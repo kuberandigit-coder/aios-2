@@ -3,32 +3,28 @@
 ## Working Directory
 C:\Users\PC\OneDrive\Desktop\kuberan web
 
-## For every completed task — AUTOMATIC (no user prompt needed):
+## After EVERY completed task — FULLY AUTOMATIC:
 
-- Save evidence in /evidence
-- Save validation reports in /validation
-- Save reusable documentation in /docs
-- Save closure notes in /closure
-- Save reusable prompts in /prompts
-
-Do NOT wait for the user to say "save AIOS". Save files immediately after every task is done.
-
-## When user says "save AIOS":
-
-1. Save all AIOS files (evidence, validation, closure, docs) as above.
-2. Then immediately run:
+1. Save evidence in /evidence
+2. Save validation reports in /validation
+3. Save reusable documentation in /docs
+4. Save closure notes in /closure
+5. Save reusable prompts in /prompts
+6. Then immediately run:
    ```
    git -C "C:\Users\PC\OneDrive\Desktop\kuberan web" add .
    git -C "C:\Users\PC\OneDrive\Desktop\kuberan web" commit -m "docs: AIOS update <date> — <task summary>"
    git -C "C:\Users\PC\OneDrive\Desktop\kuberan web" push
    ```
-3. Confirm push to `github.com/kuberandigit-coder/aios-2` completed.
+
+Do NOT wait for the user to say "save AIOS" or "push to aios 2".
+Save and push automatically every time a task is completed.
 
 ## Rules
 
 - Search existing assets before creating new ones.
 - Never create duplicate documentation.
-- Do not push to GitHub without permission — EXCEPT aios-2 which is always pushed automatically after "save AIOS".
+- Do not push Shopify theme to GitHub without permission.
 - Always include purpose, evidence, status, reviewer, next step, and PASS/FAIL in reports.
 
 ## AIOS Git Repository
