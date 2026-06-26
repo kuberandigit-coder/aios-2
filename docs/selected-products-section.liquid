@@ -1,0 +1,140 @@
+<div class="selected-products" style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
+
+  {% if section.settings.title != blank %}
+    <h2 style="text-align: center; margin-bottom: 30px;">{{ section.settings.title }}</h2>
+  {% endif %}
+
+  <div class="selected-products__grid" style="
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 24px;
+  ">
+
+    {% for i in (1..5) %}
+      {% assign product_setting = 'product_' | append: i %}
+      {% assign product = section.settings[product_setting] %}
+
+      {% if product != blank %}
+        <div class="selected-products__card" style="
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          overflow: hidden;
+          text-align: center;
+          background: #fff;
+        ">
+
+          <a href="{{ product.url }}">
+            {% if product.featured_image %}
+              <img
+                src="{{ product.featured_image | image_url: width: 400 }}"
+                alt="{{ product.featured_image.alt | escape }}"
+                style="width: 100%; height: 220px; object-fit: cover; display: block;"
+                loading="lazy"
+              >
+            {% else %}
+              {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+            {% endif %}
+          </a>
+
+          <div style="padding: 16px;">
+            <h3 style="font-size: 15px; margin: 0 0 8px;">
+              <a href="{{ product.url }}" style="text-decoration: none; color: inherit;">
+                {{ product.title }}
+              </a>
+            </h3>
+
+            <p style="font-size: 14px; color: #555; margin: 0 0 12px;">
+              {{ product.price | money }}
+            </p>
+
+            {% if product.available %}
+              <form action="/cart/add" method="post">
+                <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+                <button
+                  type="submit"
+                  style="
+                    background: #1a1a1a;
+                    color: #fff;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    width: 100%;
+                  "
+                >
+                  Add to Cart
+                </button>
+              </form>
+            {% else %}
+              <button
+                disabled
+                style="
+                  background: #ccc;
+                  color: #fff;
+                  border: none;
+                  padding: 10px 20px;
+                  border-radius: 4px;
+                  font-size: 14px;
+                  width: 100%;
+                  cursor: not-allowed;
+                "
+              >
+                Sold Out
+              </button>
+            {% endif %}
+          </div>
+
+        </div>
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+
+</div>
+
+{% schema %}
+{
+  "name": "Selected Products",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Featured Products"
+    },
+    {
+      "type": "product",
+      "id": "product_1",
+      "label": "Product 1"
+    },
+    {
+      "type": "product",
+      "id": "product_2",
+      "label": "Product 2"
+    },
+    {
+      "type": "product",
+      "id": "product_3",
+      "label": "Product 3"
+    },
+    {
+      "type": "product",
+      "id": "product_4",
+      "label": "Product 4"
+    },
+    {
+      "type": "product",
+      "id": "product_5",
+      "label": "Product 5"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Selected Products"
+    }
+  ]
+}
+{% endschema %}
