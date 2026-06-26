@@ -5,3 +5,7 @@ node_modules/
 .env.*
 .claude/
 shopify.theme.toml.local
+*.json
+
+# Shopify theme repos — each has its own .git
+shopify-themes/
