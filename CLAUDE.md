@@ -3,22 +3,42 @@
 ## Working Directory
 C:\Users\PC\OneDrive\Desktop\kuberan web
 
-## After EVERY completed task — FULLY AUTOMATIC:
+## Auto-Save Rule — NO USER PROMPT NEEDED
+
+After every response where a task has a clear completed result, automatically:
 
 1. Save evidence in /evidence
-2. Save validation reports in /validation
-3. Save reusable documentation in /docs
-4. Save closure notes in /closure
-5. Save reusable prompts in /prompts
-6. Then immediately run:
+2. Save validation in /validation
+3. Save closure in /closure
+4. Update daily doc in /docs
+5. Save reusable prompts in /prompts (if applicable)
+6. Run:
    ```
    git -C "C:\Users\PC\OneDrive\Desktop\kuberan web" add .
-   git -C "C:\Users\PC\OneDrive\Desktop\kuberan web" commit -m "docs: AIOS update <date> — <task summary>"
+   git -C "C:\Users\PC\OneDrive\Desktop\kuberan web" commit -m "docs: <date> — <task summary>"
    git -C "C:\Users\PC\OneDrive\Desktop\kuberan web" push
    ```
 
-Do NOT wait for the user to say "save AIOS" or "push to aios 2".
-Save and push automatically every time a task is completed.
+## What counts as a completed task:
+
+- A file was created or modified in the Shopify theme
+- A snippet was created and wired
+- A section was changed and pushed live
+- A bug was fixed
+- An analysis or report was delivered
+- A git commit or push was made
+- A setting or config was changed
+
+## What does NOT trigger auto-save:
+
+- Conversations, questions, explanations only
+- Analysis that has no output file
+- User is still reviewing or asking follow-up questions
+- Task was stopped or cancelled
+
+## If the result turns out wrong:
+
+If user says "change it" or "undo" after I already saved — I update the evidence file to reflect the correction and save again. Never delete previous evidence.
 
 ## Rules
 
@@ -26,6 +46,7 @@ Save and push automatically every time a task is completed.
 - Never create duplicate documentation.
 - Do not push Shopify theme to GitHub without permission.
 - Always include purpose, evidence, status, reviewer, next step, and PASS/FAIL in reports.
+- File naming: YYYY-MM-DD_task-name.md
 
 ## AIOS Git Repository
 
