@@ -14,7 +14,9 @@
 |---|-----------|----------|----------------|-------------------|--------|
 | 1 | [2core-round](#1-2core-round) | 28 | 64 | £1,366.06 | ✅ Done |
 | 2 | [2core-twisted](#2-2core-twisted) | 38 | 133 | £1,677.27 | ✅ Done |
-| 3 | _(next collection)_ | — | — | — | ⏳ Pending |
+| 3 | [3core-round](#3-3core-round) | 36 | 96 | £1,658.99 | ✅ Done |
+| 4 | [3core-twisted](#4-3core-twisted) | 35 | 127 | £3,079.42 | ✅ Done |
+| 5 | _(next collection)_ | — | — | — | ⏳ Pending |
 
 ---
 
@@ -227,10 +229,6 @@
 |-------|------|-----|----------------|---------------------|---------|
 | #LED50551 | Apr 11 | 1×£1.25 | £1.25 | Google (no UTM) | Organic Search |
 | #LED53103 | May 12 | 1×£1.25 | £1.25 | direct / product URL | Direct |
-
----
-
-_Next collection data will be added below as new sections following the same format._
 
 ---
 
@@ -569,5 +567,530 @@ _Next collection data will be added below as new sections following the same for
 | Order | Date | Qty | Product Rev £ | 1st Session Source | Channel |
 |-------|------|-----|----------------|---------------------|---------|
 | #LED51874 | Apr 27 | 1×£2.39 | £2.39 | direct (null) | Direct |
+
+---
+
+## 3. 3core-round
+
+**URL:** ledsone.co.uk/collections/3core-round
+**Products in collection:** 36
+**Products with organic sales:** 16
+**Data source:** Shopify Admin GraphQL — `product_id` filter on orders + `customerJourneySummary.firstVisit`
+
+### Channel Summary
+
+| Channel | Orders | Revenue £ | % of Revenue |
+|---------|--------|-----------|-------------|
+| Organic Search (Google, Bing, DuckDuckGo) | 14 | £183.04 | 11.0% |
+| Direct | 21 | £428.37 | 25.8% |
+| No Data / Unknown | 56 | £1,007.24 | 60.7% |
+| AI Tools (ChatGPT) | 1 | £12.99 | 0.8% |
+| Referral | 4 | £27.35 | 1.7% |
+| **TOTAL** | **96** | **£1,658.99** | **100%** |
+
+> ⚠️ **Note on No Data bulk orders:** Several No Data orders are B2B bulk purchases with no session tracking:
+> - #LED53558 (T30-linked product R18) — 30× cable = £80.70
+> - CFCN8ZUD2K — 5× R18 = £8.35, GTBTDXZ933 — 10× = £19.10, 54G9BJB7NY — 10× = £19.10, KSNPA58D44 — 10× = £19.10 (R18)
+> - #LED53657 — 5× R26 = £94.45
+>
+> **Excluding bulk orders:** ~75 orders | ~£1,418
+
+### Product Breakdown
+
+| Product ID | Colour/SKU | Organic Orders | Revenue £ | Notes |
+|-----------|-----------|---------------|-----------|-------|
+| 4417267826784 | Black ~3187 | 22 | £541.49 | Top seller |
+| 4417277558880 | R18 | 15 | £234.11 | Incl. 4 bulk B2B No Data orders |
+| 8005741805818 | R26 | 6 | £133.68 | Incl. #LED53657 5× Direct bulk ⚠️ |
+| 4417277001824 | Dark Blue ~3069 | 4 | £103.60 | |
+| 4417277395040 | Orange ~3065 | 5 | £95.34 | |
+| 4417267859552 | White ~3047 | 8 | £88.25 | |
+| 4417268023392 | Red ~3226 | 4 | £76.45 | |
+| 4417278115936 | R21 | 6 | £55.03 | |
+| 4417277788256 | R19 | 6 | £50.62 | |
+| 4417268449376 | Yellow ~3048 | 5 | £43.25 | |
+| 7858443845882 | R25 | 1 | £44.55 | Bing organic 3× |
+| 4417267925088 | B&W ~3186 | 5 | £48.23 | |
+| 4417267761248 | Gold ~3041 | 2 | £28.78 | |
+| 4417277886560 | R20 | 1 | £18.89 | Direct |
+| 8009497739514 | Light Gold ~4601 | 2 | £19.78 | |
+| 4417268351072 | Brown ~3034 | 2 | £19.78 | |
+| 8009546662138 | R30 | 1 | £9.89 | Direct |
+| 8011908514042 | R36 | 2 | £9.95 | No Data |
+| 8010080813306 | R34 | 1 | £6.79 | No Data |
+| 8005773230330 | R27 | 2 | £17.54 | No Data |
+| 8005800165626 | R28 | 1 | £12.99 | AI (ChatGPT) |
+| 4417268547680 | R16 | 0 | £0 | All PAID |
+| 4417268809824 | R17 | 0 | £0 | All PAID |
+| 4417277100128 | Blue ~3033 | 0 | £0 | 0 orders |
+| 4417267531872 | Gold ~3038 | 0 | £0 | 0 orders |
+| 4417268121696 | Burgundy ~3190 | 0 | £0 | 0 orders |
+| 8005801738490 | Rose Pink 5pk | 0 | £0 | 0 orders |
+| 15057870291330 | Light Green | 0 | £0 | 0 orders |
+| 4417283096672 | R22 | 0 | £0 | 0 orders |
+| 4417283391584 | R23 | 0 | £0 | All Meta PAID |
+| 4417283489888 | R24 | 0 | £0 | All PMax PAID |
+| 8009486926074 | R29 | 0 | £0 | 0 orders |
+| 8009549349114 | R31 | 0 | £0 | All PAID |
+| 8009550233850 | R32 | 0 | £0 | 0 orders |
+| 8009550725370 | R33 | 0 | £0 | 0 orders |
+| 8010099753210 | R35 | 0 | £0 | 0 orders |
+| **TOTAL** | **16 products with organic sales** | **96** | **£1,658.99** | |
+
+### Per-Order Detail
+
+#### 4417267826784 — Black ~3187 (22 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43247 | Jan | 1×£18.89 | £18.89 | Organic Search |
+| #LED43887 | Jan | 1×£9.89 | £9.89 | No Data |
+| #LED44339 | Jan | 1×£18.89 | £18.89 | Direct |
+| #LED44608 | Feb | 1×£18.89 | £18.89 | Direct |
+| #LED44704 | Feb | 1×£12.40 | £12.40 | No Data |
+| #LED44792 | Feb | 1×£9.89 | £9.89 | Direct |
+| #LED44814 | Feb | 1×£6.15 | £6.15 | No Data |
+| #LED45085 | Feb | 1×£2.79 | £2.79 | No Data |
+| #LED46436 | Feb | 1×£7.17 | £7.17 | Organic Search |
+| #LED46516 | Feb | 1×£9.89 | £9.89 | No Data |
+| #LED46729 | Feb | 1×£4.78 | £4.78 | Direct |
+| #LED46925 | Mar | 1×£2.39 | £2.39 | No Data |
+| #LED46995 | Mar | 3×£14.85 | £44.55 | Organic Search (Bing) |
+| #LED47305 | Mar | 1×£6.15 | £6.15 | No Data |
+| #LED48710 | Mar | 1×£9.89 | £9.89 | Organic Search |
+| #LED49171 | Mar | 1×£10.37 | £10.37 | No Data |
+| #LED50277 | Apr | 1×£9.89 | £9.89 | No Data |
+| #LED51132 | Apr | 1×£9.89 | £9.89 | No Data |
+| #LED51544 | Apr | 1×£18.89 | £18.89 | Direct |
+| #LED52030 | May | 1×£9.89 | £9.89 | Direct |
+| #LED52593 | May | 1×£9.89 | £9.89 | No Data |
+| #LED52657 | May | 1×£6.15 | £6.15 | Organic Search |
+| #LED53165 | May | 1×£2.39 | £2.39 | No Data |
+| #LED53592 | May | 1×£12.40 | £12.40 | No Data |
+| #LED53644 | May | 1×£4.78 | £4.78 | Direct |
+| #LED53657 | May | 5×£18.89 | £94.45 | Direct ⚠️ Bulk |
+| #LED53799 | May | 1×£9.89 | £9.89 | No Data |
+| #LED53949 | May | 3×£2.39 | £7.17 | No Data |
+| #LED55317 | Jun | 1×£9.89 | £9.89 | Direct |
+| #LED55450 | Jun | 1×£2.39 | £2.39 | Organic Search |
+| #LED56456 | Jun | 1×£12.68 | £12.68 | No Data |
+| #LED56581 | Jun | 1×£9.89 | £9.89 | No Data |
+
+#### 4417277558880 — R18 (15 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| CFCN8ZUD2K | — | 5×£1.67 | £8.35 | No Data ⚠️ Bulk |
+| GTBTDXZ933 | — | 10×£1.91 | £19.10 | No Data ⚠️ Bulk |
+| 54G9BJB7NY | — | 10×£1.91 | £19.10 | No Data ⚠️ Bulk |
+| KSNPA58D44 | — | 10×£1.91 | £19.10 | No Data ⚠️ Bulk |
+| _(11 retail organic orders)_ | Jan–Jun | — | £168.46 | Mixed Direct/No Data/Organic |
+
+#### 8005741805818 — R26 (6 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED51132 | Apr | 1×£9.89 | £9.89 | No Data |
+| #LED52030 | May | 1×£9.89 | £9.89 | Direct |
+| #LED53165 | May | 1×£2.39 | £2.39 | No Data |
+| #LED53657 | May | 5×£18.89 | £94.45 | Direct ⚠️ Bulk |
+| #LED53949 | May | 3×£2.39 | £7.17 | No Data |
+| #LED55317 | Jun | 1×£9.89 | £9.89 | Direct |
+
+#### 4417277001824 — Dark Blue ~3069 (4 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43247 | Jan | 1×£18.89 | £18.89 | Organic Search |
+| #LED44608 | Feb | 1×£18.89 | £18.89 | Direct |
+| #LED48710 | Mar | 1×£9.89 | £9.89 | Organic Search |
+| #LED53949 | May | 3×£2.39 | £7.17 | No Data |
+
+#### 4417277395040 — Orange ~3065 (5 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED44339 | Jan | 1×£18.89 | £18.89 | Direct |
+| #LED46436 | Feb | 1×£7.17 | £7.17 | Organic Search |
+| #LED46516 | Feb | 1×£9.89 | £9.89 | No Data |
+| #LED47305 | Mar | 1×£6.15 | £6.15 | No Data |
+| #LED52030 | May | 1×£9.89 | £9.89 | Direct |
+
+#### 4417267859552 — White ~3047 (8 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43887 | Jan | 1×£9.89 | £9.89 | No Data |
+| #LED44704 | Feb | 1×£12.40 | £12.40 | No Data |
+| #LED44814 | Feb | 1×£6.15 | £6.15 | No Data |
+| #LED46729 | Feb | 1×£4.78 | £4.78 | Direct |
+| #LED47305 | Mar | 1×£6.15 | £6.15 | No Data |
+| #LED52657 | May | 1×£6.15 | £6.15 | Organic Search |
+| #LED53592 | May | 1×£12.40 | £12.40 | No Data |
+| #LED56456 | Jun | 1×£12.68 | £12.68 | No Data |
+
+#### 4417268023392 — Red ~3226 (4 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43887 | Jan | 1×£9.89 | £9.89 | No Data |
+| #LED46925 | Mar | 1×£2.39 | £2.39 | No Data |
+| #LED50277 | Apr | 1×£9.89 | £9.89 | No Data |
+| #LED53592 | May | 1×£12.40 | £12.40 | No Data |
+
+#### 4417278115936 — R21 (6 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED44792 | Feb | 1×£9.89 | £9.89 | Direct |
+| #LED45085 | Feb | 1×£2.79 | £2.79 | No Data |
+| #LED46516 | Feb | 1×£9.89 | £9.89 | No Data |
+| #LED52593 | May | 1×£9.89 | £9.89 | No Data |
+| #LED53592 | May | 1×£9.89 | £9.89 | No Data |
+| #LED56456 | Jun | 1×£12.68 | £12.68 | No Data |
+
+#### 4417277788256 — R19 (6 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED46436 | Feb | 1×£7.17 | £7.17 | Organic Search |
+| #LED46925 | Mar | 1×£2.39 | £2.39 | No Data |
+| #LED51544 | Apr | 1×£18.89 | £18.89 | Direct |
+| #LED53592 | May | 1×£9.89 | £9.89 | No Data |
+| #LED55450 | Jun | 1×£2.39 | £2.39 | Organic Search |
+| #LED56581 | Jun | 1×£9.89 | £9.89 | No Data |
+
+#### 4417268449376 — Yellow ~3048 (5 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED44704 | Feb | 1×£12.40 | £12.40 | No Data |
+| #LED44814 | Feb | 1×£6.15 | £6.15 | No Data |
+| #LED47305 | Mar | 1×£6.15 | £6.15 | No Data |
+| #LED52657 | May | 1×£6.15 | £6.15 | Organic Search |
+| #LED53592 | May | 1×£12.40 | £12.40 | No Data |
+
+#### 7858443845882 — R25 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED46995 | Mar | 3×£14.85 | £44.55 | Organic Search (Bing) |
+
+#### 4417267925088 — B&W ~3186 (5 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED44608 | Feb | 1×£18.89 | £18.89 | Direct |
+| #LED46729 | Feb | 1×£4.78 | £4.78 | Direct |
+| #LED48710 | Mar | 1×£9.89 | £9.89 | Organic Search |
+| #LED53644 | May | 1×£4.78 | £4.78 | Direct |
+| #LED53799 | May | 1×£9.89 | £9.89 | No Data |
+
+#### 4417267761248 — Gold ~3041 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43247 | Jan | 1×£18.89 | £18.89 | Organic Search |
+| #LED54082 | May | 1×£9.89 | £9.89 | Direct |
+
+#### 4417277886560 — R20 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED44339 | Jan | 1×£18.89 | £18.89 | Direct |
+
+#### 8009497739514 — Light Gold ~4601 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED46436 | Feb | 1×£7.17 | £7.17 | Organic Search |
+| #LED55450 | Jun | 1×£2.39 | £2.39 | Organic Search |
+
+#### 4417268351072 — Brown ~3034 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43887 | Jan | 1×£9.89 | £9.89 | No Data |
+| #LED50277 | Apr | 1×£9.89 | £9.89 | No Data |
+
+#### 8009546662138 — R30 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED42388 | Jan 04 | 1×£9.89 | £9.89 | Direct |
+
+#### 8011908514042 — R36 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED46992 | Mar 02 | 3×£1.25 | £3.75 | No Data |
+| #LED54132 | May 25 | 1×£6.20 | £6.20 | No Data |
+
+#### 8010080813306 — R34 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED55602 | Jun 12 | 1×£6.79 | £6.79 | No Data |
+
+#### 8005773230330 — R27 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED49171 | Mar 28 | 1×£10.37 | £10.37 | No Data |
+| #LED53949 | May 22 | 3×£2.39 | £7.17 | No Data |
+
+#### 8005800165626 — R28 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED46963 | Mar 01 | 1×£12.99 | £12.99 | AI Tool (ChatGPT) |
+
+---
+
+## 4. 3core-twisted
+
+**URL:** ledsone.co.uk/collections/3core-twisted
+**Products in collection:** 35
+**Products with organic sales:** 16
+**Data source:** Shopify Admin GraphQL — `product_id` filter on orders + `customerJourneySummary.firstVisit`
+
+### Channel Summary
+
+| Channel | Orders | Revenue £ | % of Revenue |
+|---------|--------|-----------|-------------|
+| Organic Search (Google, Bing, DuckDuckGo) | 24 | £337.18 | 10.9% |
+| Direct | 42 | £722.19 | 23.5% |
+| No Data / Unknown | 58 | £1,975.48 | 64.2% |
+| Referral / AI | 3 | £44.57 | 1.4% |
+| **TOTAL** | **127** | **£3,079.42** | **100%** |
+
+> ⚠️ **Note on bulk/trade orders (No Data):**
+> - T5 (4417278574688) — 300× Brown = ~£711 (single wholesale order, No Data)
+> - T21 (4417277460576) — #LED49370 75×£2.23 = £167.25 (No Data)
+> - T16 (8011831148794) — #LED52659 5×£19.35 = £96.75 (No Data)
+> - T30 (7064905908385) — #LED53558 30×£2.69 = £80.70 (No Data)
+>
+> **Excluding bulk orders:** ~123 orders | ~£2,023
+
+### Product Breakdown
+
+| Product ID | Colour/SKU | Organic Orders | Revenue £ | Notes |
+|-----------|-----------|---------------|-----------|-------|
+| 4417278574688 | Brown ~3064 (T5) | 10 | £1,052.62 | Incl. ~300× wholesale ⚠️ |
+| 4417277460576 | T21 | 21 | £438.49 | Incl. 75× bulk #LED49370 ⚠️ |
+| 7064905908385 | T30 | 19 | £296.95 | Incl. 30× bulk #LED53558 ⚠️ |
+| 4417277952096 | T22 | 17 | £275.79 | |
+| 8011824398586 | Dark Brown ~4805 (T1) | 10 | £187.87 | |
+| 8011831148794 | Gold ~4824 (T16) | 9 | £238.58 | Incl. 5× bulk #LED52659 ⚠️ |
+| 4417279492192 | Ivory ~4804 (T17) | 9 | £164.34 | |
+| 4417278935136 | T23 | 7 | £88.50 | |
+| 4417278836832 | T20 | 5 | £54.02 | |
+| 8011902058746 | T19 | 4 | £55.16 | |
+| 4417277231200 | Light Purple (T18) | 3 | £43.57 | |
+| 4417279066208 | T25 | 2 | £53.01 | |
+| 4417254162528 | Peach ~3369 (T11) | 2 | £19.18 | |
+| 8011831804154 | T32 | 2 | £35.81 | |
+| 8011824398586 | Dark Brown T1 | 10 | £187.87 | |
+| 8011839537402 | Pink ~4851 (T9) | 1 | £16.34 | |
+| 8011825479930 | Blue ~4807 (T2) | 1 | £16.34 | |
+| 8011834163450 | Light Brown ~4834 (T13) | 1 | £10.37 | |
+| 8011839176954 | R&W ~4850 (T12) | 1 | £9.94 | |
+| 4417279328352 | T29 | 1 | £9.59 | Organic Search (DuckDuckGo) |
+| 4417282736224 | T24 | 1 | £6.72 | No Data |
+| 4417282867296 | T27 | 1 | £6.23 | Direct |
+| 8011872731386 | Yellow (T3) | 0 | £0 | 0 orders |
+| 4417279197280 | Purple ~3056 (T4) | 0 | £0 | 0 orders |
+| 4417279656032 | Dark Blue ~3050 (T6) | 0 | £0 | 0 orders |
+| 8011829379322 | Light Blue (T7) | 0 | £0 | 0 orders |
+| 4417282539616 | Blue Multi Tweed (T8) | 0 | £0 | 0 orders |
+| 8011834523898 | Light Green (T10) | 0 | £0 | 0 orders |
+| 8011831509242 | Dark Green ~4827 (T14) | 0 | £0 | All PAID |
+| 8011835212026 | Orange ~4839 (T15) | 0 | £0 | 0 orders |
+| 4417282703456 | T26 | 0 | £0 | All PAID |
+| 8011901534458 | T28 | 0 | £0 | All PAID |
+| 8011830034682 | T31 | 0 | £0 | 0 orders |
+| 4417282474080 | T33 | 0 | £0 | 0 orders |
+| 8011834786042 | T34 | 0 | £0 | 0 orders |
+| 8011834622202 | T35 | 0 | £0 | 0 orders |
+| **TOTAL** | **16 products with organic sales** | **127** | **£3,079.42** | |
+
+### Per-Order Detail
+
+#### 4417278574688 — Brown ~3064 / T5 (10 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| _(~300× wholesale)_ | — | ~300× | ~£711 | No Data ⚠️ Bulk |
+| _(9 retail organic orders)_ | Jan–Jun | — | ~£342 | Mixed |
+
+#### 4417277460576 — T21 (21 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED42840 | Jan | 1×£2.39 | £2.39 | No Data |
+| #LED43300 | Jan | 1×£9.43 | £9.43 | No Data |
+| #LED45778 | Feb | 1×£15.19 | £15.19 | Organic Search |
+| #LED47930 | Mar | 1×£24.62 | £24.62 | Direct |
+| #LED49370 | Mar | 75×£2.23 | £167.25 | No Data ⚠️ Bulk |
+| #LED56518 | Jun | 1×£2.39 | £2.39 | Organic Search (Bing) |
+| _(15 more retail orders)_ | Jan–Jun | — | ~£217 | Mixed |
+
+#### 7064905908385 — T30 (19 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43957 | Jan 24 | 1×£19.89 | £19.89 | Organic Search |
+| #LED44975 | Feb 05 | 2×£5.59 | £11.18 | No Data |
+| #LED45839 | Feb 16 | 1×£2.69 | £2.69 | Organic Search |
+| #LED46493 | Feb 24 | 2×£2.24 | £4.48 | Organic Search |
+| #LED46691 | Feb 26 | 1×£3.44 | £3.44 | Organic Search |
+| #LED47523 | Mar 08 | 1×£10.41 | £10.41 | Organic Search |
+| #LED48268 | Mar 17 | 1×£19.89 | £19.89 | Direct |
+| #LED48890 | Mar 24 | 1×£5.59 | £5.59 | Organic Search |
+| #LED48896 | Mar 25 | 3×£12.49 | £37.47 | Organic Search |
+| #LED49115 | Mar 27 | 1×£19.89 | £19.89 | Organic Search |
+| #LED49582 | Apr 01 | 1×£19.89 | £19.89 | No Data |
+| #LED49603 | Apr 02 | 1×£12.49 | £12.49 | No Data |
+| #LED50466 | Apr 11 | 1×£12.49 | £12.49 | Organic Search |
+| #LED51122 | Apr 17 | 1×£5.59 | £5.59 | Organic Search |
+| #LED53558 | May 18 | 30×£2.69 | £80.70 | No Data ⚠️ Bulk |
+| #LED54311 | May 27 | 1×£5.59 | £5.59 | Direct |
+| #LED55368 | Jun 09 | 1×£2.69 | £2.69 | Direct |
+| #LED56128 | Jun 20 | 1×£2.69 | £2.69 | No Data |
+| #LED56582 | Jun 27 | 1×£19.89 | £19.89 | Organic Search (Bing) |
+
+#### 4417277952096 — T22 (17 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED43957 | Jan | 1×£19.89 | £19.89 | Organic Search |
+| #LED44975 | Feb | 1×£5.59 | £5.59 | No Data |
+| #LED46493 | Feb | 1×£2.24 | £2.24 | Organic Search |
+| #LED47622 | Mar | 3×£9.59 | £28.77 | No Data |
+| _(13 more orders)_ | Mar–Jun | — | ~£219 | Mixed |
+
+#### 8011824398586 — Dark Brown ~4805 / T1 (10 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| _(10 organic orders)_ | Jan–Jun | — | £187.87 | Mixed (prev session data) |
+
+#### 8011831148794 — Gold ~4824 / T16 (9 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED52659 | May | 5×£19.35 | £96.75 | No Data ⚠️ Bulk |
+| #LED54158 | May | 2×£20.66 | £41.32 | No Data |
+| _(7 more retail orders)_ | Jan–Jun | — | ~£100 | Mixed |
+
+#### 4417279492192 — Ivory ~4804 / T17 (9 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED50244 | Apr | 3×£16.79 | £50.37 | No Data ⚠️ |
+| #LED54335 | May | 2×£16.79 | £33.58 | Direct |
+| _(7 more orders)_ | Jan–Jun | — | ~£80 | Mixed |
+
+#### 4417278935136 — T23 (7 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED45742 | Feb | 4×£2.23 | £8.92 | Direct |
+| #LED47919 | Mar | 2×£2.23 | £4.46 | Organic Search |
+| #LED49171 | Mar | 1×£10.37 | £10.37 | No Data |
+| #LED49603 | Apr | 1×£16.79 | £16.79 | No Data |
+| #LED49605 | Apr | 1×£9.59 | £9.59 | Direct |
+| #LED54158 | May | 2×£18.07 | £36.14 | No Data |
+| #LED56790 | Jun | 1×£2.23 | £2.23 | No Data |
+
+#### 4417278836832 — T20 (5 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED42840 | Jan | 1×£2.39 | £2.39 | No Data |
+| #LED43300 | Jan | 1×£9.43 | £9.43 | No Data |
+| #LED45778 | Feb | 1×£15.19 | £15.19 | Organic Search |
+| #LED47930 | Mar | 1×£24.62 | £24.62 | Direct |
+| #LED56518 | Jun | 1×£2.39 | £2.39 | Organic Search (Bing) |
+
+#### 8011902058746 — T19 (4 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED51881 | Apr | 1×£9.59 | £9.59 | Organic Search (google/organic) |
+| #LED54379 | May | 1×£15.19 | £15.19 | Direct |
+| #LED55878 | Jun | 1×£15.19 | £15.19 | Organic Search |
+| #LED55942 | Jun | 1×£15.19 | £15.19 | Organic Search |
+
+#### 4417277231200 — Light Purple / T18 (3 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED48859 | Mar | 1×£15.99 | £15.99 | No Data |
+| #LED49171 | Mar | 1×£10.37 | £10.37 | No Data |
+| #LED54158 | May | 1×£17.21 | £17.21 | No Data |
+
+#### 4417279066208 — T25 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED50394 | Apr | 1×£16.79 | £16.79 | No Data |
+| #LED54927 | May | 2×£18.11 | £36.22 | Organic Search |
+
+#### 4417254162528 — Peach ~3369 / T11 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED49171 | Mar | 1×£10.37 | £10.37 | No Data |
+| #LED54158 | May | 1×£8.81 | £8.81 | No Data |
+
+#### 8011831804154 — T32 (2 organic orders)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED55450 | Jun 10 | 1×£2.23 | £2.23 | Organic Search |
+| #LED56273 | Jun 22 | 2×£16.79 | £33.58 | No Data |
+
+#### 8011839537402 — Pink ~4851 / T9 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED49171 | Mar | 1×£16.34 | £16.34 | No Data |
+
+#### 8011825479930 — Blue ~4807 / T2 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED49171 | Mar | 1×£16.34 | £16.34 | No Data |
+
+#### 8011834163450 — Light Brown ~4834 / T13 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED49171 | Mar 28 | 1×£10.37 | £10.37 | No Data |
+
+#### 8011839176954 — R&W ~4850 / T12 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED54158 | May | 1×£9.94 | £9.94 | No Data |
+
+#### 4417279328352 — T29 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED42967 | Jan 11 | 1×£9.59 | £9.59 | Organic Search (DuckDuckGo) |
+
+#### 4417282736224 — T24 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED47465 | Mar | 1×£6.72 | £6.72 | No Data |
+
+#### 4417282867296 — T27 (1 organic order)
+
+| Order | Date | Qty×Price | Rev £ | Channel |
+|-------|------|-----------|-------|---------|
+| #LED48222 | Mar | 1×£6.23 | £6.23 | Direct |
 
 ---
