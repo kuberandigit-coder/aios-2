@@ -93,6 +93,27 @@ Retrieved via full-day paginated `events` query for 2026-06-26 (`created_at:>202
 
 This pattern (bulk import → immediate cleanup/unpublish → later full delete) is consistent with the "new OM 2024" app performing an automated product sync/import that created a flawed or duplicate listing, which staff then unpublished and ultimately deleted — rather than an unexplained/unilateral deletion.
 
+## Store-wide "new OM 2024" app activity — full day, 2026-06-26 (all product listings, not just the deleted one)
+
+User asked for the full log of everything "new OM 2024" did that day, not just the one deleted product. Queried the full day's `events` for `subject_type:PRODUCT` with `action:create` and `action:destroy` separately (`created_at:>2026-06-26T00:00:00Z AND created_at:<2026-06-27T00:00:00Z`), confirmed complete (both queries returned `hasNextPage: false`, i.e. no further pages/results beyond what's shown).
+
+### All products created by "new OM 2024" on 2026-06-26 (2 total — this was the app's entire product-creation activity for the day)
+
+| Time (UTC) | Product ID | Title | Status now |
+|---|---|---|---|
+| 04:19:45 | 15606637592841 | *(title not logged by app — see limitation above)* | **DELETED** (destroyed 08:34:31 same day by ledwebde2 LEDSone) |
+| 06:08:37 | 15606713188617 | Lampenschirm E27 Kegel Pendelleuchte 22cm Metall Deckenleuchte 2erSet Hängelampe~3873 | **Still exists — status: DRAFT**, vendor `ledsone-de`, never published (`publishedAt: null`), last updated 2026-06-29T07:15:31Z |
+
+### All products destroyed store-wide on 2026-06-26 (1 total)
+
+| Time (UTC) | Product ID | Destroyed by |
+|---|---|---|
+| 08:34:31 | 15606637592841 | ledwebde2 LEDSone (Shopify Web) — **not** "new OM 2024" |
+
+### Conclusion of this check
+
+On 2026-06-26, the "new OM 2024" app created exactly **2 product listings** store-wide (confirmed via exhaustive date-range query — no more exist). Only **one** of those two (15606637592841) was later deleted, by a human staff member (ledwebde2 LEDSone), not by the app itself. The second product created that day (15606713188617) is still in the store today, sitting in **Draft** status and never published — it was never deleted. The app itself did not destroy any full products that day (it only cleaned up excess *variants* on its own created product at 04:27:58, as noted above — the product record itself remained until the human delete at 08:34:31).
+
 ### Conclusion on detail recovery
 
 **Title, price, images, SKU, and vendor could NOT be recovered.** This is a hard limitation of Shopify's Admin API — once a product is destroyed, no endpoint (REST or GraphQL) retains its field values. The two indirect recovery paths checked (event log message text, and order line-item snapshots) both came back empty for this specific product, because (a) the creating app didn't log a title string, and (b) the product had no orders. Recommended external avenues (not accessible via this API): the "new OM 2024" app's own import/sync logs, the original CSV/feed file used to create the product, or any ad platform (e.g. Google Merchant Center) that may have already synced/cached the listing before it was deleted.
