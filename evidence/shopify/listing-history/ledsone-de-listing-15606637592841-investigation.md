@@ -57,6 +57,31 @@
 3. **`author` is a display name, not a verified email/user ID.** To fully confirm which staff account this corresponds to (and their permission level), a manual check in **Shopify Admin → Settings → Users and permissions** is recommended as corroborating evidence.
 4. **No screenshot/manual admin evidence was captured** — this investigation is entirely API-based. If corroborating visual evidence is required for the record (e.g. for HR/compliance purposes), someone with Admin access should screenshot: Shopify Admin → Settings → Users and permissions (to confirm the "ledwebde2 LEDSone" account and its owner), since Claude does not have interactive Shopify Admin UI/browser access to this store's backend in this session.
 
+## Follow-up: Attempt to Recover Product Details (title/price/images)
+
+User asked whether the deleted product's details could be retrieved. Additional investigation:
+
+| Check | Method | Raw Result | Result |
+|---|---|---|---|
+| Node lookup by GID | `graphql_query`: `node(id: "gid://shopify/Product/15606637592841")` | `{"data":{"node":null}}` | Confirms no residual record anywhere in API |
+| Product's own `create` event | `events(query:"subject_type:PRODUCT AND action:create")`, matched by `subjectId` | `{"createdAt":"2026-06-26T04:19:45Z","action":"create","message":"","author":"new OM 2024","attributeToUser":false,"attributeToApp":true,"appTitle":"new OM 2024","arguments":[]}` | Product was created via the **"new OM 2024" app** (order-management/import app), not a direct human admin action. Unlike most other create events in this store (which include the product title in the message/link), this one has an **empty message and empty arguments** — the app did not pass title text into the event log. |
+| Product's `published` events | `events(query:"subject_type:PRODUCT AND action:published")`, matched by `subjectId`, same-day window | 12 published events at 04:19:45–04:19:49Z (Online Store, Shop, Facebook & Instagram, Pinterest, Microsoft Copilot, TikTok, Inbox — via "new OM 2024", "Shopify", and "Flow Platform") | Confirms the product went live across multiple sales channels within seconds of creation, but none of these events carry title/price either |
+| Order line item snapshot check | `graphql_query`: `orders(query: "product_id:15606637592841")` | `{"data":{"orders":{"edges":[]}}}` | **No orders found** referencing this product — it appears to have had zero sales before deletion, so there is no line-item snapshot of its title/price/SKU to recover |
+
+### Product lifecycle timeline
+
+| Time (UTC) | Event | Actor |
+|---|---|---|
+| 2026-06-26T04:19:45Z | Created | App: "new OM 2024" |
+| 2026-06-26T04:19:45–49Z | Published to 7 channels | App: "new OM 2024" / "Flow Platform" / "Shopify" |
+| 2026-06-26T08:34:31Z | Destroyed (deleted) | ledwebde2 LEDSone (Shopify Web admin) |
+
+**Total lifespan: ~4 hours 15 minutes.**
+
+### Conclusion on detail recovery
+
+**Title, price, images, SKU, and vendor could NOT be recovered.** This is a hard limitation of Shopify's Admin API — once a product is destroyed, no endpoint (REST or GraphQL) retains its field values. The two indirect recovery paths checked (event log message text, and order line-item snapshots) both came back empty for this specific product, because (a) the creating app didn't log a title string, and (b) the product had no orders. Recommended external avenues (not accessible via this API): the "new OM 2024" app's own import/sync logs, the original CSV/feed file used to create the product, or any ad platform (e.g. Google Merchant Center) that may have already synced/cached the listing before it was deleted.
+
 ## Conclusion
 
 - **Product/listing status:** DELETED (hard delete / "destroy" action) — not archived, not unpublished, not draft.
