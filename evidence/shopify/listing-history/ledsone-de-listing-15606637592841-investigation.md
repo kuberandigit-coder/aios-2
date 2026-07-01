@@ -68,15 +68,30 @@ User asked whether the deleted product's details could be retrieved. Additional 
 | Product's `published` events | `events(query:"subject_type:PRODUCT AND action:published")`, matched by `subjectId`, same-day window | 12 published events at 04:19:45–04:19:49Z (Online Store, Shop, Facebook & Instagram, Pinterest, Microsoft Copilot, TikTok, Inbox — via "new OM 2024", "Shopify", and "Flow Platform") | Confirms the product went live across multiple sales channels within seconds of creation, but none of these events carry title/price either |
 | Order line item snapshot check | `graphql_query`: `orders(query: "product_id:15606637592841")` | `{"data":{"orders":{"edges":[]}}}` | **No orders found** referencing this product — it appears to have had zero sales before deletion, so there is no line-item snapshot of its title/price/SKU to recover |
 
-### Product lifecycle timeline
+### Product lifecycle timeline — FULL HISTORY (corrected/expanded, all actors)
 
-| Time (UTC) | Event | Actor |
-|---|---|---|
-| 2026-06-26T04:19:45Z | Created | App: "new OM 2024" |
-| 2026-06-26T04:19:45–49Z | Published to 7 channels | App: "new OM 2024" / "Flow Platform" / "Shopify" |
-| 2026-06-26T08:34:31Z | Destroyed (deleted) | ledwebde2 LEDSone (Shopify Web admin) |
+Retrieved via full-day paginated `events` query for 2026-06-26 (`created_at:>2026-06-26T00:00:00Z AND created_at:<2026-06-27T00:00:00Z`), filtered to entries with `subjectId` matching this product or its variant IDs.
 
-**Total lifespan: ~4 hours 15 minutes.**
+| Time (UTC) | Event | Actor | App/Surface |
+|---|---|---|---|
+| 04:19:45 | Product **created** (with ~40 variants created in the same second) | **new OM 2024** (app, not a human user — `attributeToUser: false`) | new OM 2024 |
+| 04:19:45–46 | **Published** to Online Store + other Shopify-native channels (6 events) | new OM 2024, then Shopify (system) | Shopify Web / system |
+| 04:19:49 | **Published** to 5 more channels (Facebook & Instagram, Pinterest, TikTok, Microsoft Copilot, Inbox) | Flow Platform (automation) | Flow Platform |
+| 04:27:58 | **~24 variants destroyed** (bulk variant cleanup — duplicates/excess variants removed, product itself untouched) | **new OM 2024** (app) | new OM 2024 |
+| 04:28:32–33 | Product **unpublished** from multiple channels (8 unpublish events) + **status_changed** | **Dan Chen** (human staff), then Shopify (system) | Shopify Web |
+| 04:42:35 | 2 new variants **created** (replacing/adjusting some of the removed ones) | **Dan Chen** (human staff) | Shopify Web |
+| 04:46:14–04:47:24 | 4 more variants **destroyed** | **Dan Chen** (human staff) | Shopify Web |
+| **08:34:31** | **Product itself destroyed** (hard delete) | **ledwebde2 LEDSone** (human staff, `attributeToUser: true`) | Shopify Web |
+| 08:34:32 | **All ~29 remaining variants destroyed** in the same second (cascading delete alongside the parent product) | **ledwebde2 LEDSone** | Shopify Web |
+
+**Total lifespan: ~4 hours 15 minutes** (created 04:19:45 → destroyed 08:34:31).
+
+**Key correction from initial pass:** the deletion was not a single isolated action. The product went through an active edit/cleanup cycle involving **three different actors** before final deletion:
+1. **"new OM 2024" app** — created the product+variants, published it, then itself removed ~24 duplicate/excess variants ~8 minutes later.
+2. **Dan Chen** (staff) — unpublished the product from all channels and did further variant cleanup (~9 to ~28 minutes after creation).
+3. **ledwebde2 LEDSone** (staff) — performed the final hard delete of the product and all its remaining variants, ~4 hours after creation, via Shopify Admin web UI.
+
+This pattern (bulk import → immediate cleanup/unpublish → later full delete) is consistent with the "new OM 2024" app performing an automated product sync/import that created a flawed or duplicate listing, which staff then unpublished and ultimately deleted — rather than an unexplained/unilateral deletion.
 
 ### Conclusion on detail recovery
 
