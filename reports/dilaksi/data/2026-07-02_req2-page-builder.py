@@ -101,6 +101,30 @@ def organic_sessions(pid):
     h = _HANDLE.get(str(pid))
     return _ORG.get(h, 0) if h else 0
 
+# --- SEO Priority (approved Dilaksi Req 2 business rule, 2026-07-02) ---
+# Rules applied in exact order. Profit Margin (PM) is not yet available (COGS pending),
+# but rules 2 and 4 also require Sales >= 10000 / >= 4000 and the maximum product sales
+# in this dataset is 1995.12 — so PM-dependent rules can never match and every row is
+# decidable without PM. Verified before build; documented in evidence.
+def seo_priority(demand, sales, org):
+    # demand: int or None (None = no keyword could be mapped from the title)
+    if demand is None:
+        # Rules 1/3/5 need demand; 2/4 are false (sales < 4000 for all rows); rule 6 => Low.
+        # Rule 1 would also give Low (sales < 2000 always true here), so priority is Low
+        # either way — flagged for review because the keyword is unmapped.
+        return ("Low — flag for review", "1/6 (demand unmapped; Low either way)")
+    if demand < 100 and sales < 2000:
+        return ("Low — flag for review", "1")
+    # 2: sales >= 10000 and PM >= 30 — unreachable (max sales 1995.12), PM not needed
+    if demand >= 2000 and org < demand * 0.5:
+        return ("High", "3")
+    # 4: sales >= 4000 and PM >= 25 and demand >= 500 — unreachable (max sales 1995.12)
+    if demand >= 500 and org >= demand * 0.5:
+        return ("Medium", "5")
+    return ("Low", "6")
+
+PRI_LOG = []  # evidence rows: coll, pid, title, sales, demand, organic, profit_margin, condition, priority
+
 COLL_META = {"pendant-lights": ("Pendant Lights", "#1f5eff"), "wall-light": ("Wall Lights", "#0a7d4f"),
              "spider-light": ("Spider Lights", "#9a5b00"), "plugin-lighting": ("Plug-in Lighting", "#c62828"),
              "table-lamps": ("Table Lamps", "#6a1b9a")}
@@ -131,6 +155,13 @@ for c in order:
         ocls = "og" if og > 0 else "og og0"
         otitle = "Visitors who landed on this product page from unpaid Google search in the last 30 days (GA4 Data API, Organic Search channel only)" if _HANDLE.get(str(pid)) else "product handle not resolved; shown as 0"
         badge += '<span class="{oc}" title="{ot}">Organic: {ov:,} visit{pl} (30d)</span>'.format(oc=ocls, ot=otitle, ov=og, pl="" if og == 1 else "s")
+        _d = dm[1] if dm else None
+        pri, cond = seo_priority(_d, p["sales"], og)
+        PRI_LOG.append([c, pid, p["title"], round(p["sales"], 2), "" if _d is None else _d, og, "N/A (COGS pending)", cond, pri])
+        pcls = {"H": "pri-h", "M": "pri-m"}.get(pri[0], "pri-l")
+        badge += ('<span class="pri {pc}" title="SEO Priority — approved Dilaksi Req 2 business rule, matched condition {cn}. '
+                  'Inputs: demand {dv}, sales &pound;{sv:,.2f}, organic {ov}, profit margin N/A (COGS pending; not required — see evidence)">'
+                  'SEO: {pv}</span>').format(pc=pcls, cn=esc(cond), dv=("n/a" if _d is None else "{:,}".format(_d)), sv=p["sales"], ov=og, pv=esc(pri))
         badge += '<span class="s {cls}" title="Net sales in the last 30 days (returns deducted)">&pound;{v:,.2f}</span>'.format(cls=sales_cls, v=p["sales"])
         badge += '<span class="u">{u} units</span>'.format(u=p["units"]) if p["units"] else '<span class="u none">no sales</span>'
         status = '' if p["status"] == "ACTIVE" else '<span class="st">{s}</span>'.format(s=esc(p["status"]))
@@ -186,6 +217,12 @@ details.prod .t{font-size:13.5px;font-weight:600;flex:1;min-width:200px;}
 .og{font-size:11.5px;font-weight:700;color:#1f5eff;background:#eaf0ff;border-radius:999px;padding:3px 10px;white-space:nowrap;}
 .og.og0{color:#9aa3b2;background:#f0f3f8;font-weight:600;}
 .dm .kw{font-weight:500;font-style:normal;opacity:.85;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom;}
+.pri{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;}
+.pri-h{color:#c62828;background:#fdecea;}
+.pri-m{color:#9a5b00;background:#fff4e5;}
+.pri-l{color:#5b6577;background:#f0f3f8;font-weight:600;}
+.rulenote{background:var(--card);border:1px solid var(--line);border-left:5px solid #c62828;border-radius:12px;padding:12px 18px;margin-bottom:14px;font-size:12.5px;color:var(--muted);}
+.rulenote strong{color:var(--ink);}
 .legend{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.9;}
 .legend strong{color:var(--ink);}
 .legend .dm,.legend .og,.legend .s,.legend .u{margin-right:4px;}
@@ -295,8 +332,11 @@ page = """<!DOCTYPE html>
   <span class="dm">Demand: 6,600 searches/mo <i class="kw">&ldquo;pendant lights&rdquo;</i></span> = how many times per month people in the UK Google the keyword mapped to this product (Semrush UK database, pulled 2026-07-02). Grey <span class="dm dm0">Demand: 0 searches/mo</span> = the keyword has no measurable monthly searches.<br>
   <span class="og">Organic: 31 visits (30d)</span> = real visitors who landed on this product page from unpaid Google search in the last 30 days (GA4 Data API, Organic Search channel only). Grey <span class="og og0">Organic: 0 visits (30d)</span> = nobody arrived from organic search in the window.<br>
   <span class="s pos">&pound;1,995.12</span> = net sales in the last 30 days (Shopify, returns deducted) &middot; <span class="u">49 units</span> = units sold. Grey &pound;0.00 / <span class="u none">no sales</span> = listed but not sold in the window.<br>
+  <span class="pri pri-h">SEO: High</span> / <span class="pri pri-m">SEO: Medium</span> / <span class="pri pri-l">SEO: Low</span> = SEO Priority from the approved business rule (hover shows the matched condition and the exact input values). <span class="pri pri-l">Low &mdash; flag for review</span> = low demand and low sales; review whether the product should be kept, merged or re-keyworded.<br>
   <strong>High demand or organic visits + no sales</strong> = the product gets interest but does not convert &mdash; these are the first SEO/CRO priorities. Use the <strong>Without sales</strong> filter to list them.
 </div>
+
+<div class="rulenote"><strong>SEO Priority calculated using approved Dilaksi Requirement 2 business rule. Rule documented in AIOS evidence.</strong> Rules applied in exact order: (1)&nbsp;Demand&nbsp;&lt;&nbsp;100 AND Sales&nbsp;&lt;&nbsp;&pound;2,000 &rarr; Low &mdash; flag for review &middot; (2)&nbsp;Sales&nbsp;&ge;&nbsp;&pound;10,000 AND Margin&nbsp;&ge;&nbsp;30% &rarr; High &middot; (3)&nbsp;Demand&nbsp;&ge;&nbsp;2,000 AND Organic&nbsp;&lt;&nbsp;50% of Demand &rarr; High &middot; (4)&nbsp;Sales&nbsp;&ge;&nbsp;&pound;4,000 AND Margin&nbsp;&ge;&nbsp;25% AND Demand&nbsp;&ge;&nbsp;500 &rarr; Medium &middot; (5)&nbsp;Demand&nbsp;&ge;&nbsp;500 AND Organic&nbsp;&ge;&nbsp;50% of Demand &rarr; Medium &middot; (6)&nbsp;else Low. Profit margin is not yet available (COGS pending) but is never required here: rules 2 and 4 also need sales &ge; &pound;4,000 and the highest 30-day product sales is &pound;1,995.12, so those rules cannot match any row.</div>
 
 {sections}
 
@@ -305,13 +345,24 @@ page = """<!DOCTYPE html>
   <strong>Demand data source:</strong> Semrush keyword monthly search volume (UK database, pulled 2026-07-02). Keyword mapping documented in AIOS evidence. Purple badges show demand for the top 30 sellers; collection header shows the head-term demand; remaining products are not yet keyword-mapped (pending batch approval).<br>
   <strong>Demand data source: Semrush keyword monthly search volume. Keyword mapping documented in AIOS evidence.</strong> UK database, pulled 2026-07-02. Every product carries a demand badge (hover shows the keyword used). Purple = keyword has UK search volume; grey 0/mo = the mapped keyword has no measurable monthly searches; "n/a" = no keyword could be derived from the title (14 products). Top-30 sellers use manually curated keywords; the rest use automatically cleaned title keywords (marked AUTO in evidence).<br>
   <strong>Organic Sessions data source:</strong> Google Analytics 4 Data API (service account, property 408110563), true last-30-days window, session default channel group = <strong>Organic Search only</strong>. Sessions are summed per product from organic landing pages (<code>/products/&lt;handle&gt;</code> and <code>/collections/*/products/&lt;handle&gt;</code>, query strings stripped). Blue badge = the product received organic-search landing sessions in the window; grey 0 org = no organic landing sessions recorded. Product handles resolved via Shopify Admin GraphQL (pagination verified complete).<br>
-  <strong>Data source:</strong> Shopify Admin GraphQL (all products &amp; variants of the 5 collections, pagination verified complete) + ShopifyQL sales cube (dual-pull, full coverage proven). A product appearing in more than one collection is shown under each. Profit margin and SEO priority are pending (COGS not yet in PostgreSQL / rule not approved) &mdash; see the main Dilaksi page. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-shopify-sales-discovery-evidence.md</code>.
+  <strong>Data source:</strong> Shopify Admin GraphQL (all products &amp; variants of the 5 collections, pagination verified complete) + ShopifyQL sales cube (dual-pull, full coverage proven). A product appearing in more than one collection is shown under each. <strong>SEO Priority</strong> is calculated from the approved Requirement 2 business rule (see the red-bordered rule box above the product list; per-row calculation log in AIOS evidence). Profit margin remains pending (COGS not yet in PostgreSQL) &mdash; it is not required by any reachable rule for this dataset. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-shopify-sales-discovery-evidence.md</code>.
 </div>
 
 </div>
 <script>{js}</script>
 </body>
 </html>""".format(css=CSS, js=JS, nprod=len(prods), nrows=len(rows), tot=net_tot, units=units_tot, sold=sold, sections="".join(sections))
+
+with open(_DATA + "2026-07-02_req2-seo-priority-log.csv", "w", newline="", encoding="utf-8") as _f:
+    _w = csv.writer(_f)
+    _w.writerow(["collection", "product_id", "title", "sales_gbp_30d", "demand_searches_mo",
+                 "organic_sessions_30d", "profit_margin", "matched_condition", "seo_priority"])
+    _w.writerows(PRI_LOG)
+print("priority log rows:", len(PRI_LOG),
+      "| High:", sum(1 for r in PRI_LOG if r[8] == "High"),
+      "| Medium:", sum(1 for r in PRI_LOG if r[8] == "Medium"),
+      "| Low:", sum(1 for r in PRI_LOG if r[8] == "Low"),
+      "| Low-flag:", sum(1 for r in PRI_LOG if r[8].startswith("Low —")))
 
 out = "C:/Users/PC/OneDrive/Desktop/kuberan web/reports/digital-marketing-member-pages/pages/dilaksi-req2-all-products.html"
 open(out, "w", encoding='utf-8').write(page)

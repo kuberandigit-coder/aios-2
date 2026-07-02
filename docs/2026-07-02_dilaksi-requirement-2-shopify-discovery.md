@@ -36,3 +36,11 @@ Added collection filter (All + 5 collections), 3-state sales filter (All / With 
 - Closure: `closure/2026-07-02_dilaksi-req2-collection-sales-filters.md`
 
 **PASS/FAIL:** PASS
+
+---
+
+## Update — SEO Priority rule applied (2026-07-02, later session)
+
+Applied the user-approved 6-condition SEO Priority rule to all 1,231 product rows: High 110 · Medium 0 · Low 435 · Low—flag for review 686 · Pending 0. Profit margin missing for all rows but provably unrequired (max product sales £1,995.12 < £4,000/£10,000 margin-rule thresholds) — nothing invented. Per-row log: `reports/dilaksi/data/2026-07-02_req2-seo-priority-log.csv`; independent re-check: 0 mismatches. Required note added on page. **NOT deployed — awaiting approval.** Full AIOS set: prompt/evidence(dilaksi)/validation/closure/handover/source-map/vercel, all dated 2026-07-02 `_dilaksi_req2_seo_priority_rule_*`.
+
+**PASS/FAIL:** PASS (local) — deployment pending approval
