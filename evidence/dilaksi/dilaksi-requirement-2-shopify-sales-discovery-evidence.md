@@ -85,3 +85,11 @@ None usable: no Shopify sync tables exist (verified via information_schema scans
 **Known limits recorded:** Last Order Date column NOT included — ShopifyQL day-grain pull caps at 1,000 rows (covers only ~2026-06-21→07-02); precise per-product last-order dates need order-level paging, flagged as follow-up. total_sales is net of returns (some negative day rows observed). Rolling window = 2026-06-02→2026-07-02.
 
 **PASS/FAIL:** PASS — extraction complete from verified sources, no guessed values.
+
+## UPDATE 2026-07-02 — Requirement 2 data published to Dilaksi page + DEPLOYED (user-approved)
+
+- `pages/dilaksi.html` Requirement 2 section now carries real Shopify data: top 30 products by sales, summary card Total Sales **£29,866.96 net of returns** (1,922 units, 292/1,231 products sold), TOTAL row, per-collection net breakdown in footnotes (pendant £17,992.58 · wall £8,520.03 · plugin £1,781.20 · spider £930.21 · table £642.94; gross before returns £33,298.43).
+- Margin / Demand / Organic Sessions remain N/A, SEO Priority remains "Pending approval" — still no invented data.
+- Standalone report `reports/dilaksi/dilaksi-product-priority-guidance-last-30-days.html` synced as full copy (Req 1 + Req 2).
+- Correction during build: first summary counted only positive rows (£33,298.43 gross); net figure including return adjustments is £29,866.96 — page displays net, gross noted.
+- Deployed to Vercel production; verified live: page returns "Requirement 2 — Shopify Sales Data Loaded" and £29,866.96 at https://digital-marketing-member-pages.vercel.app/pages/dilaksi.html

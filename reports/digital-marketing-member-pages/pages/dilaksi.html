@@ -165,30 +165,30 @@
 
   <!-- ===================== REQUIREMENT 2 ===================== -->
   <header style="margin-top:34px;">
-    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#9a5b00;text-transform:uppercase;margin-bottom:6px;">Requirement 2 — Data Pending</div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 2 — Shopify Sales Data Loaded</div>
     <h1>Product Priority Guidance</h1>
-    <div class="sub">Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Generated: <strong>2026-07-02</strong></div>
+    <div class="sub">Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Generated: <strong>2026-07-02</strong> &nbsp;·&nbsp; Source: Shopify Admin API + ShopifyQL (live extraction)</div>
     <div class="filters">
-      <span class="chip">Date range: Last 30 Days (requested)</span>
+      <span class="chip">Date range: Last 30 Days (2026-06-02 → 2026-07-02, BST)</span>
       <span class="chip">Collections: wall-light · plugin-lighting · table-lamps · spider-light · pendant-lights</span>
-      <span class="chip warn">Status: Data pending — source not yet in PostgreSQL</span>
+      <span class="chip warn">Margin / Demand / Organic Sessions / SEO Priority: pending (not in PostgreSQL)</span>
     </div>
   </header>
 
   <div class="cards">
-    <div class="card"><div class="label">Total Sales</div><div class="value na">Pending</div><div class="note">per-SKU 30-day sales not yet in PostgreSQL</div></div>
-    <div class="card"><div class="label">Avg Profit Margin</div><div class="value na">Pending</div><div class="note">real COGS margins not yet loaded</div></div>
+    <div class="card"><div class="label">Total Sales (30d)</div><div class="value">£29,866.96</div><div class="note">net of returns · 1,922 units · 292 of 1,231 products sold</div></div>
+    <div class="card"><div class="label">Avg Profit Margin</div><div class="value na">Pending</div><div class="note">verified COGS not yet loaded</div></div>
     <div class="card"><div class="label">Total Demand</div><div class="value na">Pending</div><div class="note">Semrush keyword→SKU mapping pending</div></div>
     <div class="card"><div class="label">Total Organic Sessions</div><div class="value na">Pending</div><div class="note">per-product organic sessions pending</div></div>
   </div>
 
   <div class="tablebox">
-    <div class="tbar">Requirement 2 table structure (approved format) — rows will populate once the PostgreSQL pipeline extension is loaded and the SEO priority rule is approved</div>
+    <div class="tbar">Top 30 products by sales (of 292 sold / 1,231 in scope) · full variant-level data: reports/dilaksi/data/2026-07-02_req2-shopify-category-sku-sales-last30d.csv</div>
     <div class="scroll">
     <table>
       <thead>
         <tr>
-          <th>Category</th>
+          <th>Category / Product</th>
           <th>SKU</th>
           <th class="num">Sales (£)</th>
           <th class="num">Profit Margin</th>
@@ -198,22 +198,56 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td class="na" colspan="7" style="padding:28px;text-align:center;">
-            Data pending — no rows shown because PostgreSQL does not yet contain per-SKU 30-day sales, verified profit margins,
-            keyword demand mapping, per-product organic sessions, or an approved SEO priority rule for these collections.
-            <br><strong>SEO priority logic pending approval.</strong> No sample or estimated values are displayed by policy (no invented data).
-          </td>
-        </tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">3-Pack Retro Industrial Style Metal Pendant Ceiling Lights ~6268</div></td><td class="q">CRSF100BM3PK+PHSQ1PBRYB3PK+LSSS300BB3PK <span style="color:#9aa3b2;">+11 more</span></td><td class="num rev">1,995.12</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">wall-light<div style="color:#5b6577;font-size:11.5px;">Rustic Industrial Wall Light Antique Metal E27 Sconce ~6245</div></td><td class="q">CRSF100BM+WSCH135BM+LSDO210BI <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">1,090.89</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Adjustable Pendant Light – E27 Base, 95cm Cord ~3134</div></td><td class="q">CRSF100GB+PHUP1PBRGB <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">938.61</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">wall-light<div style="color:#5b6577;font-size:11.5px;">Exposed Nautical Conduit Wall Light E27 Metal ~6548</div></td><td class="q">WSIWCRBL <span style="color:#9aa3b2;">+4 more</span></td><td class="num rev">780.41</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Pool Table Lights Steampunk Metal ~1124</div></td><td class="q">PLADBC <span style="color:#9aa3b2;">+2 more</span></td><td class="num rev">724.71</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">plugin-lighting<div style="color:#5b6577;font-size:11.5px;">2M Plug-in Vintage E27 Dimmer Switch Fabric Pendant Light Holder with </div></td><td class="q">PSDS2BMRBL+ICST64E27 <span style="color:#9aa3b2;">+7 more</span></td><td class="num rev">683.30</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">3 PCs Single Pendant Light E27 Metal ~6150</div></td><td class="q">ENC7498 <span style="color:#9aa3b2;">+3 more</span></td><td class="num rev">616.76</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">5 Pack Vintage E27 Pendant Lamp Holder Ceiling Hanging Light~4245</div></td><td class="q">CRSF100BC5PK+PHHT1PBRBC5PK <span style="color:#9aa3b2;">+3 more</span></td><td class="num rev">570.57</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">table-lamps<div style="color:#5b6577;font-size:11.5px;">Crow Table Lamp with Free E27 Bulb ~4780</div></td><td class="q">TPOSBDBM <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">559.34</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">wall-light<div style="color:#5b6577;font-size:11.5px;">Industrial Swan Neck Wall Light Curved Arm Cone Fitting ~5575</div></td><td class="q">CRFF140BM+WSNW170BM+LSFT220BM+ICST64E27 <span style="color:#9aa3b2;">+3 more</span></td><td class="num rev">543.00</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">spider-light<div style="color:#5b6577;font-size:11.5px;">Modern Multi Arm Ceiling Light Spider Lamp~1167</div></td><td class="q">ENC1991 <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">541.74</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Retro Hemp Rope Pendant E27 Holder Ceiling Light Decor~1358</div></td><td class="q">PHUH0.5HETBM <span style="color:#9aa3b2;">+2 more</span></td><td class="num rev">529.54</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">wall-light<div style="color:#5b6577;font-size:11.5px;">Rotatable Metal Wall Spotlight GU10 Conduit Light Fixture ~ 5642</div></td><td class="q">ENC8046 <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">521.84</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">wall-light<div style="color:#5b6577;font-size:11.5px;">Vintage Copper Industrial Wall Light | Swan Neck Dome Sconce for Livin</div></td><td class="q">CRFF140CO+WSNW170CO+LSRP260CO+ICST64E27</td><td class="num rev">478.37</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">5 Way Industrial Steampunk Pipe Pendant Ceiling Light E27~2368</div></td><td class="q">PLHIBC <span style="color:#9aa3b2;">+4 more</span></td><td class="num rev">465.20</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">4-Light Steampunk Flush Mount Pipe Ceiling Light ~6542</div></td><td class="q">PL4HBM <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">457.14</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">wall-light<div style="color:#5b6577;font-size:11.5px;">Cylinder Adjustable Ceiling Spotlight for Conduit Lighting~5633</div></td><td class="q">CRFF65YB+LHTTAGU10YB+LDGU10WW5 <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">395.64</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">5 Light Octopus Pendant Light Spider Lamp ~6580</div></td><td class="q">ENC4037</td><td class="num rev">392.90</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Industrial Black Inner Gold Ceiling Pendant | Easy Fit Retro Light ~ 5</div></td><td class="q">PHSHF1PBRYB+LSCY290BG+ICST64E27 <span style="color:#9aa3b2;">+5 more</span></td><td class="num rev">369.88</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Vintage Industrial Metal Pendant Light E27 ~5934</div></td><td class="q">CRSF100BM+PHSH1PBRBM+LSMS320BI <span style="color:#9aa3b2;">+11 more</span></td><td class="num rev">354.69</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">spider-light<div style="color:#5b6577;font-size:11.5px;">Spider Pendant Lamp 3 Way Hanging Brushed Copper Ceiling Lamp Lighting</div></td><td class="q">ENC4028</td><td class="num rev">345.24</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">2m Industrial Black Inner Gold Ceiling Easy Fit  Pendant Light ~6778</div></td><td class="q">ENC9771</td><td class="num rev">340.42</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">2m E27 Lamp Holder Pendant Light Fitting Round Cable E27 Base Holder~1</div></td><td class="q">PHSF2AGRGB <span style="color:#9aa3b2;">+2 more</span></td><td class="num rev">339.47</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Vintage Style Semi Flush Mount Ceiling Light E27 ~6274</div></td><td class="q">CRFF100BM+LHNSE27YB+SCRN70BM+LSTF40BG</td><td class="num rev">337.06</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Industrial Twisted Fabric Cable Pendant Light E27 Brass Holder 1m~1715</div></td><td class="q">PHSF1AGTGB <span style="color:#9aa3b2;">+6 more</span></td><td class="num rev">313.23</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Vintage Retro Metal Shade Pendant Light E27 ~5854</div></td><td class="q">CRSF100WH+PHHT1PWRGR+LSMS320GR <span style="color:#9aa3b2;">+3 more</span></td><td class="num rev">295.49</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">plugin-lighting<div style="color:#5b6577;font-size:11.5px;">4M Fabric Flex Cable Plug In Pendant Light Set E27 Bulb Holder ~3746</div></td><td class="q">PSDS4BMRBL+ICST64E27 <span style="color:#9aa3b2;">+7 more</span></td><td class="num rev">294.99</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">10Pack Brushed Copper Pendant Light,E27 Lamp Holder Hanging Light,PVC </div></td><td class="q">CRSF100BCAPK+PHHT1PBRBCAPK</td><td class="num rev">293.43</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Vintage E27 Pendant Ceiling Light with 95cm Cable ~4398</div></td><td class="q">CRSF100BB+PHSH1PBRBB <span style="color:#9aa3b2;">+4 more</span></td><td class="num rev">267.05</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
+        <tr><td class="lp">pendant-lights<div style="color:#5b6577;font-size:11.5px;">Industrial Hemp Rope Pendant Ceiling Light~5071</div></td><td class="q">ENC3517 <span style="color:#9aa3b2;">+1 more</span></td><td class="num rev">262.20</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">Pending approval</td></tr>
       </tbody>
+      <tfoot>
+        <tr>
+          <td>TOTAL — all 1,231 products in the 5 collections</td>
+          <td>—</td>
+          <td class="num">£29,866.96 (net)</td>
+          <td class="na">N/A</td>
+          <td class="na">N/A</td>
+          <td class="na">N/A</td>
+          <td class="na">Pending</td>
+        </tr>
+      </tfoot>
     </table>
     </div>
   </div>
 
   <div class="footnotes">
     <h3>Requirement 2 — data source &amp; known limits</h3>
-    <p><strong>Status:</strong> Structure approved and published; data pending. PostgreSQL was inspected read-only on 2026-07-02 (22 schemas): no per-SKU last-30-days sales, no verified COGS margin (only a 20%-cost proxy on 5 pilot SKUs from 2026-06-09), keyword demand exists only at keyword level (Semrush baseline), organic sessions only at page level (14 pilot pages), and <strong>no approved SEO priority field or rule exists</strong>.</p>
-    <p><strong>Pipeline extension requested (Option B):</strong> (1) Shopify per-SKU UK sales, daily, for last-30-day windows; (2) verified COGS → real profit margin per SKU; (3) Semrush search-volume mapped keyword→product URL→SKU; (4) GA4 organic sessions per product page daily; (5) an approved SEO Priority rule signed off by SEO team. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-product-priority-postgresql-evidence.md</code>.</p>
+    <p><strong>Category, SKU, Sales (£):</strong> live Shopify extraction 2026-07-02 — Admin GraphQL collections (1,231 product memberships, all pages verified complete) joined to ShopifyQL sales cube (1,711 sold rows, dual-pull overlap proves full coverage). Sales are net of returns. Per-collection (net of returns): pendant-lights £17,992.58 · wall-light £8,520.03 · spider-light £930.21 · plugin-lighting £1,781.20 · table-lamps £642.94. Gross before return adjustments: £33,298.43.</p>
+    <p><strong>Profit Margin, Demand, Organic Sessions:</strong> not available in PostgreSQL (verified by full-database scan) — pipeline extension requested. <strong>SEO Priority:</strong> no approved rule exists; values intentionally left "Pending approval" — nothing is invented. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-shopify-sales-discovery-evidence.md</code>.</p>
   </div>
 
 </div>
