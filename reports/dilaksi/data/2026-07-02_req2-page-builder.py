@@ -123,29 +123,31 @@ for c in order:
         dm=PROD_DEMAND.get(pid) or auto_demand(c,pid)
         if dm:
             dcls = "dm" if dm[1] > 0 else "dm dm0"
-            badge = '<span class="{dc}" title="Semrush UK keyword: {kw}">{v:,}/mo</span>'.format(dc=dcls, kw=dm[0], v=dm[1])
+            badge = ('<span class="{dc}" title="Google searches per month in the UK for the keyword mapped to this product (Semrush, pulled 2026-07-02)">'
+                     'Demand: {v:,} searches/mo <i class="kw">&ldquo;{kw}&rdquo;</i></span>').format(dc=dcls, kw=esc(dm[0]), v=dm[1])
         else:
-            badge = '<span class="dm dm0" title="no keyword could be mapped from title">n/a</span>'
+            badge = '<span class="dm dm0" title="no keyword could be mapped from this product title">Demand: n/a</span>'
         og = organic_sessions(pid)
         ocls = "og" if og > 0 else "og og0"
-        otitle = "GA4 organic sessions, last 30 days (Organic Search landing pages)" if _HANDLE.get(str(pid)) else "product handle not resolved; shown as 0"
-        badge += '<span class="{oc}" title="{ot}">{ov:,} org</span>'.format(oc=ocls, ot=otitle, ov=og)
-        badge += '<span class="s {cls}">&pound;{v:,.2f}</span>'.format(cls=sales_cls, v=p["sales"])
+        otitle = "Visitors who landed on this product page from unpaid Google search in the last 30 days (GA4 Data API, Organic Search channel only)" if _HANDLE.get(str(pid)) else "product handle not resolved; shown as 0"
+        badge += '<span class="{oc}" title="{ot}">Organic: {ov:,} visit{pl} (30d)</span>'.format(oc=ocls, ot=otitle, ov=og, pl="" if og == 1 else "s")
+        badge += '<span class="s {cls}" title="Net sales in the last 30 days (returns deducted)">&pound;{v:,.2f}</span>'.format(cls=sales_cls, v=p["sales"])
         badge += '<span class="u">{u} units</span>'.format(u=p["units"]) if p["units"] else '<span class="u none">no sales</span>'
         status = '' if p["status"] == "ACTIVE" else '<span class="st">{s}</span>'.format(s=esc(p["status"]))
         skus_attr = esc(" ".join((sku or "").lower() for sku, _, _, _ in vs))
         items.append(
-            '<details class="prod" data-name="{nm}" data-sku="{sk}" data-sold="{so}">'
+            '<details class="prod" data-coll="' + c + '" data-name="{nm}" data-sku="{sk}" data-sold="{so}">'
             '<summary><span class="t">{ti}{st}</span>{bd}</summary>'
             '<table class="vt"><thead><tr><th>SKU</th><th>Variant ID</th><th class="num">Sales (&pound;)</th><th class="num">Units</th></tr></thead>'
             '<tbody>{vr}</tbody></table></details>'.format(
                 nm=esc(p["title"].lower()), sk=skus_attr, so=1 if p["sales"] > 0 else 0,
                 ti=esc(p["title"]), st=status, bd=badge, vr=vrows))
+    corg = sum(organic_sessions(pid) for pid, _ in plist)
     sections.append(
         '<section class="coll" id="{c}">'
         '<h2 style="border-left:5px solid {color};"><span>{name} <code>/{c}</code></span>'
-        '<span class="cstat">{n} products &middot; {sold} sold &middot; &pound;{s:,.2f} &middot; {u} units &middot; demand &ldquo;{dk}&rdquo; {dv:,}/mo</span></h2>'
-        '{items}</section>'.format(c=c, color=color, name=name, n=len(plist), sold=csold, s=csales, u=cunits, dk=COLL_DEMAND[c][0], dv=COLL_DEMAND[c][1], items="".join(items)))
+        '<span class="cstat">{n} products &middot; {sold} sold &middot; &pound;{s:,.2f} &middot; {u} units &middot; demand &ldquo;{dk}&rdquo; {dv:,}/mo &middot; organic {corg:,} visits (30d)</span></h2>'
+        '{items}</section>'.format(c=c, color=color, name=name, n=len(plist), sold=csold, s=csales, u=cunits, dk=COLL_DEMAND[c][0], dv=COLL_DEMAND[c][1], corg=corg, items="".join(items)))
 
 CSS = """
 :root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--na:#9aa3b2;}
@@ -183,6 +185,12 @@ details.prod .t{font-size:13.5px;font-weight:600;flex:1;min-width:200px;}
 .dm.dm0{color:#9aa3b2;background:#f0f3f8;font-weight:600;}
 .og{font-size:11.5px;font-weight:700;color:#1f5eff;background:#eaf0ff;border-radius:999px;padding:3px 10px;white-space:nowrap;}
 .og.og0{color:#9aa3b2;background:#f0f3f8;font-weight:600;}
+.dm .kw{font-weight:500;font-style:normal;opacity:.85;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom;}
+.legend{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.9;}
+.legend strong{color:var(--ink);}
+.legend .dm,.legend .og,.legend .s,.legend .u{margin-right:4px;}
+.tgroup{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.tgroup .glbl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-right:2px;}
 .st{font-size:10.5px;color:#9a5b00;background:#fff4e5;border-radius:999px;padding:2px 8px;margin-left:8px;font-weight:700;}
 table.vt{width:100%;border-collapse:collapse;font-size:12.5px;background:#fafbfd;}
 table.vt th{text-align:left;padding:8px 16px;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
@@ -198,21 +206,33 @@ td.num.pos{color:var(--good);font-weight:600;} td.num.zero{color:var(--na);}
 """
 
 JS = """
-const q=document.getElementById('q'),all=document.getElementById('f-all'),soldB=document.getElementById('f-sold'),openB=document.getElementById('f-open');
-let soldOnly=false;
+const q=document.getElementById('q'),openB=document.getElementById('f-open');
+let salesMode='all',collMode='all';
 function apply(){
   const s=q.value.trim().toLowerCase();
   document.querySelectorAll('details.prod').forEach(d=>{
-    const hit=(!s||d.dataset.name.includes(s)||d.dataset.sku.includes(s))&&(!soldOnly||d.dataset.sold==='1');
-    d.classList.toggle('hidden',!hit);
+    const textHit=!s||d.dataset.name.includes(s)||d.dataset.sku.includes(s);
+    const salesHit=salesMode==='all'||(salesMode==='sold'?d.dataset.sold==='1':d.dataset.sold==='0');
+    const collHit=collMode==='all'||d.dataset.coll===collMode;
+    d.classList.toggle('hidden',!(textHit&&salesHit&&collHit));
   });
   document.querySelectorAll('section.coll').forEach(sec=>{
     sec.classList.toggle('hidden',!sec.querySelector('details.prod:not(.hidden)'));
   });
 }
 q.addEventListener('input',apply);
-all.onclick=()=>{soldOnly=false;all.classList.add('on');soldB.classList.remove('on');apply();};
-soldB.onclick=()=>{soldOnly=true;soldB.classList.add('on');all.classList.remove('on');apply();};
+document.getElementById('g-sales').addEventListener('click',e=>{
+  const b=e.target.closest('.tbtn');if(!b)return;
+  salesMode=b.dataset.sales;
+  document.querySelectorAll('#g-sales .tbtn').forEach(x=>x.classList.toggle('on',x===b));
+  apply();
+});
+document.getElementById('g-coll').addEventListener('click',e=>{
+  const b=e.target.closest('.tbtn');if(!b)return;
+  collMode=b.dataset.coll;
+  document.querySelectorAll('#g-coll .tbtn').forEach(x=>x.classList.toggle('on',x===b));
+  apply();
+});
 let opened=false;
 openB.onclick=()=>{opened=!opened;openB.textContent=opened?'Collapse all':'Expand all';document.querySelectorAll('details.prod:not(.hidden)').forEach(d=>d.open=opened);};
 """
@@ -250,9 +270,32 @@ page = """<!DOCTYPE html>
 
 <div class="toolbar">
   <input id="q" type="text" placeholder="Search product name or SKU&hellip;">
-  <button class="tbtn on" id="f-all">All products</button>
-  <button class="tbtn" id="f-sold">With sales only</button>
+  <span class="tgroup" id="g-sales">
+    <span class="glbl">Sales:</span>
+    <button class="tbtn on" data-sales="all">All products</button>
+    <button class="tbtn" data-sales="sold">With sales</button>
+    <button class="tbtn" data-sales="unsold">Without sales</button>
+  </span>
   <button class="tbtn" id="f-open">Expand all</button>
+</div>
+<div class="toolbar" style="top:auto;">
+  <span class="tgroup" id="g-coll">
+    <span class="glbl">Collection:</span>
+    <button class="tbtn on" data-coll="all">All (5)</button>
+    <button class="tbtn" data-coll="pendant-lights">Pendant Lights</button>
+    <button class="tbtn" data-coll="wall-light">Wall Lights</button>
+    <button class="tbtn" data-coll="spider-light">Spider Lights</button>
+    <button class="tbtn" data-coll="plugin-lighting">Plug-in Lighting</button>
+    <button class="tbtn" data-coll="table-lamps">Table Lamps</button>
+  </span>
+</div>
+
+<div class="legend">
+  <strong>How to read each product row</strong> (hover any badge for the full explanation):<br>
+  <span class="dm">Demand: 6,600 searches/mo <i class="kw">&ldquo;pendant lights&rdquo;</i></span> = how many times per month people in the UK Google the keyword mapped to this product (Semrush UK database, pulled 2026-07-02). Grey <span class="dm dm0">Demand: 0 searches/mo</span> = the keyword has no measurable monthly searches.<br>
+  <span class="og">Organic: 31 visits (30d)</span> = real visitors who landed on this product page from unpaid Google search in the last 30 days (GA4 Data API, Organic Search channel only). Grey <span class="og og0">Organic: 0 visits (30d)</span> = nobody arrived from organic search in the window.<br>
+  <span class="s pos">&pound;1,995.12</span> = net sales in the last 30 days (Shopify, returns deducted) &middot; <span class="u">49 units</span> = units sold. Grey &pound;0.00 / <span class="u none">no sales</span> = listed but not sold in the window.<br>
+  <strong>High demand or organic visits + no sales</strong> = the product gets interest but does not convert &mdash; these are the first SEO/CRO priorities. Use the <strong>Without sales</strong> filter to list them.
 </div>
 
 {sections}

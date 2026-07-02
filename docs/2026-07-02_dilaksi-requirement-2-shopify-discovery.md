@@ -24,3 +24,15 @@ Completed the Organic Sessions column: fetched remaining pendant-lights handle p
 - Live: https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req2-all-products.html
 
 **PASS/FAIL:** PASS
+
+---
+
+## Update — Collection filter, Without-sales filter, detailed badges (2026-07-02, later session)
+
+Added collection filter (All + 5 collections), 3-state sales filter (All / With sales / Without sales), plain-language demand and organic badges (`Demand: N searches/mo "keyword"`, `Organic: N visits (30d)`) with tooltips, a legend box explaining every badge and data source, and per-collection organic totals. Presentation-only change (same data). Deployed and verified live.
+
+- Evidence: `evidence/2026-07-02_dilaksi-req2-collection-sales-filters.md`
+- Validation: `validation/2026-07-02_dilaksi-req2-collection-sales-filters.md`
+- Closure: `closure/2026-07-02_dilaksi-req2-collection-sales-filters.md`
+
+**PASS/FAIL:** PASS
