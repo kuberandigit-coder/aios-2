@@ -15,7 +15,7 @@
 
 ## Redeploy after changes
 ```
-cd "C:SERSPCONEDRIVEDESKTOPKUBERAN WEBEPORTSDIGITAL-MARKETING-MEMBER-PAGES"
+cd "C:/Users/PC/OneDrive/Desktop/kuberan web/reports/digital-marketing-member-pages"
 vercel deploy --prod --yes
 ```
 
