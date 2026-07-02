@@ -64,9 +64,10 @@ PROD_DEMAND={ # pid: (keyword, volume/mo, confidence)
 
 # --- Full-catalog demand (auto keywords from cleaned titles; Semrush uk 2026-07-02) ---
 import json as _json
-_KWMAP=_json.load(open(r"C:/Users/PC/AppData/Local/Temp/claude/C--Users-PC-OneDrive-Desktop-kuberan-web/9a06ae41-5035-40e1-8b9b-d6c2b9293f22/scratchpad/req2/kw_map.json"))
+_DATA="C:/Users/PC/OneDrive/Desktop/kuberan web/reports/dilaksi/data/"
+_KWMAP=_json.load(open(_DATA+"2026-07-02_req2-keyword-map.json"))
 _VOL={}
-for _l in open(r"C:/Users/PC/AppData/Local/Temp/claude/C--Users-PC-OneDrive-Desktop-kuberan-web/9a06ae41-5035-40e1-8b9b-d6c2b9293f22/scratchpad/req2/vol.csv",encoding="utf-8"):
+for _l in open(_DATA+"2026-07-02_req2-semrush-volumes.csv",encoding="utf-8"):
     _l=_l.strip()
     if _l and ";" in _l:
         _k,_v=_l.rsplit(";",1); _VOL[_k]=int(_v)
@@ -76,6 +77,29 @@ def auto_demand(coll,pid):
     v=_VOL.get(kw)
     if v is None: return (kw,0,"LOW")  # keyword not in Semrush db => 0/no data
     return (kw,v,"AUTO")
+
+# --- GA4 Organic Sessions (Data API, service account, last 30 days, Organic Search only) ---
+import re as _re
+_HANDLE = {}  # pid -> handle
+_p1 = _json.load(open(_DATA + "2026-07-02_req2-handles-p1.json"))
+for _c in _p1["data"].values():
+    for _e in _c.get("products", {}).get("edges", []):
+        _n = _e["node"]
+        _HANDLE[str(_n["legacyResourceId"])] = _n["handle"]
+for _pg in ("p2", "p3", "p4"):
+    for _row in csv.DictReader(open(_DATA + "2026-07-02_req2-handles-%s.csv" % _pg, encoding="utf-8")):
+        _HANDLE[str(_row["legacyResourceId"])] = _row["handle"]
+
+_ORG = collections.defaultdict(int)  # handle -> organic sessions
+for _row in csv.DictReader(open(_DATA + "2026-07-02_req2-ga4-organic-landing-30d.csv", encoding="utf-8-sig")):
+    _path = (_row["landing_page"] or "").split("?")[0].rstrip("/")
+    _m = _re.search(r"/products/([^/]+)$", _path)
+    if _m:
+        _ORG[_m.group(1)] += int(float(_row["sessions"]))
+
+def organic_sessions(pid):
+    h = _HANDLE.get(str(pid))
+    return _ORG.get(h, 0) if h else 0
 
 COLL_META = {"pendant-lights": ("Pendant Lights", "#1f5eff"), "wall-light": ("Wall Lights", "#0a7d4f"),
              "spider-light": ("Spider Lights", "#9a5b00"), "plugin-lighting": ("Plug-in Lighting", "#c62828"),
@@ -102,6 +126,10 @@ for c in order:
             badge = '<span class="{dc}" title="Semrush UK keyword: {kw}">{v:,}/mo</span>'.format(dc=dcls, kw=dm[0], v=dm[1])
         else:
             badge = '<span class="dm dm0" title="no keyword could be mapped from title">n/a</span>'
+        og = organic_sessions(pid)
+        ocls = "og" if og > 0 else "og og0"
+        otitle = "GA4 organic sessions, last 30 days (Organic Search landing pages)" if _HANDLE.get(str(pid)) else "product handle not resolved; shown as 0"
+        badge += '<span class="{oc}" title="{ot}">{ov:,} org</span>'.format(oc=ocls, ot=otitle, ov=og)
         badge += '<span class="s {cls}">&pound;{v:,.2f}</span>'.format(cls=sales_cls, v=p["sales"])
         badge += '<span class="u">{u} units</span>'.format(u=p["units"]) if p["units"] else '<span class="u none">no sales</span>'
         status = '' if p["status"] == "ACTIVE" else '<span class="st">{s}</span>'.format(s=esc(p["status"]))
@@ -153,6 +181,8 @@ details.prod .t{font-size:13.5px;font-weight:600;flex:1;min-width:200px;}
 .u.none{color:var(--na);}
 .dm{font-size:11.5px;font-weight:700;color:#6a1b9a;background:#f3e8fb;border-radius:999px;padding:3px 10px;white-space:nowrap;}
 .dm.dm0{color:#9aa3b2;background:#f0f3f8;font-weight:600;}
+.og{font-size:11.5px;font-weight:700;color:#1f5eff;background:#eaf0ff;border-radius:999px;padding:3px 10px;white-space:nowrap;}
+.og.og0{color:#9aa3b2;background:#f0f3f8;font-weight:600;}
 .st{font-size:10.5px;color:#9a5b00;background:#fff4e5;border-radius:999px;padding:2px 8px;margin-left:8px;font-weight:700;}
 table.vt{width:100%;border-collapse:collapse;font-size:12.5px;background:#fafbfd;}
 table.vt th{text-align:left;padding:8px 16px;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
@@ -207,6 +237,7 @@ page = """<!DOCTYPE html>
     <span class="chip">5 collections &middot; {nprod} products &middot; {nrows} SKU rows</span>
     <span class="chip warn">Sales are net of returns</span>
     <span class="chip" style="background:#f3e8fb;color:#6a1b9a;">Demand: Semrush UK monthly search volume — full catalog (every product keyword-mapped)</span>
+    <span class="chip">Organic Sessions: GA4 Data API — true last 30 days, Organic Search only</span>
   </div>
 </header>
 
@@ -230,7 +261,8 @@ page = """<!DOCTYPE html>
   <strong>How to read this page:</strong> products are grouped by collection and sorted by 30-day sales (highest first). Click any product row to see every SKU/variant with its individual sales and units. Grey &pound;0.00 = listed but not sold in the window; red = net negative (returns exceeded sales).<br>
   <strong>Demand data source:</strong> Semrush keyword monthly search volume (UK database, pulled 2026-07-02). Keyword mapping documented in AIOS evidence. Purple badges show demand for the top 30 sellers; collection header shows the head-term demand; remaining products are not yet keyword-mapped (pending batch approval).<br>
   <strong>Demand data source: Semrush keyword monthly search volume. Keyword mapping documented in AIOS evidence.</strong> UK database, pulled 2026-07-02. Every product carries a demand badge (hover shows the keyword used). Purple = keyword has UK search volume; grey 0/mo = the mapped keyword has no measurable monthly searches; "n/a" = no keyword could be derived from the title (14 products). Top-30 sellers use manually curated keywords; the rest use automatically cleaned title keywords (marked AUTO in evidence).<br>
-  <strong>Data source:</strong> Shopify Admin GraphQL (all products &amp; variants of the 5 collections, pagination verified complete) + ShopifyQL sales cube (dual-pull, full coverage proven). A product appearing in more than one collection is shown under each. Profit margin, search demand, organic sessions and SEO priority are pending (not yet in PostgreSQL / rule not approved) &mdash; see the main Dilaksi page. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-shopify-sales-discovery-evidence.md</code>.
+  <strong>Organic Sessions data source:</strong> Google Analytics 4 Data API (service account, property 408110563), true last-30-days window, session default channel group = <strong>Organic Search only</strong>. Sessions are summed per product from organic landing pages (<code>/products/&lt;handle&gt;</code> and <code>/collections/*/products/&lt;handle&gt;</code>, query strings stripped). Blue badge = the product received organic-search landing sessions in the window; grey 0 org = no organic landing sessions recorded. Product handles resolved via Shopify Admin GraphQL (pagination verified complete).<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL (all products &amp; variants of the 5 collections, pagination verified complete) + ShopifyQL sales cube (dual-pull, full coverage proven). A product appearing in more than one collection is shown under each. Profit margin and SEO priority are pending (COGS not yet in PostgreSQL / rule not approved) &mdash; see the main Dilaksi page. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-shopify-sales-discovery-evidence.md</code>.
 </div>
 
 </div>

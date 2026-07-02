@@ -11,3 +11,16 @@ Discovery-only task, PASS. Verified with live queries: Category = Shopify Admin 
 - Next: approval for full extraction (~25 paginated calls), then build the Shopify columns of Requirement 2.
 
 **PASS/FAIL:** PASS
+
+---
+
+## Update — GA4 Organic Sessions added (2026-07-02, later session)
+
+Completed the Organic Sessions column: fetched remaining pendant-lights handle pages 2–4 via Shopify Admin GraphQL (pagination complete, hasNextPage=false), joined GA4 Data API organic landing CSV (property 408110563, Organic Search only, true last 30 days) to all 1,231 product rows by handle, added blue "org" badge (420 unique products nonzero, 1,360 sessions; verified 0 for the rest). Builder repointed to permanent `reports/dilaksi/data/` paths. Deployed to Vercel production and verified live (HTTP 200, 1,231 badges).
+
+- Evidence: `evidence/2026-07-02_dilaksi-req2-ga4-organic-sessions.md`
+- Validation: `validation/2026-07-02_dilaksi-req2-ga4-organic-sessions.md`
+- Closure: `closure/2026-07-02_dilaksi-req2-ga4-organic-sessions.md`
+- Live: https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req2-all-products.html
+
+**PASS/FAIL:** PASS
