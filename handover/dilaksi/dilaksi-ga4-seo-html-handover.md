@@ -29,3 +29,7 @@
 **Known limits:** as above + GSC/GA4 measure differently (query is indicative).
 **Next step:** (1) Dilaksi reviews; (2) decide Vercel deploy (explicit approval required); (3) raise pipeline extension for the 3 missing metrics and a 30-day window.
 **PASS/FAIL rule:** This handover is complete if a new person can regenerate the report and explain every N/A without asking anyone.
+
+## UPDATE 2026-07-02 — Published to Staff-requirements repo
+
+Report pushed to github.com/digitalmarketing69140951-sys/Staff-requirements- at `dilaksi/dilaksi-ga4-seo-organic-last-30-days.html` (commit 0c336de, first commit of that repo). Note: repo name has a trailing hyphen.
