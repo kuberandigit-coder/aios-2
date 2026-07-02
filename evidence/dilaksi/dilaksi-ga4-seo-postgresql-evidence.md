@@ -47,6 +47,14 @@ Schemas scanned: 22 user schemas. Relevant: `google_search_console`, `analytics`
 **Files created/modified:** this evidence file only (HTML intentionally NOT built — stop conditions).
 **Validation result:** N/A — build not started.
 **Status:** STOPPED — awaiting GPT/requester decision.
+
+## UPDATE 2026-07-02 — Option A approved by user; report BUILT
+
+- User instruction: "i need the HTML code with available data, mark not available data as not available in the database".
+- Final query: top 50 landing pages from `ga4_organic_landing_page_revenue` (run_date 2026-06-27, Organic Search only) LEFT JOIN top GSC query per page (`gsc_web_query_page`, sc-domain:ledsone.co.uk, date >= 2026-05-21, ranked by clicks; domain+querystring stripped for path match).
+- Row count: 50 rows displayed; totals row computed over all 6,089 rows: sessions 24,685, users 20,965, purchases 759, revenue £27,206.41.
+- Engagement Rate / Avg Engagement Time / Pages/Session rendered as "N/A — not available in the database" (summary card states it explicitly). No invented data.
+- Output: `reports/dilaksi/dilaksi-ga4-seo-organic-last-30-days.html` — validated PASS (see validation file).
 **Known limits:** Google Sheet itself not opened (no Sheets access from this session); requirement taken from the prompt text. GA4 property inspected: 408110563.
 **Next step:** GPT/requester chooses Option A/B/C.
 **PASS/FAIL rule applied:** Building HTML now would FAIL ("data hardcoded/invented without approval"); stopping with documented evidence = correct per stop conditions.
