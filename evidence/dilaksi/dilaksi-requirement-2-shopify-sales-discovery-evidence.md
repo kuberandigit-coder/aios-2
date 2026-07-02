@@ -93,3 +93,9 @@ None usable: no Shopify sync tables exist (verified via information_schema scans
 - Standalone report `reports/dilaksi/dilaksi-product-priority-guidance-last-30-days.html` synced as full copy (Req 1 + Req 2).
 - Correction during build: first summary counted only positive rows (£33,298.43 gross); net figure including return adjustments is £29,866.96 — page displays net, gross noted.
 - Deployed to Vercel production; verified live: page returns "Requirement 2 — Shopify Sales Data Loaded" and £29,866.96 at https://digital-marketing-member-pages.vercel.app/pages/dilaksi.html
+
+## UPDATE 2026-07-02 — Standalone full-list page built + DEPLOYED (user request)
+
+- New standalone page: `pages/dilaksi-req2-all-products.html` — ALL 1,231 products of the 5 collections with every SKU/variant (5,576 rows) and per-SKU sales/units. UI: grouped by collection (sorted by sales), expandable product rows, live search (name/SKU), "with sales only" filter, expand/collapse all, summary cards (net £29,866.96 / 1,922 units / 292 sold).
+- Linked from the main Dilaksi page Requirement 2 table bar. Standalone copy synced to `reports/dilaksi/dilaksi-product-priority-guidance-last-30-days.html`.
+- Deployed to Vercel production; verified live: 1,231 product rows render, summary card reads 1,231. URL: https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req2-all-products.html
