@@ -51,6 +51,7 @@
 <div class="wrap">
 
   <header>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 1 — Completed</div>
     <h1>Core GA4 Data for SEO — Organic Search Landing Page Performance</h1>
     <div class="sub">Store: <strong>ledsone.co.uk</strong> (GA4 property 408110563) &nbsp;·&nbsp; Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Generated: <strong>2026-07-02</strong></div>
     <div class="filters">
@@ -160,6 +161,59 @@
     <p><strong>Engagement Rate, Avg. Engagement Time, Pages/Session:</strong> <em>Not available in the database</em> — these metrics are not collected by the current GA4 → PostgreSQL export. Columns are shown as N/A rather than estimated. Pipeline extension has been requested.</p>
     <p><strong>Query column:</strong> comes from Google Search Console (not GA4), showing each page's top query by clicks; GSC and GA4 measure differently, so the query is indicative, not a session-level join. "(not set)" is GA4's own bucket for sessions without a recorded landing page.</p>
     <p>Table shows the top 50 landing pages by sessions; the TOTAL row covers all 6,089 pages. Generated 2026-07-02 by AIOS (Claude Code) for Dilaksi, SEO team. Evidence: <code>evidence/dilaksi/dilaksi-ga4-seo-postgresql-evidence.md</code>.</p>
+  </div>
+
+  <!-- ===================== REQUIREMENT 2 ===================== -->
+  <header style="margin-top:34px;">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#9a5b00;text-transform:uppercase;margin-bottom:6px;">Requirement 2 — Data Pending</div>
+    <h1>Product Priority Guidance</h1>
+    <div class="sub">Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Generated: <strong>2026-07-02</strong></div>
+    <div class="filters">
+      <span class="chip">Date range: Last 30 Days (requested)</span>
+      <span class="chip">Collections: wall-light · plugin-lighting · table-lamps · spider-light · pendant-lights</span>
+      <span class="chip warn">Status: Data pending — source not yet in PostgreSQL</span>
+    </div>
+  </header>
+
+  <div class="cards">
+    <div class="card"><div class="label">Total Sales</div><div class="value na">Pending</div><div class="note">per-SKU 30-day sales not yet in PostgreSQL</div></div>
+    <div class="card"><div class="label">Avg Profit Margin</div><div class="value na">Pending</div><div class="note">real COGS margins not yet loaded</div></div>
+    <div class="card"><div class="label">Total Demand</div><div class="value na">Pending</div><div class="note">Semrush keyword→SKU mapping pending</div></div>
+    <div class="card"><div class="label">Total Organic Sessions</div><div class="value na">Pending</div><div class="note">per-product organic sessions pending</div></div>
+  </div>
+
+  <div class="tablebox">
+    <div class="tbar">Requirement 2 table structure (approved format) — rows will populate once the PostgreSQL pipeline extension is loaded and the SEO priority rule is approved</div>
+    <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>SKU</th>
+          <th class="num">Sales (£)</th>
+          <th class="num">Profit Margin</th>
+          <th class="num">Demand (searches/mo)</th>
+          <th class="num">Organic Sessions</th>
+          <th class="num">SEO Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="na" colspan="7" style="padding:28px;text-align:center;">
+            Data pending — no rows shown because PostgreSQL does not yet contain per-SKU 30-day sales, verified profit margins,
+            keyword demand mapping, per-product organic sessions, or an approved SEO priority rule for these collections.
+            <br><strong>SEO priority logic pending approval.</strong> No sample or estimated values are displayed by policy (no invented data).
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="footnotes">
+    <h3>Requirement 2 — data source &amp; known limits</h3>
+    <p><strong>Status:</strong> Structure approved and published; data pending. PostgreSQL was inspected read-only on 2026-07-02 (22 schemas): no per-SKU last-30-days sales, no verified COGS margin (only a 20%-cost proxy on 5 pilot SKUs from 2026-06-09), keyword demand exists only at keyword level (Semrush baseline), organic sessions only at page level (14 pilot pages), and <strong>no approved SEO priority field or rule exists</strong>.</p>
+    <p><strong>Pipeline extension requested (Option B):</strong> (1) Shopify per-SKU UK sales, daily, for last-30-day windows; (2) verified COGS → real profit margin per SKU; (3) Semrush search-volume mapped keyword→product URL→SKU; (4) GA4 organic sessions per product page daily; (5) an approved SEO Priority rule signed off by SEO team. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-product-priority-postgresql-evidence.md</code>.</p>
   </div>
 
 </div>

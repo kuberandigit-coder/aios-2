@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Priority Guidance — Dilaksi | Data Pending</title>
+<style>
+  :root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--na:#9aa3b2;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;}
+  .wrap{max-width:1100px;margin:0 auto;}
+  header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+  h1{font-size:22px;}
+  .sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+  .chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
+  .chip.warn{background:#fff4e5;color:#9a5b00;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+  .card .value{font-size:16px;font-weight:600;margin-top:6px;color:var(--na);}
+  .card .note{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .tbar{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{background:#f0f3f8;text-align:left;padding:11px 14px;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);}
+  thead th.num{text-align:right;}
+  td.na{color:var(--na);font-style:italic;text-align:center;padding:28px;line-height:1.7;}
+  .footnotes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:12.5px;color:var(--muted);line-height:1.65;}
+  .footnotes h3{font-size:13px;color:var(--ink);margin-bottom:8px;}
+  .footnotes strong{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#9a5b00;text-transform:uppercase;margin-bottom:6px;">Requirement 2 — Data Pending</div>
+    <h1>Product Priority Guidance</h1>
+    <div class="sub">Requested by: <strong>Dilaksi</strong> (SEO team) · Generated: <strong>2026-07-02</strong></div>
+    <div class="filters">
+      <span class="chip">Date range: Last 30 Days (requested)</span>
+      <span class="chip">Collections: wall-light · plugin-lighting · table-lamps · spider-light · pendant-lights</span>
+      <span class="chip warn">Status: Data pending — source not yet in PostgreSQL</span>
+    </div>
+  </header>
+
+  <div class="cards">
+    <div class="card"><div class="label">Total Sales</div><div class="value">Pending</div><div class="note">per-SKU 30-day sales not yet in PostgreSQL</div></div>
+    <div class="card"><div class="label">Avg Profit Margin</div><div class="value">Pending</div><div class="note">real COGS margins not yet loaded</div></div>
+    <div class="card"><div class="label">Total Demand</div><div class="value">Pending</div><div class="note">Semrush keyword→SKU mapping pending</div></div>
+    <div class="card"><div class="label">Total Organic Sessions</div><div class="value">Pending</div><div class="note">per-product organic sessions pending</div></div>
+  </div>
+
+  <div class="tablebox">
+    <div class="tbar">Approved table structure — rows will populate once the PostgreSQL pipeline extension is loaded and the SEO priority rule is approved</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th><th>SKU</th><th class="num">Sales (£)</th><th class="num">Profit Margin</th>
+          <th class="num">Demand (searches/mo)</th><th class="num">Organic Sessions</th><th class="num">SEO Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="na" colspan="7">
+          Data pending — PostgreSQL does not yet contain per-SKU 30-day sales, verified profit margins, keyword demand mapping,
+          per-product organic sessions, or an approved SEO priority rule for these collections.<br>
+          <strong>SEO priority logic pending approval.</strong> No sample or estimated values are displayed by policy (no invented data).
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footnotes">
+    <h3>Data source &amp; known limits</h3>
+    <p><strong>Discovery (2026-07-02, read-only):</strong> 22 PostgreSQL schemas inspected. Nearest sources: staging_ai.master_sku_cluster_growth_model (5 pilot SKUs, 90-day, 20%-cost margin proxy, 2026-06-09 snapshot), staging_ai.seo_aeo_page_opportunity_baseline (14 pages), development.seo_organic_baseline (Semrush keyword volumes). None cover the requested collections at SKU grain for the last 30 days, and no approved SEO Priority field exists.</p>
+    <p><strong>Pipeline extension requested (Option B):</strong> (1) Shopify per-SKU UK sales daily; (2) verified COGS → real margin per SKU; (3) Semrush volume mapped keyword→URL→SKU; (4) GA4 organic sessions per product page daily; (5) approved SEO Priority rule. Evidence: <code>evidence/dilaksi/dilaksi-requirement-2-product-priority-postgresql-evidence.md</code>.</p>
+  </div>
+
+</div>
+</body>
+</html>
