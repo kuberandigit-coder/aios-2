@@ -1,0 +1,31 @@
+/* Digital Marketing Member Reports — shared styles */
+:root{
+  --ink:#1a2233; --muted:#5b6577; --line:#e3e7ee; --bg:#f5f7fa;
+  --card:#ffffff; --accent:#1f5eff; --accent-soft:#eaf0ff;
+  --done:#0a7d4f; --done-soft:#e5f5ee;
+  --pending:#9a5b00; --pending-soft:#fff4e5;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif; background:var(--bg); color:var(--ink); padding:32px 20px; line-height:1.55;}
+.wrap{max-width:1100px; margin:0 auto;}
+header.site{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px 30px; margin-bottom:22px;}
+h1{font-size:24px; letter-spacing:.2px;}
+.sub{color:var(--muted); font-size:14px; margin-top:8px;}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px;}
+a.card{display:block; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; text-decoration:none; color:var(--ink); transition:box-shadow .15s, transform .15s, border-color .15s;}
+a.card:hover{box-shadow:0 6px 18px rgba(26,34,51,.10); transform:translateY(-2px); border-color:var(--accent);}
+.card .name{font-size:17px; font-weight:700;}
+.card .desc{font-size:12.5px; color:var(--muted); margin-top:6px; min-height:32px;}
+.badge{display:inline-block; margin-top:12px; padding:4px 12px; border-radius:999px; font-size:11.5px; font-weight:700; letter-spacing:.3px;}
+.badge.done{background:var(--done-soft); color:var(--done);}
+.badge.pending{background:var(--pending-soft); color:var(--pending);}
+footer.site{margin-top:26px; color:var(--muted); font-size:12.5px; text-align:center;}
+/* placeholder member pages */
+.placeholder{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:34px; max-width:640px; margin:0 auto;}
+.placeholder h2{font-size:21px;}
+.placeholder dl{margin-top:18px; font-size:14px;}
+.placeholder dt{font-weight:700; margin-top:12px; color:#42506a; font-size:12px; text-transform:uppercase; letter-spacing:.5px;}
+.placeholder dd{margin-top:3px; color:var(--muted);}
+.back{display:inline-block; margin-bottom:16px; color:var(--accent); text-decoration:none; font-size:13.5px; font-weight:600;}
+.back:hover{text-decoration:underline;}
+@media (max-width:600px){ body{padding:18px 12px;} h1{font-size:20px;} }
