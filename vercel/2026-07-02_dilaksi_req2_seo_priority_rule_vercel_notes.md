@@ -6,22 +6,18 @@
 - **Team member:** Dilaksi · **Team:** SEO · **Owner/reviewer:** Kuberan
 - **Business question / SEO Priority rule used:** see prompt file.
 
-## Status: NOT DEPLOYED (per scope — deployment requires explicit approval)
-- Local page updated: `reports/digital-marketing-member-pages/pages/dilaksi-req2-all-products.html`
-- Live production page still shows the previous version (deployment `dpl_CkLAekmwkxiwPVnnbQUsPe6Sko3s`, before SEO Priority).
+## Status: DEPLOYED — approved by user 2026-07-02
+- Deployment: `dpl_5ewCmKKhNZwX4das8Vg9gM8yxmLe` → READY (production, aliased to https://digital-marketing-member-pages.vercel.app)
+- Command used: `vercel deploy --prod --yes` from `reports/digital-marketing-member-pages`
 
-## On approval, run:
-```
-cd "C:\Users\PC\OneDrive\Desktop\kuberan web\reports\digital-marketing-member-pages"
-vercel deploy --prod --yes
-```
-Then verify live at https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req2-all-products.html :
-- HTTP 200; `class="pri` occurrences = 1,235 (1,231 rows + 4 legend samples)
-- Rule note present: "SEO Priority calculated using approved Dilaksi Requirement 2 business rule."
-- Req 1 page (`/pages/dilaksi.html`) unchanged.
-Then update this file with the new deployment ID and mark closure GREEN.
+## Live verification (2026-07-02, post-deploy)
+- https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req2-all-products.html → HTTP **200**
+- `class="pri` occurrences: **1,235** (1,231 product rows + 4 legend samples) ✓
+- SEO High badges: 111 (110 rows + 1 legend) · Low: 436 (435 + 1) · flag-for-review: 688 (686 + 2 legend/rule mentions) ✓
+- Rule note present verbatim ✓
+- Req 1 page `/pages/dilaksi.html` → HTTP 200, unchanged ✓
 
 - **Files created or modified / Evidence path / Validation result:** see evidence file · PASS (local)
-- **Status:** awaiting deployment approval · **Known limits:** live page temporarily behind local
-- **Next step:** deploy on approval
-- **PASS/FAIL rule:** as evidence. **PASS (local scope)**
+- **Status:** deployed and verified live · **Known limits:** PM pending (see evidence)
+- **Next step:** none — rerun builder + redeploy when COGS lands
+- **PASS/FAIL rule:** as evidence. **PASS**

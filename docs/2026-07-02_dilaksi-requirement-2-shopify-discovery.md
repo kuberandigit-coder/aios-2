@@ -44,3 +44,6 @@ Added collection filter (All + 5 collections), 3-state sales filter (All / With 
 Applied the user-approved 6-condition SEO Priority rule to all 1,231 product rows: High 110 · Medium 0 · Low 435 · Low—flag for review 686 · Pending 0. Profit margin missing for all rows but provably unrequired (max product sales £1,995.12 < £4,000/£10,000 margin-rule thresholds) — nothing invented. Per-row log: `reports/dilaksi/data/2026-07-02_req2-seo-priority-log.csv`; independent re-check: 0 mismatches. Required note added on page. **NOT deployed — awaiting approval.** Full AIOS set: prompt/evidence(dilaksi)/validation/closure/handover/source-map/vercel, all dated 2026-07-02 `_dilaksi_req2_seo_priority_rule_*`.
 
 **PASS/FAIL:** PASS (local) — deployment pending approval
+
+### Deployment approved & completed (2026-07-02)
+SEO Priority update deployed to Vercel production (`dpl_5ewCmKKhNZwX4das8Vg9gM8yxmLe`) after user approval; live verified — HTTP 200, 1,235 pri badges (1,231 rows + 4 legend), rule note present, Req 1 page unaffected. RAG: GREEN.
