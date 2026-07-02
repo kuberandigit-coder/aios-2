@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Digital Marketing Member Reports</title>
 <link rel="stylesheet" href="assets/css/style.css">
+<style>
+div.card.expander{cursor:pointer;}
+div.card.expander:hover{box-shadow:0 6px 18px rgba(26,34,51,.10); border-color:var(--accent);}
+.pagelist{display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:12px;}
+div.card.expander.open .pagelist{display:block;}
+.pagebtn{display:block; background:var(--accent-soft); color:var(--accent); text-decoration:none; font-size:12.5px; font-weight:700; padding:10px 12px; border-radius:9px; margin-bottom:8px;}
+.pagebtn:hover{background:var(--accent); color:#fff;}
+</style>
 <script src="assets/js/main.js" defer></script>
 </head>
 <body>
@@ -17,11 +25,15 @@
   </header>
 
   <div class="grid">
-    <a class="card" href="pages/dilaksi.html">
+    <div class="card expander" id="dilaksi-card" tabindex="0">
       <div class="name">Dilaksi</div>
-      <div class="desc">Core GA4 Data for SEO — Organic Search landing page performance</div>
+      <div class="desc">2 pages available — click to choose</div>
       <span class="badge done">Completed / Available</span>
-    </a>
+      <div class="pagelist">
+        <a class="pagebtn" href="pages/dilaksi.html">Requirement 1 — GA4 SEO Organic Report</a>
+        <a class="pagebtn" href="pages/dilaksi-req2-all-products.html">Requirement 2 — Product Priority Guidance (all products &amp; SKUs)</a>
+      </div>
+    </div>
     <a class="card" href="pages/hetheesha.html">
       <div class="name">Hetheesha</div>
       <div class="desc">Awaiting requirement</div>
@@ -97,5 +109,11 @@
   <footer class="site">Digital Marketing Member Reports · AIOS · generated 2026-07-02 · data pages are PostgreSQL-sourced snapshots</footer>
 
 </div>
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+  var c=document.getElementById("dilaksi-card");
+  if(c){c.addEventListener("click",function(e){ if(e.target.closest(".pagebtn"))return; c.classList.toggle("open");});}
+});
+</script>
 </body>
 </html>

@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!box) return;
   box.addEventListener("input", function () {
     var q = box.value.trim().toLowerCase();
-    document.querySelectorAll(".grid a.card").forEach(function (card) {
+    document.querySelectorAll(".grid .card").forEach(function (card) {
       var name = card.querySelector(".name").textContent.toLowerCase();
       card.style.display = name.indexOf(q) === -1 ? "none" : "";
     });
