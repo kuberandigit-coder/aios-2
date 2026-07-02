@@ -69,5 +69,13 @@ Ask requester: **which GitHub repo/URL shows the Jefry and Kamshi folders?** Pro
 - Verified: `eods/` now contains only `Thivagini` (68 files = 65 moved + 3 original); working tree clean.
 
 **Remaining duplicate pair:** Hetheesa/Hetheesha only.
+
+## UPDATE 2026-07-02 (later) — Hetheesa → Hetheesha merge EXECUTED (user-approved)
+
+- Overlap check before move: no shared filenames — Hetheesha's existing 3 files untouched.
+- Executed: `git mv eods/Hetheesa/* eods/Hetheesha/` → commit **2d79b4b** (65 files, all 100% renames) → pushed to main.
+- Verified: `eods/` now contains only `Hetheesha` (68 files); working tree clean.
+
+**All four duplicate staff-folder pairs in eod-reports are now resolved.** Remaining follow-up: EOD tool HTML still uses old spellings (Jefry, Kamshi, Thivajini, Hetheesa) — folders will regenerate until updated.
 **Known limit / follow-up risk:** EOD tool HTML (`EOD/admin.html`, `index.html`, `standup*.html`) still uses spelling "Jefry" — if reports are filed by that name, a new `Jefry` folder will reappear. Pending user decision to update the tool.
 **Pass/fail:** PASS — rename executed only after explicit user approval, with collision check, evidence saved.
