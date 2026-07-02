@@ -158,7 +158,8 @@ for c in order:
         _d = dm[1] if dm else None
         pri, cond = seo_priority(_d, p["sales"], og)
         PRI_LOG.append([c, pid, p["title"], round(p["sales"], 2), "" if _d is None else _d, og, "N/A (COGS pending)", cond, pri])
-        pcls = {"H": "pri-h", "M": "pri-m"}.get(pri[0], "pri-l")
+        pcls = "pri-h" if pri == "High" else ("pri-m" if pri == "Medium" else ("pri-f" if "flag" in pri else "pri-l"))
+        pkey = {"pri-h": "high", "pri-m": "medium", "pri-f": "flag", "pri-l": "low"}[pcls]
         badge += ('<span class="pri {pc}" title="SEO Priority — approved Dilaksi Req 2 business rule, matched condition {cn}. '
                   'Inputs: demand {dv}, sales &pound;{sv:,.2f}, organic {ov}, profit margin N/A (COGS pending; not required — see evidence)">'
                   'SEO: {pv}</span>').format(pc=pcls, cn=esc(cond), dv=("n/a" if _d is None else "{:,}".format(_d)), sv=p["sales"], ov=og, pv=esc(pri))
@@ -167,7 +168,7 @@ for c in order:
         status = '' if p["status"] == "ACTIVE" else '<span class="st">{s}</span>'.format(s=esc(p["status"]))
         skus_attr = esc(" ".join((sku or "").lower() for sku, _, _, _ in vs))
         items.append(
-            '<details class="prod" data-coll="' + c + '" data-name="{nm}" data-sku="{sk}" data-sold="{so}">'
+            '<details class="prod" data-coll="' + c + '" data-pri="' + pkey + '" data-name="{nm}" data-sku="{sk}" data-sold="{so}">'
             '<summary><span class="t">{ti}{st}</span>{bd}</summary>'
             '<table class="vt"><thead><tr><th>SKU</th><th>Variant ID</th><th class="num">Sales (&pound;)</th><th class="num">Units</th></tr></thead>'
             '<tbody>{vr}</tbody></table></details>'.format(
@@ -217,10 +218,11 @@ details.prod .t{font-size:13.5px;font-weight:600;flex:1;min-width:200px;}
 .og{font-size:11.5px;font-weight:700;color:#1f5eff;background:#eaf0ff;border-radius:999px;padding:3px 10px;white-space:nowrap;}
 .og.og0{color:#9aa3b2;background:#f0f3f8;font-weight:600;}
 .dm .kw{font-weight:500;font-style:normal;opacity:.85;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom;}
-.pri{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;}
-.pri-h{color:#c62828;background:#fdecea;}
-.pri-m{color:#9a5b00;background:#fff4e5;}
-.pri-l{color:#5b6577;background:#f0f3f8;font-weight:600;}
+.pri{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;color:#fff;}
+.pri-h{background:#d32f2f;}
+.pri-m{background:#ef6c00;}
+.pri-l{background:#2e7d32;}
+.pri-f{background:#7b1fa2;}
 .rulenote{background:var(--card);border:1px solid var(--line);border-left:5px solid #c62828;border-radius:12px;padding:12px 18px;margin-bottom:14px;font-size:12.5px;color:var(--muted);}
 .rulenote strong{color:var(--ink);}
 .legend{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.9;}
@@ -244,14 +246,15 @@ td.num.pos{color:var(--good);font-weight:600;} td.num.zero{color:var(--na);}
 
 JS = """
 const q=document.getElementById('q'),openB=document.getElementById('f-open');
-let salesMode='all',collMode='all';
+let salesMode='all',collMode='all',priMode='all';
 function apply(){
   const s=q.value.trim().toLowerCase();
   document.querySelectorAll('details.prod').forEach(d=>{
     const textHit=!s||d.dataset.name.includes(s)||d.dataset.sku.includes(s);
     const salesHit=salesMode==='all'||(salesMode==='sold'?d.dataset.sold==='1':d.dataset.sold==='0');
     const collHit=collMode==='all'||d.dataset.coll===collMode;
-    d.classList.toggle('hidden',!(textHit&&salesHit&&collHit));
+    const priHit=priMode==='all'||d.dataset.pri===priMode;
+    d.classList.toggle('hidden',!(textHit&&salesHit&&collHit&&priHit));
   });
   document.querySelectorAll('section.coll').forEach(sec=>{
     sec.classList.toggle('hidden',!sec.querySelector('details.prod:not(.hidden)'));
@@ -268,6 +271,12 @@ document.getElementById('g-coll').addEventListener('click',e=>{
   const b=e.target.closest('.tbtn');if(!b)return;
   collMode=b.dataset.coll;
   document.querySelectorAll('#g-coll .tbtn').forEach(x=>x.classList.toggle('on',x===b));
+  apply();
+});
+document.getElementById('g-pri').addEventListener('click',e=>{
+  const b=e.target.closest('.tbtn');if(!b)return;
+  priMode=b.dataset.pri;
+  document.querySelectorAll('#g-pri .tbtn').forEach(x=>x.classList.toggle('on',x===b));
   apply();
 });
 let opened=false;
@@ -326,13 +335,23 @@ page = """<!DOCTYPE html>
     <button class="tbtn" data-coll="table-lamps">Table Lamps</button>
   </span>
 </div>
+<div class="toolbar" style="top:auto;">
+  <span class="tgroup" id="g-pri">
+    <span class="glbl">SEO Priority:</span>
+    <button class="tbtn on" data-pri="all">All</button>
+    <button class="tbtn" data-pri="high">High (110)</button>
+    <button class="tbtn" data-pri="medium">Medium (0)</button>
+    <button class="tbtn" data-pri="low">Low (435)</button>
+    <button class="tbtn" data-pri="flag">Low &mdash; flag for review (686)</button>
+  </span>
+</div>
 
 <div class="legend">
   <strong>How to read each product row</strong> (hover any badge for the full explanation):<br>
   <span class="dm">Demand: 6,600 searches/mo <i class="kw">&ldquo;pendant lights&rdquo;</i></span> = how many times per month people in the UK Google the keyword mapped to this product (Semrush UK database, pulled 2026-07-02). Grey <span class="dm dm0">Demand: 0 searches/mo</span> = the keyword has no measurable monthly searches.<br>
   <span class="og">Organic: 31 visits (30d)</span> = real visitors who landed on this product page from unpaid Google search in the last 30 days (GA4 Data API, Organic Search channel only). Grey <span class="og og0">Organic: 0 visits (30d)</span> = nobody arrived from organic search in the window.<br>
   <span class="s pos">&pound;1,995.12</span> = net sales in the last 30 days (Shopify, returns deducted) &middot; <span class="u">49 units</span> = units sold. Grey &pound;0.00 / <span class="u none">no sales</span> = listed but not sold in the window.<br>
-  <span class="pri pri-h">SEO: High</span> / <span class="pri pri-m">SEO: Medium</span> / <span class="pri pri-l">SEO: Low</span> = SEO Priority from the approved business rule (hover shows the matched condition and the exact input values). <span class="pri pri-l">Low &mdash; flag for review</span> = low demand and low sales; review whether the product should be kept, merged or re-keyworded.<br>
+  <span class="pri pri-h">SEO: High</span> (red = act first) / <span class="pri pri-m">SEO: Medium</span> (orange) / <span class="pri pri-l">SEO: Low</span> (green = fine, no action) / <span class="pri pri-f">SEO: Low &mdash; flag for review</span> (violet = low demand AND low sales &mdash; review whether to keep, merge or re-keyword) = SEO Priority from the approved business rule; hover any badge for the matched condition and exact input values. Use the <strong>SEO Priority</strong> filter row to list one tier.<br>
   <strong>High demand or organic visits + no sales</strong> = the product gets interest but does not convert &mdash; these are the first SEO/CRO priorities. Use the <strong>Without sales</strong> filter to list them.
 </div>
 

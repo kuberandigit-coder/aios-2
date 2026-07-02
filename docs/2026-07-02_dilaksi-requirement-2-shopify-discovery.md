@@ -47,3 +47,6 @@ Applied the user-approved 6-condition SEO Priority rule to all 1,231 product row
 
 ### Deployment approved & completed (2026-07-02)
 SEO Priority update deployed to Vercel production (`dpl_5ewCmKKhNZwX4das8Vg9gM8yxmLe`) after user approval; live verified — HTTP 200, 1,235 pri badges (1,231 rows + 4 legend), rule note present, Req 1 page unaffected. RAG: GREEN.
+
+### SEO Priority filter + visible colours (2026-07-02, later)
+Added SEO Priority filter row (All/High/Medium/Low/Flag, with counts, combinable with all other filters) and switched badges to solid colours: red High, orange Medium, green Low, violet flag-for-review. Priority values unchanged. Deployed (`dpl_EQC9XUnBoS7DnYZ3GGq5TfQorQy3`) and verified live. PASS.
