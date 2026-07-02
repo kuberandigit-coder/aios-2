@@ -65,3 +65,14 @@
 **Known limits:** 30 of 1,231 products keyword-mapped (top sellers); remainder pending batch approval (~1,200 more Semrush lines ≈ 12,000 API units); volumes are UK national head-term estimates, not product-exact.
 **Next step:** approve deploy; decide on full-catalog keyword batch.
 **PASS/FAIL rule:** PASS — all displayed demand values come from executed Semrush reports; mapping fully documented; zero invented numbers.
+
+---
+
+## UPDATE 2026-07-02 — FULL-CATALOG BATCH EXECUTED (user-approved: "run the full catalog semrush batch")
+
+- Keywords auto-derived from cleaned product titles (codes/sizes/bulb-types/pack-counts stripped; style words + head noun kept): **1,187 of the remaining 1,201 products mapped to 564 unique keywords**; 14 products unmappable (typos/French titles) → shown as "n/a".
+- Semrush pulls: **10 × `phrase_these` batches, uk database, 2026-07-02** (~564 lines ≈ 5,640 API units). Keywords Semrush had no data for = 0/mo.
+- Page rebuilt: **every one of the 1,231 products now has a demand badge** — purple = measurable UK volume (938 products), grey 0/mo = mapped keyword with no measurable volume, "n/a" = no keyword derivable (14). Hover always shows the exact keyword. Footer note updated accordingly.
+- Auto-keyword rows are confidence **AUTO/LOW-MEDIUM** (top 30 keep their curated keywords).
+- Machine-readable mapping saved into the repo: `reports/dilaksi/data/2026-07-02_req2-keyword-map.json` (collection|product_id → keyword) and `reports/dilaksi/data/2026-07-02_req2-semrush-volumes.csv` (keyword → volume/mo).
+- Deployed to Vercel (continuation of approved demand deploy); live verification: 1,231 badges render on production URL.
