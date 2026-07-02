@@ -57,3 +57,31 @@ None usable: no Shopify sync tables exist (verified via information_schema scans
 **Known limits:** ShopifyQL total_sales includes discounts/returns effects (net-of-returns "total sales"); first sales row has blank product_id (deleted products bucket, £4,643.56) — will be excluded on join; collection overlap means a product may appear under multiple categories.
 **Next step:** GPT/Kuberan approve full extraction → build Requirement 2 Shopify columns.
 **PASS/FAIL:** **PASS** — Category, SKU, and Sales sources verified and documented; nothing guessed.
+
+---
+
+## UPDATE 2026-07-02 — FULL EXTRACTION EXECUTED (user-approved: "run the extraction")
+
+**Method run:**
+- Products: GraphQL `collectionByHandle → products(first:250)` — 8 calls total (wall-light 1 page/231, plugin-lighting 35, table-lamps 28, spider-light 58, pendant-lights 4 pages/879). All pages verified `hasNextPage:false` at end. **1,231 product memberships captured** (matches discovery counts +1 wall-light).
+- Sales: ShopifyQL `FROM sales … GROUP BY product_id, product_variant_sku SINCE -30d UNTIL today` pulled twice (ORDER BY total_sales DESC LIMIT 1000 + ASC LIMIT 1000) → **1,711 unique sold rows, 289-row overlap proves full coverage** of every sold product/SKU in the window.
+- Join on product_id; SKU-level match to variants; sold SKUs not in current variant list kept as "(sold under SKU: …)" rows; deleted-products bucket (blank product_id) excluded.
+
+**Output file:** `reports/dilaksi/data/2026-07-02_req2-shopify-category-sku-sales-last30d.csv` — **5,576 variant-level rows** (Category, Product Title, Product ID, Variant ID, SKU, Total Sales £ last 30d, Units Sold, Orders, Vendor, Status).
+
+**Per-collection results (last 30 days to 2026-07-02, BST):**
+
+| Collection | Products | Products w/ sales | Sales (£) | Units |
+|---|---|---|---|---|
+| wall-light | 231 | 79 | 8,882.04 | 564 |
+| plugin-lighting | 35 | 19 | 1,781.20 | 143 |
+| table-lamps | 28 | 4 | 642.94 | 33 |
+| spider-light | 58 | 22 | 2,356.41 | 61 |
+| pendant-lights | 879 | 168 | 19,635.84 | 1,111 |
+| **Total** | **1,231** | **292** | **33,298.43** | **1,912** |
+
+(Products in multiple collections are counted per collection; total is membership-based, not deduplicated.)
+
+**Known limits recorded:** Last Order Date column NOT included — ShopifyQL day-grain pull caps at 1,000 rows (covers only ~2026-06-21→07-02); precise per-product last-order dates need order-level paging, flagged as follow-up. total_sales is net of returns (some negative day rows observed). Rolling window = 2026-06-02→2026-07-02.
+
+**PASS/FAIL:** PASS — extraction complete from verified sources, no guessed values.
