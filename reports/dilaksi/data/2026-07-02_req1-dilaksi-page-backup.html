@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Core GA4 Data for SEO — Organic Search | Dilaksi | LEDSone UK</title>
+<style>
+  :root{
+    --ink:#1a2233; --muted:#5b6577; --line:#e3e7ee; --bg:#f5f7fa;
+    --card:#ffffff; --accent:#1f5eff; --accent-soft:#eaf0ff;
+    --na:#9aa3b2; --good:#0a7d4f;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif; background:var(--bg); color:var(--ink); padding:32px 20px;}
+  .wrap{max-width:1240px; margin:0 auto;}
+  header{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px 30px; margin-bottom:18px;}
+  h1{font-size:22px; letter-spacing:.2px;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:6px;}
+  .filters{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px;}
+  .chip{background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:5px 14px; font-size:12.5px; font-weight:600;}
+  .chip.warn{background:#fff4e5; color:#9a5b00;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin-bottom:18px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px;}
+  .card .label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px;}
+  .card .value{font-size:24px; font-weight:700; margin-top:6px;}
+  .card .value.na{color:var(--na); font-size:16px; font-weight:600;}
+  .card .note{font-size:11.5px; color:var(--muted); margin-top:4px;}
+  .tablebox{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
+  .tablebox .tbar{padding:14px 20px; border-bottom:1px solid var(--line); font-size:13px; color:var(--muted);}
+  .scroll{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1080px;}
+  thead th{position:sticky; top:0; background:#f0f3f8; text-align:left; padding:11px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#42506a; border-bottom:2px solid var(--line); white-space:nowrap;}
+  thead th.num, td.num{text-align:right;}
+  tbody td{padding:9px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody tr:nth-child(even){background:#fafbfd;}
+  tbody tr:hover{background:var(--accent-soft);}
+  td.lp{max-width:360px; word-break:break-all; font-weight:500;}
+  td.q{color:#33415c; max-width:230px;}
+  td.na{color:var(--na); font-style:italic; text-align:center;}
+  td.rev{font-weight:600; color:var(--good);}
+  td.rev.zero{color:var(--na); font-weight:400;}
+  tfoot td{padding:12px 14px; font-weight:700; background:#eef2f9; border-top:2px solid var(--line);}
+  tfoot td.na{color:var(--na); font-weight:600; font-style:italic; text-align:center;}
+  .footnotes{margin-top:18px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 24px; font-size:12.5px; color:var(--muted); line-height:1.65;}
+  .footnotes h3{font-size:13px; color:var(--ink); margin-bottom:8px;}
+  .footnotes strong{color:var(--ink);}
+  @media (max-width:700px){ h1{font-size:18px;} .card .value{font-size:19px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 1 — Completed</div>
+    <h1>Core GA4 Data for SEO — Organic Search Landing Page Performance</h1>
+    <div class="sub">Store: <strong>ledsone.co.uk</strong> (GA4 property 408110563) &nbsp;·&nbsp; Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Generated: <strong>2026-07-02</strong></div>
+    <div class="filters">
+      <span class="chip">Collection: All</span>
+      <span class="chip warn">Date range: 90 days ending 2026-06-27 (see note — 30-day window not available)</span>
+      <span class="chip">Channel: Organic Search only</span>
+      <span class="chip">Source: PostgreSQL (no hardcoded analytics data)</span>
+    </div>
+  </header>
+
+  <div class="cards">
+    <div class="card"><div class="label">Total Sessions</div><div class="value">24,685</div><div class="note">all 6,089 organic landing pages</div></div>
+    <div class="card"><div class="label">Total Users</div><div class="value">20,965</div><div class="note">GA4 active users</div></div>
+    <div class="card"><div class="label">Purchases</div><div class="value">759</div><div class="note">ecommerce purchases</div></div>
+    <div class="card"><div class="label">Purchase Revenue</div><div class="value">£27,206.41</div><div class="note">organic search only</div></div>
+    <div class="card"><div class="label">Avg Engagement Rate</div><div class="value na">Not available in database</div><div class="note">not collected by GA4 export</div></div>
+  </div>
+
+  <div class="tablebox">
+    <div class="tbar">Top 50 landing pages by sessions (of 6,089 total) · Query = top Google Search Console query for that page (last 30 days of GSC data, to 2026-06-20)</div>
+    <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Landing Page</th>
+          <th>Query (top, GSC)</th>
+          <th class="num">Sessions</th>
+          <th class="num">Users</th>
+          <th class="num">Engagement Rate</th>
+          <th class="num">Avg. Engagement Time</th>
+          <th class="num">Pages/Session</th>
+          <th class="num">Purchase Revenue (£)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="lp">(not set)</td><td class="q">—</td><td class="num">1,472</td><td class="num">894</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">33.58</td></tr>
+        <tr><td class="lp">/</td><td class="q">ledsone</td><td class="num">1,345</td><td class="num">846</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">4,930.77</td></tr>
+        <tr><td class="lp">/blogs/new/e27-bulb-guide</td><td class="q">what is an e27 bulb</td><td class="num">220</td><td class="num">208</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/blogs/new/b22-bayonet-bulbs-explained-your-essential-led-buying-guide</td><td class="q">b22 light bulb</td><td class="num">219</td><td class="num">210</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">93.24</td></tr>
+        <tr><td class="lp">/collections/spider-light</td><td class="q">spider light fitting</td><td class="num">187</td><td class="num">119</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">302.44</td></tr>
+        <tr><td class="lp">/collections/plugin-lighting</td><td class="q">plug in pendant light</td><td class="num">185</td><td class="num">181</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">337.71</td></tr>
+        <tr><td class="lp">/blogs/new/transformers-for-led-lighting-complete-guide</td><td class="q">led transformer</td><td class="num">176</td><td class="num">168</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">51.96</td></tr>
+        <tr><td class="lp">/collections/conduit-lighting</td><td class="q">conduit light fittings</td><td class="num">174</td><td class="num">147</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">58.38</td></tr>
+        <tr><td class="lp">/blogs/new/how-many-lumens-do-i-need-a-room-by-room-uk-lighting-guide</td><td class="q">is 2100 lumens bright</td><td class="num">151</td><td class="num">138</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/collections/lampshades</td><td class="q">retro lamp shades</td><td class="num">119</td><td class="num">112</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/blogs/new/lighting-trends-2026-styles-and-ideas-for-your-home</td><td class="q">kitchen lighting trends 2026</td><td class="num">119</td><td class="num">117</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/blogs/new/best-switches-and-sockets-in-the-uk-2026-buying-guide</td><td class="q">best light switches</td><td class="num">115</td><td class="num">114</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/blogs/understanding-2-core-electrical-cable-the-essentials-1/understanding-2-core-electrical-cable-the-essentials</td><td class="q">two core wire</td><td class="num">114</td><td class="num">108</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/blogs/new/how-to-brighten-a-dark-corner-best-floor-lamps-table-lamps-wall-lighting-ideas</td><td class="q">corner lights for living room</td><td class="num">112</td><td class="num">105</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/pages/pi</td><td class="q">light installation</td><td class="num">106</td><td class="num">86</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/collections/pendant-lights</td><td class="q">ledsone lighting</td><td class="num">103</td><td class="num">79</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">254.63</td></tr>
+        <tr><td class="lp">/blogs/new/understanding-3-core-electrical-cables-types-uses-and-color-codes</td><td class="q">3 core cable</td><td class="num">100</td><td class="num">98</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/3-light-black-industrial-hanging-ceiling-pendant-lights</td><td class="q">dining lights</td><td class="num">96</td><td class="num">93</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">65.78</td></tr>
+        <tr><td class="lp">/products/led-up-down-wall-light-motion-detector-indoor-outdoor-wall-lights</td><td class="q">sensor lights outdoor</td><td class="num">93</td><td class="num">90</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">145.36</td></tr>
+        <tr><td class="lp">/blogs/new/how-to-wire-a-ceiling-rose-uk-guide</td><td class="q">ceiling rose wiring</td><td class="num">85</td><td class="num">83</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/8-12w-300ma-dc-25-45v-compact-constant-current-led-driver</td><td class="q">led driver 12w</td><td class="num">85</td><td class="num">83</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/blogs/new/in-depth-guide-to-the-essential-components-of-the-20mm-conduit-lighting-system</td><td class="q">industrial conduit lighting</td><td class="num">80</td><td class="num">73</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/collections/pipe-lighting</td><td class="q">copper pipe ceiling light</td><td class="num">80</td><td class="num">72</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">206.17</td></tr>
+        <tr><td class="lp">/blogs/new/easy-fit-ceiling-shades-tips</td><td class="q">types of light shades</td><td class="num">79</td><td class="num">78</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/20mm-galvanized-steel-conduit-lighting-box-fitting</td><td class="q">electrical conduit junction box</td><td class="num">74</td><td class="num">72</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/blogs/new/wall-lighting-ideas-living-room</td><td class="q">best wall lights for living room</td><td class="num">72</td><td class="num">65</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/crystal-shade-round-mini-pendant-kitchen-island-light-4628</td><td class="q">crystal kitchen lights</td><td class="num">68</td><td class="num">62</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">126.66</td></tr>
+        <tr><td class="lp">/products/3a-60a-lighting-chock-block-connection-12-way-electric-wire-terminal-connector</td><td class="q">electrical connector terminals</td><td class="num">68</td><td class="num">66</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/collections/vintage-bulbs</td><td class="q">e27 light bulbs</td><td class="num">60</td><td class="num">60</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">210.08</td></tr>
+        <tr><td class="lp">/products/10w-led-modern-ip54-curved-wall-light-with-pir-motion-sensor</td><td class="q">wall mounted pir light</td><td class="num">59</td><td class="num">55</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">209.88</td></tr>
+        <tr><td class="lp">/products/e27-bulb-holder-socket-for-wall-sconce-lamp-light-hanging-mounted-180-degree-adjustable-4737</td><td class="q">wall light lamp holder</td><td class="num">58</td><td class="num">55</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/black-raven-shape-rasin-bird-table-lamps-desk-lamp</td><td class="q">raven lamp</td><td class="num">55</td><td class="num">25</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/collections/wall-light</td><td class="q">e27 wall lights</td><td class="num">55</td><td class="num">47</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">147.24</td></tr>
+        <tr><td class="lp">/collections/wire-connectors</td><td class="q">electrical cable connectors types</td><td class="num">54</td><td class="num">54</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/pages/lighting-installation-accessories</td><td class="q">light fitting accessories</td><td class="num">53</td><td class="num">50</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">132.36</td></tr>
+        <tr><td class="lp">/collections/e27-base-bulb</td><td class="q">large screw bulb</td><td class="num">53</td><td class="num">48</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">39.68</td></tr>
+        <tr><td class="lp">/products/modern-large-crystal-ceiling-light-gold-pendant-chandelier-lamp-for-living-room-4117</td><td class="q">gold chandelier</td><td class="num">50</td><td class="num">46</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/collections/led-bulbs</td><td class="q">decorative light bulbs bayonet fitting</td><td class="num">49</td><td class="num">46</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">58.49</td></tr>
+        <tr><td class="lp">/products/vintage-plug-in-wall-lights-2m-cable-dimmer-switch-wall-sconce-lamp</td><td class="q">brass plug in wall light</td><td class="num">49</td><td class="num">46</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">25.58</td></tr>
+        <tr><td class="lp">/products/vintage-decorative-industrial-retro-edison-bayonet-led-bulb-b22-base-light-bulb</td><td class="q">chandelier light bulbs bayonet</td><td class="num">48</td><td class="num">45</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">28.27</td></tr>
+        <tr><td class="lp">/products/vintage-c35-e14-4w-bent-tip-candle-led-flame-light-bulb</td><td class="q">candle bulbs</td><td class="num">48</td><td class="num">48</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">53.67</td></tr>
+        <tr><td class="lp">/collections/hemp-rope-lighting</td><td class="q">rope ceiling light</td><td class="num">47</td><td class="num">43</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">95.96</td></tr>
+        <tr><td class="lp">/collections/2core-twisted</td><td class="q">braided electrical cable</td><td class="num">45</td><td class="num">42</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">131.62</td></tr>
+        <tr><td class="lp">/cart</td><td class="q">ledsone uk limited</td><td class="num">45</td><td class="num">21</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/1-3w-300ma-compact-constant-current-led-driver</td><td class="q">12v led driver</td><td class="num">44</td><td class="num">41</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/multi-shade-2m-pendant-light</td><td class="q">multi pendant lights</td><td class="num">43</td><td class="num">36</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/dc-12v-ip20-power-supply</td><td class="q">240v to 12v converter</td><td class="num">43</td><td class="num">42</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev">43.07</td></tr>
+        <tr><td class="lp">/products/lampshade-wall-light-wall-light-chandelier-shades</td><td class="q">wall pendant lights</td><td class="num">42</td><td class="num">40</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/modern-chandelier-led-crystal-ceiling-mount-and-hanging-light-5423</td><td class="q">chandelier ceiling light</td><td class="num">42</td><td class="num">40</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+        <tr><td class="lp">/products/single-ceiling-pendant-lamp-shade-swag-hanging-light</td><td class="q">swag pendant light</td><td class="num">42</td><td class="num">40</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="num rev zero">0.00</td></tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>TOTAL — all 6,089 organic landing pages</td>
+          <td>—</td>
+          <td class="num">24,685</td>
+          <td class="num">20,965</td>
+          <td class="na">N/A</td>
+          <td class="na">N/A</td>
+          <td class="na">N/A</td>
+          <td class="num">£27,206.41</td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>
+  </div>
+
+  <div class="footnotes">
+    <h3>Data source &amp; known limits</h3>
+    <p><strong>Source:</strong> PostgreSQL — <code>google_search_console.ga4_organic_landing_page_revenue</code> (GA4 export snapshot, run 2026-06-27, window 2026-03-30 → 2026-06-27, channel = Organic Search only) joined with <code>google_search_console.gsc_web_query_page</code> (top query per page by clicks, GSC data 2026-05-21 → 2026-06-20, site sc-domain:ledsone.co.uk). Nothing is hardcoded from screenshots.</p>
+    <p><strong>Requested "Last 30 days":</strong> not available — the GA4 export stores ~90-day aggregate snapshots, not daily rows. This report uses the latest available window (90 days ending 2026-06-27) and is labelled accordingly.</p>
+    <p><strong>Engagement Rate, Avg. Engagement Time, Pages/Session:</strong> <em>Not available in the database</em> — these metrics are not collected by the current GA4 → PostgreSQL export. Columns are shown as N/A rather than estimated. Pipeline extension has been requested.</p>
+    <p><strong>Query column:</strong> comes from Google Search Console (not GA4), showing each page's top query by clicks; GSC and GA4 measure differently, so the query is indicative, not a session-level join. "(not set)" is GA4's own bucket for sessions without a recorded landing page.</p>
+    <p>Table shows the top 50 landing pages by sessions; the TOTAL row covers all 6,089 pages. Generated 2026-07-02 by AIOS (Claude Code) for Dilaksi, SEO team. Evidence: <code>evidence/dilaksi/dilaksi-ga4-seo-postgresql-evidence.md</code>.</p>
+  </div>
+
+</div>
+</body>
+</html>
