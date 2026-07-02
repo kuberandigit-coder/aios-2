@@ -4,12 +4,12 @@
 **Requirement source:** Google Sheet — Product Priority Guidance · **Team member:** Dilaksi · **Team:** SEO
 **Business question:** SEO prioritisation of products/categories.
 
-- Live https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req2-all-products.html currently serves the **pre-demand** version.
+- Live https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req2-all-products.html now serves the **demand-updated** version (verified).
 - Local repo copy contains the Semrush demand update (validated PASS).
 - To publish after approval: `cd "C:/Users/PC/OneDrive/Desktop/kuberan web/reports/digital-marketing-member-pages"` → `vercel deploy --prod --yes` → verify `class="dm"` count = 30 on the live page → record deployment ID here.
 
 **Semrush source checked / keywords checked / files modified / evidence path / validation:** see evidence + validation files (2026-07-02_dilaksi_req2_semrush_demand_*)
-**Owner/reviewer:** Kuberan · **Status:** AWAITING DEPLOY APPROVAL
+**Owner/reviewer:** Kuberan · **Status:** DEPLOYED — user approved 2026-07-02. Deployment digital-marketing-member-pages-mhiv11a4u ready; live verification: 30 demand badges + source note present on production URL.
 **Known limits:** until deploy, team sees no demand data online.
 **Next step:** get approval → deploy → verify → update this note.
 **PASS/FAIL rule:** PASS if deployed only after explicit approval; FAIL otherwise.
