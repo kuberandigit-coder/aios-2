@@ -6,11 +6,14 @@
 <title>Digital Marketing Member Reports</title>
 <link rel="stylesheet" href="assets/css/style.css">
 <style>
-div.card.expander{cursor:pointer;}
-div.card.expander:hover{box-shadow:0 6px 18px rgba(26,34,51,.10); border-color:var(--accent);}
+div.card.expander{cursor:pointer; position:relative;}
+.chev{position:absolute; top:20px; right:18px; width:22px; height:22px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; transition:transform .2s;}
+div.card.expander.open .chev{transform:rotate(180deg);}
 .pagelist{display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:12px;}
 div.card.expander.open .pagelist{display:block;}
-.pagebtn{display:block; background:var(--accent-soft); color:var(--accent); text-decoration:none; font-size:12.5px; font-weight:700; padding:10px 12px; border-radius:9px; margin-bottom:8px;}
+.pagebtn{display:flex; align-items:center; gap:8px; background:var(--accent-soft); color:var(--accent); text-decoration:none; font-size:12.5px; font-weight:700; padding:10px 12px; border-radius:9px; margin-bottom:8px; transition:background .15s,color .15s;}
+.pagebtn:last-child{margin-bottom:0;}
+.pagebtn .no{background:#fff; border-radius:6px; padding:1px 7px; font-size:11px; flex:none;}
 .pagebtn:hover{background:var(--accent); color:#fff;}
 </style>
 <script src="assets/js/main.js" defer></script>
@@ -26,12 +29,13 @@ div.card.expander.open .pagelist{display:block;}
 
   <div class="grid">
     <div class="card expander" id="dilaksi-card" tabindex="0">
+      <span class="chev">&#9662;</span>
       <div class="name">Dilaksi</div>
       <div class="desc">2 pages available — click to choose</div>
       <span class="badge done">Completed / Available</span>
       <div class="pagelist">
-        <a class="pagebtn" href="pages/dilaksi.html">Requirement 1 — GA4 SEO Organic Report</a>
-        <a class="pagebtn" href="pages/dilaksi-req2-all-products.html">Requirement 2 — Product Priority Guidance (all products &amp; SKUs)</a>
+        <a class="pagebtn" href="pages/dilaksi.html"><span class="no">R1</span> GA4 SEO Organic Report</a>
+        <a class="pagebtn" href="pages/dilaksi-req2-all-products.html"><span class="no">R2</span> Product Priority Guidance — all products &amp; SKUs</a>
       </div>
     </div>
     <a class="card" href="pages/hetheesha.html">
