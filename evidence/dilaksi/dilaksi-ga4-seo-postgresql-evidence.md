@@ -58,3 +58,9 @@ Schemas scanned: 22 user schemas. Relevant: `google_search_console`, `analytics`
 **Known limits:** Google Sheet itself not opened (no Sheets access from this session); requirement taken from the prompt text. GA4 property inspected: 408110563.
 **Next step:** GPT/requester chooses Option A/B/C.
 **PASS/FAIL rule applied:** Building HTML now would FAIL ("data hardcoded/invented without approval"); stopping with documented evidence = correct per stop conditions.
+
+## UPDATE 2026-07-02 — Deep re-verification of missing metrics (user requested confirmation)
+
+- Full information_schema scan (all schemas) for engag|duration|bounce|dwell|time_on|pageview|screen|views|per_session|events: only unrelated hits (Amazon ASIN traffic, ETL logs, task plans). No GA4 engagement columns exist.
+- All 9 GA4 tables checked: metrics limited to sessions, active_users, ecommerce_purchases, purchase_revenue (+item_views). CONFIRMED: Engagement Rate, Avg Engagement Time, Pages/Session are NOT in PostgreSQL.
+- New finding: raw_data.ga4_landing_page_daily is a daily landing-page table that could support a true last-30-days window, but it holds 0 rows (pipeline never loaded). Filling it + adding engagement metrics to the export = full Dilaksi spec.
