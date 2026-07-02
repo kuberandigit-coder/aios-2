@@ -52,6 +52,13 @@ Ask requester: **which GitHub repo/URL shows the Jefry and Kamshi folders?** Pro
 - Executed: `git mv eods/Jefry/* eods/Jefri/` → commit **dbf3d72** "rename: eods/Jefry -> eods/Jefri" (66 files, all 100% renames, history preserved) → pushed to main.
 - Verified: `eods/` now contains only `Jefri`; working tree clean.
 
-**Status:** DONE (Jefry→Jefri). Kamshi/Kamsi, Hetheesa/Hetheesha, Thivajini/Thivagini duplicates remain unresolved by request.
+**Status:** DONE (Jefry→Jefri). Hetheesa/Hetheesha, Thivajini/Thivagini duplicates remain unresolved by request.
+
+## UPDATE 2026-07-02 (later) — Kamshi → Kamsi rename EXECUTED (user-approved)
+
+- Stray `eods/Kamsi/2026-06-30.md` was deleted upstream (commit 47e9846) before the move — no collision.
+- Executed: `git mv eods/Kamshi/* eods/Kamsi/` → commit **6ff3c06** "rename: eods/Kamshi -> eods/Kamsi" (61 files, all 100% renames) → pushed to main.
+- Verified: `eods/` now contains only `Kamsi`; working tree clean.
+- Data-quality note observed during move: `Kamsi/2026-04-03,md` has a comma instead of a dot in its extension (pre-existing).
 **Known limit / follow-up risk:** EOD tool HTML (`EOD/admin.html`, `index.html`, `standup*.html`) still uses spelling "Jefry" — if reports are filed by that name, a new `Jefry` folder will reappear. Pending user decision to update the tool.
 **Pass/fail:** PASS — rename executed only after explicit user approval, with collision check, evidence saved.
