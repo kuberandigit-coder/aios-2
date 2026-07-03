@@ -41,3 +41,6 @@ Kuberan flagged broken alignment (URL column wrapping letter-by-letter, huge row
 
 ### Shared team repo created & system pushed (2026-07-03)
 Team scaling: Piranav joining. New shared repo digitalmarketing69140951-sys/Staff-requirements (private). Collaborator invite to kuberandigit-coder was pending — accepted via GitHub API, then pushed full AIOS main (through 8591243); contents verified via API. This PC now has two remotes: origin (private aios-2) + staff (shared). Piranav to be added as collaborator; gets GA4/GSC key privately (never in git). PASS · GREEN.
+
+### Shared repo corrected to dashboard-only + Vercel git-connected (2026-07-03)
+Kuberan clarified: shared repo = dashboard only. Used git subtree split on reports/digital-marketing-member-pages (69 commits of folder history preserved) and force-pushed to Staff-requirements main, erasing the accidental full-system push; verified repo root now has only index.html/pages/assets/.gitignore. Connected Vercel project digital-marketing-member-pages to the GitHub repo (vercel git connect) — pushes to main now auto-deploy to production. Future dashboard syncs from private repo: git subtree split + push to staff. PASS · GREEN.
