@@ -63,3 +63,6 @@ Approved and deployed dpl_7B5LMGtc7kmZerrb6hfaSoK4cqH2. Live verified: 4,793 row
 
 ### Kamsi Req 1 expanded to full store (2026-07-03)
 Per Kuberan: full catalog via read-only Shopify bulk export (22,699 records). 13,866 active SKUs · 4,115 slow-moving · 1.76M units in slow-movers. Category = product type (~250 values). Rebuilt, deployed, live verified. PASS · GREEN.
+
+### Index card for Kamsi upgraded to expander (2026-07-03)
+Kamsi card on index.html converted from "Pending" link-card to a Dilaksi-style expander with R1 button (Slow-Moving Product Visibility); expander JS generalised to handle both cards. Deployed and live verified (kamsi-card + R1 button present). PASS · GREEN.

@@ -54,11 +54,15 @@ div.card.expander.open .pagelist{display:block;}
       <div class="desc">Awaiting requirement</div>
       <span class="badge pending">Pending</span>
     </a>
-    <a class="card" href="pages/kamsi.html">
+    <div class="card expander" id="kamsi-card" tabindex="0">
+      <span class="chev">&#9662;</span>
       <div class="name">Kamsi</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
+      <div class="desc">1 page available — click to choose</div>
+      <span class="badge done">Completed / Available</span>
+      <div class="pagelist">
+        <a class="pagebtn" href="pages/kamsi-req1-slow-moving-products.html"><span class="no">R1</span> Slow-Moving Product Visibility — full store, 90-day sales vs stock</a>
+      </div>
+    </div>
     <a class="card" href="pages/mahima.html">
       <div class="name">Mahima</div>
       <div class="desc">Awaiting requirement</div>
@@ -116,8 +120,10 @@ div.card.expander.open .pagelist{display:block;}
 </div>
 <script>
 document.addEventListener("DOMContentLoaded",function(){
-  var c=document.getElementById("dilaksi-card");
-  if(c){c.addEventListener("click",function(e){ if(e.target.closest(".pagebtn"))return; c.classList.toggle("open");});}
+  ["dilaksi-card","kamsi-card"].forEach(function(id){
+    var c=document.getElementById(id);
+    if(c){c.addEventListener("click",function(e){ if(e.target.closest(".pagebtn"))return; c.classList.toggle("open");});}
+  });
 });
 </script>
 </body>
