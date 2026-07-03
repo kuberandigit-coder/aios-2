@@ -17,3 +17,9 @@ Built `pages/dilaksi-req3-pages-for-removal.html` (member-pages design: header w
 Live: https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req3-pages-for-removal.html
 
 **PASS/FAIL:** PASS
+
+---
+
+## Update — GSC connection investigated (2026-07-03)
+
+GSC not connected. Best method: reuse the GA4 service account (aios-ga4-reader@…). Live API test pinpointed the exact blocker: Search Console API disabled on Cloud project 1028134974687. Two owner actions documented (enable API via exact URL + add service-account email to ledsone.co.uk GSC property as Restricted). Ready test script: `reports/dilaksi/data/2026-07-03_req3-gsc-test-query.py` (5 Req 3 URLs, 12m, exact-page filter). No secrets exposed. AIOS set saved (…_dilaksi_req3_gsc_connection_*). PASS (investigation); AMBER pending owner actions.
