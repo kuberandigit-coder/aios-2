@@ -16,7 +16,13 @@
 | 2 | [2core-twisted](#2-2core-twisted) | 38 | 133 | £1,677.27 | ✅ Done |
 | 3 | [3core-round](#3-3core-round) | 36 | 96 | £1,658.99 | ✅ Done |
 | 4 | [3core-twisted](#4-3core-twisted) | 35 | 127 | £3,079.42 | ✅ Done |
-| 5 | _(next collection)_ | — | — | — | ⏳ Pending |
+| 5 | [dc-5v-transformer](#5-dc-5v-transformer) | 9 | 5 | £123.91 | ✅ Done |
+| 6 | [dc-24v-transformer](#6-dc-24v-transformer) | 23 | 29 | £1,510.62 | ✅ Done |
+| 7 | [slim-transformers](#7-slim-transformers) | 13 | 14 | £650.33 | ✅ Done |
+| 8 | [constant-current-transformer](#8-constant-current-transformer) | 20 | 40 | £573.05 | ✅ Done |
+| 9 | dc-12v-transformer | — | — | — | ⏳ Pending |
+| 10 | waterproof-transformers | — | — | — | ⏳ Pending |
+| 11 | constant-voltage-transformer | — | — | — | ⏳ Pending |
 
 ---
 

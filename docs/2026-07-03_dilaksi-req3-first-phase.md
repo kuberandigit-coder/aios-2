@@ -23,3 +23,9 @@ Live: https://digital-marketing-member-pages.vercel.app/pages/dilaksi-req3-pages
 ## Update — GSC connection investigated (2026-07-03)
 
 GSC not connected. Best method: reuse the GA4 service account (aios-ga4-reader@…). Live API test pinpointed the exact blocker: Search Console API disabled on Cloud project 1028134974687. Two owner actions documented (enable API via exact URL + add service-account email to ledsone.co.uk GSC property as Restricted). Ready test script: `reports/dilaksi/data/2026-07-03_req3-gsc-test-query.py` (5 Req 3 URLs, 12m, exact-page filter). No secrets exposed. AIOS set saved (…_dilaksi_req3_gsc_connection_*). PASS (investigation); AMBER pending owner actions.
+
+### GSC connected & impressions live (2026-07-03)
+Owner enabled the API + granted property access. Test query PASS: sc-domain:ledsone.co.uk visible (Restricted). Impressions 12m: wall-light 148,429 (87 clicks); other 4 URLs 0. Column filled, deployed dpl_6TSEbaN2CSAQQ9VMJtFnbv2KSGoP, live verified. Only Semrush backlinks remain.
+
+### Index card updated (2026-07-03)
+Added R3 button ("Pages for Removal — last 12 months") to the Dilaksi expander card on index.html, matching the R1/R2 buttons; card text now "3 pages available". Deployed dpl_354jB9QCuQLH4K8QoFSX2msUUBsF; live verified (index 200 with R3 link, req3 page 200, R1/R2 unaffected).

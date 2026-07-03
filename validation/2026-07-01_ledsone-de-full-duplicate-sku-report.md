@@ -14,4 +14,7 @@
 ## Status: PASS
 
 ## Next step
-Human review of `duplicate-risk/2026-07-01_ledsone-de-full-duplicate-sku-report.docx` to decide which duplicate/weaker listings should be merged, redirected, or archived.
+Human review of `duplicate-risk/2026-07-01_ledsone-de-full-duplicate-sku-report_v2.docx` to decide which duplicate/weaker listings should be merged, redirected, or archived.
+
+## Report layout revision (post-delivery)
+User flagged that the `#` and `All-time Orders` columns were clipped in the first version (table wider than the landscape page). Fixed by narrowing Handle/Product Title/Sales columns and widening `#`, bringing total column width to 10.0in within the 10.3in usable landscape area. Saved as `_v2.docx` because the original filename was locked open in Word at the time of the fix.

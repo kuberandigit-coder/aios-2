@@ -12,3 +12,9 @@ GSC is **not** currently connected. Best method confirmed: **reuse the existing 
 - **Evidence path:** `evidence/dilaksi/2026-07-03_dilaksi_req3_gsc_connection_evidence.md` · **Validation result:** PASS
 - **Status:** investigation complete · **Next step:** owner performs the 2 setup steps, then run the test script; on success fill the GSC Impressions column in the Req 3 page and redeploy (with approval)
 - **PASS/FAIL rule:** PASS if method+permissions+steps+test plan documented in AIOS without secrets. **PASS**
+
+---
+
+## Update — connection completed & data live (2026-07-03)
+
+Owner completed both setup steps. Test query succeeded: service account sees `sc-domain:ledsone.co.uk` (siteRestrictedUser). 12-month exact-page impressions pulled for all 5 Req 3 URLs: wall-light 148,429 impressions / 87 clicks; the four dead URLs 0. Results: `reports/dilaksi/data/2026-07-03_req3-gsc-impressions-12m.csv`. GSC Impressions column filled on the Req 3 page (both copies), connector chip + methodology footnote added, deployed `dpl_6TSEbaN2CSAQQ9VMJtFnbv2KSGoP`, live verified (200, values present, 0 blank impression cells). **RAG now GREEN.** Remaining gap: Referring Backlinks (Semrush) only.
