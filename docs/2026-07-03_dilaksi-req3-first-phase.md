@@ -66,3 +66,6 @@ Per Kuberan: full catalog via read-only Shopify bulk export (22,699 records). 13
 
 ### Index card for Kamsi upgraded to expander (2026-07-03)
 Kamsi card on index.html converted from "Pending" link-card to a Dilaksi-style expander with R1 button (Slow-Moving Product Visibility); expander JS generalised to handle both cards. Deployed and live verified (kamsi-card + R1 button present). PASS · GREEN.
+
+### Hetheesha card live + Vercel git-deploy root cause found (2026-07-03)
+Hetheesha index card upgraded to expander (Available badge + R1 button to Piranav's ledsone.fr top-selling report). Root cause of ALL hung git deploys today: Vercel deployment protection BLOCKS deployments whose git author isn't an authorized team member (readyState=BLOCKED via API) — not build settings (those were already correct: no framework/build command). Proof: identical push authored as digitalmarketing69140951@gmail.com deployed in 10s and went live. Fix for team: approve blocked deployments once per author (kuberandigit-coder, Piranav) in the Vercel dashboard, or disable git-author protection in Settings→Git. PASS · GREEN.
