@@ -15,3 +15,7 @@
 **Known Limitations:** page is static; data refresh requires rerunning the builder.
 **Next Steps:** Kuberan approval → deploy → live verification note appended here.
 **PASS/FAIL:** PASS (recommendation ready; deployment intentionally not performed)
+
+## Deployment record (2026-07-03)
+Kuberan approved ("deploy kamsi"). Deployed dpl_7B5LMGtc7kmZerrb6hfaSoK4cqH2 via CLI → https://digital-marketing-member-pages.vercel.app/pages/kamsi-req1-slow-moving-products.html
+Live verification: HTTP 200, 4,793 rows, title present; kamsi.html links R1; Dilaksi Req3 page unaffected (200). Status: LIVE · PASS.

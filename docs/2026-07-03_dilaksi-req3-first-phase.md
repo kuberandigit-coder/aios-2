@@ -57,3 +57,6 @@ Deploy problem: after `vercel git connect`, both git- and CLI-triggered builds h
 
 ### Kamsi Requirement 1 — Slow-Moving Product Visibility (2026-07-03)
 New member requirement delivered (undeployed, per approval rule). Duplicate check: none found; reused Dilaksi Req2 Shopify catalog asset. PG read-only discovery (order_transaction SHOPIFY 90d, inv_final_stock warehouses, listing_data seasonal scan) + Shopify connector (tags check, live variant verification 656/613 & 154/121). Result: 4,793 products, 1,388 Slow-Moving (<10 sold 90d & stock >100), 418,658 units in slow-movers. Page kamsi-req1-slow-moving-products.html in Dilaksi style: KPI cards, search, Status/Category/Seasonal filters, sortable, CSV export, responsive. Seasonal Tag = Not Available (promo tags rejected — nothing invented). Full AIOS set in new Kamsi folders. PASS · GREEN (deploy pending approval).
+
+### Kamsi Req 1 deployed (2026-07-03)
+Approved and deployed dpl_7B5LMGtc7kmZerrb6hfaSoK4cqH2. Live verified: 4,793 rows, kamsi.html linked, other member pages unaffected. Shared repo synced via subtree. PASS · GREEN.
