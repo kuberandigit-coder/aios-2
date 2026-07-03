@@ -29,3 +29,6 @@ Owner enabled the API + granted property access. Test query PASS: sc-domain:leds
 
 ### Index card updated (2026-07-03)
 Added R3 button ("Pages for Removal — last 12 months") to the Dilaksi expander card on index.html, matching the R1/R2 buttons; card text now "3 pages available". Deployed dpl_354jB9QCuQLH4K8QoFSX2msUUBsF; live verified (index 200 with R3 link, req3 page 200, R1/R2 unaffected).
+
+### Referring Backlinks filled via Semrush connector (2026-07-03, after account switch)
+New Claude account has the Semrush MCP connector. Fetched `backlinks_overview` (target_type=url) per Req 3 URL: wall-light 56 backlinks / 8 referring domains; the other 4 URLs "NOTHING FOUND" → shown as 0 (not in Semrush index). Both page copies updated, raw CSV saved (`reports/dilaksi/data/2026-07-03_req3-semrush-backlinks.csv`), AIOS evidence/validation/closure saved. Req 3 data columns now 100% complete; Recommended Action still intentionally blank. Deploy to Vercel pending Kuberan's approval. PASS · GREEN.
