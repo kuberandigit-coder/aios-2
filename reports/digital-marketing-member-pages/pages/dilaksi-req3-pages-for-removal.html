@@ -27,21 +27,24 @@
   .tablebox{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
   .tablebox .tbar{padding:14px 20px; border-bottom:1px solid var(--line); font-size:13px; color:var(--muted);}
   .scroll{overflow-x:auto;}
-  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1080px;}
-  thead th{background:#f0f3f8; text-align:left; padding:11px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#42506a; border-bottom:2px solid var(--line); white-space:nowrap;}
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1180px; table-layout:fixed;}
+  col.c-url{width:19%;} col.c-ga4{width:13%;} col.c-bl{width:13%;} col.c-nav{width:19%;} col.c-live{width:16%;} col.c-gsc{width:13%;} col.c-act{width:7%;}
+  thead th{background:#f0f3f8; text-align:left; padding:12px 16px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#42506a; border-bottom:2px solid var(--line);}
   thead th.num, td.num{text-align:right;}
-  tbody td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody td{padding:14px 16px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45;}
   tbody tr:nth-child(even){background:#fafbfd;}
   tbody tr:hover{background:var(--accent-soft);}
-  td.lp{max-width:340px; word-break:break-all; font-weight:500;}
+  td.lp{font-weight:600; overflow-wrap:break-word; word-break:normal;}
+  td.lp .path{font-family:Consolas,"Courier New",monospace; font-size:12.5px; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:2px 8px; display:inline-block; max-width:100%; overflow-wrap:anywhere;}
   td.na{color:var(--na); font-style:italic;}
   .pill{display:inline-block; border-radius:999px; padding:3px 11px; font-size:11.5px; font-weight:700; white-space:nowrap; color:#fff;}
   .pill.yes{background:#2e7d32;}
   .pill.no{background:#c62828;}
   .pill.pend{background:#9aa3b2;}
-  .sess{font-weight:700;}
-  .sess.zero{color:var(--na); font-weight:500;}
-  .why{font-size:11.5px; color:var(--muted); margin-top:4px; line-height:1.5;}
+  .sess{font-weight:700; font-size:15px;}
+  .sess.zero{color:var(--na); font-weight:600;}
+  .why{font-size:11.5px; color:var(--muted); margin-top:5px; line-height:1.55; overflow-wrap:break-word;}
+  .src{display:block; font-size:10.5px; color:#8a93a5; margin-top:6px; text-transform:uppercase; letter-spacing:.4px; font-weight:600;}
   .footnotes{margin-top:18px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 24px; font-size:12.5px; color:var(--muted); line-height:1.65;}
   .footnotes h3{font-size:13px; color:var(--ink); margin-bottom:8px;}
   .footnotes strong{color:var(--ink);}
@@ -73,63 +76,120 @@
     <div class="tbar">All 5 Requirement 3 URLs · GA4 = organic-search landing sessions, last 12 months · Live status verified in Shopify Admin + HTTP check on 2026-07-03</div>
     <div class="scroll">
     <table>
+      <colgroup>
+        <col class="c-url"><col class="c-ga4"><col class="c-bl"><col class="c-nav"><col class="c-live"><col class="c-gsc"><col class="c-act">
+      </colgroup>
       <thead>
         <tr>
           <th>URL</th>
-          <th class="num">GA4 Sessions (12m, organic)</th>
-          <th>Referring Backlinks</th>
-          <th>Linked in Nav / Footer / Sitemap</th>
+          <th class="num">GA4 Sessions<br>(12m, organic)</th>
+          <th>Referring<br>Backlinks</th>
+          <th>Linked in Nav /<br>Footer / Sitemap</th>
           <th>Currently Live</th>
-          <th class="num">GSC Impressions</th>
-          <th>Recommended Action</th>
+          <th class="num">GSC Impressions<br>(12m)</th>
+          <th>Recommended<br>Action</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="lp">/collections/wall-light
-            <div class="why">Live collection "Wall Lights &amp; Sconces" — 206 sessions on the exact URL + 31 on paginated ?page= variants</div></td>
-          <td class="num"><span class="sess">237</span></td>
-          <td><span class="sess">56</span><div class="why">from 8 referring domains (Semrush)</div></td>
-          <td><span class="pill yes">Yes</span><div class="why">Header navigation ✓ · Footer ✗ · Sitemap ✓ (auto-generated, but header link is deliberate)</div></td>
-          <td><span class="pill yes">Yes</span><div class="why">HTTP 200 · Shopify collection exists (gid 159869927520)</div></td>
-          <td class="num"><span class="sess">148,429</span><div class="why">87 clicks (12m)</div></td>
-          <td class="na">—</td>
+          <td class="lp"><span class="path">/collections/wall-light</span>
+            <div class="why">Live collection "Wall Lights &amp; Sconces"</div></td>
+          <td class="num"><span class="sess">237</span>
+            <div class="why">206 sessions on the exact URL + 31 on paginated ?page= variants · Organic Search channel only</div>
+            <span class="src">GA4 Data API · property 408110563</span></td>
+          <td><span class="sess">56</span>
+            <div class="why">total backlinks from 8 referring domains, exact-URL match</div>
+            <span class="src">Semrush Backlink Analytics · 2026-07-03</span></td>
+          <td><span class="pill yes">Yes</span>
+            <div class="why">Header navigation ✓ · Footer ✗ · Sitemap ✓ (sitemap is auto-generated, but the header link is deliberate)</div>
+            <span class="src">Live HTML + sitemap chain · 2026-07-03</span></td>
+          <td><span class="pill yes">Yes</span>
+            <div class="why">HTTP 200 · Shopify collection exists (gid 159869927520)</div>
+            <span class="src">HTTP check + Shopify Admin GraphQL</span></td>
+          <td class="num"><span class="sess">148,429</span>
+            <div class="why">87 clicks in the same 12-month window, exact-page filter</div>
+            <span class="src">GSC Search Analytics API</span></td>
+          <td class="na">—<div class="why">deferred to next phase per requirement</div></td>
         </tr>
         <tr>
-          <td class="lp">/pages/summer-sale-2023</td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td><span class="sess zero">0</span><div class="why">not in Semrush index</div></td>
-          <td><span class="pill no">No</span><div class="why">Not in header, footer, or any sitemap</div></td>
-          <td><span class="pill no">No — 404</span><div class="why">No Shopify page with this handle · no URL redirect configured</div></td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td class="na">—</td>
+          <td class="lp"><span class="path">/pages/summer-sale-2023</span>
+            <div class="why">Old campaign page — no longer exists in Shopify</div></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">no organic landing sessions in 12 months</div>
+            <span class="src">GA4 Data API · property 408110563</span></td>
+          <td><span class="sess zero">0</span>
+            <div class="why">no backlinks indexed for this exact URL ("NOTHING FOUND")</div>
+            <span class="src">Semrush Backlink Analytics · 2026-07-03</span></td>
+          <td><span class="pill no">No</span>
+            <div class="why">Not in header, footer, or any sitemap file</div>
+            <span class="src">Live HTML + sitemap chain · 2026-07-03</span></td>
+          <td><span class="pill no">No — 404</span>
+            <div class="why">No Shopify page with this handle · no URL redirect configured</div>
+            <span class="src">HTTP check + Shopify Admin GraphQL</span></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">0 impressions · 0 clicks (12m, exact-page filter)</div>
+            <span class="src">GSC Search Analytics API</span></td>
+          <td class="na">—<div class="why">deferred to next phase per requirement</div></td>
         </tr>
         <tr>
-          <td class="lp">/products/discontinued-lamp-x</td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td><span class="sess zero">0</span><div class="why">not in Semrush index</div></td>
-          <td><span class="pill no">No</span><div class="why">Not in header, footer, or any sitemap</div></td>
-          <td><span class="pill no">No — 404</span><div class="why">No Shopify product with this handle (checked active, draft and archived) · no redirect</div></td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td class="na">—</td>
+          <td class="lp"><span class="path">/products/discontinued-lamp-x</span>
+            <div class="why">Discontinued product — removed from Shopify</div></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">no organic landing sessions in 12 months</div>
+            <span class="src">GA4 Data API · property 408110563</span></td>
+          <td><span class="sess zero">0</span>
+            <div class="why">no backlinks indexed for this exact URL ("NOTHING FOUND")</div>
+            <span class="src">Semrush Backlink Analytics · 2026-07-03</span></td>
+          <td><span class="pill no">No</span>
+            <div class="why">Not in header, footer, or any sitemap file</div>
+            <span class="src">Live HTML + sitemap chain · 2026-07-03</span></td>
+          <td><span class="pill no">No — 404</span>
+            <div class="why">No Shopify product with this handle (active, draft and archived all checked) · no redirect</div>
+            <span class="src">HTTP check + Shopify Admin GraphQL</span></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">0 impressions · 0 clicks (12m, exact-page filter)</div>
+            <span class="src">GSC Search Analytics API</span></td>
+          <td class="na">—<div class="why">deferred to next phase per requirement</div></td>
         </tr>
         <tr>
-          <td class="lp">/pages/old-landing-black-friday</td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td><span class="sess zero">0</span><div class="why">not in Semrush index</div></td>
-          <td><span class="pill no">No</span><div class="why">Not in header, footer, or any sitemap</div></td>
-          <td><span class="pill no">No — 404</span><div class="why">No Shopify page with this handle · no redirect</div></td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td class="na">—</td>
+          <td class="lp"><span class="path">/pages/old-landing-black-friday</span>
+            <div class="why">Old campaign landing page — no longer exists in Shopify</div></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">no organic landing sessions in 12 months</div>
+            <span class="src">GA4 Data API · property 408110563</span></td>
+          <td><span class="sess zero">0</span>
+            <div class="why">no backlinks indexed for this exact URL ("NOTHING FOUND")</div>
+            <span class="src">Semrush Backlink Analytics · 2026-07-03</span></td>
+          <td><span class="pill no">No</span>
+            <div class="why">Not in header, footer, or any sitemap file</div>
+            <span class="src">Live HTML + sitemap chain · 2026-07-03</span></td>
+          <td><span class="pill no">No — 404</span>
+            <div class="why">No Shopify page with this handle · no URL redirect configured</div>
+            <span class="src">HTTP check + Shopify Admin GraphQL</span></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">0 impressions · 0 clicks (12m, exact-page filter)</div>
+            <span class="src">GSC Search Analytics API</span></td>
+          <td class="na">—<div class="why">deferred to next phase per requirement</div></td>
         </tr>
         <tr>
-          <td class="lp">/products/spider-light-v1-old</td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td><span class="sess zero">0</span><div class="why">not in Semrush index</div></td>
-          <td><span class="pill no">No</span><div class="why">Not in header, footer, or any sitemap</div></td>
-          <td><span class="pill no">No — 404</span><div class="why">No Shopify product with this handle (checked active, draft and archived) · no redirect</div></td>
-          <td class="num"><span class="sess zero">0</span></td>
-          <td class="na">—</td>
+          <td class="lp"><span class="path">/products/spider-light-v1-old</span>
+            <div class="why">Superseded product version — removed from Shopify</div></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">no organic landing sessions in 12 months</div>
+            <span class="src">GA4 Data API · property 408110563</span></td>
+          <td><span class="sess zero">0</span>
+            <div class="why">no backlinks indexed for this exact URL ("NOTHING FOUND")</div>
+            <span class="src">Semrush Backlink Analytics · 2026-07-03</span></td>
+          <td><span class="pill no">No</span>
+            <div class="why">Not in header, footer, or any sitemap file</div>
+            <span class="src">Live HTML + sitemap chain · 2026-07-03</span></td>
+          <td><span class="pill no">No — 404</span>
+            <div class="why">No Shopify product with this handle (active, draft and archived all checked) · no redirect</div>
+            <span class="src">HTTP check + Shopify Admin GraphQL</span></td>
+          <td class="num"><span class="sess zero">0</span>
+            <div class="why">0 impressions · 0 clicks (12m, exact-page filter)</div>
+            <span class="src">GSC Search Analytics API</span></td>
+          <td class="na">—<div class="why">deferred to next phase per requirement</div></td>
         </tr>
       </tbody>
     </table>

@@ -35,3 +35,6 @@ New Claude account has the Semrush MCP connector. Fetched `backlinks_overview` (
 
 ### Backlinks column deployed (2026-07-03)
 Kuberan approved deploy. dpl_A8XeA6KCD1S5RWQJKiSNcm9tQhMk → https://digital-marketing-member-pages.vercel.app — live verified: HTTP 200, no "Pending — Semrush" markers, wall-light 56 backlinks / 8 domains visible. Req 3 fully live. PASS · GREEN.
+
+### Table layout & detail redesign (2026-07-03)
+Kuberan flagged broken alignment (URL column wrapping letter-by-letter, huge row heights). Fixed: table-layout:fixed with colgroup widths, monospace URL chips with proper word wrapping, larger value numerals, and a source label under every cell (GA4 property / Semrush / GSC / Shopify+HTTP / live-HTML check with fetch dates). Every cell now shows value + explanation + data source; zero rows get explicit "0 impressions · 0 clicks" and "NOTHING FOUND" notes. Both copies synced. Deployed dpl_Hg9zt2yBqXDj3Puz1JZxrCdowMit, live verified HTTP 200 with all new markers present. PASS · GREEN.
