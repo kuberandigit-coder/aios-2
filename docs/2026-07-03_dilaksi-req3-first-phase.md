@@ -72,3 +72,6 @@ Hetheesha index card upgraded to expander (Available badge + R1 button to Pirana
 
 ### Kamsi Requirement 2 — Low CTR Page Identification (2026-07-03)
 Delivered undeployed (approval rule). GSC API June 2026, sc-domain:ledsone.co.uk, collections+blogs only (products excluded): 1,385 pages (1,148 coll / 237 blog), 1,324 Low CTR (<2%), avg CTR 0.33%, 578k impressions, 1,894 clicks. Keyword = top-impressions query per page. PG discovery: google_search_console mirror found, cross-check exact match (70/26,370) — API kept as single truth. Page kamsi-req2-low-ctr-pages.html (Dilaksi style, 5 KPIs, Flag/Type/CTR-range filters, sort, CSV, pagination). Hub + index extended to 2 reports. Full AIOS set saved. Also removed stray untracked staffreq-test clone from dashboard folder. PASS · GREEN (deploy pending approval).
+
+### Kamsi req2 deployed + req1 seasonal column removed (2026-07-03)
+Kuberan approved. Req1 Seasonal Tag column removed (builder + page, filter and CSV updated). Deployed via authorized-author push: index R2 button, kamsi.html 2 reports, req2 low-CTR page, req1 without seasonal — all live verified in ~10s. PASS · GREEN.

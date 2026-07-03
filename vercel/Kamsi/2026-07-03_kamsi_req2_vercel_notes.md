@@ -14,3 +14,6 @@
 **Known Limitations:** static page; monthly refresh via scripts.
 **Next Steps:** Kuberan approval → deploy → live verification appended here.
 **PASS/FAIL:** PASS (recommendation ready; deployment intentionally not performed)
+
+## Deployment record (2026-07-03)
+Kuberan approved ("deploy everything"). Pushed via authorized-author git (auto-deploy ~10s). Live verified: index Kamsi card shows R2 button; req2 page live (Low CTR Page Identification); req1 Seasonal Tag column removed (0 occurrences live); kamsi.html hub shows 2 reports. Status: LIVE · PASS.
