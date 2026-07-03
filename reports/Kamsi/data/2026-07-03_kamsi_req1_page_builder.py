@@ -108,7 +108,7 @@ page = f'''<!DOCTYPE html>
   .tbar button.primary{{background:var(--accent); color:#fff; border-color:var(--accent);}}
   .scroll{{overflow-x:auto;}}
   table{{width:100%; border-collapse:collapse; font-size:13px; min-width:1100px; table-layout:fixed;}}
-  col.c-sku{{width:11%;}} col.c-url{{width:26%;}} col.c-cat{{width:11%;}} col.c-units{{width:9%;}} col.c-stock{{width:9%;}} col.c-last{{width:10%;}} col.c-seas{{width:10%;}} col.c-status{{width:11%;}}
+  col.c-sku{{width:12%;}} col.c-url{{width:31%;}} col.c-cat{{width:13%;}} col.c-units{{width:9%;}} col.c-stock{{width:9%;}} col.c-last{{width:11%;}} col.c-status{{width:11%;}}
   thead th{{background:#f0f3f8; text-align:left; padding:12px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#42506a; border-bottom:2px solid var(--line); cursor:pointer; user-select:none;}}
   thead th.num, td.num{{text-align:right;}}
   tbody td{{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45; overflow-wrap:break-word;}}
@@ -160,14 +160,12 @@ page = f'''<!DOCTYPE html>
         <option value="">All</option>
 {cat_opts}
       </select></label>
-      <label>Seasonal Tag <select id="f_seas" onchange="flt()">
-        <option value="">All</option><option value="Not Available">Not Available</option></select></label>
       <button onclick="rst()">Reset filters</button>
       <button class="primary" onclick="exp()">Export CSV</button>
     </div>
     <div class="scroll">
     <table id="t">
-      <colgroup><col class="c-sku"><col class="c-url"><col class="c-cat"><col class="c-units"><col class="c-stock"><col class="c-last"><col class="c-seas"><col class="c-status"></colgroup>
+      <colgroup><col class="c-sku"><col class="c-url"><col class="c-cat"><col class="c-units"><col class="c-stock"><col class="c-last"><col class="c-status"></colgroup>
       <thead>
         <tr>
           <th onclick="srt(0,false)">SKU</th>
@@ -176,8 +174,7 @@ page = f'''<!DOCTYPE html>
           <th class="num" onclick="srt(3,true)">Units Sold (90d)</th>
           <th class="num" onclick="srt(4,true)">Current Stock</th>
           <th onclick="srt(5,false)">Last Order Date</th>
-          <th onclick="srt(6,false)">Seasonal Tag</th>
-          <th onclick="srt(7,false)">Status</th>
+          <th onclick="srt(6,false)">Status</th>
         </tr>
       </thead>
       <tbody id="tb"></tbody>
@@ -202,7 +199,7 @@ page = f'''<!DOCTYPE html>
     <strong>Units Sold (90d) &amp; Last Order Date:</strong> Shopify-channel order lines from the company PostgreSQL order mirror (public.order_transaction, source SHOPIFY, cancelled orders excluded), window {WINDOW}, read-only. SKUs with no Shopify order in the window show 0 and "—".<br>
     <strong>Current Stock:</strong> company inventory system (PostgreSQL public.inv_final_stock), stock summed across all warehouses, read-only, snapshot {GEN}. Cross-verified against the live Shopify Admin on {GEN}: Shopify's sellable quantity runs slightly lower than the warehouse total (samples: 613 vs 656, 121 vs 154) because Shopify shows channel-allocated stock — the warehouse total is used here as the true "current stock". {fmt(n_nostock)} SKUs not present in the inventory system show "—" and are never classified Slow-Moving (stock unknown ≠ stock &gt; 100).<br>
     <strong>Status rule (verbatim from requirement):</strong> Units Sold (90d) &lt; 10 AND Current Stock &gt; 100 → <span class="pill slow">Slow-Moving</span>, otherwise <span class="pill act">Active</span>.<br>
-    <strong>Seasonal Tag:</strong> "Not Available" — Shopify product tags were inspected via the connector and contain only promotional campaign tags (e.g. "xmas", "Christmas Biggest Sale" on non-seasonal items like ceiling hooks), which do not reliably indicate product seasonality; no seasonal metafield/product type exists. Per requirement, no seasonal tags were invented.<br>
+    <strong>Seasonal Tag:</strong> column removed on Kuberan's instruction (2026-07-03) — no reliable seasonal field exists in Shopify (tags are promotional campaign labels).<br>
     <strong>Data files:</strong> <code>reports/Kamsi/data/2026-07-03_kamsi_req1_*.csv</code> · Builder: <code>2026-07-03_kamsi_req1_page_builder.py</code> (rerun to regenerate).
   </div>
 
@@ -216,22 +213,22 @@ function nfmt(n){{return n.toLocaleString('en-GB');}}
 function maxpg(){{var ps=+document.getElementById('psize').value; return Math.max(1, Math.ceil(F.length/ps));}}
 function flt(){{
   var q=document.getElementById('q').value.toLowerCase();
-  var fs=document.getElementById('f_status').value, fc=document.getElementById('f_cat').value, fz=document.getElementById('f_seas').value;
+  var fs=document.getElementById('f_status').value, fc=document.getElementById('f_cat').value;
   F=D.filter(function(r){{
     if(q && r[0].toLowerCase().indexOf(q)<0 && r[1].toLowerCase().indexOf(q)<0 && r[2].toLowerCase().indexOf(q)<0) return false;
     if(fs && (r[7]===1?'Slow-Moving':'Active')!==fs) return false;
     if(fc && r[3]!==fc) return false;
-    return true; // seasonal is "Not Available" for all rows, so fz never excludes
+    return true;
   }});
   if(sc>=0) doSort();
   pg=1; render();
 }}
 function rst(){{
-  ['f_status','f_cat','f_seas'].forEach(function(i){{document.getElementById(i).value='';}});
+  ['f_status','f_cat'].forEach(function(i){{document.getElementById(i).value='';}});
   document.getElementById('q').value=''; sc=-1; F=D.slice(); pg=1; render();
 }}
 var numeric={{3:4,4:5}}; // header col -> data index for numeric sorts
-var textIdx={{0:0,1:1,2:3,5:6,7:7}};
+var textIdx={{0:0,1:1,2:3,5:6}};
 function srt(i,num){{ sc=i; sd=!sd; doSort(); pg=1; render(); }}
 function doSort(){{
   var i=sc;
@@ -239,7 +236,7 @@ function doSort(){{
     var r;
     if(i===3) r=a[4]-b[4];
     else if(i===4) r=a[5]-b[5];
-    else if(i===7) r=a[7]-b[7];
+    else if(i===6) r=a[7]-b[7];
     else if(i===6) r=0;
     else {{var k=textIdx[i]; r=String(a[k]).localeCompare(String(b[k]));}}
     return sd? -r : r;
@@ -256,17 +253,17 @@ function render(){{
     var pill = r[7]===1 ? '<span class="pill slow">Slow-Moving</span>' : '<span class="pill act">Active</span>';
     out.push('<tr><td class="skucell">'+esc(r[0])+'</td><td class="lp">'+url+'<div class="why">'+esc(r[2])+'</div></td><td>'+esc(r[3])+'</td>'+
       '<td class="num"><span class="sess'+(r[4]===0?' zero':'')+'">'+nfmt(r[4])+'</span></td><td class="num">'+stock+'</td><td>'+esc(r[6])+'</td>'+
-      '<td class="na">Not Available</td><td>'+pill+'</td></tr>');
+      '<td>'+pill+'</td></tr>');
   }}
   document.getElementById('tb').innerHTML=out.join('');
   document.getElementById('cnt').textContent = F.length===D.length ? 'All '+nfmt(D.length)+' products' : 'Showing '+nfmt(F.length)+' of '+nfmt(D.length)+' products';
   document.getElementById('pinfo').textContent = F.length ? ('Rows '+nfmt(s+1)+'-'+nfmt(Math.min(s+ps,F.length))+' of '+nfmt(F.length)+' | page '+pg+' / '+maxpg()) : 'No rows match';
 }}
 function exp(){{
-  var hdr=['SKU','Page URL','Category','Units Sold (90d)','Current Stock','Last Order Date','Seasonal Tag','Status'];
+  var hdr=['SKU','Page URL','Category','Units Sold (90d)','Current Stock','Last Order Date','Status'];
   var lines=[hdr.join(',')];
   F.forEach(function(r){{
-    var vals=[r[0], r[1]?'https://ledsone.co.uk/products/'+r[1]:'', r[3], r[4], (r[5]<0?'':r[5]), r[6], 'Not Available', (r[7]===1?'Slow-Moving':'Active')];
+    var vals=[r[0], r[1]?'https://ledsone.co.uk/products/'+r[1]:'', r[3], r[4], (r[5]<0?'':r[5]), r[6], (r[7]===1?'Slow-Moving':'Active')];
     lines.push(vals.map(function(v){{return '"'+String(v).replace(/"/g,'""')+'"';}}).join(','));
   }});
   var blob=new Blob([lines.join(String.fromCharCode(10))],{{type:'text/csv'}});
