@@ -65,25 +65,11 @@ cats = sorted(set(r["category"] for r in rows))
 
 def fmt(n): return f"{n:,}"
 
-body = []
-for r in rows:
-    url = f"https://ledsone.co.uk/products/{r['handle']}" if r["handle"] else ""
-    urlcell = (f'<a class="path" href="{url}" target="_blank" rel="noopener">/products/{r["handle"]}</a>'
-               if r["handle"] else '<span class="na">—</span>')
-    scls = "pill slow" if r["status"] == "Slow-Moving" else "pill act"
-    stock_disp = fmt(r["stock"]) if isinstance(r["stock"], int) else "—"
-    stock_note = "" if r["stock_known"] else '<div class="why">SKU not found in inventory system</div>'
-    u_cls = "sess zero" if r["units"] == 0 else "sess"
-    body.append(f'''        <tr data-status="{r["status"]}" data-cat="{r["category"]}" data-seas="{r["seasonal"]}">
-          <td class="skucell">{html.escape(r["sku"])}</td>
-          <td class="lp">{urlcell}<div class="why">{html.escape(r["title"][:90])}</div></td>
-          <td>{html.escape(r["category"])}</td>
-          <td class="num"><span class="{u_cls}">{fmt(r["units"])}</span></td>
-          <td class="num"><span class="sess">{stock_disp}</span>{stock_note}</td>
-          <td>{r["last_order"]}</td>
-          <td class="na">{r["seasonal"]}</td>
-          <td><span class="{scls}">{r["status"]}</span></td>
-        </tr>''')
+# Compact data embed: [sku, handle, title, category, units, stock(-1=unknown), last_order, slow(0/1)]
+data_rows = [[r["sku"], r["handle"], r["title"][:90], r["category"], r["units"],
+              (r["stock"] if isinstance(r["stock"], int) else -1), r["last_order"],
+              1 if r["status"] == "Slow-Moving" else 0] for r in rows]
+DATA_JSON = json.dumps(data_rows, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
 
 cat_opts = "\n".join(f'        <option value="{html.escape(c)}">{html.escape(c)}</option>' for c in cats)
 
@@ -194,10 +180,19 @@ page = f'''<!DOCTYPE html>
           <th onclick="srt(7,false)">Status</th>
         </tr>
       </thead>
-      <tbody>
-{chr(10).join(body)}
-      </tbody>
+      <tbody id="tb"></tbody>
     </table>
+    </div>
+    <div class="tbar" style="border-top:1px solid var(--line); border-bottom:0; justify-content:space-between;">
+      <span id="pinfo"></span>
+      <span style="display:flex; gap:8px; align-items:center;">
+        <label>Rows <select id="psize" onchange="pg=1;render()">
+          <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+        <button onclick="pg=1;render()">&laquo;</button>
+        <button onclick="if(pg>1){{pg--;render()}}">&lsaquo; Prev</button>
+        <button onclick="if(pg<maxpg()){{pg++;render()}}">Next &rsaquo;</button>
+        <button onclick="pg=maxpg();render()">&raquo;</button>
+      </span>
     </div>
   </div>
 
@@ -212,52 +207,73 @@ page = f'''<!DOCTYPE html>
   </div>
 
 </div>
+<script id="d" type="application/json">{DATA_JSON}</script>
 <script>
-function vis(){{return [].slice.call(document.querySelectorAll('#t tbody tr')).filter(function(tr){{return tr.style.display!=='none';}});}}
+var D=JSON.parse(document.getElementById('d').textContent); // [sku,handle,title,cat,units,stock(-1 unknown),last,slow]
+var F=D.slice(), pg=1, sc=-1, sd=false;
+function esc(s){{return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}}
+function nfmt(n){{return n.toLocaleString('en-GB');}}
+function maxpg(){{var ps=+document.getElementById('psize').value; return Math.max(1, Math.ceil(F.length/ps));}}
 function flt(){{
   var q=document.getElementById('q').value.toLowerCase();
   var fs=document.getElementById('f_status').value, fc=document.getElementById('f_cat').value, fz=document.getElementById('f_seas').value;
-  var shown=0, total=0;
-  document.querySelectorAll('#t tbody tr').forEach(function(tr){{
-    total++;
-    var ok = tr.cells[0].innerText.toLowerCase().indexOf(q)>-1 || tr.cells[1].innerText.toLowerCase().indexOf(q)>-1;
-    if(ok && fs) ok = tr.dataset.status===fs;
-    if(ok && fc) ok = tr.dataset.cat===fc;
-    if(ok && fz) ok = tr.dataset.seas===fz;
-    tr.style.display = ok ? '' : 'none';
-    if(ok) shown++;
+  F=D.filter(function(r){{
+    if(q && r[0].toLowerCase().indexOf(q)<0 && r[1].toLowerCase().indexOf(q)<0 && r[2].toLowerCase().indexOf(q)<0) return false;
+    if(fs && (r[7]===1?'Slow-Moving':'Active')!==fs) return false;
+    if(fc && r[3]!==fc) return false;
+    return true; // seasonal is "Not Available" for all rows, so fz never excludes
   }});
-  document.getElementById('cnt').textContent = shown===total ? 'All '+total.toLocaleString()+' products' : 'Showing '+shown.toLocaleString()+' of '+total.toLocaleString()+' products';
+  if(sc>=0) doSort();
+  pg=1; render();
 }}
 function rst(){{
   ['f_status','f_cat','f_seas'].forEach(function(i){{document.getElementById(i).value='';}});
-  document.getElementById('q').value=''; flt();
+  document.getElementById('q').value=''; sc=-1; F=D.slice(); pg=1; render();
 }}
-var dir={{}};
-function srt(i,num){{
-  var tb=document.querySelector('#t tbody'), rows=[].slice.call(tb.rows);
-  dir[i]=!dir[i];
-  rows.sort(function(a,b){{
-    var x=a.cells[i].innerText.trim(), y=b.cells[i].innerText.trim();
-    if(num){{x=parseFloat(x.replace(/,/g,''))||0; y=parseFloat(y.replace(/,/g,''))||0; return dir[i]?y-x:x-y;}}
-    return dir[i]?y.localeCompare(x):x.localeCompare(y);
+var numeric={{3:4,4:5}}; // header col -> data index for numeric sorts
+var textIdx={{0:0,1:1,2:3,5:6,7:7}};
+function srt(i,num){{ sc=i; sd=!sd; doSort(); pg=1; render(); }}
+function doSort(){{
+  var i=sc;
+  F.sort(function(a,b){{
+    var r;
+    if(i===3) r=a[4]-b[4];
+    else if(i===4) r=a[5]-b[5];
+    else if(i===7) r=a[7]-b[7];
+    else if(i===6) r=0;
+    else {{var k=textIdx[i]; r=String(a[k]).localeCompare(String(b[k]));}}
+    return sd? -r : r;
   }});
-  rows.forEach(function(r){{tb.appendChild(r);}});
+}}
+function render(){{
+  var ps=+document.getElementById('psize').value;
+  if(pg>maxpg()) pg=maxpg();
+  var s=(pg-1)*ps, rows=F.slice(s, s+ps), out=[];
+  for(var i=0;i<rows.length;i++){{
+    var r=rows[i];
+    var url = r[1] ? '<a class="path" href="https://ledsone.co.uk/products/'+esc(r[1])+'" target="_blank" rel="noopener">/products/'+esc(r[1])+'</a>' : '<span class="na">&#8212;</span>';
+    var stock = r[5]<0 ? '<span class="sess">&#8212;</span><div class="why">SKU not found in inventory system</div>' : '<span class="sess">'+nfmt(r[5])+'</span>';
+    var pill = r[7]===1 ? '<span class="pill slow">Slow-Moving</span>' : '<span class="pill act">Active</span>';
+    out.push('<tr><td class="skucell">'+esc(r[0])+'</td><td class="lp">'+url+'<div class="why">'+esc(r[2])+'</div></td><td>'+esc(r[3])+'</td>'+
+      '<td class="num"><span class="sess'+(r[4]===0?' zero':'')+'">'+nfmt(r[4])+'</span></td><td class="num">'+stock+'</td><td>'+esc(r[6])+'</td>'+
+      '<td class="na">Not Available</td><td>'+pill+'</td></tr>');
+  }}
+  document.getElementById('tb').innerHTML=out.join('');
+  document.getElementById('cnt').textContent = F.length===D.length ? 'All '+nfmt(D.length)+' products' : 'Showing '+nfmt(F.length)+' of '+nfmt(D.length)+' products';
+  document.getElementById('pinfo').textContent = F.length ? ('Rows '+nfmt(s+1)+'-'+nfmt(Math.min(s+ps,F.length))+' of '+nfmt(F.length)+' | page '+pg+' / '+maxpg()) : 'No rows match';
 }}
 function exp(){{
   var hdr=['SKU','Page URL','Category','Units Sold (90d)','Current Stock','Last Order Date','Seasonal Tag','Status'];
   var lines=[hdr.join(',')];
-  vis().forEach(function(tr){{
-    var url=tr.cells[1].querySelector('a'); url=url?url.href:'';
-    var vals=[tr.cells[0].innerText.trim(), url, tr.dataset.cat,
-      tr.cells[3].innerText.trim().replace(/,/g,''), tr.cells[4].innerText.trim().split('\\n')[0].replace(/,/g,''),
-      tr.cells[5].innerText.trim(), tr.dataset.seas, tr.dataset.status];
+  F.forEach(function(r){{
+    var vals=[r[0], r[1]?'https://ledsone.co.uk/products/'+r[1]:'', r[3], r[4], (r[5]<0?'':r[5]), r[6], 'Not Available', (r[7]===1?'Slow-Moving':'Active')];
     lines.push(vals.map(function(v){{return '"'+String(v).replace(/"/g,'""')+'"';}}).join(','));
   }});
-  var blob=new Blob([lines.join('\\n')],{{type:'text/csv'}});
+  var blob=new Blob([lines.join(String.fromCharCode(10))],{{type:'text/csv'}});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='kamsi-slow-moving-products-{GEN}.csv'; a.click();
 }}
+render();
 </script>
 </body>
 </html>
