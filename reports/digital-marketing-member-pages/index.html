@@ -39,11 +39,15 @@ div.card.expander.open .pagelist{display:block;}
         <a class="pagebtn" href="pages/dilaksi-req3-pages-for-removal.html"><span class="no">R3</span> Pages for Removal — last 12 months</a>
       </div>
     </div>
-    <a class="card" href="pages/hetheesha.html">
+    <div class="card expander" id="hetheesha-card" tabindex="0">
+      <span class="chev">&#9662;</span>
       <div class="name">Hetheesha</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
+      <div class="desc">1 page available — click to choose</div>
+      <span class="badge done">Completed / Available</span>
+      <div class="pagelist">
+        <a class="pagebtn" href="pages/hetheesha.html"><span class="no">R1</span> Top-Selling Products SEO Report — ledsone.fr</a>
+      </div>
+    </div>
     <a class="card" href="pages/jakshan.html">
       <div class="name">Jakshan</div>
       <div class="desc">Awaiting requirement</div>
@@ -120,7 +124,7 @@ div.card.expander.open .pagelist{display:block;}
 </div>
 <script>
 document.addEventListener("DOMContentLoaded",function(){
-  ["dilaksi-card","kamsi-card"].forEach(function(id){
+  ["dilaksi-card","kamsi-card","hetheesha-card"].forEach(function(id){
     var c=document.getElementById(id);
     if(c){c.addEventListener("click",function(e){ if(e.target.closest(".pagebtn"))return; c.classList.toggle("open");});}
   });
