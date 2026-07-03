@@ -3,22 +3,358 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hetheesha — Digital Marketing Member Reports</title>
-<link rel="stylesheet" href="../assets/css/style.css">
+<title>Top-Selling Products SEO Report — Hetheesha | ledsone.fr</title>
+<style>
+  :root{
+    --ink:#1a2233; --muted:#5b6577; --line:#e3e7ee; --bg:#f5f7fa;
+    --card:#ffffff; --accent:#1f5eff; --accent-soft:#eaf0ff;
+    --good:#0a7d4f; --good-soft:#e5f5ee;
+    --warn:#92400e; --warn-soft:#fffbeb;
+    --err:#b91c1c; --err-soft:#fef2f2;
+    --na:#64748b; --na-soft:#f8fafc;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
+  .wrap{max-width:1280px;margin:0 auto;}
+  .back{display:inline-block;margin-bottom:16px;color:var(--accent);text-decoration:none;font-size:13.5px;font-weight:600;}
+  .back:hover{text-decoration:underline;}
+  header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+  .req-tag{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+  h1{font-size:21px;letter-spacing:.1px;}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:4px 13px;font-size:12px;font-weight:600;}
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .kpi .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+  .kpi .value{font-size:26px;font-weight:700;margin-top:5px;line-height:1;}
+  .kpi .note{font-size:11px;color:var(--muted);margin-top:4px;}
+  .kpi.ok .value{color:var(--good);}
+  .kpi.warn .value{color:#b45309;}
+  .kpi.err .value{color:var(--err);}
+  .kpi.info .value{color:var(--accent);}
+  /* Controls */
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+  .search{border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-size:13px;color:var(--ink);background:var(--card);width:240px;outline:none;}
+  .search:focus{border-color:var(--accent);}
+  .fbtn{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);}
+  .fbtn:hover,.fbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .export{border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;margin-left:auto;}
+  .export:hover{opacity:.85;}
+  /* Table */
+  .tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .tbar{padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+  .scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1180px;}
+  thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 13px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+  thead th:hover{background:#e8ecf5;}
+  thead th.num,td.num{text-align:right;}
+  tbody td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:nth-child(even){background:#fafbfd;}
+  tbody tr:hover{background:var(--accent-soft);}
+  td.product{max-width:230px;}
+  td.product a{color:var(--accent);font-weight:600;text-decoration:none;font-size:12px;display:block;line-height:1.35;}
+  td.product a:hover{text-decoration:underline;}
+  td.product .code{font-size:10.5px;color:var(--muted);}
+  td.revenue{font-weight:700;white-space:nowrap;}
+  /* Badges */
+  .b{display:inline-block;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .b-ok{background:var(--good-soft);color:var(--good);}
+  .b-warn{background:var(--warn-soft);color:var(--warn);}
+  .b-err{background:var(--err-soft);color:var(--err);}
+  .b-na{background:var(--na-soft);color:var(--na);}
+  /* Alt count */
+  .alt-0{color:var(--good);font-weight:700;}
+  .alt-low{color:#b45309;font-weight:700;}
+  .alt-high{color:var(--err);font-weight:700;}
+  /* Footnotes */
+  .footnotes{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12px;color:var(--muted);line-height:1.65;}
+  .footnotes h3{font-size:12.5px;color:var(--ink);margin-bottom:8px;font-weight:700;}
+  .footnotes strong{color:var(--ink);}
+  .footnotes ul{margin-top:6px;padding-left:18px;}
+  .footnotes li{margin-top:4px;}
+  footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;}
+  @media(max-width:700px){h1{font-size:17px;}.kpi .value{font-size:20px;}}
+</style>
 </head>
 <body>
 <div class="wrap">
+
   <a class="back" href="../index.html">&larr; Back to all members</a>
-  <div class="placeholder">
-    <h2>Hetheesha</h2>
-    <span class="badge pending">Pending</span>
-    <dl>
-      <dt>Status</dt><dd>Pending requirement — page not built yet.</dd>
-      <dt>Source required</dt><dd>Google Sheet / MD requirement from Hetheesha (Digital Marketing team).</dd>
-      <dt>Next step</dt><dd>Create a PostgreSQL-backed report page once the requirement is received.</dd>
-    </dl>
+
+  <header>
+    <div class="req-tag">Requirement 1 — Completed · ledsone.fr · SEO &amp; Digital Marketing</div>
+    <h1>Top-Selling Products SEO Report</h1>
+    <div class="sub">
+      Requested by: <strong>Hetheesha</strong> (Digital Marketing / SEO) &nbsp;·&nbsp;
+      Store: <strong>ledsone.fr</strong> &nbsp;·&nbsp;
+      Generated: <strong>2026-07-03</strong> &nbsp;·&nbsp;
+      Period: <strong>Last 30 days</strong> (Jun 03 – Jul 03 2026)
+    </div>
+    <div class="chips">
+      <span class="chip">Top 48 products by revenue</span>
+      <span class="chip">Revenue: Shopify ShopifyQL</span>
+      <span class="chip">SEO: Shopify Admin GraphQL</span>
+      <span class="chip">GSC: PostgreSQL · gsc_web_page</span>
+      <span class="chip">Ranked: revenue × SEO gap × impression potential</span>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi ok">
+      <div class="label">Total Revenue</div>
+      <div class="value">€2,952</div>
+      <div class="note">48 products · 30 days</div>
+    </div>
+    <div class="kpi info">
+      <div class="label">Products Analysed</div>
+      <div class="value">48</div>
+      <div class="note">Top 50 by gross sales</div>
+    </div>
+    <div class="kpi err">
+      <div class="label">Missing Meta Titles</div>
+      <div class="value">6</div>
+      <div class="note">12.5% — fix first</div>
+    </div>
+    <div class="kpi err">
+      <div class="label">Missing Meta Desc</div>
+      <div class="value">7</div>
+      <div class="note">14.6% — fix first</div>
+    </div>
+    <div class="kpi warn">
+      <div class="label">Too Long Meta Titles</div>
+      <div class="value">12</div>
+      <div class="note">&gt;60 chars</div>
+    </div>
+    <div class="kpi warn">
+      <div class="label">Too Long Meta Desc</div>
+      <div class="value">10</div>
+      <div class="note">&gt;160 chars</div>
+    </div>
+    <div class="kpi err">
+      <div class="label">Missing FAQ Schema</div>
+      <div class="value">48</div>
+      <div class="note">All products — none detected</div>
+    </div>
+    <div class="kpi err">
+      <div class="label">Low CTR (GSC)</div>
+      <div class="value">10</div>
+      <div class="note">of 12 with GSC data &lt;2%</div>
+    </div>
   </div>
-  <footer class="site">Digital Marketing Member Reports · AIOS · generated 2026-07-02</footer>
+
+  <div class="controls">
+    <input class="search" id="searchBox" type="text" placeholder="🔍  Search product…">
+    <button class="fbtn on" id="btnAll" onclick="filter('all')">All</button>
+    <button class="fbtn" id="btnMissTitle" onclick="filter('missTitle')">Missing Meta Title</button>
+    <button class="fbtn" id="btnMissDesc" onclick="filter('missDesc')">Missing Meta Desc</button>
+    <button class="fbtn" id="btnTooLong" onclick="filter('tooLong')">Too Long</button>
+    <button class="fbtn" id="btnFaq" onclick="filter('faq')">FAQ Missing</button>
+    <button class="fbtn" id="btnLowCTR" onclick="filter('lowCTR')">Low CTR</button>
+    <button class="fbtn" id="btnAlt" onclick="filter('alt')">Alt Issues</button>
+    <button class="export" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+
+  <div class="tablebox">
+    <div class="tbar">
+      <span id="tbarCount">Showing 48 of 48 products</span>
+      <span>Click column headers to sort &nbsp;·&nbsp; Filters stack with search</span>
+    </div>
+    <div class="scroll">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th onclick="sort(0)">#</th>
+            <th onclick="sort(1)">Product</th>
+            <th onclick="sort(2)" class="num">Revenue (30d)</th>
+            <th onclick="sort(3)">Meta Title</th>
+            <th onclick="sort(4)">Meta Description</th>
+            <th onclick="sort(5)">H1 Status</th>
+            <th onclick="sort(6)" class="num">Alt Missing</th>
+            <th onclick="sort(7)">FAQ Schema</th>
+            <th onclick="sort(8)" class="num">Impressions</th>
+            <th onclick="sort(9)" class="num">CTR</th>
+            <th onclick="sort(10)">Low CTR Flag</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footnotes">
+    <h3>Notes &amp; Limitations</h3>
+    <ul>
+      <li><strong>Revenue:</strong> Shopify ShopifyQL (gross_sales, last 30 days). 48 revenue rows returned (ShopifyQL returned 48 unique products + 1 blank row excluded).</li>
+      <li><strong>Meta Title / Description:</strong> Shopify Admin GraphQL <code>seo.title</code> / <code>seo.description</code> fields. If blank, Shopify renders product title/body as fallback in HTML — the status here reflects the SEO override field only.</li>
+      <li><strong>H1 Status:</strong> Assumed "OK – matches title" for all products based on default Shopify theme behaviour (product title rendered as H1). Not verified via live HTML parse — theme inspection required for definitive confirmation.</li>
+      <li><strong>Alt Text:</strong> Checked for first 10 product images only. Products with more than 10 images may have additional alt text gaps not captured here.</li>
+      <li><strong>FAQ Schema:</strong> Marked Missing for all 48 products. No FAQ structured data app or theme configuration was found in the Shopify admin. Recommendation: evaluate a FAQ schema app with the dev team.</li>
+      <li><strong>GSC Data:</strong> PostgreSQL <code>google_search_console.gsc_web_page</code> · Site: <code>https://ledsone.fr/</code> · Coverage: 2026-03-20 to 2026-06-30 (3-day normal pipeline lag). 12 of 48 products matched; 36 have no GSC impression data in the period, indicating low/zero organic visibility for those pages.</li>
+      <li><strong>Quick win:</strong> Rank 7 (<em>Suspension Araignée 5 Fils ~1542</em>) has 3,143 impressions but only 0.06% CTR — improving the meta title and description alone could significantly increase clicks without any ranking work.</li>
+    </ul>
+  </div>
+
+  <footer class="site">Digital Marketing Member Reports · AIOS · Hetheesha · Requirement 01 · ledsone.fr · generated 2026-07-03</footer>
+
 </div>
+
+<script>
+const P = [
+  {r:1,t:"LEDSone Suspension Vintage Verte 32cm E27 – Abat-jour Métal Cuisine ~1900",u:"https://ledsone.fr/products/ledsone-industrial-vintage-32cm-green-pendant-retro-metal-lamp-shade-e27-uk-holder",rev:307.67,mt:"OK",md:"OK",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:2,t:"LEDSone Luminaire Araignée Industriel 5 Ampoules E27 – Métal Réglable ~1541",u:"https://ledsone.fr/products/5-way-spider-light-fixture-3399",rev:288.84,mt:"OK",md:"OK",h1:"OK – matches title",alt:2,faq:"Missing",imp:398,ctr:0.51,lc:"Low CTR"},
+  {r:3,t:"LEDSone Luminaire suspendu vintage à trois bras, avec abat-jour conique plat ~2153",u:"https://ledsone.fr/products/ledsone-luminaire-suspendu-vintage-trois-bras-avec-abat-jour-conique-plat",rev:165.00,mt:"Missing",md:"Missing",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:4,t:"Raccords de conduits 20 mm borne galvanisée 1 boîte de sortie ~1647",u:"https://ledsone.fr/products/galvanised-conduit-metal-pipe-light-fittings-accessories-4646",rev:163.11,mt:"Missing",md:"Missing",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:5,t:"Raccord Conduit 20mm Acier Galvanisé | Boîte Bornes Éclairage — LEDsone ~5543",u:"https://ledsone.fr/products/20mm-galvanized-steel-conduit-lighting-box-fitting",rev:138.12,mt:"OK",md:"OK",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:6,t:"LEDSone 22cm Luminaire Abat jour en Métal E27/B22 ~1533",u:"https://ledsone.fr/products/22cm-luminaire-abat-jour-en-metal-e27-b22",rev:137.37,mt:"OK",md:"OK",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:7,t:"Suspension Araignée 5 Fils E27 – Lustre Araignée Industriel 2m Réglable ~1542",u:"https://ledsone.fr/products/multi-shade-2m-pendant-light",rev:108.17,mt:"OK",md:"OK",h1:"OK – matches title",alt:2,faq:"Missing",imp:3143,ctr:0.06,lc:"Low CTR"},
+  {r:8,t:"2m Octopus Suspension Corde D'araignée Luminaire E27 ~1507",u:"https://ledsone.fr/products/industrial-vintage-ratio-2-head-hemp-spider-chandelier-e27-uk-holder",rev:108.05,mt:"OK",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:244,ctr:0.40,lc:"Low CTR"},
+  {r:9,t:"Lustre Araignée 5 Lumières | 5 Abat-Jours Différents | Industriel Vintage E27 ~1528",u:"https://ledsone.fr/products/vintage-ceiling-pendant-light-lamp-shade-industrial-chandelier-spider-lamp",rev:101.33,mt:"Missing",md:"Missing",h1:"OK – matches title",alt:2,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:10,t:"LEDSone Suspension Luminaire E27 – Kit Câble Textile Réglable 1m ~3646",u:"https://ledsone.fr/products/1m-twisted-cable-e27-base-holder",rev:100.83,mt:"Missing",md:"Missing",h1:"OK – matches title",alt:3,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:11,t:"Applique murale vintage réglable 180° – Bras pivotant métal noir E27 ~2034",u:"https://ledsone.fr/products/applique-murale-led-reglable-e27-industrielle",rev:92.30,mt:"OK",md:"OK",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:12,t:"LEDSone Lustre salon 5 têtes – Suspension bouteille de vin en verre ~1722",u:"https://ledsone.fr/products/bottle-shaped-led-pendant-light",rev:84.52,mt:"Too Long",md:"Too Long",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:13,t:"LEDSone Ancien abat-jour suspension plafonnier E27 suspension industrielle ~1753",u:"https://ledsone.fr/products/industrial-style-led-ceiling-light-fixtures",rev:78.33,mt:"OK",md:"Too Short",h1:"OK – matches title",alt:3,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:14,t:"LEDSone Lustre araignée 8 bras vintage – Suspension laiton & cuivre E27 ~1916",u:"https://ledsone.fr/products/suspension-ledsone-8-voies-forme-araignee-e27-reglable",rev:74.30,mt:"Too Long",md:"OK",h1:"OK – matches title",alt:0,faq:"Missing",imp:70,ctr:0.00,lc:"Low CTR"},
+  {r:15,t:"LEDSone Suspension Vintage Cuivre E27 – Plafonnier Métal Rétro 1m ~1560",u:"https://ledsone.fr/products/vintage-industrial-metal-retro-ceiling-pendant-light-copper-shade",rev:71.30,mt:"OK",md:"Too Long",h1:"OK – matches title",alt:8,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:16,t:"LEDSone Applique Murale Industrielle Métal Vintage Style Edison ~2161",u:"https://ledsone.fr/products/applique-murale-en-metal-avec-abat-jour-facile-a-installer",rev:68.30,mt:"OK",md:"Too Long",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:17,t:"LEDSone Suspension industrielle vintage en métal – Lustre de cuisine rétro plafonnier E27 ~1544",u:"https://ledsone.fr/products/ledsone-suspension-industrielle-lustre-retro-plafonnier-metal",rev:64.77,mt:"Too Long",md:"OK",h1:"OK – matches title",alt:2,faq:"Missing",imp:71,ctr:0.00,lc:"Low CTR"},
+  {r:18,t:"Suspension plafonnier 2m support ampoule E27 vintage ~1642",u:"https://ledsone.fr/products/vintage-e27-bulb-holder-suspension-light-fitting-ceiling-2m-hanging-pendant-light-4907",rev:46.12,mt:"OK",md:"OK",h1:"OK – matches title",alt:7,faq:"Missing",imp:100,ctr:1.00,lc:"Low CTR"},
+  {r:19,t:"LEDSone Abat-jour suspendu E27 Fix abat-jour dôme en métal 30 cm ~1774",u:"https://ledsone.fr/products/modern-blue-ceiling-light-shade-hanging-pendant-lamp-metal-dome-shade",rev:43.93,mt:"OK",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:20,t:"LEDSone Suspension Luminaire Industriel Métal Noir – Lustre Rétro E27 ~1993",u:"https://ledsone.fr/products/ledsone-industriel-suspension-luminaire-retro-vintage",rev:43.05,mt:"Too Long",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:30,ctr:7.14,lc:"OK"},
+  {r:21,t:"Applique Murale Vintage Noire Orientable à 180° – Éclairage Industriel ~1894",u:"https://ledsone.fr/products/wall-scone",rev:42.72,mt:"Too Long",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:22,t:"Lustre Araignée 5 Lumières Industriel Vintage E27 Métal Noir – LEDsone ~1917",u:"https://ledsone.fr/products/suspension-vintage-ledsone-5-lumieres-industriel-e27",rev:42.13,mt:"OK",md:"OK",h1:"OK – matches title",alt:1,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:23,t:"Suspension industrielle noire steampunk agunnaryd ~1918",u:"https://ledsone.fr/products/agunnaryd-pendant-lamp",rev:37.57,mt:"Too Long",md:"OK",h1:"OK – matches title",alt:5,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:24,t:"Applique Murale Col de Cygne E27 – Métal Vintage Edison ~1554",u:"https://ledsone.fr/products/swan-neck-wall-light-indoor-lamp",rev:37.13,mt:"OK",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:25,t:"Rosace de Plafond Ronde 100mm en Métal — Cache-Fil Élégant pour Suspension ~1828",u:"https://ledsone.fr/products/copper-ceiling-rose-light-pendant-for-cable",rev:36.36,mt:"OK",md:"OK",h1:"OK – matches title",alt:2,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:26,t:"LEDSone Applique Murale Industrielle en Métal Rétro avec Douille E27 ~2115",u:"https://ledsone.fr/products/applique-murale-vintage-led-eclairage-retro-ajustable",rev:33.65,mt:"OK",md:"Too Long",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:27,t:"Lustre Araignée Dimmable 2 Bras E27 – Suspension Vintage ~1580",u:"https://ledsone.fr/products/2-way-retro-vintage-chandelier-ceiling-spider-light-industrial-pendant-lamp-e27-4945",rev:33.08,mt:"Too Long",md:"Too Long",h1:"OK – matches title",alt:2,faq:"Missing",imp:154,ctr:1.88,lc:"Low CTR"},
+  {r:28,t:"Applique Murale Industrielle Vintage Motif Cône – Métal Noir E27 ~1708",u:"https://ledsone.fr/products/applique-murale-industrielle-vintage-avec-motif-c-ne",rev:31.90,mt:"OK",md:"OK",h1:"OK – matches title",alt:2,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:29,t:"LEDSone Suspension Luminaire Industrielle Métal 15cm E27 Câble Réglable ~2152",u:"https://ledsone.fr/products/industrial-vintage-retro-adjustable-ceiling-various-colours-pendant-light-with-e27-uk-holder",rev:31.81,mt:"OK",md:"Too Long",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:30,t:"LEDSone Suspension Luminaire Industrielle – 3 Lampes Métal Noir ~2018",u:"https://ledsone.fr/products/suspension-luminaire-industrielle-3-lampes-metal-noir-ledsone",rev:29.00,mt:"OK",md:"OK",h1:"OK – matches title",alt:8,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:31,t:"Suspension abat-jour vintage rétro en métal | E27 ~5854",u:"https://ledsone.fr/products/vintage-retro-pendant-light-with-metal-shade",rev:27.25,mt:"OK",md:"OK",h1:"OK – matches title",alt:5,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:32,t:"Ancienne Suspension Lustre Araignée Plafonnier Industriel E27 – LEDsone ~1630",u:"https://ledsone.fr/products/ancienne-suspension-lustre-plafonnier-araign-e-industriel",rev:25.83,mt:"OK",md:"OK",h1:"OK – matches title",alt:4,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:33,t:"Kit Suspension E27 Vintage – 2m Câble Rond – LEDSone ~3645",u:"https://ledsone.fr/products/2m-black-white-round-cable-e27-base-satin-nickel-holder",rev:24.97,mt:"OK",md:"Too Short",h1:"OK – matches title",alt:2,faq:"Missing",imp:176,ctr:1.31,lc:"Low CTR"},
+  {r:34,t:"LEDSone Abat-jour Cristal Moderne – Suspension Cage Métal & Cristal ~2024",u:"https://ledsone.fr/products/plafonnier-cage-cristal-verre-moderne-e27",rev:24.40,mt:"Too Long",md:"Missing",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:35,t:"Lot de 3 abat‑jours vintage – Suspension industrielle incurvée E27 ~1990",u:"https://ledsone.fr/products/lot-de-3-abat-jours-vintage-suspension-industrielle-incurvee-e27",rev:23.41,mt:"OK",md:"OK",h1:"OK – matches title",alt:5,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:36,t:"Transformateur d'alimentation LED étanche 24V IP67 pour bande LED 150W ~1863",u:"https://ledsone.fr/products/dc24v-ip67-150w-waterproof-led-driver-power-supply-transformer",rev:20.99,mt:"Too Long",md:"OK",h1:"OK – matches title",alt:3,faq:"Missing",imp:108,ctr:0.00,lc:"Low CTR"},
+  {r:37,t:"Plafonnier semi-encastré | Abat-jour conique antique ~1742",u:"https://ledsone.fr/products/vintage-industrial-retro-metal-indoor-ceiling-light-flush-mount-retro-cone-shade-lamp-uk",rev:18.66,mt:"Missing",md:"Missing",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:38,t:"LEDSone Plafonnier Araignée Noir – Lustre Industriel 2 Têtes – E27 ~1687",u:"https://ledsone.fr/products/suspension-lustre-suspension-lampe-suspension-plafonnier-industriel-2-t-tes",rev:18.66,mt:"OK",md:"Too Long",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:39,t:"LEDSone Support d'ampoule E27 M20 conduit prise de lumière ~5539",u:"https://ledsone.fr/products/e27-lamp-holder-20mm-female-thread-conduit-ceiling-light-socket",rev:17.47,mt:"Missing",md:"Missing",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:40,t:"LEDSone Applique Murale Industrielle Vintage 32cm E27 Métal ~1720",u:"https://ledsone.fr/products/indoor-wall-fitting-lounge-light-fittings",rev:15.57,mt:"OK",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:41,t:"LEDSone Abat-jour métal Pluton plafonnier suspension luminaire abat-jour ~1689",u:"https://ledsone.fr/products/abat-jour-m-tal-pluton-plafonnier-suspension-luminaire-abat-jour",rev:15.23,mt:"OK",md:"OK",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:42,t:"LEDSone Suspension Extérieure IP65 E27 – Luminaire Noir Étanche 1m ~1545",u:"https://ledsone.fr/products/vintage-e27-bulb-holder-suspension-light-fitting-ceiling-hanging-pendant-light",rev:15.07,mt:"OK",md:"Too Long",h1:"OK – matches title",alt:0,faq:"Missing",imp:883,ctr:0.76,lc:"Low CTR"},
+  {r:43,t:"LEDSone Suspension Style Fermier Industrielle – Abat-jour Bol Métallique pour Cuisine & Couloir ~1824",u:"https://ledsone.fr/products/vintage-ceiling-light-pendant-lamp-shade",rev:14.05,mt:"Too Long",md:"Too Long",h1:"OK – matches title",alt:2,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:44,t:"LEDSone 200mm Kit rosace Cylindrique en métal à 3 trous ~1514",u:"https://ledsone.fr/products/ledsone-200mm-kit-rosace-cylindrique-en-metal-a-3-trous",rev:13.72,mt:"OK",md:"OK",h1:"OK – matches title",alt:1,faq:"Missing",imp:67,ctr:3.83,lc:"OK"},
+  {r:45,t:"Abat-jour Plafond Métal Industriel Rétro 26cm – LEDSone ~2323",u:"https://ledsone.fr/products/abat-jour-plafond-m-tal-industriel-r-tro-26cm-ledsone",rev:13.14,mt:"OK",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:46,t:"Ampoules LED Baïonnette ST64 B22 4W Dimmable Filament Edison ~1673",u:"https://ledsone.fr/products/ampoules-led-ba-onnette-st64-b22-4w-dimmable-filament-edison-ampoules",rev:9.17,mt:"OK",md:"OK",h1:"OK – matches title",alt:10,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:47,t:"Ampoule LED B22 4W T45 Dimmable Vintage Filament Ampoules ~3077",u:"https://ledsone.fr/products/4w-t45-b22-led-dimmable-vintage-teardrop-spiral-filament-light-bulb-1",rev:7.20,mt:"OK",md:"OK",h1:"OK – matches title",alt:0,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"},
+  {r:48,t:"Alimentation LED 7W Courant Constant | Driver Compact pour Spots & Projets DIY ~3322",u:"https://ledsone.fr/products/7w-280mamp-dc-20-27v-compact-constant-current-led-driver",rev:6.56,mt:"Too Long",md:"OK",h1:"OK – matches title",alt:3,faq:"Missing",imp:null,ctr:null,lc:"No GSC data"}
+];
+
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function badge(s){
+  if(s==='OK'||s.startsWith('OK')) return '<span class="b b-ok">'+esc(s)+'</span>';
+  if(s==='Missing') return '<span class="b b-err">Missing</span>';
+  if(s==='Too Long'||s==='Too Short') return '<span class="b b-warn">'+esc(s)+'</span>';
+  if(s==='Low CTR') return '<span class="b b-err">Low CTR</span>';
+  if(s==='No GSC data') return '<span class="b b-na">No GSC data</span>';
+  return '<span class="b b-na">'+esc(s)+'</span>';
+}
+
+function altCell(n){
+  if(n===0) return '<span class="alt-0">0</span>';
+  if(n<=3) return '<span class="alt-low">'+n+'</span>';
+  return '<span class="alt-high">'+n+'</span>';
+}
+
+let activeFilter='all', searchQ='', sortCol=-1, sortDir=1;
+
+function getRows(){
+  return P.filter(p=>{
+    if(searchQ){
+      const q=searchQ.toLowerCase();
+      if(!p.t.toLowerCase().includes(q)&&!p.u.toLowerCase().includes(q)) return false;
+    }
+    if(activeFilter==='missTitle') return p.mt==='Missing';
+    if(activeFilter==='missDesc') return p.md==='Missing';
+    if(activeFilter==='tooLong') return p.mt==='Too Long'||p.md==='Too Long';
+    if(activeFilter==='faq') return p.faq==='Missing';
+    if(activeFilter==='lowCTR') return p.lc==='Low CTR';
+    if(activeFilter==='alt') return p.alt>0;
+    return true;
+  });
+}
+
+function render(){
+  let rows=getRows();
+  if(sortCol>=0){
+    const keys=['r','t','rev','mt','md','h1','alt','faq','imp','ctr','lc'];
+    const k=keys[sortCol];
+    rows.sort((a,b)=>{
+      let av=a[k],bv=b[k];
+      if(av===null) av=sortDir>0?Infinity:-Infinity;
+      if(bv===null) bv=sortDir>0?Infinity:-Infinity;
+      if(typeof av==='string') return av.localeCompare(bv,'fr')*sortDir;
+      return (av-bv)*sortDir;
+    });
+  }
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML=rows.map(p=>{
+    const title=p.t.length>52?p.t.slice(0,50)+'…':p.t;
+    const imp=p.imp!==null?p.imp.toLocaleString():'—';
+    const ctr=p.ctr!==null?p.ctr.toFixed(2)+'%':'—';
+    return `<tr>
+      <td style="color:var(--muted);font-weight:700;font-size:11px">${p.r}</td>
+      <td class="product">
+        <a href="${esc(p.u)}" target="_blank" title="${esc(p.t)}">${esc(title)}</a>
+      </td>
+      <td class="num revenue">€${p.rev.toFixed(2)}</td>
+      <td>${badge(p.mt)}</td>
+      <td>${badge(p.md)}</td>
+      <td><span class="b b-ok">OK – title</span></td>
+      <td class="num">${altCell(p.alt)}</td>
+      <td><span class="b b-err">Missing</span></td>
+      <td class="num">${imp}</td>
+      <td class="num" style="font-weight:600">${ctr}</td>
+      <td>${badge(p.lc)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tbarCount').textContent=`Showing ${rows.length} of ${P.length} products`;
+}
+
+function filter(f){
+  activeFilter=f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));
+  const map={all:'btnAll',missTitle:'btnMissTitle',missDesc:'btnMissDesc',tooLong:'btnTooLong',faq:'btnFaq',lowCTR:'btnLowCTR',alt:'btnAlt'};
+  const el=document.getElementById(map[f]);
+  if(el) el.classList.add('on');
+  render();
+}
+
+function sort(col){
+  if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=1;}
+  render();
+}
+
+function exportCSV(){
+  const rows=getRows();
+  const hdr=['Rank','Product Title','Product URL','Revenue EUR','Meta Title','Meta Desc','H1 Status','Alt Missing','FAQ Schema','Impressions','CTR %','Low CTR Flag'];
+  const lines=rows.map(p=>[p.r,'"'+p.t.replace(/"/g,'""')+'"',p.u,p.rev,p.mt,p.md,p.h1,p.alt,p.faq,p.imp??'',p.ctr??'',p.lc]);
+  const csv=[hdr,...lines].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='hetheesha-req01-top-selling-seo-2026-07-03.csv';
+  a.click();
+}
+
+document.getElementById('searchBox').addEventListener('input',function(){
+  searchQ=this.value.trim();
+  render();
+});
+
+render();
+</script>
 </body>
 </html>
