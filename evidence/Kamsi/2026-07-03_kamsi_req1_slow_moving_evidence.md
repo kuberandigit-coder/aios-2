@@ -47,3 +47,6 @@ Missing fields in PG: page URLs (sparse), product tags. **PG verdict: supports s
 **External Sources Checked:** Shopify MCP connector (catalog reuse, tags, live variant verification).
 **PostgreSQL Sources Checked:** as listed in Step 2.
 **PASS/FAIL:** PASS
+
+## Update — expanded to FULL store catalog (2026-07-03, Kuberan request)
+Kuberan requested all products, not just the 5 core collections. Ran a read-only Shopify bulk operation (bulkOperationRunQuery — data export only, store unmodified): 22,699 records = every product + variant (id, handle, title, status, productType, sku, inventoryQuantity) → `2026-07-03_kamsi_req1_full_catalog.jsonl`. Builder switched to this catalog; Category = normalised Shopify product type (~250 values). New numbers: **13,866 active SKUs · 4,115 Slow-Moving · 9,751 Active · 1,762,439 units of stock in slow-movers · 570 SKUs unknown stock**. Same rule, same PG sales/stock sources. Deployed and live-verified (13,866 rows). New limitation: page is ~10.9MB (13.8k rows) — loads fine but heavy on slow connections; pagination possible if needed. PASS.

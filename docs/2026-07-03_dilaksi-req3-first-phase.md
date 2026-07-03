@@ -60,3 +60,6 @@ New member requirement delivered (undeployed, per approval rule). Duplicate chec
 
 ### Kamsi Req 1 deployed (2026-07-03)
 Approved and deployed dpl_7B5LMGtc7kmZerrb6hfaSoK4cqH2. Live verified: 4,793 rows, kamsi.html linked, other member pages unaffected. Shared repo synced via subtree. PASS · GREEN.
+
+### Kamsi Req 1 expanded to full store (2026-07-03)
+Per Kuberan: full catalog via read-only Shopify bulk export (22,699 records). 13,866 active SKUs · 4,115 slow-moving · 1.76M units in slow-movers. Category = product type (~250 values). Rebuilt, deployed, live verified. PASS · GREEN.

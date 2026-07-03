@@ -1,14 +1,13 @@
 # Kamsi Requirement 1 — Slow-Moving Product Visibility — page builder (single source of truth)
-# Merges: Shopify catalog (Req2 asset, Shopify connector-sourced) + handle map
+# Merges: FULL Shopify catalog (bulk export JSONL, all products+variants, Shopify connector-sourced)
 #         + PostgreSQL: Shopify-channel units sold 90d + last order date (public.order_transaction)
 #         + PostgreSQL: current stock summed across warehouses (public.inv_final_stock)
 # Rule (from requirement, verbatim): Units Sold (90d) < 10 AND Current Stock > 100 => Slow-Moving, else Active.
 # Seasonal Tag: no reliable seasonal field exists (Shopify tags are promo campaign tags) => "Not Available".
-import csv, html, os
+import csv, html, os, json
 from collections import OrderedDict
 
 DATA = os.path.dirname(os.path.abspath(__file__))
-DILAKSI = os.path.join(DATA, "..", "..", "dilaksi", "data")
 GEN = "2026-07-03"
 WINDOW = "2026-04-04 → 2026-07-03 (90 days)"
 
@@ -22,21 +21,28 @@ stock = {}
 for r in csv.DictReader(open(p(DATA, "2026-07-03_kamsi_req1_stock_by_sku.csv"), encoding="utf-8")):
     stock[r["sku"]] = int(r["stock"])
 
-handles = {r["product_id"]: r["handle"] for r in csv.DictReader(open(p(DATA, "2026-07-03_kamsi_req1_handle_map.csv"), encoding="utf-8"))}
-
-catalog = OrderedDict()  # sku -> row (first occurrence wins for category)
+# Full-store catalog from Shopify bulk export (JSONL: product lines then variant lines with __parentId)
+products = {}
+catalog = OrderedDict()  # sku -> row (first ACTIVE occurrence wins)
 n_draft = 0
-for r in csv.DictReader(open(p(DILAKSI, "2026-07-02_req2-shopify-category-sku-sales-last30d.csv"), encoding="utf-8-sig")):
-    sku = r["SKU"].strip()
-    if not sku: continue
-    if r["Status"] != "ACTIVE":
-        n_draft += 1; continue
-    if sku in catalog: continue
-    catalog[sku] = {
-        "sku": sku, "title": r["Product Title"], "pid": r["Product ID"],
-        "category": r["Category(Collection)"],
-        "handle": handles.get(r["Product ID"], ""),
-    }
+with open(p(DATA, "2026-07-03_kamsi_req1_full_catalog.jsonl"), encoding="utf-8") as f:
+    for line in f:
+        o = json.loads(line)
+        if "__parentId" not in o:
+            products[o["id"]] = o
+        else:
+            prod = products.get(o["__parentId"], {})
+            sku = (o.get("sku") or "").strip()
+            if not sku: continue
+            if prod.get("status") != "ACTIVE":
+                n_draft += 1; continue
+            if sku in catalog: continue
+            cat = " ".join((prod.get("productType") or "").replace("_", " ").split()).title() or "Uncategorised"
+            catalog[sku] = {
+                "sku": sku, "title": prod.get("title") or prod.get("handle", "").replace("-", " "),
+                "pid": prod.get("id", ""), "category": cat,
+                "handle": prod.get("handle", ""),
+            }
 
 rows = []
 for sku, c in catalog.items():
@@ -152,7 +158,7 @@ page = f'''<!DOCTYPE html>
   </header>
 
   <div class="cards">
-    <div class="card"><div class="label">Total Products Checked</div><div class="value">{fmt(len(rows))}</div><div class="note">active products, 5 core collections</div></div>
+    <div class="card"><div class="label">Total Products Checked</div><div class="value">{fmt(len(rows))}</div><div class="note">full store catalog, active SKUs</div></div>
     <div class="card warn"><div class="label">Slow-Moving Products</div><div class="value">{fmt(n_slow)}</div><div class="note">&lt;10 sold (90d) &amp; stock &gt;100</div></div>
     <div class="card"><div class="label">Active Products</div><div class="value">{fmt(n_active)}</div><div class="note">everything else</div></div>
     <div class="card warn"><div class="label">Stock in Slow-Moving</div><div class="value">{fmt(slow_stock)}</div><div class="note">total units sitting in slow-movers</div></div>
@@ -197,7 +203,7 @@ page = f'''<!DOCTYPE html>
 
   <div class="footnotes">
     <h3>Notes &amp; Methodology</h3>
-    <strong>Product list:</strong> {fmt(len(rows))} active products (deduplicated by SKU) from the Shopify Admin catalog across the 5 core collections (wall-light, pendant-lights, plugin-lighting, spider-light, table-lamps), collected via the Shopify connector on 2026-07-02 (AIOS asset reused per duplicate rule). DRAFT products excluded ({n_draft} variant rows) because their pages are not publicly visible.<br>
+    <strong>Product list:</strong> {fmt(len(rows))} active SKUs — the FULL Shopify Admin catalog (every product and variant), exported via a Shopify bulk operation on {GEN} through the Shopify connector (read-only). Category = Shopify product type (lightly normalised for case/underscores). Non-ACTIVE (draft/archived) variants excluded ({fmt(n_draft)} rows) because their pages are not publicly visible.<br>
     <strong>Units Sold (90d) &amp; Last Order Date:</strong> Shopify-channel order lines from the company PostgreSQL order mirror (public.order_transaction, source SHOPIFY, cancelled orders excluded), window {WINDOW}, read-only. SKUs with no Shopify order in the window show 0 and "—".<br>
     <strong>Current Stock:</strong> company inventory system (PostgreSQL public.inv_final_stock), stock summed across all warehouses, read-only, snapshot {GEN}. Cross-verified against the live Shopify Admin on {GEN}: Shopify's sellable quantity runs slightly lower than the warehouse total (samples: 613 vs 656, 121 vs 154) because Shopify shows channel-allocated stock — the warehouse total is used here as the true "current stock". {fmt(n_nostock)} SKUs not present in the inventory system show "—" and are never classified Slow-Moving (stock unknown ≠ stock &gt; 100).<br>
     <strong>Status rule (verbatim from requirement):</strong> Units Sold (90d) &lt; 10 AND Current Stock &gt; 100 → <span class="pill slow">Slow-Moving</span>, otherwise <span class="pill act">Active</span>.<br>
