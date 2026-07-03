@@ -51,3 +51,6 @@ Deploy problem: after `vercel git connect`, both git- and CLI-triggered builds h
 
 ### Reusable prompt set saved (2026-07-03)
 8 reusable prompts for the Req 3 all-collections page saved to prompts/dilaksi/2026-07-03_req3_all_collections_prompts.md: full refresh, layout-only rebuild, single-source refresh, deploy (with stuck-build fix note), Recommended Action (rule placeholder), removal-candidates report, live verification, add-new-column. PASS.
+
+### Filters added to Req 3 all-collections page (2026-07-03)
+5 data-driven filter dropdowns added (Req 2 style): GA4 Traffic (has/100+/zero), Backlinks (has/zero), GSC Impressions (has/10k+/zero), Navigation (header-footer linked/sitemap only), Signal (zero-signal removal candidates/has any signal) + Reset button + live "Showing X of 473" counter; combines with search and column sorting. Implemented in the builder via per-row data attributes (values from the real CSVs). Rebuilt both copies, deployed via CLI, live verified (all 5 selects + 473 rows present). PASS · GREEN.

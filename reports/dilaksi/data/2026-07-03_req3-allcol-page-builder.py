@@ -70,7 +70,9 @@ for r in rows:
     bl_why = f'from {r["bld"]} referring domain{"s" if r["bld"]!=1 else ""}' if r["bl"] > 0 else "not in Semrush index"
     imp_cls = "sess" if r["imp"] > 0 else "sess zero"
     imp_why = f'{fmt(r["clk"])} clicks (12m)' if r["imp"] > 0 else "0 impressions · 0 clicks"
-    body_rows.append(f'''        <tr>
+    zero_sig = "1" if (r["ga4"] == 0 and r["imp"] == 0 and r["bl"] == 0) else "0"
+    nav_state = "linked" if (r["hdr"] or r["ftr"]) else "sitemap"
+    body_rows.append(f'''        <tr data-ga4="{r["ga4"]}" data-bl="{r["bl"]}" data-imp="{r["imp"]}" data-nav="{nav_state}" data-zero="{zero_sig}">
           <td class="lp"><span class="path">/collections/{r["handle"]}</span><div class="why">{t}</div></td>
           <td class="num"><span class="{ga4_cls}">{fmt(r["ga4"])}</span><div class="why">{ga4_why}</div></td>
           <td class="num"><span class="{bl_cls}">{fmt(r["bl"])}</span><div class="why">{bl_why}</div></td>
@@ -108,6 +110,8 @@ page = f'''<!DOCTYPE html>
   .tablebox{{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;}}
   .tablebox .tbar{{padding:14px 20px; border-bottom:1px solid var(--line); font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:12px; align-items:center;}}
   .tbar input{{flex:1; min-width:220px; padding:8px 14px; border:1px solid var(--line); border-radius:8px; font-size:13px;}}
+  .tbar label{{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#42506a;}}
+  .tbar select{{padding:7px 10px; border:1px solid var(--line); border-radius:8px; font-size:12.5px; background:#fff; color:var(--ink); cursor:pointer;}}
   .scroll{{overflow-x:auto;}}
   table{{width:100%; border-collapse:collapse; font-size:13px; min-width:1180px; table-layout:fixed;}}
   col.c-url{{width:22%;}} col.c-ga4{{width:12%;}} col.c-bl{{width:12%;}} col.c-nav{{width:17%;}} col.c-live{{width:11%;}} col.c-gsc{{width:13%;}} col.c-act{{width:7%;}}
@@ -156,8 +160,21 @@ page = f'''<!DOCTYPE html>
   </div>
 
   <div class="tablebox">
-    <div class="tbar"><span>All {len(rows)} live collection URLs · click a column header to sort</span>
+    <div class="tbar"><span id="cnt">All {len(rows)} live collection URLs</span> <span style="color:#9aa3b2">· click a column header to sort</span>
       <input type="text" id="q" placeholder="Search collection URL or title…" oninput="flt()"></div>
+    <div class="tbar" style="border-top:0;">
+      <label>GA4 Traffic <select id="f_ga4" onchange="flt()">
+        <option value="">All</option><option value="has">Has sessions</option><option value="high">100+ sessions</option><option value="zero">Zero sessions</option></select></label>
+      <label>Backlinks <select id="f_bl" onchange="flt()">
+        <option value="">All</option><option value="has">Has backlinks</option><option value="zero">Zero backlinks</option></select></label>
+      <label>GSC Impressions <select id="f_imp" onchange="flt()">
+        <option value="">All</option><option value="has">Has impressions</option><option value="high">10,000+</option><option value="zero">Zero impressions</option></select></label>
+      <label>Navigation <select id="f_nav" onchange="flt()">
+        <option value="">All</option><option value="linked">Header/Footer linked</option><option value="sitemap">Sitemap only</option></select></label>
+      <label>Signal <select id="f_zero" onchange="flt()">
+        <option value="">All</option><option value="zero">Zero-signal (removal candidates)</option><option value="some">Has any signal</option></select></label>
+      <button onclick="rst()" style="padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;">Reset filters</button>
+    </div>
     <div class="scroll">
     <table id="t">
       <colgroup>
@@ -196,9 +213,27 @@ page = f'''<!DOCTYPE html>
 <script>
 function flt(){{
   var q=document.getElementById('q').value.toLowerCase();
+  var fga=document.getElementById('f_ga4').value, fbl=document.getElementById('f_bl').value,
+      fim=document.getElementById('f_imp').value, fnv=document.getElementById('f_nav').value,
+      fz=document.getElementById('f_zero').value;
+  var shown=0, total=0;
   document.querySelectorAll('#t tbody tr').forEach(function(tr){{
-    tr.style.display = tr.cells[0].innerText.toLowerCase().indexOf(q)>-1 ? '' : 'none';
+    total++;
+    var ga4=+tr.dataset.ga4, bl=+tr.dataset.bl, imp=+tr.dataset.imp, nav=tr.dataset.nav, z=tr.dataset.zero;
+    var ok = tr.cells[0].innerText.toLowerCase().indexOf(q)>-1;
+    if(ok && fga){{ ok = fga==='has'? ga4>0 : fga==='high'? ga4>=100 : ga4===0; }}
+    if(ok && fbl){{ ok = fbl==='has'? bl>0 : bl===0; }}
+    if(ok && fim){{ ok = fim==='has'? imp>0 : fim==='high'? imp>=10000 : imp===0; }}
+    if(ok && fnv){{ ok = nav===fnv; }}
+    if(ok && fz){{ ok = fz==='zero'? z==='1' : z==='0'; }}
+    tr.style.display = ok ? '' : 'none';
+    if(ok) shown++;
   }});
+  document.getElementById('cnt').textContent = shown===total ? 'All '+total+' live collection URLs' : 'Showing '+shown+' of '+total+' collections';
+}}
+function rst(){{
+  ['f_ga4','f_bl','f_imp','f_nav','f_zero'].forEach(function(i){{document.getElementById(i).value='';}});
+  document.getElementById('q').value=''; flt();
 }}
 var dir={{}};
 function srt(i,num){{
