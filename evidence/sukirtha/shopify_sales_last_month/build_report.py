@@ -1,12 +1,13 @@
 # Sukirtha task: ledsone.de products with 0 or 1 sale in June 2026
 # Inputs: products.jsonl, orders.jsonl (Shopify bulk exports)
 import json, csv, os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 SCRATCH = os.path.dirname(os.path.abspath(__file__))
 OUT = r"C:\Users\PC\OneDrive\Desktop\kuberan web\evidence\sukirtha\shopify_sales_last_month"
-CEST = timezone(timedelta(hours=2))
-JUNE_START = datetime(2026, 6, 1, 0, 0, 0, tzinfo=CEST)
+CEST = ZoneInfo("Europe/Berlin")
+JUNE_START = datetime(2026, 1, 1, 0, 0, 0, tzinfo=CEST)
 JUNE_END = datetime(2026, 6, 30, 23, 59, 59, 999999, tzinfo=CEST)
 
 products, variants, sku_index = {}, {}, {}
@@ -69,14 +70,14 @@ with open(os.path.join(SCRATCH, "orders.jsonl"), encoding="utf-8") as f:
                 last_order[pid] = dt
 
 os.makedirs(OUT, exist_ok=True)
-csv_path = os.path.join(OUT, "2026-06_ledsone_de_1-sale_no-sales_products.csv")
+csv_path = os.path.join(OUT, "2026-01_to_2026-06_ledsone_de_1-sale_no-sales_products.csv")
 rows_written = {"NO SALES": 0, "1 SALE": 0}
 excluded_gt1 = 0
 with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
     w = csv.writer(f)
     w.writerow(["Product ID", "Product Title", "Product Handle", "Product Status",
                 "Product URL", "Image URL", "Variant IDs", "SKUs", "Price (EUR)",
-                "Stock Qty", "Qty Sold 2026-06", "Sales Status", "Last Order Date"])
+                "Stock Qty", "Qty Sold 2026-01-01..2026-06-30", "Sales Status", "Last Order Date"])
     for pid in sorted(products, key=lambda p: products[p]["handle"]):
         p = products[pid]
         q = june_qty.get(pid, 0)
@@ -103,7 +104,7 @@ stats = {"products": len(products), "variants": len(variants),
          "unmatched_june_lines": sum(1 for u in unmatched if u["june"]),
          "no_sales": rows_written["NO SALES"], "one_sale": rows_written["1 SALE"],
          "excluded_qty_gt1": excluded_gt1, "csv": csv_path}
-with open(os.path.join(SCRATCH, "stats.json"), "w") as f:
+with open(os.path.join(SCRATCH, "stats_h1.json"), "w") as f:
     json.dump(stats, f, indent=2)
 with open(os.path.join(SCRATCH, "unmatched.json"), "w") as f:
     json.dump(unmatched[:200], f, indent=2)

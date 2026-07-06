@@ -15,3 +15,11 @@
 Cross-check: ShopifyQL June sales-by-product (269 net-activity rows) consistent with gross line-item aggregation (260 products with ≥1 gross unit; difference = returns/adjustment rows in analytics).
 
 **Overall: PASS**
+
+## Re-validation after window correction (Jan 1 – Jun 30, 2026)
+Rerun on corrected window `2026-01-01..2026-06-30` (Europe/Berlin), output `2026-01_to_2026-06_ledsone_de_1-sale_no-sales_products.csv`:
+- Rows: 1,688 NO SALES + 176 1 SALE = 1,864; excluded >1 sale: 648; 1,864+648 = 2,512 = catalogue ✔
+- Orders in window: 4,606 non-cancelled (API ordersCount 4,609 incl. cancelled) ✔
+- 0 unmatched line items in window ✔; all other checks 1–9 unchanged PASS.
+
+**Overall (corrected deliverable): PASS**

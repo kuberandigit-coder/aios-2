@@ -1,5 +1,9 @@
 # Evidence — ledsone.de 1-Sale / No-Sales Products, June 2026
 
+> **CORRECTION 2026-07-06 (later same day):** After delivery, user clarified the sales window must be **2026-01-01 → 2026-06-30** (not June only). Final deliverable is now
+> `2026-01_to_2026-06_ledsone_de_1-sale_no-sales_products.csv` — **1,688 NO SALES + 176 with 1 SALE, 648 excluded (>1 sale)**; reconciles 1,688+176+648 = 2,512. Window uses Europe/Berlin (CET/CEST). Jan–Jun non-cancelled orders: 4,606 (4,609 incl. cancelled, matches ordersCount API); 6,369 line items, 0 unmatched.
+> The June-only CSV below is retained as evidence of the first delivery; all other method details apply unchanged to the corrected run.
+
 - **Purpose:** Give Sukirtha an export of all ledsone.de products with 0 or exactly 1 sale in June 2026, incl. product URL, image URL, price, stock, last order date.
 - **Requirement owner:** Sukirtha · **Supporting staff:** Kuberan
 - **Store:** ledsone.de (ledsone-de.myshopify.com) · **Timezone:** CEST (UTC+2) — confirmed via `get-shop-info`
