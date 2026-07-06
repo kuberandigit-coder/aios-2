@@ -4,130 +4,201 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Digital Marketing Member Reports</title>
-<link rel="stylesheet" href="assets/css/style.css">
 <style>
-div.card.expander{cursor:pointer; position:relative;}
-.chev{position:absolute; top:20px; right:18px; width:22px; height:22px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; transition:transform .2s;}
-div.card.expander.open .chev{transform:rotate(180deg);}
-.pagelist{display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:12px;}
-div.card.expander.open .pagelist{display:block;}
-.pagebtn{display:flex; align-items:center; gap:8px; background:var(--accent-soft); color:var(--accent); text-decoration:none; font-size:12.5px; font-weight:700; padding:10px 12px; border-radius:9px; margin-bottom:8px; transition:background .15s,color .15s;}
-.pagebtn:last-child{margin-bottom:0;}
-.pagebtn .no{background:#fff; border-radius:6px; padding:1px 7px; font-size:11px; flex:none;}
-.pagebtn:hover{background:var(--accent); color:#fff;}
+  :root{
+    --navy:#0c1a30; --navy-2:#13284a; --ink:#1a2233; --muted:#5b6577;
+    --line:#e3e7ee; --bg:#f4f6f9; --card:#ffffff;
+    --gold:#b98b1e; --gold-soft:#faf3e0;
+    --accent:#1f5eff; --accent-soft:#eaf0ff;
+    --good:#0a7d4f; --good-soft:#e5f5ee;
+    --na:#64748b; --na-soft:#eef2f7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;}
+
+  /* ── Masthead (compact, plain official) ── */
+  .masthead{background:var(--card);color:var(--ink);padding:18px 24px;border-bottom:1px solid var(--line);}
+  .masthead .inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:14px;}
+  .eyebrow .mark{width:34px;height:34px;background:var(--navy);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex:none;}
+  .headtxt{flex:1;min-width:220px;}
+  .masthead h1{font-size:17px;font-weight:700;letter-spacing:.2px;line-height:1.3;}
+  .masthead .lede{font-size:12px;color:var(--muted);margin-top:1px;}
+  .statrow{display:flex;flex-wrap:wrap;gap:22px;}
+  .stat .v{font-size:15px;font-weight:700;color:var(--ink);}
+  .stat .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:1px;}
+
+  /* ── Body ── */
+  .page{max-width:1100px;margin:0 auto;padding:34px 24px 50px;}
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:26px;}
+  .toolbar .hint{font-size:12.5px;color:var(--muted);}
+  #member-search{padding:10px 16px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;width:280px;max-width:100%;background:var(--card);outline:none;}
+  #member-search:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);}
+
+  .section-title{display:flex;align-items:center;gap:12px;font-size:11.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:30px 0 12px;}
+  .section-title::after{content:"";flex:1;height:1px;background:var(--line);}
+  .section-title .count{background:var(--na-soft);color:var(--na);border-radius:999px;padding:1px 10px;font-size:11px;letter-spacing:0;}
+
+  .roster{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(12,26,48,.05);}
+  a.row{display:flex;align-items:center;gap:16px;padding:16px 22px;text-decoration:none;color:inherit;border-bottom:1px solid var(--line);transition:background .15s;}
+  a.row:last-child{border-bottom:none;}
+  a.row:hover{background:#f8fafc;}
+  a.row:hover .go{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .avatar{width:42px;height:42px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:16px;font-weight:600;}
+  .avatar.live{background:var(--navy);color:#e8d59a;border:1.5px solid var(--gold);}
+  .avatar.idle{background:var(--na-soft);color:var(--na);border:1.5px solid var(--line);}
+  .who{flex:1;min-width:0;}
+  .who .nm{display:block;font-size:15px;font-weight:700;letter-spacing:.2px;}
+  .who .role{display:block;font-size:12px;color:var(--muted);margin-top:3px;}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;}
+  .tag{font-size:10.5px;font-weight:700;letter-spacing:.4px;border-radius:5px;padding:3px 8px;white-space:nowrap;}
+  .tag.r{background:var(--accent-soft);color:var(--accent);}
+  .tag.none{background:var(--na-soft);color:var(--na);}
+  .status{font-size:11px;font-weight:700;border-radius:999px;padding:4px 12px;white-space:nowrap;flex:none;}
+  .status.live{background:var(--good-soft);color:var(--good);}
+  .status.pending{background:var(--gold-soft);color:var(--gold);}
+  .go{flex:none;width:30px;height:30px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);transition:all .15s;}
+
+  footer.site{max-width:1100px;margin:0 auto;padding:0 24px 36px;color:var(--muted);font-size:12px;text-align:center;}
+  @media(max-width:640px){
+    .masthead h1{font-size:24px;}
+    .tags{display:none;}
+    a.row{padding:14px 16px;}
+  }
 </style>
-<script src="assets/js/main.js" defer></script>
 </head>
 <body>
-<div class="wrap">
 
-  <header class="site">
-    <h1>Digital Marketing Member Reports</h1>
-    <p class="sub">Central navigation hub for the Digital Marketing team. Each member gets a dedicated HTML report page generated from PostgreSQL data, based on their Google Sheet / MD requirement. Click a card to open that member's page.</p>
-    <p class="sub" style="margin-top:12px;"><input id="member-search" type="text" placeholder="Filter by name…" style="padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;width:230px;max-width:100%;"></p>
-  </header>
+<header class="masthead">
+  <div class="inner">
+    <span class="eyebrow"><span class="mark">DM</span></span>
+    <div class="headtxt">
+      <h1>Digital Marketing · Member Reporting Directory</h1>
+      <p class="lede">Select a member to open their dashboard at Requirement 1 — all requirements appear as tabs on the page.</p>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="v">13</div><div class="l">Members</div></div>
+      <div class="stat"><div class="v">3</div><div class="l">Active Dashboards</div></div>
+      <div class="stat"><div class="v">6</div><div class="l">Live Reports</div></div>
+      <div class="stat"><div class="v">2026-07-06</div><div class="l">Updated</div></div>
+    </div>
+  </div>
+</header>
 
-  <div class="grid">
-    <div class="card expander" id="dilaksi-card" tabindex="0">
-      <span class="chev">&#9662;</span>
-      <div class="name">Dilaksi</div>
-      <div class="desc">3 pages available — click to choose</div>
-      <span class="badge done">Completed / Available</span>
-      <div class="pagelist">
-        <a class="pagebtn" href="pages/dilaksi.html"><span class="no">R1</span> GA4 SEO Organic Report</a>
-        <a class="pagebtn" href="pages/dilaksi-req2-all-products.html"><span class="no">R2</span> Product Priority Guidance — all products &amp; SKUs</a>
-        <a class="pagebtn" href="pages/dilaksi-req3-pages-for-removal.html"><span class="no">R3</span> Pages for Removal — last 12 months</a>
-      </div>
-    </div>
-    <div class="card expander" id="hetheesha-card" tabindex="0">
-      <span class="chev">&#9662;</span>
-      <div class="name">Hetheesha</div>
-      <div class="desc">1 page available — click to choose</div>
-      <span class="badge done">Completed / Available</span>
-      <div class="pagelist">
-        <a class="pagebtn" href="pages/hetheesha.html"><span class="no">R1</span> Top-Selling Products SEO Report — ledsone.fr</a>
-      </div>
-    </div>
-    <a class="card" href="pages/jakshan.html">
-      <div class="name">Jakshan</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
+<main class="page">
+
+  <div class="toolbar">
+    <input id="member-search" type="text" placeholder="Filter members by name…" aria-label="Filter members by name">
+    <span class="hint">Data pages are PostgreSQL / Shopify / GSC-sourced snapshots · read-only</span>
+  </div>
+
+  <div class="section-title">Active Dashboards <span class="count">3</span></div>
+  <div class="roster" id="roster-active">
+    <a class="row" href="pages/dilaksi.html" data-name="dilaksi">
+      <span class="avatar live">D</span>
+      <span class="who"><span class="nm">Dilaksi</span><span class="role">SEO &amp; Digital Marketing · ledsone.co.uk</span></span>
+      <span class="tags"><span class="tag r">R1 · GA4 SEO Organic</span><span class="tag r">R2 · Product Priority</span><span class="tag r">R3 · Pages for Removal</span></span>
+      <span class="status live">3 Reports Live</span>
+      <span class="go">&rarr;</span>
     </a>
-    <a class="card" href="pages/jefri.html">
-      <div class="name">Jefri</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
+    <a class="row" href="pages/hetheesha.html" data-name="hetheesha">
+      <span class="avatar live">H</span>
+      <span class="who"><span class="nm">Hetheesha</span><span class="role">SEO &amp; Digital Marketing · ledsone.fr</span></span>
+      <span class="tags"><span class="tag r">R1 · Top-Selling Products SEO</span></span>
+      <span class="status live">1 Report Live</span>
+      <span class="go">&rarr;</span>
     </a>
-    <div class="card expander" id="kamsi-card" tabindex="0">
-      <span class="chev">&#9662;</span>
-      <div class="name">Kamsi</div>
-      <div class="desc">2 pages available — click to choose</div>
-      <span class="badge done">Completed / Available</span>
-      <div class="pagelist">
-        <a class="pagebtn" href="pages/kamsi-req1-slow-moving-products.html"><span class="no">R1</span> Slow-Moving Product Visibility — full store, 90-day sales vs stock</a>
-        <a class="pagebtn" href="pages/kamsi-req2-low-ctr-pages.html"><span class="no">R2</span> Low CTR Page Identification — collections &amp; blogs, June 2026</a>
-      </div>
-    </div>
-    <a class="card" href="pages/mahima.html">
-      <div class="name">Mahima</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/ripson.html">
-      <div class="name">Ripson</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/sajeepan.html">
-      <div class="name">Sajeepan</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/sonya.html">
-      <div class="name">Sonya</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/sukirtha.html">
-      <div class="name">Sukirtha</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/thanishtika.html">
-      <div class="name">Thanishtika</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/thasitha.html">
-      <div class="name">Thasitha</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/theekshy.html">
-      <div class="name">Theekshy</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/thishoban.html">
-      <div class="name">Thishoban</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
-    </a>
-    <a class="card" href="pages/thivagini.html">
-      <div class="name">Thivagini</div>
-      <div class="desc">Awaiting requirement</div>
-      <span class="badge pending">Pending</span>
+    <a class="row" href="pages/kamsi-req1-slow-moving-products.html" data-name="kamsi">
+      <span class="avatar live">K</span>
+      <span class="who"><span class="nm">Kamsi</span><span class="role">SEO &amp; Digital Marketing · ledsone.co.uk</span></span>
+      <span class="tags"><span class="tag r">R1 · Slow-Moving Products</span><span class="tag r">R2 · Low CTR Pages</span></span>
+      <span class="status live">2 Reports Live</span>
+      <span class="go">&rarr;</span>
     </a>
   </div>
 
-  <footer class="site">Digital Marketing Member Reports · AIOS · generated 2026-07-02 · data pages are PostgreSQL-sourced snapshots</footer>
+  <div class="section-title">Awaiting Requirements <span class="count">10</span></div>
+  <div class="roster" id="roster-pending">
+    <a class="row" href="pages/jakshan.html" data-name="jakshan">
+      <span class="avatar idle">J</span>
+      <span class="who"><span class="nm">Jakshan</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/jefri.html" data-name="jefri">
+      <span class="avatar idle">J</span>
+      <span class="who"><span class="nm">Jefri</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/mahima.html" data-name="mahima">
+      <span class="avatar idle">M</span>
+      <span class="who"><span class="nm">Mahima</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/sajeepan.html" data-name="sajeepan">
+      <span class="avatar idle">S</span>
+      <span class="who"><span class="nm">Sajeepan</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/sonya.html" data-name="sonya">
+      <span class="avatar idle">S</span>
+      <span class="who"><span class="nm">Sonya</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/sukirtha.html" data-name="sukirtha">
+      <span class="avatar idle">S</span>
+      <span class="who"><span class="nm">Sukirtha</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/thanishtika.html" data-name="thanishtika">
+      <span class="avatar idle">T</span>
+      <span class="who"><span class="nm">Thanishtika</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/thasitha.html" data-name="thasitha">
+      <span class="avatar idle">T</span>
+      <span class="who"><span class="nm">Thasitha</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/theekshy.html" data-name="theekshy">
+      <span class="avatar idle">T</span>
+      <span class="who"><span class="nm">Theekshy</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+    <a class="row" href="pages/thivagini.html" data-name="thivagini">
+      <span class="avatar idle">T</span>
+      <span class="who"><span class="nm">Thivagini</span><span class="role">Digital Marketing team</span></span>
+      <span class="tags"><span class="tag none">No requirement received</span></span>
+      <span class="status pending">Pending</span>
+      <span class="go">&rarr;</span>
+    </a>
+  </div>
 
-</div>
+</main>
+
+<footer class="site">Digital Marketing Member Reports · AIOS · updated 2026-07-06 · data pages are PostgreSQL-sourced snapshots</footer>
+
 <script>
-document.addEventListener("DOMContentLoaded",function(){
-  ["dilaksi-card","kamsi-card","hetheesha-card"].forEach(function(id){
-    var c=document.getElementById(id);
-    if(c){c.addEventListener("click",function(e){ if(e.target.closest(".pagebtn"))return; c.classList.toggle("open");});}
+document.getElementById('member-search').addEventListener('input',function(){
+  var q=this.value.trim().toLowerCase();
+  document.querySelectorAll('a.row').forEach(function(r){
+    r.style.display=r.getAttribute('data-name').indexOf(q)>-1?'':'none';
   });
 });
 </script>

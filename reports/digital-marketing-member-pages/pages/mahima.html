@@ -4,21 +4,74 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mahima — Digital Marketing Member Reports</title>
-<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  :root{
+    --ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;
+    --card:#ffffff;--accent:#1f5eff;--accent-soft:#eaf0ff;
+    --gold:#b98b1e;--gold-soft:#faf3e0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
+  .wrap{max-width:1320px;margin:0 auto;}
+  .back{display:inline-block;margin-bottom:16px;color:var(--accent);text-decoration:none;font-size:13.5px;font-weight:600;}
+  .back:hover{text-decoration:underline;}
+  /* Tab nav — shared pattern (matches hetheesha.html) */
+  .tab-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
+  .tab-btn{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;font-family:inherit;}
+  .tab-btn:hover{background:var(--accent-soft);color:var(--accent);}
+  .tab-btn.active{background:var(--accent);color:#fff;}
+  .tab-btn .tab-label{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .placeholder{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:60px 30px;text-align:center;}
+  .placeholder .ph-icon{font-size:36px;margin-bottom:14px;}
+  .placeholder h2{font-size:17px;color:var(--ink);margin-bottom:8px;}
+  .placeholder p{color:var(--muted);font-size:13.5px;max-width:520px;margin:0 auto;}
+  .placeholder .badge{display:inline-block;margin-top:14px;background:var(--gold-soft);color:var(--gold);border-radius:999px;padding:4px 14px;font-size:11.5px;font-weight:700;}
+  footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;}
+  @media(max-width:700px){.tab-btn{padding:7px 12px;font-size:12px;}}
+</style>
 </head>
 <body>
 <div class="wrap">
+
   <a class="back" href="../index.html">&larr; Back to all members</a>
-  <div class="placeholder">
-    <h2>Mahima</h2>
-    <span class="badge pending">Pending</span>
-    <dl>
-      <dt>Status</dt><dd>Pending requirement — page not built yet.</dd>
-      <dt>Source required</dt><dd>Google Sheet / MD requirement from Mahima (Digital Marketing team).</dd>
-      <dt>Next step</dt><dd>Create a PostgreSQL-backed report page once the requirement is received.</dd>
-    </dl>
+
+  <nav class="tab-nav" role="tablist" aria-label="Mahima requirements">
+    <button class="tab-btn active" id="tab-btn-1" role="tab" aria-selected="true" aria-controls="tab-panel-1" onclick="showTab(1)">Requirement 1<span class="tab-label">Not yet assigned</span></button>
+    <button class="tab-btn" id="tab-btn-2" role="tab" aria-selected="false" aria-controls="tab-panel-2" onclick="showTab(2)">Requirement 2<span class="tab-label">Not yet assigned</span></button>
+    <button class="tab-btn" id="tab-btn-3" role="tab" aria-selected="false" aria-controls="tab-panel-3" onclick="showTab(3)">Requirement 3<span class="tab-label">Not yet assigned</span></button>
+    <button class="tab-btn" id="tab-btn-4" role="tab" aria-selected="false" aria-controls="tab-panel-4" onclick="showTab(4)">Requirement 4<span class="tab-label">Not yet assigned</span></button>
+    <button class="tab-btn" id="tab-btn-5" role="tab" aria-selected="false" aria-controls="tab-panel-5" onclick="showTab(5)">Requirement 5<span class="tab-label">Not yet assigned</span></button>
+  </nav>
+
+  <div class="tab-panel active" id="tab-panel-1" role="tabpanel" aria-labelledby="tab-btn-1">
+    <div class="placeholder"><div class="ph-icon">&#128203;</div><h2>Mahima — Requirement 1</h2><p>No requirement has been received yet. Once a Google Sheet / MD requirement arrives from Mahima (Digital Marketing team), a PostgreSQL-backed report will be built into this tab.</p><span class="badge">Pending Requirement</span></div>
   </div>
-  <footer class="site">Digital Marketing Member Reports · AIOS · generated 2026-07-02</footer>
+  <div class="tab-panel" id="tab-panel-2" role="tabpanel" aria-labelledby="tab-btn-2">
+    <div class="placeholder"><div class="ph-icon">&#128203;</div><h2>Requirement 2</h2><p>This requirement has not been implemented yet.</p></div>
+  </div>
+  <div class="tab-panel" id="tab-panel-3" role="tabpanel" aria-labelledby="tab-btn-3">
+    <div class="placeholder"><div class="ph-icon">&#128203;</div><h2>Requirement 3</h2><p>This requirement has not been implemented yet.</p></div>
+  </div>
+  <div class="tab-panel" id="tab-panel-4" role="tabpanel" aria-labelledby="tab-btn-4">
+    <div class="placeholder"><div class="ph-icon">&#128203;</div><h2>Requirement 4</h2><p>This requirement has not been implemented yet.</p></div>
+  </div>
+  <div class="tab-panel" id="tab-panel-5" role="tabpanel" aria-labelledby="tab-btn-5">
+    <div class="placeholder"><div class="ph-icon">&#128203;</div><h2>Requirement 5</h2><p>This requirement has not been implemented yet.</p></div>
+  </div>
+
+  <footer class="site">Digital Marketing Member Reports · AIOS · Mahima · updated 2026-07-06</footer>
+
 </div>
+<script>
+function showTab(n){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+  document.getElementById('tab-panel-'+n).classList.add('active');
+  const btn=document.getElementById('tab-btn-'+n);
+  btn.classList.add('active');btn.setAttribute('aria-selected','true');
+}
+</script>
 </body>
 </html>

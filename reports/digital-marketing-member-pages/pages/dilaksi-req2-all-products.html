@@ -66,9 +66,41 @@ td.num.pos{color:var(--good);font-weight:600;} td.num.zero{color:var(--na);}
 .hidden{display:none!important;}
 @media(max-width:600px){h1{font-size:18px;}.card .v{font-size:17px;}}
 </style>
+<style>
+/* Requirement tab navigation — shared pattern (matches hetheesha.html) */
+.back{display:inline-block;margin-bottom:16px;color:var(--accent,#1f5eff);text-decoration:none;font-size:13.5px;font-weight:600;}
+.back:hover{text-decoration:underline;}
+.tab-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card,#fff);border:1px solid var(--line,#e3e7ee);border-radius:14px;padding:8px;}
+.tab-btn{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted,#5b6577);transition:background .15s,color .15s;white-space:nowrap;text-decoration:none;display:inline-block;text-align:center;font-family:inherit;}
+.tab-btn:hover{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);}
+.tab-btn.active{background:var(--accent,#1f5eff);color:#fff;}
+.tab-btn .tab-label{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
+.ph-panel{display:none;background:var(--card,#fff);border:1px solid var(--line,#e3e7ee);border-radius:14px;padding:60px 30px;text-align:center;}
+.ph-panel .ph-icon{font-size:36px;margin-bottom:14px;}
+.ph-panel h2{font-size:17px;color:var(--ink,#1a2233);margin-bottom:8px;}
+.ph-panel p{color:var(--muted,#5b6577);font-size:13.5px;}
+body.ph-mode .wrap > *:not(.tab-nav):not(.back):not(.ph-panel):not(footer){display:none;}
+body.ph-mode .ph-panel{display:block;}
+@media(max-width:700px){.tab-btn{padding:7px 12px;font-size:12px;}}
+</style>
 </head>
 <body>
 <div class="wrap">
+
+<a class="back" href="../index.html">&larr; Back to all members</a>
+
+<nav class="tab-nav" role="tablist" aria-label="Dilaksi requirements">
+  <a class="tab-btn" href="dilaksi.html">Requirement 1<span class="tab-label">GA4 SEO Organic Report</span></a>
+  <a class="tab-btn active" href="dilaksi-req2-all-products.html">Requirement 2<span class="tab-label">Product Priority Guidance</span></a>
+  <a class="tab-btn" href="dilaksi-req3-pages-for-removal.html">Requirement 3<span class="tab-label">Pages for Removal</span></a>
+  <button class="tab-btn" onclick="phShow(4,this)">Requirement 4<span class="tab-label">Not yet assigned</span></button>
+  <button class="tab-btn" onclick="phShow(5,this)">Requirement 5<span class="tab-label">Not yet assigned</span></button>
+</nav>
+
+<div class="ph-panel" id="ph-panel"><div class="ph-icon">&#128203;</div><h2 id="ph-title">Requirement</h2><p>This requirement has not been implemented yet.</p></div>
+<script>
+function phShow(n,btn){document.body.classList.add('ph-mode');document.getElementById('ph-title').textContent='Requirement '+n;document.querySelectorAll('.tab-nav .tab-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
+</script>
 
 <header class="top">
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 2 — Full Product List</div>
