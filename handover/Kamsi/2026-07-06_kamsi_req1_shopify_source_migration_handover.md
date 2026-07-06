@@ -2,7 +2,7 @@
 - **Title:** Slow-Moving Product Visibility now 100% Shopify-sourced
 - **Purpose:** Continuation notes for the next session/agent
 - **Requirement Source:** Kamsi (via Kuberan, 2026-07-06) · **Owner:** Kamsi · **Reviewer:** Kuberan
-- **Status:** Built & validated locally; NOT deployed (needs Kuberan approval) · **PASS**
+- **Status:** DEPLOYED & verified live 2026-07-06 (Kuberan approved; Staff-requirements commit 2f5dc9d) · **PASS**
 
 ## What changed
 Units Sold (90d), Current Stock, Last Order Date migrated from PostgreSQL (order_transaction / inv_final_stock) to Shopify Admin API bulk exports. New results: 13,866 SKUs, 4,351 Slow-Moving, 9,515 Active, 1,937,897 units in slow-movers, 0 stock-unknown.
