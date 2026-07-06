@@ -45,10 +45,53 @@ for h in handles:
     })
 rows.sort(key=lambda r: (-r["ga4"], -r["imp"]))
 
+# ── Recommended Action — Kuberan-approved business rule (2026-07-06) ──
+# Duplicate-title detection: among live (200) pages, group by normalized title;
+# within a duplicate group the page with the most GA4 sessions (tie: GSC impressions)
+# is treated as "the live equivalent" that the others should redirect to.
+_title_groups = defaultdict(list)
+for r in rows:
+    t = (r["title"] or "").strip().lower()
+    if t and r["status"] == "200":
+        _title_groups[t].append(r)
+dup_target = {}  # handle -> canonical handle it duplicates
+for t, grp in _title_groups.items():
+    if len(grp) > 1:
+        canon = max(grp, key=lambda r: (r["ga4"], r["imp"]))
+        for r in grp:
+            if r["handle"] != canon["handle"]:
+                dup_target[r["handle"]] = canon["handle"]
+
+def recommended_action(r):
+    has_query = "?" in r["handle"] or "&" in r["handle"]
+    is_live = r["status"] == "200"
+    linked = r["hdr"] or r["ftr"]
+    if has_query and is_live:
+        return "Add canonical tag — do not delete"
+    if is_live and r["handle"] in dup_target:
+        return f'301 Redirect to /collections/{dup_target[r["handle"]]}'
+    if r["ga4"] == 0 and r["imp"] == 0 and r["bl"] == 0 and not linked:
+        return "Delete (410)"
+    if r["ga4"] <= 20 and r["bl"] >= 1:
+        return "301 Redirect to nearest matching live collection/product"
+    if r["ga4"] == 0 and r["imp"] > 0 and r["bl"] == 0:
+        return "301 Redirect to nearest matching live collection/product"
+    if linked:
+        return "Keep — do not delete (structurally important, review content instead)"
+    return "Review manually (borderline — human judgment needed)"
+
+for r in rows:
+    r["action"] = recommended_action(r)
+
 n_live = sum(1 for r in rows if r["status"] == "200")
 n_zero = sum(1 for r in rows if r["ga4"] == 0 and r["imp"] == 0 and r["bl"] == 0)
 tot_sess = sum(r["ga4"] for r in rows); tot_imp = sum(r["imp"] for r in rows)
 n_linked = sum(1 for r in rows if r["hdr"] or r["ftr"])
+n_del = sum(1 for r in rows if r["action"].startswith("Delete"))
+n_keep = sum(1 for r in rows if r["action"].startswith("Keep"))
+n_redir = sum(1 for r in rows if "Redirect" in r["action"])
+n_canon = sum(1 for r in rows if r["action"].startswith("Add canonical"))
+n_review = sum(1 for r in rows if r["action"].startswith("Review"))
 
 def fmt(n): return f"{n:,}"
 
@@ -72,14 +115,20 @@ for r in rows:
     imp_why = f'{fmt(r["clk"])} clicks (12m)' if r["imp"] > 0 else "0 impressions · 0 clicks"
     zero_sig = "1" if (r["ga4"] == 0 and r["imp"] == 0 and r["bl"] == 0) else "0"
     nav_state = "linked" if (r["hdr"] or r["ftr"]) else "sitemap"
-    body_rows.append(f'''        <tr data-ga4="{r["ga4"]}" data-bl="{r["bl"]}" data-imp="{r["imp"]}" data-nav="{nav_state}" data-zero="{zero_sig}">
+    act = r["action"]
+    act_cls = ("del" if act.startswith("Delete") else
+               "keep" if act.startswith("Keep") else
+               "review" if act.startswith("Review") else
+               "redir" if "Redirect" in act else
+               "canon")
+    body_rows.append(f'''        <tr data-ga4="{r["ga4"]}" data-bl="{r["bl"]}" data-imp="{r["imp"]}" data-nav="{nav_state}" data-zero="{zero_sig}" data-act="{act_cls}">
           <td class="lp"><span class="path">/collections/{r["handle"]}</span><div class="why">{t}</div></td>
           <td class="num"><span class="{ga4_cls}">{fmt(r["ga4"])}</span><div class="why">{ga4_why}</div></td>
           <td class="num"><span class="{bl_cls}">{fmt(r["bl"])}</span><div class="why">{bl_why}</div></td>
           <td>{linked}</td>
           <td>{live_pill}</td>
           <td class="num"><span class="{imp_cls}">{fmt(r["imp"])}</span><div class="why">{imp_why}</div></td>
-          <td class="na">—</td>
+          <td><span class="pill act-{act_cls}">{html.escape(act)}</span></td>
         </tr>''')
 
 page = f'''<!DOCTYPE html>
@@ -114,7 +163,7 @@ page = f'''<!DOCTYPE html>
   .tbar select{{padding:7px 10px; border:1px solid var(--line); border-radius:8px; font-size:12.5px; background:#fff; color:var(--ink); cursor:pointer;}}
   .scroll{{overflow-x:auto;}}
   table{{width:100%; border-collapse:collapse; font-size:13px; min-width:1180px; table-layout:fixed;}}
-  col.c-url{{width:22%;}} col.c-ga4{{width:12%;}} col.c-bl{{width:12%;}} col.c-nav{{width:17%;}} col.c-live{{width:11%;}} col.c-gsc{{width:13%;}} col.c-act{{width:7%;}}
+  col.c-url{{width:20%;}} col.c-ga4{{width:11%;}} col.c-bl{{width:11%;}} col.c-nav{{width:15%;}} col.c-live{{width:10%;}} col.c-gsc{{width:12%;}} col.c-act{{width:21%;}}
   thead th{{background:#f0f3f8; text-align:left; padding:12px 16px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#42506a; border-bottom:2px solid var(--line); cursor:pointer; user-select:none;}}
   thead th.num, td.num{{text-align:right;}}
   tbody td{{padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45;}}
@@ -127,6 +176,11 @@ page = f'''<!DOCTYPE html>
   .pill.yes{{background:#2e7d32;}}
   .pill.no{{background:#c62828;}}
   .pill.sm{{background:#9aa3b2;}}
+  .pill.act-del{{background:#c62828;}}
+  .pill.act-keep{{background:#2e7d32;}}
+  .pill.act-redir{{background:#1f5eff;}}
+  .pill.act-canon{{background:#6a4fc4;}}
+  .pill.act-review{{background:#b98b1e;}}
   .sess{{font-weight:700; font-size:14px;}}
   .sess.zero{{color:var(--na); font-weight:600;}}
   .why{{font-size:11px; color:var(--muted); margin-top:4px; line-height:1.5; overflow-wrap:break-word;}}
@@ -157,6 +211,10 @@ page = f'''<!DOCTYPE html>
     <div class="card"><div class="label">GSC Impressions (12m)</div><div class="value">{fmt(tot_imp)}</div><div class="note">all collections combined</div></div>
     <div class="card"><div class="label">Zero-Signal Collections</div><div class="value">{fmt(n_zero)}</div><div class="note">0 sessions · 0 impressions · 0 backlinks</div></div>
     <div class="card"><div class="label">Linked in Header/Footer</div><div class="value">{fmt(n_linked)}</div><div class="note">rest are sitemap-only</div></div>
+    <div class="card"><div class="label">Recommended: Delete (410)</div><div class="value">{fmt(n_del)}</div><div class="note">zero-signal, not linked</div></div>
+    <div class="card"><div class="label">Recommended: Redirect (301)</div><div class="value">{fmt(n_redir)}</div><div class="note">duplicates + low/no-traffic w/ signal</div></div>
+    <div class="card"><div class="label">Recommended: Keep</div><div class="value">{fmt(n_keep)}</div><div class="note">linked in nav/footer</div></div>
+    <div class="card"><div class="label">Recommended: Review Manually</div><div class="value">{fmt(n_review)}</div><div class="note">borderline — human judgment</div></div>
   </div>
 
   <div class="tablebox">
@@ -173,6 +231,9 @@ page = f'''<!DOCTYPE html>
         <option value="">All</option><option value="linked">Header/Footer linked</option><option value="sitemap">Sitemap only</option></select></label>
       <label>Signal <select id="f_zero" onchange="flt()">
         <option value="">All</option><option value="zero">Zero-signal (removal candidates)</option><option value="some">Has any signal</option></select></label>
+      <label>Recommended Action <select id="f_act" onchange="flt()">
+        <option value="">All</option><option value="del">Delete (410)</option><option value="redir">301 Redirect</option>
+        <option value="canon">Canonical tag</option><option value="keep">Keep</option><option value="review">Review manually</option></select></label>
       <button onclick="rst()" style="padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;">Reset filters</button>
     </div>
     <div class="scroll">
@@ -205,7 +266,7 @@ page = f'''<!DOCTYPE html>
     <strong>Referring Backlinks:</strong> Semrush Backlink Analytics (backlinks_pages report, root domain ledsone.co.uk, sorted by backlinks; the report reached 0-backlink pages, so every collection not listed genuinely has no indexed backlinks). Fetched {GEN_DATE}.<br>
     <strong>Linked in Nav/Footer/Sitemap:</strong> homepage &lt;header&gt;/&lt;footer&gt; HTML inspected {GEN_DATE}; all rows are in the (auto-generated) sitemap by definition, so "Sitemap only" marks collections with no deliberate navigation link.<br>
     <strong>Currently Live:</strong> individual HTTP request to every URL on {GEN_DATE} (throttled to respect rate limits). Page titles are taken from each live page's &lt;title&gt; tag.<br>
-    <strong>Recommended Action:</strong> intentionally blank — needs a Kuberan-approved business rule before it can be filled.<br>
+    <strong>Recommended Action:</strong> Kuberan-approved business rule (2026-07-06), applied top-to-bottom, first match wins: (1) URL has query params AND live → <em>Add canonical tag</em>; (2) live AND duplicate title of another live page → <em>301 Redirect</em> to the live page with the higher GA4/GSC signal; (3) 0 GA4 sessions AND 0 GSC impressions AND 0 backlinks AND not linked in header/footer → <em>Delete (410)</em>; (4) GA4 ≤ 20 AND backlinks ≥ 1 → <em>301 Redirect to nearest matching live collection/product</em>; (5) 0 GA4 sessions AND GSC impressions &gt; 0 AND 0 backlinks → <em>301 Redirect to nearest matching live collection/product</em> (has search visibility, no traffic); (6) linked in header/footer nav (any traffic) → <em>Keep</em> — structurally important; (7) everything else → <em>Review manually</em>. "Nearest matching live collection/product" is a description of the action needed, not a computed target — a human picks the actual redirect destination.<br>
     <strong>Data files:</strong> <code>reports/dilaksi/data/2026-07-03_req3-allcol-*.csv</code> · Builder: <code>2026-07-03_req3-allcol-page-builder.py</code> (rerun to regenerate this page).
   </div>
 
@@ -215,24 +276,25 @@ function flt(){{
   var q=document.getElementById('q').value.toLowerCase();
   var fga=document.getElementById('f_ga4').value, fbl=document.getElementById('f_bl').value,
       fim=document.getElementById('f_imp').value, fnv=document.getElementById('f_nav').value,
-      fz=document.getElementById('f_zero').value;
+      fz=document.getElementById('f_zero').value, fact=document.getElementById('f_act').value;
   var shown=0, total=0;
   document.querySelectorAll('#t tbody tr').forEach(function(tr){{
     total++;
-    var ga4=+tr.dataset.ga4, bl=+tr.dataset.bl, imp=+tr.dataset.imp, nav=tr.dataset.nav, z=tr.dataset.zero;
+    var ga4=+tr.dataset.ga4, bl=+tr.dataset.bl, imp=+tr.dataset.imp, nav=tr.dataset.nav, z=tr.dataset.zero, act=tr.dataset.act;
     var ok = tr.cells[0].innerText.toLowerCase().indexOf(q)>-1;
     if(ok && fga){{ ok = fga==='has'? ga4>0 : fga==='high'? ga4>=100 : ga4===0; }}
     if(ok && fbl){{ ok = fbl==='has'? bl>0 : bl===0; }}
     if(ok && fim){{ ok = fim==='has'? imp>0 : fim==='high'? imp>=10000 : imp===0; }}
     if(ok && fnv){{ ok = nav===fnv; }}
     if(ok && fz){{ ok = fz==='zero'? z==='1' : z==='0'; }}
+    if(ok && fact){{ ok = act===fact; }}
     tr.style.display = ok ? '' : 'none';
     if(ok) shown++;
   }});
   document.getElementById('cnt').textContent = shown===total ? 'All '+total+' live collection URLs' : 'Showing '+shown+' of '+total+' collections';
 }}
 function rst(){{
-  ['f_ga4','f_bl','f_imp','f_nav','f_zero'].forEach(function(i){{document.getElementById(i).value='';}});
+  ['f_ga4','f_bl','f_imp','f_nav','f_zero','f_act'].forEach(function(i){{document.getElementById(i).value='';}});
   document.getElementById('q').value=''; flt();
 }}
 var dir={{}};
