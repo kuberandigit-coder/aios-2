@@ -63,35 +63,36 @@ for t, grp in _title_groups.items():
                 dup_target[r["handle"]] = canon["handle"]
 
 def recommended_action(r):
+    # returns (short_label, why_text, css_class)
     has_query = "?" in r["handle"] or "&" in r["handle"]
     is_live = r["status"] == "200"
     linked = r["hdr"] or r["ftr"]
     if has_query and is_live:
-        return "Add canonical tag — do not delete"
+        return ("Canonical tag", "Query-param URL of a live page — do not delete", "canon")
     if is_live and r["handle"] in dup_target:
-        return f'301 Redirect to /collections/{dup_target[r["handle"]]}'
+        return (f'Redirect (301)', f'Duplicate → /collections/{dup_target[r["handle"]]}', "redir")
     if r["ga4"] == 0 and r["imp"] == 0 and r["bl"] == 0 and not linked:
-        return "Delete (410)"
+        return ("Delete (410)", "Zero signal, not linked", "del")
     if r["ga4"] <= 20 and r["bl"] >= 1:
-        return "301 Redirect to nearest matching live collection/product"
+        return ("Redirect (301)", "Low traffic, has backlinks — nearest live match", "redir")
     if r["ga4"] == 0 and r["imp"] > 0 and r["bl"] == 0:
-        return "301 Redirect to nearest matching live collection/product"
+        return ("Redirect (301)", "Search visibility, no traffic — nearest live match", "redir")
     if linked:
-        return "Keep — do not delete (structurally important, review content instead)"
-    return "Review manually (borderline — human judgment needed)"
+        return ("Keep", "Structurally important — review content instead", "keep")
+    return ("Review manually", "Borderline — human judgment needed", "review")
 
 for r in rows:
-    r["action"] = recommended_action(r)
+    r["act_label"], r["act_why"], r["act_cls"] = recommended_action(r)
 
 n_live = sum(1 for r in rows if r["status"] == "200")
 n_zero = sum(1 for r in rows if r["ga4"] == 0 and r["imp"] == 0 and r["bl"] == 0)
 tot_sess = sum(r["ga4"] for r in rows); tot_imp = sum(r["imp"] for r in rows)
 n_linked = sum(1 for r in rows if r["hdr"] or r["ftr"])
-n_del = sum(1 for r in rows if r["action"].startswith("Delete"))
-n_keep = sum(1 for r in rows if r["action"].startswith("Keep"))
-n_redir = sum(1 for r in rows if "Redirect" in r["action"])
-n_canon = sum(1 for r in rows if r["action"].startswith("Add canonical"))
-n_review = sum(1 for r in rows if r["action"].startswith("Review"))
+n_del = sum(1 for r in rows if r["act_cls"] == "del")
+n_keep = sum(1 for r in rows if r["act_cls"] == "keep")
+n_redir = sum(1 for r in rows if r["act_cls"] == "redir")
+n_canon = sum(1 for r in rows if r["act_cls"] == "canon")
+n_review = sum(1 for r in rows if r["act_cls"] == "review")
 
 def fmt(n): return f"{n:,}"
 
@@ -115,12 +116,7 @@ for r in rows:
     imp_why = f'{fmt(r["clk"])} clicks (12m)' if r["imp"] > 0 else "0 impressions · 0 clicks"
     zero_sig = "1" if (r["ga4"] == 0 and r["imp"] == 0 and r["bl"] == 0) else "0"
     nav_state = "linked" if (r["hdr"] or r["ftr"]) else "sitemap"
-    act = r["action"]
-    act_cls = ("del" if act.startswith("Delete") else
-               "keep" if act.startswith("Keep") else
-               "review" if act.startswith("Review") else
-               "redir" if "Redirect" in act else
-               "canon")
+    act_cls = r["act_cls"]
     body_rows.append(f'''        <tr data-ga4="{r["ga4"]}" data-bl="{r["bl"]}" data-imp="{r["imp"]}" data-nav="{nav_state}" data-zero="{zero_sig}" data-act="{act_cls}">
           <td class="lp"><span class="path">/collections/{r["handle"]}</span><div class="why">{t}</div></td>
           <td class="num"><span class="{ga4_cls}">{fmt(r["ga4"])}</span><div class="why">{ga4_why}</div></td>
@@ -128,7 +124,7 @@ for r in rows:
           <td>{linked}</td>
           <td>{live_pill}</td>
           <td class="num"><span class="{imp_cls}">{fmt(r["imp"])}</span><div class="why">{imp_why}</div></td>
-          <td><span class="pill act-{act_cls}">{html.escape(act)}</span></td>
+          <td><span class="pill act-{act_cls}">{html.escape(r["act_label"])}</span><div class="why">{html.escape(r["act_why"])}</div></td>
         </tr>''')
 
 page = f'''<!DOCTYPE html>
@@ -188,10 +184,26 @@ page = f'''<!DOCTYPE html>
   .footnotes h3{{font-size:13px; color:var(--ink); margin-bottom:8px;}}
   .footnotes strong{{color:var(--ink);}}
   @media (max-width:700px){{ h1{{font-size:18px;}} .card .value{{font-size:19px;}} }}
+  .back{{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line,#e3e7ee);border-radius:9px;background:var(--card,#fff);color:var(--muted,#5b6577);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}}
+  .back:hover{{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);border-color:var(--accent,#1f5eff);}}
+  .tab-nav{{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card,#fff);border:1px solid var(--line,#e3e7ee);border-radius:14px;padding:8px;}}
+  .tab-btn{{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted,#5b6577);transition:background .15s,color .15s;white-space:nowrap;text-decoration:none;display:inline-block;text-align:center;font-family:inherit;}}
+  .tab-btn:hover{{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);}}
+  .tab-btn.active{{background:var(--accent,#1f5eff);color:#fff;}}
+  .tab-btn .tab-label{{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}}
+  @media(max-width:700px){{.tab-btn{{padding:7px 12px;font-size:12px;}}}}
 </style>
 </head>
 <body>
 <div class="wrap">
+
+<a class="back" href="../index.html">&larr; Back to all members</a>
+
+<nav class="tab-nav" role="tablist" aria-label="Dilaksi requirements">
+  <a class="tab-btn" href="dilaksi.html">Requirement 1<span class="tab-label">GA4 SEO Organic Report</span></a>
+  <a class="tab-btn" href="dilaksi-req2-all-products.html">Requirement 2<span class="tab-label">Product Priority Guidance</span></a>
+  <a class="tab-btn active" href="dilaksi-req3-pages-for-removal.html">Requirement 3<span class="tab-label">Pages for Removal</span></a>
+</nav>
 
   <header>
     <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 3 — All Collections</div>
@@ -206,15 +218,9 @@ page = f'''<!DOCTYPE html>
 
   <div class="cards">
     <div class="card"><div class="label">Live Collections</div><div class="value">{fmt(len(rows))}</div><div class="note">from the site's own sitemap</div></div>
-    <div class="card"><div class="label">HTTP 200 Verified</div><div class="value">{fmt(n_live)}</div><div class="note">individually checked {GEN_DATE}</div></div>
     <div class="card"><div class="label">Organic Sessions (12m)</div><div class="value">{fmt(tot_sess)}</div><div class="note">GA4, all collections combined</div></div>
     <div class="card"><div class="label">GSC Impressions (12m)</div><div class="value">{fmt(tot_imp)}</div><div class="note">all collections combined</div></div>
     <div class="card"><div class="label">Zero-Signal Collections</div><div class="value">{fmt(n_zero)}</div><div class="note">0 sessions · 0 impressions · 0 backlinks</div></div>
-    <div class="card"><div class="label">Linked in Header/Footer</div><div class="value">{fmt(n_linked)}</div><div class="note">rest are sitemap-only</div></div>
-    <div class="card"><div class="label">Recommended: Delete (410)</div><div class="value">{fmt(n_del)}</div><div class="note">zero-signal, not linked</div></div>
-    <div class="card"><div class="label">Recommended: Redirect (301)</div><div class="value">{fmt(n_redir)}</div><div class="note">duplicates + low/no-traffic w/ signal</div></div>
-    <div class="card"><div class="label">Recommended: Keep</div><div class="value">{fmt(n_keep)}</div><div class="note">linked in nav/footer</div></div>
-    <div class="card"><div class="label">Recommended: Review Manually</div><div class="value">{fmt(n_review)}</div><div class="note">borderline — human judgment</div></div>
   </div>
 
   <div class="tablebox">

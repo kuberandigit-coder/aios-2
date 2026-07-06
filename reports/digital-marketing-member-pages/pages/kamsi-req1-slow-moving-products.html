@@ -55,19 +55,13 @@
 </style>
 <style>
 /* Requirement tab navigation — shared pattern (matches hetheesha.html) */
-.back{display:inline-block;margin-bottom:16px;color:var(--accent,#1f5eff);text-decoration:none;font-size:13.5px;font-weight:600;}
-.back:hover{text-decoration:underline;}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line,#e3e7ee);border-radius:9px;background:var(--card,#fff);color:var(--muted,#5b6577);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);border-color:var(--accent,#1f5eff);}
 .tab-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card,#fff);border:1px solid var(--line,#e3e7ee);border-radius:14px;padding:8px;}
 .tab-btn{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted,#5b6577);transition:background .15s,color .15s;white-space:nowrap;text-decoration:none;display:inline-block;text-align:center;font-family:inherit;}
 .tab-btn:hover{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);}
 .tab-btn.active{background:var(--accent,#1f5eff);color:#fff;}
 .tab-btn .tab-label{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
-.ph-panel{display:none;background:var(--card,#fff);border:1px solid var(--line,#e3e7ee);border-radius:14px;padding:60px 30px;text-align:center;}
-.ph-panel .ph-icon{font-size:36px;margin-bottom:14px;}
-.ph-panel h2{font-size:17px;color:var(--ink,#1a2233);margin-bottom:8px;}
-.ph-panel p{color:var(--muted,#5b6577);font-size:13.5px;}
-body.ph-mode .wrap > *:not(.tab-nav):not(.back):not(.ph-panel):not(footer){display:none;}
-body.ph-mode .ph-panel{display:block;}
 @media(max-width:700px){.tab-btn{padding:7px 12px;font-size:12px;}}
 </style>
 </head>
@@ -79,15 +73,8 @@ body.ph-mode .ph-panel{display:block;}
   <nav class="tab-nav" role="tablist" aria-label="Kamsi requirements">
     <a class="tab-btn active" href="kamsi-req1-slow-moving-products.html">Requirement 1<span class="tab-label">Slow-Moving Product Visibility</span></a>
     <a class="tab-btn" href="kamsi-req2-low-ctr-pages.html">Requirement 2<span class="tab-label">Low CTR Page Identification</span></a>
-    <button class="tab-btn" onclick="phShow(3,this)">Requirement 3<span class="tab-label">Not yet assigned</span></button>
-    <button class="tab-btn" onclick="phShow(4,this)">Requirement 4<span class="tab-label">Not yet assigned</span></button>
-    <button class="tab-btn" onclick="phShow(5,this)">Requirement 5<span class="tab-label">Not yet assigned</span></button>
+    <a class="tab-btn" href="kamsi-req3-core-ga4-seo.html">Requirement 3<span class="tab-label">Core GA4 Data for SEO</span></a>
   </nav>
-
-  <div class="ph-panel" id="ph-panel"><div class="ph-icon">&#128203;</div><h2 id="ph-title">Requirement</h2><p>This requirement has not been implemented yet.</p></div>
-  <script>
-  function phShow(n,btn){document.body.classList.add('ph-mode');document.getElementById('ph-title').textContent='Requirement '+n;document.querySelectorAll('.tab-nav .tab-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
-  </script>
 
   <header>
     <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Kamsi — Requirement 1</div>

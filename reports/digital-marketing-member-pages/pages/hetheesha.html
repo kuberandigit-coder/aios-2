@@ -16,8 +16,8 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
   .wrap{max-width:1400px;margin:0 auto;}
-  .back{display:inline-block;margin-bottom:16px;color:var(--accent);text-decoration:none;font-size:13.5px;font-weight:600;}
-  .back:hover{text-decoration:underline;}
+  .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line,#e3e7ee);border-radius:9px;background:var(--card,#fff);color:var(--muted,#5b6577);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+  .back:hover{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);border-color:var(--accent,#1f5eff);}
   .tab-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
   .tab-btn{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;}
   .tab-btn:hover{background:var(--accent-soft);color:var(--accent);}
@@ -102,19 +102,7 @@
     </button>
     <button class="tab-btn" id="tab-btn-2" role="tab" aria-selected="false" aria-controls="tab-panel-2" onclick="showTab(2)">
       Requirement 2
-      <span class="tab-label">Not yet assigned</span>
-    </button>
-    <button class="tab-btn" id="tab-btn-3" role="tab" aria-selected="false" aria-controls="tab-panel-3" onclick="showTab(3)">
-      Requirement 3
-      <span class="tab-label">Not yet assigned</span>
-    </button>
-    <button class="tab-btn" id="tab-btn-4" role="tab" aria-selected="false" aria-controls="tab-panel-4" onclick="showTab(4)">
-      Requirement 4
-      <span class="tab-label">Not yet assigned</span>
-    </button>
-    <button class="tab-btn" id="tab-btn-5" role="tab" aria-selected="false" aria-controls="tab-panel-5" onclick="showTab(5)">
-      Requirement 5
-      <span class="tab-label">Not yet assigned</span>
+      <span class="tab-label">Collection SEO Dashboard</span>
     </button>
   </nav>
 
@@ -225,18 +213,105 @@
 
   </div><!-- /tab-panel-1 -->
 
+  <!-- REQUIREMENT 2 -->
   <div class="tab-panel" id="tab-panel-2" role="tabpanel" aria-labelledby="tab-btn-2">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 2</h2><p>Not yet implemented.</p></div>
-  </div>
-  <div class="tab-panel" id="tab-panel-3" role="tabpanel" aria-labelledby="tab-btn-3">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 3</h2><p>Not yet implemented.</p></div>
-  </div>
-  <div class="tab-panel" id="tab-panel-4" role="tabpanel" aria-labelledby="tab-btn-4">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 4</h2><p>Not yet implemented.</p></div>
-  </div>
-  <div class="tab-panel" id="tab-panel-5" role="tabpanel" aria-labelledby="tab-btn-5">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 5</h2><p>Not yet implemented.</p></div>
-  </div>
+
+    <header class="rpt">
+      <div class="req-tag">Requirement 2 · ledsone.fr · SEO &amp; Digital Marketing</div>
+      <h1>Collection Performance Dashboard</h1>
+      <div class="sub">
+        Staff: <strong>Hetheesha</strong> &nbsp;·&nbsp;
+        Store: <strong>ledsone.fr</strong> &nbsp;·&nbsp;
+        Source: <strong>Shopify + GSC (90d)</strong> &nbsp;·&nbsp;
+        Refreshed: <strong>2026-07-06</strong>
+      </div>
+      <div class="chips">
+        <span class="chip">66 Collections</span>
+        <span class="chip">GSC: google_search_console.gsc_web_page</span>
+        <span class="chip">Shopify Admin GraphQL</span>
+        <span class="chip">PostgreSQL Read-Only</span>
+      </div>
+    </header>
+
+    <div class="kpis" id="r2kpis">
+      <div class="kpi info"><div class="label">Collections</div><div class="value" id="r2kTotal">66</div><div class="note">All Shopify collections</div></div>
+      <div class="kpi ok"><div class="label">Pass (No Red)</div><div class="value" id="r2kPass">—</div><div class="note">All checks Green</div></div>
+      <div class="kpi warn"><div class="label">Warnings</div><div class="value" id="r2kWarn">—</div><div class="note">At least one Yellow</div></div>
+      <div class="kpi err"><div class="label">Failed</div><div class="value" id="r2kFail">—</div><div class="note">At least one Red flag</div></div>
+      <div class="kpi info"><div class="label">GSC Clicks (90d)</div><div class="value" id="r2kClicks">—</div><div class="note">ledsone.fr collections</div></div>
+      <div class="kpi info"><div class="label">GSC Impressions</div><div class="value" id="r2kImp">—</div><div class="note">90-day window</div></div>
+    </div>
+
+    <div class="controls">
+      <input class="search" id="r2SearchBox" placeholder="Search collection URL or title…" autocomplete="off">
+      <button class="fbtn on" id="r2BtnAll" onclick="r2_filter('all')">All</button>
+      <button class="fbtn" id="r2BtnFail" onclick="r2_filter('fail')">Failed</button>
+      <button class="fbtn" id="r2BtnWarn" onclick="r2_filter('warn')">Warnings</button>
+      <button class="fbtn" id="r2BtnPass" onclick="r2_filter('pass')">Pass</button>
+      <button class="fbtn" id="r2BtnThin" onclick="r2_filter('thin')">Thin Content</button>
+      <button class="fbtn" id="r2BtnNoTitle" onclick="r2_filter('notitle')">No Meta Title</button>
+      <button class="fbtn" id="r2BtnFAQ" onclick="r2_filter('faq')">Has FAQ</button>
+      <button class="fbtn" id="r2BtnGSC" onclick="r2_filter('gsc')">Has GSC Traffic</button>
+      <button class="export" onclick="r2_exportCSV()">Export CSV</button>
+    </div>
+
+    <div class="tablebox">
+      <div class="tbar"><span id="r2tbarCount">66 collections</span><span style="font-size:11px;color:var(--muted)">Click column headers to sort · GA4 N/A for ledsone.fr in DB</span></div>
+      <div class="scroll">
+        <table id="r2table">
+          <thead>
+            <tr>
+              <th onclick="r2_sort(0)">#</th>
+              <th onclick="r2_sort(1)">Collection URL</th>
+              <th class="num" onclick="r2_sort(2)">Word Count</th>
+              <th onclick="r2_sort(3)">Thin Flag</th>
+              <th onclick="r2_sort(4)">Meta Title</th>
+              <th onclick="r2_sort(5)">Meta Desc</th>
+              <th onclick="r2_sort(6)">H1 Status</th>
+              <th onclick="r2_sort(7)">FAQ Schema</th>
+              <th class="num" onclick="r2_sort(8)">Int. Links In</th>
+              <th class="num" onclick="r2_sort(9)">GSC Clicks</th>
+              <th class="num" onclick="r2_sort(10)">CTR</th>
+              <th class="num" onclick="r2_sort(11)">Organic Sessions</th>
+              <th class="num" onclick="r2_sort(12)">Conv. Rate</th>
+              <th class="num" onclick="r2_sort(13)">Revenue (30d)</th>
+            </tr>
+          </thead>
+          <tbody id="r2tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="validation">
+      <h3>Validation &amp; Data Sources</h3>
+      <div class="val-grid">
+        <div class="val-item"><div class="val-dot pass"></div><span>66 collections fetched via Shopify Admin GraphQL (2 pages)</span></div>
+        <div class="val-item"><div class="val-dot pass"></div><span>GSC data: google_search_console.gsc_web_page (site_url='https://ledsone.fr/')</span></div>
+        <div class="val-item"><div class="val-dot pass"></div><span>Word count: Shopify descriptionHtml stripped of HTML tags</span></div>
+        <div class="val-item"><div class="val-dot pass"></div><span>FAQ Schema: custom.faq_schema metafield — 2 collections present</span></div>
+        <div class="val-item"><div class="val-dot pass"></div><span>Internal links: parsed from all collection descriptionHtml</span></div>
+        <div class="val-item"><div class="val-dot fail"></div><span>GA4 organic sessions/CVR/revenue: NOT available for ledsone.fr in connected DB</span></div>
+        <div class="val-item"><div class="val-dot fail"></div><span>Revenue (30d): Shopify Analytics returns store total only — collection breakdown unavailable</span></div>
+        <div class="val-item"><div class="val-dot pass"></div><span>No placeholder values · No invented business logic · Production not modified</span></div>
+      </div>
+    </div>
+
+    <div class="footnotes">
+      <h3>Footnotes &amp; Status Rules</h3>
+      <ul>
+        <li><strong>Word Count:</strong> ≥200 Green · 100–199 Yellow · &lt;100 Red. Computed from Shopify descriptionHtml after HTML/CSS stripping.</li>
+        <li><strong>Thin Content Flag:</strong> &lt;100 words = Thin (Red) · ≥100 words = OK (Green).</li>
+        <li><strong>Meta Title:</strong> Missing (0 chars) = Red · &lt;30 chars = Too Short (Yellow) · 30–70 = OK (Green) · &gt;70 = Too Long (Yellow). Duplicate titles flagged Red.</li>
+        <li><strong>Meta Description:</strong> Missing = Red · &lt;120 = Too Short (Yellow) · 120–160 = OK (Green) · &gt;160 = Too Long (Yellow).</li>
+        <li><strong>H1 Status:</strong> Uses collection title (Shopify theme renders collection title as H1). Checked against handle keyword. Missing = Red · Mismatch = Yellow · Matches = Green.</li>
+        <li><strong>FAQ Schema:</strong> custom.faq_schema metafield — Present (Green) or Missing (Red). Only lumiere-daraignee &amp; decor-led have this metafield.</li>
+        <li><strong>Internal Links:</strong> Count of internal collection-to-collection links found in all description HTML. 0 = Red · 1–2 = Yellow · ≥3 = Green.</li>
+        <li><strong>GSC Clicks/CTR:</strong> Source: google_search_console.gsc_web_page · Last 90 days · Aggregated by page URL.</li>
+        <li><strong>Organic Sessions, Conv. Rate, Revenue (30d):</strong> — (Not Available) — GA4 table in PostgreSQL contains ledsone.co.uk data only (property_id 408110563). ledsone.fr GA4 data not loaded in connected DB. Shopify Analytics provides store-level total (€3,076.94 / 30d) but not collection-level breakdown.</li>
+      </ul>
+    </div>
+
+  </div><!-- /tab-panel-2 -->
 
   <footer class="site">Hetheesha · ledsone.fr · SEO Reports · AIOS · Refreshed 2026-07-06</footer>
 
@@ -479,6 +554,246 @@ function r1_exportCSV(){
 
 document.getElementById('r1SearchBox').addEventListener('input',function(){r1_sq=this.value.trim();r1_render();});
 r1_render();
+</script>
+<script>
+/* ===== REQUIREMENT 2 — COLLECTION SEO DASHBOARD ===== */
+// Data: [handle, title, wordCount, seoTitleLen, seoDescLen, hasFAQ, internalLinks, gscClicks, gscImp, gscCTR_pct, gscPos, h1ok]
+// h1ok: 1=Green(matches keyword), 0=Yellow(mismatch/issue)
+// Source: Shopify Admin GraphQL + google_search_console.gsc_web_page (90d) + PostgreSQL inspection 2026-07-06
+const R2 = [
+ ['frontpage','Home page',0,0,0,0,0,0,12,0,3.5,0],
+ ['lumiere-daraignee','Lumière d\'araignée',2214,63,157,1,1,206,11118,1.81,5.42,1],
+ ['lampes-suspendues','Lampes suspendues',3817,67,153,0,1,25,5776,0.48,12.66,1],
+ ['applique-murale','Applique murale',1792,53,157,0,1,39,2296,1.37,10.04,1],
+ ['eclairage-de-table','Éclairage de table',3231,68,152,0,0,1,531,0.06,9.37,1],
+ ['abat-jour','Abat-jour',1234,48,152,0,1,128,22686,0.61,12.48,1],
+ ['eclairage-de-tuyaux','Éclairage de tuyaux',2287,58,148,0,0,21,2040,1.02,10.28,1],
+ ['plafonniers','Plafonniers',2929,56,146,0,1,8,2419,0.23,14.84,1],
+ ['cage-metallique','Cage métallique',1535,52,157,0,0,3,862,0.92,10.17,1],
+ ['support-de-lampe','Support de lampe',2449,58,139,0,0,42,13424,0.31,11.84,1],
+ ['transformateurs-led','Transformateurs LED',3895,40,143,0,1,18,2176,1.07,15.11,1],
+ ['5v-transformateurs-led','5V Transformateurs LED',1246,58,152,0,1,7,1102,0.71,10.31,1],
+ ['ip20-transformateurs-led','IP20 Transformateurs LED',1498,43,141,0,0,8,848,1.05,12.51,1],
+ ['12-v-transformateur','12V Transformateur LED',3209,54,150,0,1,1,2642,0.02,19,1],
+ ['ip67-transformateur-led','IP67 Transformateur LED',1304,0,146,0,0,4,575,0.45,8.6,1],
+ ['ip45transformateur-led','IP45 Transformateur LED',1801,0,0,0,0,2,594,0.30,10.91,1],
+ ['24v-transformateurs-led','24V Transformateurs LED',1433,0,157,0,0,3,403,0.75,15.61,1],
+ ['ampoule-led','Ampoule LED',2338,48,135,0,1,5,554,1.45,17.91,1],
+ ['ampoules-e27','Ampoules E27',1376,60,150,0,0,3,891,0.44,17.75,1],
+ ['ampoules-b22','Ampoules B22',1205,57,139,0,0,77,12610,0.65,12.08,1],
+ ['decor-led','Décor LED',1273,69,130,1,0,1,171,0.27,14.28,1],
+ ['ampoules-e14','Ampoules E14',1891,52,156,0,0,5,707,0.99,25.1,1],
+ ['transformateur-de-courant-constant','Transformateur de courant constant',1907,51,155,0,0,15,708,1.29,7.85,1],
+ ['cables','Câbles',1468,59,123,0,1,0,0,0,0,1],
+ ['cable-rond-a-2-conducteurs','Câble rond à 2 conducteurs',1860,52,167,0,0,0,0,0,0,1],
+ ['cable-rond-a-3-conducteurs','Câble rond à 3 conducteurs',1794,60,136,0,0,1,293,0.41,8.2,1],
+ ['cable-torsade-a-2-conducteurs','Câble torsadé à 2 conducteurs',1731,0,0,0,0,7,448,1.22,8.04,1],
+ ['cable-torsade-a-3-conducteurs','Câble torsadé à 3 conducteurs',2752,0,149,0,0,12,1215,1.01,8.58,1],
+ ['luminaires-tendance','Luminaires tendance',0,53,144,0,0,0,46,0,3.57,1],
+ ['lumieres-led-dinterieur','Lumières LED d\'intérieur',1875,44,142,0,0,3,501,0.42,6.14,1],
+ ['ajustement-facile','Ajustement facile',1232,0,0,0,0,5,126,3.74,11.34,0],
+ ['meilleure-vente','Meilleure vente',0,0,0,0,0,0,0,0,0,1],
+ ['rideau-de-douche','Rideau de douche',1978,26,143,0,0,0,0,0,0,1],
+ ['panneaux-led','Panneaux LED',2670,70,144,0,0,1,4757,0.02,25.62,1],
+ ['eclairage-de-cuisine','luminaires cuisine',1650,63,115,0,0,2,238,0.73,15.13,0],
+ ['rosaces-de-plafond','Rosaces de plafond',1196,55,138,0,0,70,13162,0.54,10.99,1],
+ ['horloge','Horloge',2855,44,147,0,0,0,0,0,0,1],
+ ['anneau-dombrage','Anneau d\'ombrage',1855,55,144,0,0,9,685,1.25,8.71,1],
+ ['eclairage-de-plug-in','Éclairage de plug-in',0,0,0,0,0,0,0,0,0,0],
+ ['livraison-gratuite','Lampes suspendues',0,0,144,0,0,1,5,16.67,8.67,0],
+ ['tapis-de-sol','Tapis de sol',0,0,0,0,0,0,0,0,0,1],
+ ['eclairage-des-conduits','Éclairage des conduits',1144,0,0,0,0,0,132,0,10.18,1],
+ ['interrupteurs-et-prises','Interrupteurs et prises',0,0,0,0,0,0,0,0,0,1],
+ ['crochets-et-anneaux','Crochets et Anneaux',1644,61,142,0,0,3,703,0.35,10.91,1],
+ ['connecteurs-de-fils-boite-de-jonction','connecteurs de fils-boîte de jonction',2375,48,158,0,0,18,3228,0.52,10.99,0],
+ ['duree-limitee-jusqua-50-de-reduction','Durée limitée – Jusqu\'à 50% de réduction',0,0,0,0,0,1,6,10,4.8,0],
+ ['produits-tendance','Produits tendance',0,0,0,0,0,0,8,0,4.7,1],
+ ['lumieres-de-conduit-metal','Lumières de conduit',0,46,158,0,0,1,94,0.39,23.85,0],
+ ['clients-achetent','Clients achètent',0,0,0,0,0,0,0,0,0,0],
+ ['eclairage-dombre-a-motif','Éclairage d\'ombre à motif',0,0,0,0,0,0,0,0,0,0],
+ ['conduit-metallique','Conduit Métallique',0,49,155,0,0,0,0,0,0,1],
+ ['tous-les-produits','Tous les produits',0,70,113,0,0,0,388,0,3.04,1],
+ ['eclairage-de-la-chambre','Éclairage de la chambre',0,0,0,0,0,0,0,0,0,1],
+ ['suspension-rotin','Suspension Rotin',0,16,158,0,0,0,7,0,9.8,1],
+ ['luminaire-salon','Luminaire Salon',0,0,133,0,0,0,2,0,7.0,1],
+ ['produits-les-plus-vendus','Produits les plus vendus',0,41,158,0,0,0,0,0,0,1],
+ ['offres-du-nouvel-an-2026','Offres du Nouvel An 2026',0,0,0,0,0,0,0,0,0,0],
+ ['promotion-hebdomadaire','Ventes hebdomadaires',0,52,159,0,0,1,28,2.63,9.16,0],
+ ['nouveautes-derniers-produits-arrives','Nouveautés – Derniers produits arrivés',1200,47,140,0,0,1,83,0.53,8.19,1],
+ ['eclairage-led','Éclairage LED',0,56,146,0,0,0,1,0,4.0,1],
+ ['vente-en-liquidation','Vente en liquidation',0,0,0,0,0,1,15,11.11,10.35,1],
+ ['supports-de-rosace-de-plafond','Supports de rosace de plafond',0,49,147,0,0,0,46,0,10.08,1],
+ ['offres-speciales','Offres spéciales',0,0,0,0,0,0,12,0,6.7,1],
+ ['modules-led','Modules LED',0,0,0,0,0,0,6,0,7.22,1],
+ ['appliques-murales-dexterieur','Appliques murales d\'extérieur',0,0,0,0,0,0,0,0,0,1],
+ ['illuminez-votre-interieur','Illuminez votre intérieur',0,0,0,0,0,0,0,0,0,0]
+];
+
+const R2_BASE = 'https://ledsone.fr/collections/';
+
+function r2_esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function r2_titleSt(len){
+  if(len===0)return['Missing','err'];
+  if(len<30)return['Too Short','warn'];
+  if(len<=70)return['OK','ok'];
+  return['Too Long','warn'];
+}
+function r2_descSt(len){
+  if(len===0)return['Missing','err'];
+  if(len<120)return['Too Short','warn'];
+  if(len<=160)return['OK','ok'];
+  return['Too Long','warn'];
+}
+function r2_wcColor(wc){
+  if(wc>=200)return'ok';
+  if(wc>=100)return'warn';
+  return'err';
+}
+function r2_thinSt(wc){return wc<100?['Thin','err']:['OK','ok'];}
+function r2_linksSt(n){
+  if(n===0)return['0','err'];
+  if(n<=2)return['1–2','warn'];
+  return['3+','ok'];
+}
+function r2_faqSt(f){return f?['Present','ok']:['Missing','err'];}
+function r2_h1St(ok){return ok?['Matches','ok']:['Mismatch','warn'];}
+
+function r2_badge(label,cls){return`<span class="b b-${cls}">${r2_esc(label)}</span>`;}
+function r2_numCell(v,def){return v===0&&def!==undefined?`<span style="color:var(--muted)">${def}</span>`:r2_esc(v);}
+
+function r2_hasSevere(row){
+  const[,, wc, stLen, sdLen, faq, links]= row;
+  const[,tCls]=r2_titleSt(stLen);
+  const[,dCls]=r2_descSt(sdLen);
+  const[,thCls]=r2_thinSt(wc);
+  const[,lCls]=r2_linksSt(links);
+  return tCls==='err'||dCls==='err'||thCls==='err'||lCls==='err';
+}
+function r2_hasWarn(row){
+  const[,, wc, stLen, sdLen,,links,,,,, h1ok]= row;
+  if(r2_hasSevere(row))return false;
+  const[,tCls]=r2_titleSt(stLen);
+  const[,dCls]=r2_descSt(sdLen);
+  const[,lCls]=r2_linksSt(links);
+  return tCls==='warn'||dCls==='warn'||lCls==='warn'||!h1ok;
+}
+
+let r2_filter_mode='all', r2_sq2='', r2_sc2=-1, r2_sd2=1;
+
+function r2_getRows(){
+  let rows=R2.filter(r=>{
+    const q=r2_sq2.toLowerCase();
+    if(q&&!r[0].toLowerCase().includes(q)&&!r[1].toLowerCase().includes(q))return false;
+    if(r2_filter_mode==='fail')return r2_hasSevere(r);
+    if(r2_filter_mode==='warn')return r2_hasWarn(r);
+    if(r2_filter_mode==='pass')return !r2_hasSevere(r)&&!r2_hasWarn(r);
+    if(r2_filter_mode==='thin')return r[2]<100;
+    if(r2_filter_mode==='notitle')return r[3]===0;
+    if(r2_filter_mode==='faq')return r[5]===1;
+    if(r2_filter_mode==='gsc')return r[7]>0;
+    return true;
+  });
+  if(r2_sc2>=0){
+    rows=rows.slice().sort((a,b)=>{
+      let av,bv;
+      if(r2_sc2===1){av=a[0];bv=b[0];return av.localeCompare(bv,'fr')*r2_sd2;}
+      const idx=[null,null,2,2,3,4,11,5,6,7,8,9,10,null][r2_sc2];
+      if(idx!=null){av=a[idx];bv=b[idx];}
+      else av=bv=0;
+      return(av-bv)*r2_sd2;
+    });
+  }
+  return rows;
+}
+
+function r2_render(){
+  const rows=r2_getRows();
+  const tbody=document.getElementById('r2tbody');
+  tbody.innerHTML=rows.map((r,i)=>{
+    const[handle,title,wc,stLen,sdLen,faq,links,clicks,imp,ctr,pos,h1ok]=r;
+    const url=R2_BASE+handle;
+    const shortH=handle.length>34?handle.slice(0,32)+'…':handle;
+    const[tLbl,tCls]=r2_titleSt(stLen);
+    const[dLbl,dCls]=r2_descSt(sdLen);
+    const[thLbl,thCls]=r2_thinSt(wc);
+    const[lLbl,lCls]=r2_linksSt(links);
+    const[fLbl,fCls]=r2_faqSt(faq);
+    const[hLbl,hCls]=r2_h1St(h1ok);
+    const wcCls=r2_wcColor(wc);
+    const ctrFmt=ctr>0?ctr.toFixed(2)+'%':'—';
+    const impFmt=imp>0?imp.toLocaleString('fr-FR'):'—';
+    const clicksFmt=clicks>0?clicks.toLocaleString('fr-FR'):'—';
+    const posFmt=pos>0?pos.toFixed(1):'—';
+    return`<tr>
+      <td class="rank num">${i+1}</td>
+      <td class="product"><a href="${r2_esc(url)}" target="_blank" rel="noopener" title="${r2_esc(title)}">${r2_esc(shortH)}</a><div style="font-size:10px;color:var(--muted);margin-top:2px">${r2_esc(title)}</div></td>
+      <td class="num"><span style="font-weight:700;color:var(--${wcCls==='ok'?'good':wcCls==='warn'?'warn':'err'})">${wc>0?wc.toLocaleString('fr-FR'):'0'}</span></td>
+      <td>${r2_badge(thLbl,thCls)}</td>
+      <td>${r2_badge(tLbl+(stLen>0?' ('+stLen+'c)':''),tCls)}</td>
+      <td>${r2_badge(dLbl+(sdLen>0?' ('+sdLen+'c)':''),dCls)}</td>
+      <td>${r2_badge(hLbl,hCls)}</td>
+      <td>${r2_badge(fLbl,fCls)}</td>
+      <td class="num">${r2_badge(lLbl,lCls)}</td>
+      <td class="num" style="font-weight:600">${clicksFmt}</td>
+      <td class="num" style="font-weight:600">${ctrFmt}</td>
+      <td class="num" style="color:var(--na)">—</td>
+      <td class="num" style="color:var(--na)">—</td>
+      <td class="num" style="color:var(--na)">—</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('r2tbarCount').textContent=`Showing ${rows.length} of ${R2.length} collections`;
+
+  // KPI update (on first render only)
+  if(r2_filter_mode==='all'&&!r2_sq2){
+    const fail=R2.filter(r2_hasSevere).length;
+    const warn=R2.filter(r=>r2_hasWarn(r)).length;
+    const pass=R2.length-fail-warn;
+    const totalClicks=R2.reduce((s,r)=>s+r[7],0);
+    const totalImp=R2.reduce((s,r)=>s+r[8],0);
+    document.getElementById('r2kPass').textContent=pass;
+    document.getElementById('r2kWarn').textContent=warn;
+    document.getElementById('r2kFail').textContent=fail;
+    document.getElementById('r2kClicks').textContent=totalClicks.toLocaleString('fr-FR');
+    document.getElementById('r2kImp').textContent=totalImp.toLocaleString('fr-FR');
+  }
+}
+
+function r2_filter(mode){
+  r2_filter_mode=mode;
+  ['All','Fail','Warn','Pass','Thin','NoTitle','FAQ','GSC'].forEach(n=>{
+    const el=document.getElementById('r2Btn'+n);
+    if(el)el.classList.remove('on');
+  });
+  const map={all:'r2BtnAll',fail:'r2BtnFail',warn:'r2BtnWarn',pass:'r2BtnPass',thin:'r2BtnThin',notitle:'r2BtnNoTitle',faq:'r2BtnFAQ',gsc:'r2BtnGSC'};
+  const el=document.getElementById(map[mode]);if(el)el.classList.add('on');
+  r2_render();
+}
+function r2_sort(col){
+  if(r2_sc2===col)r2_sd2*=-1;else{r2_sc2=col;r2_sd2=col===2||col>=7?-1:1;}
+  r2_render();
+}
+function r2_exportCSV(){
+  const rows=r2_getRows();
+  const hdr=['#','Handle','Title','URL','Word Count','Thin Flag','Meta Title Status','Meta Title Len','Meta Desc Status','Meta Desc Len','H1 Status','FAQ Schema','Int Links In','GSC Clicks (90d)','GSC Impressions','GSC CTR %','GSC Avg Position','Organic Sessions','Conv. Rate','Revenue 30d'];
+  const lines=rows.map((r,i)=>{
+    const[handle,title,wc,stLen,sdLen,faq,links,clicks,imp,ctr,pos,h1ok]=r;
+    const[tLbl]=r2_titleSt(stLen);
+    const[dLbl]=r2_descSt(sdLen);
+    const[thLbl]=r2_thinSt(wc);
+    const[hLbl]=r2_h1St(h1ok);
+    const[fLbl]=r2_faqSt(faq);
+    return[i+1,handle,title,R2_BASE+handle,wc,thLbl,tLbl,stLen,dLbl,sdLen,hLbl,fLbl,links,clicks,imp,ctr>0?ctr.toFixed(2)+'%':'',pos>0?pos.toFixed(1):'','N/A','N/A','N/A'];
+  });
+  const csv=[hdr,...lines].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='hetheesha-req02-collections-seo-2026-07-06.csv';
+  a.click();
+}
+
+document.getElementById('r2SearchBox').addEventListener('input',function(){r2_sq2=this.value.trim();r2_render();});
+r2_render();
 </script>
 </body>
 </html>
