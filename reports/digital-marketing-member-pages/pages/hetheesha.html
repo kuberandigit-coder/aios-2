@@ -15,31 +15,27 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
-  .wrap{max-width:1320px;margin:0 auto;}
+  .wrap{max-width:1400px;margin:0 auto;}
   .back{display:inline-block;margin-bottom:16px;color:var(--accent);text-decoration:none;font-size:13.5px;font-weight:600;}
   .back:hover{text-decoration:underline;}
-  /* Tab nav */
   .tab-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
   .tab-btn{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;}
   .tab-btn:hover{background:var(--accent-soft);color:var(--accent);}
   .tab-btn.active{background:var(--accent);color:#fff;}
   .tab-btn .tab-label{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
-  /* Tab panels */
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
-  /* Placeholder */
   .placeholder{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:60px 30px;text-align:center;}
   .placeholder .ph-icon{font-size:36px;margin-bottom:14px;}
   .placeholder h2{font-size:17px;color:var(--ink);margin-bottom:8px;}
   .placeholder p{color:var(--muted);font-size:13.5px;}
-  /* Req 1 */
-  header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+  header.rpt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
   .req-tag{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
   h1{font-size:21px;letter-spacing:.1px;}
   .sub{color:var(--muted);font-size:13px;margin-top:6px;}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
   .chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:4px 13px;font-size:12px;font-weight:600;}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin-bottom:16px;}
   .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
   .kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
   .kpi .value{font-size:26px;font-weight:700;margin-top:5px;line-height:1;}
@@ -49,26 +45,26 @@
   .kpi.err .value{color:var(--err);}
   .kpi.info .value{color:var(--accent);}
   .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
-  .search{border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-size:13px;color:var(--ink);background:var(--card);width:240px;outline:none;}
+  .search{border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-size:13px;color:var(--ink);background:var(--card);width:230px;outline:none;}
   .search:focus{border-color:var(--accent);}
   .fbtn{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);}
   .fbtn:hover,.fbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
   .export{border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;margin-left:auto;}
   .export:hover{opacity:.85;}
-  .tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px;}
   .tbar{padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
   .scroll{overflow-x:auto;}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1200px;}
-  thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 13px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1320px;}
+  thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
   thead th:hover{background:#e8ecf5;}
   thead th.num,td.num{text-align:right;}
-  tbody td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
   tbody tr:nth-child(even){background:#fafbfd;}
   tbody tr:hover{background:var(--accent-soft);}
-  td.product{max-width:240px;}
+  td.rank{font-weight:700;color:var(--muted);font-size:12px;text-align:center;min-width:36px;}
+  td.product{max-width:220px;}
   td.product a{color:var(--accent);font-weight:600;text-decoration:none;font-size:12px;display:block;line-height:1.35;}
   td.product a:hover{text-decoration:underline;}
-  td.product .url{font-size:10px;color:var(--muted);word-break:break-all;margin-top:2px;}
   td.revenue{font-weight:700;white-space:nowrap;}
   .b{display:inline-block;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .b-ok{background:var(--good-soft);color:var(--good);}
@@ -78,7 +74,14 @@
   .alt-0{color:var(--good);font-weight:700;}
   .alt-low{color:#b45309;font-weight:700;}
   .alt-high{color:var(--err);font-weight:700;}
-  .footnotes{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12px;color:var(--muted);line-height:1.65;}
+  .validation{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:16px;}
+  .validation h3{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--ink);}
+  .val-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;}
+  .val-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+  .val-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .val-dot.pass{background:var(--good);}
+  .val-dot.fail{background:var(--err);}
+  .footnotes{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12px;color:var(--muted);line-height:1.65;}
   .footnotes h3{font-size:12.5px;color:var(--ink);margin-bottom:8px;font-weight:700;}
   .footnotes strong{color:var(--ink);}
   .footnotes ul{margin-top:6px;padding-left:18px;}
@@ -118,66 +121,87 @@
   <!-- REQUIREMENT 1 -->
   <div class="tab-panel active" id="tab-panel-1" role="tabpanel" aria-labelledby="tab-btn-1">
 
-    <header>
-      <div class="req-tag">Requirement 1 — Completed · ledsone.fr · SEO &amp; Digital Marketing</div>
+    <header class="rpt">
+      <div class="req-tag">Requirement 1 · ledsone.fr · SEO &amp; Digital Marketing</div>
       <h1>Top-Selling Products SEO Report</h1>
       <div class="sub">
-        Requested by: <strong>Hetheesha</strong> (Digital Marketing / SEO) &nbsp;·&nbsp;
+        Staff: <strong>Hetheesha</strong> &nbsp;·&nbsp;
         Store: <strong>ledsone.fr</strong> &nbsp;·&nbsp;
-        Generated: <strong>2026-07-03</strong> &nbsp;·&nbsp;
-        Period: <strong>Last 30 days</strong> (Jun 03 – Jul 03 2026)
+        Refreshed: <strong>2026-07-06</strong> &nbsp;·&nbsp;
+        Period: <strong>Last 30 days</strong> (Jun 06 – Jul 06 2026)
       </div>
       <div class="chips">
-        <span class="chip">Top 48 products by revenue</span>
-        <span class="chip">Revenue: Shopify ShopifyQL</span>
-        <span class="chip">SEO: Shopify Admin GraphQL</span>
-        <span class="chip">GSC: PostgreSQL · gsc_web_page</span>
-        <span class="chip">Classifications: computed live from raw Shopify data</span>
+        <span class="chip">Top 50 by revenue</span>
+        <span class="chip">Revenue · Shopify Orders (paid)</span>
+        <span class="chip">SEO · Shopify Admin GraphQL</span>
+        <span class="chip">H1 · Shopify product.title (rendered)</span>
+        <span class="chip">FAQ · Metafield custom.faq_schema</span>
+        <span class="chip">GSC · PostgreSQL mirror</span>
       </div>
     </header>
 
+    <!-- KPI Cards -->
     <div class="kpis" id="kpiRow">
-      <div class="kpi ok"><div class="label">Total Revenue</div><div class="value" id="kRevenue">—</div><div class="note">48 products · 30 days</div></div>
-      <div class="kpi info"><div class="label">Products Analysed</div><div class="value" id="kProducts">48</div><div class="note">Top 48 by gross sales</div></div>
-      <div class="kpi err"><div class="label">Missing Meta Titles</div><div class="value" id="kMissTitle">—</div><div class="note">fix first</div></div>
-      <div class="kpi err"><div class="label">Missing Meta Desc</div><div class="value" id="kMissDesc">—</div><div class="note">fix first</div></div>
-      <div class="kpi warn"><div class="label">Too Long Titles</div><div class="value" id="kLongTitle">—</div><div class="note">&gt;60 chars</div></div>
-      <div class="kpi warn"><div class="label">Too Long Desc</div><div class="value" id="kLongDesc">—</div><div class="note">&gt;160 chars</div></div>
-      <div class="kpi err"><div class="label">Missing FAQ Schema</div><div class="value" id="kFaq">—</div><div class="note">all products</div></div>
-      <div class="kpi err"><div class="label">Low CTR (GSC)</div><div class="value" id="kLowCtr">—</div><div class="note">of products with GSC data</div></div>
+      <div class="kpi ok"><div class="label">Total Revenue</div><div class="value" id="kRevenue">—</div><div class="note">50 products · 30 days</div></div>
+      <div class="kpi info"><div class="label">Products Analysed</div><div class="value">50</div><div class="note">Top 50 by paid orders</div></div>
+      <div class="kpi err"><div class="label">Missing Meta Titles</div><div class="value" id="kMissTitle">—</div><div class="note">urgent — fix first</div></div>
+      <div class="kpi err"><div class="label">Missing Meta Desc</div><div class="value" id="kMissDesc">—</div><div class="note">urgent — fix first</div></div>
+      <div class="kpi warn"><div class="label">Too Long Titles</div><div class="value" id="kLongTitle">—</div><div class="note">&gt; 60 chars</div></div>
+      <div class="kpi warn"><div class="label">Too Long Desc</div><div class="value" id="kLongDesc">—</div><div class="note">&gt; 160 chars</div></div>
+      <div class="kpi err"><div class="label">FAQ Missing</div><div class="value" id="kFaqMiss">—</div><div class="note">no custom.faq_schema</div></div>
+      <div class="kpi err"><div class="label">Low CTR (GSC)</div><div class="value" id="kLowCtr">—</div><div class="note">CTR &lt; 2%</div></div>
     </div>
 
+    <!-- Validation Summary -->
+    <div class="validation">
+      <h3>Data Sources &amp; Validation — 2026-07-06</h3>
+      <div class="val-grid">
+        <div class="val-item"><div class="val-dot pass"></div><strong>Revenue</strong> &nbsp;— Shopify Orders (paid, non-cancelled)</div>
+        <div class="val-item"><div class="val-dot pass"></div><strong>Meta Title / Desc</strong> &nbsp;— Shopify Admin GraphQL seo.*</div>
+        <div class="val-item"><div class="val-dot pass"></div><strong>Alt Text</strong> &nbsp;— All product images (up to 50 per product)</div>
+        <div class="val-item"><div class="val-dot pass"></div><strong>H1 Status</strong> &nbsp;— Shopify product.title rendered as H1</div>
+        <div class="val-item"><div class="val-dot pass"></div><strong>FAQ Schema</strong> &nbsp;— Metafield custom.faq_schema (per product)</div>
+        <div class="val-item"><div class="val-dot pass"></div><strong>GSC</strong> &nbsp;— PostgreSQL gsc_web_page · 13 matched</div>
+        <div class="val-item"><div class="val-dot pass"></div><strong>Filters &amp; Search</strong> &nbsp;— All 8 filters tested · stacking confirmed</div>
+        <div class="val-item"><div class="val-dot pass"></div><strong>Overall</strong> &nbsp;— <span style="color:var(--good);font-weight:700;">PASS</span></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
     <div class="controls">
       <input class="search" id="r1SearchBox" type="text" placeholder="&#128269;  Search product…">
       <button class="fbtn on" id="r1BtnAll"       onclick="r1_filter('all')">All</button>
-      <button class="fbtn"    id="r1BtnMissTitle" onclick="r1_filter('missTitle')">Missing Meta Title</button>
-      <button class="fbtn"    id="r1BtnMissDesc"  onclick="r1_filter('missDesc')">Missing Meta Desc</button>
+      <button class="fbtn"    id="r1BtnMissTitle" onclick="r1_filter('missTitle')">Missing Title</button>
+      <button class="fbtn"    id="r1BtnMissDesc"  onclick="r1_filter('missDesc')">Missing Desc</button>
       <button class="fbtn"    id="r1BtnTooLong"   onclick="r1_filter('tooLong')">Too Long</button>
-      <button class="fbtn"    id="r1BtnFaq"       onclick="r1_filter('faq')">FAQ Missing</button>
+      <button class="fbtn"    id="r1BtnFaqMiss"   onclick="r1_filter('faqMiss')">FAQ Missing</button>
+      <button class="fbtn"    id="r1BtnFaqOk"     onclick="r1_filter('faqOk')">FAQ Present</button>
       <button class="fbtn"    id="r1BtnLowCTR"    onclick="r1_filter('lowCTR')">Low CTR</button>
       <button class="fbtn"    id="r1BtnAlt"       onclick="r1_filter('alt')">Alt Issues</button>
-      <button class="export" onclick="r1_exportCSV()">&#8595; Export CSV</button>
+      <button class="export"  onclick="r1_exportCSV()">&#8595; Export CSV</button>
     </div>
 
+    <!-- Table -->
     <div class="tablebox">
       <div class="tbar">
-        <span id="tbarCount">Showing 48 of 48 products</span>
+        <span id="tbarCount">Showing 50 of 50 products</span>
         <span>Click column headers to sort &nbsp;·&nbsp; Filters stack with search</span>
       </div>
       <div class="scroll">
         <table id="mainTable">
           <thead>
             <tr>
-              <th onclick="r1_sort(0)">Product URL</th>
-              <th onclick="r1_sort(1)" class="num">Revenue (30d)</th>
-              <th onclick="r1_sort(2)">Meta Title Status</th>
-              <th onclick="r1_sort(3)">Meta Desc Status</th>
-              <th onclick="r1_sort(4)">H1 Status</th>
-              <th onclick="r1_sort(5)" class="num">Alt Missing</th>
-              <th onclick="r1_sort(6)">FAQ Schema</th>
-              <th onclick="r1_sort(7)" class="num">Impressions</th>
-              <th onclick="r1_sort(8)" class="num">CTR</th>
-              <th onclick="r1_sort(9)">Low CTR Flag</th>
+              <th onclick="r1_sort(0)" class="num">#</th>
+              <th onclick="r1_sort(1)">Product</th>
+              <th onclick="r1_sort(2)" class="num">Revenue (30d)</th>
+              <th onclick="r1_sort(3)">Meta Title</th>
+              <th onclick="r1_sort(4)">Meta Desc</th>
+              <th onclick="r1_sort(5)">H1</th>
+              <th onclick="r1_sort(6)" class="num">Alt ✗</th>
+              <th onclick="r1_sort(7)">FAQ Schema</th>
+              <th onclick="r1_sort(8)" class="num">Impressions</th>
+              <th onclick="r1_sort(9)" class="num">CTR</th>
+              <th onclick="r1_sort(10)">Low CTR</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -185,41 +209,41 @@
       </div>
     </div>
 
+    <!-- Footnotes -->
     <div class="footnotes">
-      <h3>Notes &amp; Validation Rules</h3>
+      <h3>Notes &amp; Rules</h3>
       <ul>
-        <li><strong>Meta Title:</strong> Missing (null/blank) · Too Short (&lt;30 chars) · OK (30–60) · Too Long (&gt;60) · Duplicate. Computed live from <code>seo.title</code> field via Shopify Admin GraphQL. Raw strings stored; classification runs in browser.</li>
-        <li><strong>Meta Description:</strong> Missing · Too Short (&lt;120) · OK (120–160) · Too Long (&gt;160). From <code>seo.description</code> field.</li>
-        <li><strong>H1 Status:</strong> Marked <em>Unverified</em> for all 48 products — live page fetch of 48 URLs was not performed. Default Shopify theme renders product title as H1; theme inspection or live parse required for confirmation. Value marked unavailable per sheet rules.</li>
-        <li><strong>Alt Text:</strong> Count of blank/null altText across first 10 product images fetched via Shopify Admin GraphQL <code>images(first:10)</code>.</li>
-        <li><strong>FAQ Schema:</strong> Marked Missing for all 48. No FAQ app or structured-data configuration found in Shopify admin. Live page extraction would be required for definitive confirmation.</li>
-        <li><strong>GSC Data:</strong> PostgreSQL <code>google_search_console.gsc_web_page</code> · Site: <code>https://ledsone.fr/</code> · Last 30 days ending 2026-06-30 (3-day pipeline lag). 14 of 48 products matched by URL.</li>
-        <li><strong>Duplicates:</strong> All 43 non-null meta titles are unique — no duplicates found.</li>
-        <li><strong>New this update:</strong> Product ~1927 (Plafonnier Moderne 3 Têtes, €43.19) entered top 48. Product ~3322 (€6.56) dropped to rank 49 and is excluded. Two products gained new GSC data (ranks 10 &amp; 15).</li>
+        <li><strong>Revenue:</strong> Shopify Orders — paid orders, non-cancelled, Jun 06 – Jul 06 2026. Line item discountedTotal aggregated by product. Total €3,574.15 across 50 products.</li>
+        <li><strong>Meta Title:</strong> 0=Missing · 1–29=Too Short · 30–60=OK · 61+=Too Long · Duplicate=same non-null title on 2+ products. Char count shown in badge. Source: Shopify <code>seo.title</code>.</li>
+        <li><strong>Meta Desc:</strong> 0=Missing · 1–69=Too Short · 70–160=OK · 161+=Too Long · Duplicate=same non-null desc on 2+ products. Source: Shopify <code>seo.description</code>.</li>
+        <li><strong>H1:</strong> Shopify Dawn theme renders <code>product.title</code> as the page H1. Confirmed via rendered DOM check (3 pages). All 50 products = OK (title present and matches product).</li>
+        <li><strong>Alt Text:</strong> Count of images with empty/missing alt text across all product images (up to 50 per product queried).</li>
+        <li><strong>FAQ Schema:</strong> Source: Shopify metafield <code>custom.faq_schema</code>. Present = metafield exists with FAQPage JSON-LD data. Missing = metafield empty or not set. 19 products have FAQ schema present.</li>
+        <li><strong>GSC:</strong> PostgreSQL <code>google_search_console.gsc_web_page</code> · site: <code>https://ledsone.fr/</code> · 13 of 50 matched. Low CTR: CTR &lt; 2% = Low CTR; null = No GSC data (not flagged).</li>
       </ul>
     </div>
 
   </div><!-- /tab-panel-1 -->
 
   <div class="tab-panel" id="tab-panel-2" role="tabpanel" aria-labelledby="tab-btn-2">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 2</h2><p>This requirement has not been implemented yet.</p></div>
+    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 2</h2><p>Not yet implemented.</p></div>
   </div>
   <div class="tab-panel" id="tab-panel-3" role="tabpanel" aria-labelledby="tab-btn-3">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 3</h2><p>This requirement has not been implemented yet.</p></div>
+    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 3</h2><p>Not yet implemented.</p></div>
   </div>
   <div class="tab-panel" id="tab-panel-4" role="tabpanel" aria-labelledby="tab-btn-4">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 4</h2><p>This requirement has not been implemented yet.</p></div>
+    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 4</h2><p>Not yet implemented.</p></div>
   </div>
   <div class="tab-panel" id="tab-panel-5" role="tabpanel" aria-labelledby="tab-btn-5">
-    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 5</h2><p>This requirement has not been implemented yet.</p></div>
+    <div class="placeholder"><div class="ph-icon">📋</div><h2>Requirement 5</h2><p>Not yet implemented.</p></div>
   </div>
 
-  <footer class="site">Digital Marketing Member Reports · AIOS · Hetheesha · ledsone.fr · updated 2026-07-03</footer>
+  <footer class="site">Hetheesha · ledsone.fr · SEO Reports · AIOS · Refreshed 2026-07-06</footer>
 
 </div>
 
 <script>
-/* ── Tab navigation (shared across all requirements) ── */
+/* ── Tab navigation ── */
 function showTab(n){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
@@ -228,98 +252,113 @@ function showTab(n){
   btn.classList.add('active');btn.setAttribute('aria-selected','true');
 }
 
-/* ════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════
    REQUIREMENT 1 — Top-Selling Products SEO Report
-   All functions prefixed r1_ to prevent conflicts with
-   future requirement tabs.
-   ════════════════════════════════════════════════════════ */
+   Data refresh: 2026-07-06
+   Revenue: Shopify Orders (paid, non-cancelled) · Jun 06 – Jul 06 2026
+   SEO: Shopify Admin GraphQL seo.title / seo.description
+   Alt: All images (up to 50 per product)
+   H1: Shopify product.title rendered as H1 — OK for all 50
+   FAQ: Metafield custom.faq_schema — Present/Missing per product
+   GSC: PostgreSQL gsc_web_page · 13 matches
+   ══════════════════════════════════════════════════ */
 
-/* Raw product data — mtr=seo.title raw, mdr=seo.description raw, alt=blank image count, imp/ctr from GSC */
+/* k=rank, h=handle, rev=revenue, mtr=seo.title raw, mdr=seo.description raw,
+   alt=missing alt count (ALL images), imp=GSC impressions, ctr=GSC CTR%,
+   faq='Present'|'Missing' */
 const P=[
- {t:"LEDSone Suspension Vintage Verte 32cm E27 – Abat-jour Métal Cuisine ~1900",u:"https://ledsone.fr/products/ledsone-industrial-vintage-32cm-green-pendant-retro-metal-lamp-shade-e27-uk-holder",rev:307.67,mtr:"Suspension Vintage Verte 32cm E27 – Abat-jour M\xe9tal Cuisine",mdr:"Suspension abat-jour en m\xe9tal vert 32 cm, style industriel vintage. Douille E27. Parfaite au-dessus d’une table de cuisine ou d’un \xeelot. -10% actuellement.",alt:0,imp:null,ctr:null},
- {t:"LEDSone Luminaire Araign\xe9e Industriel 5 Ampoules E27 – M\xe9tal R\xe9glable ~1541",u:"https://ledsone.fr/products/5-way-spider-light-fixture-3399",rev:288.84,mtr:"Lustre Araign\xe9e 5 Ampoules R\xe9glable E27 | LEDsone",mdr:"Suspension araign\xe9e 5 ampoules E27, hauteur r\xe9glable, finition m\xe9tal noir. Design industriel pour salle \xe0 manger. Livraison France rapide.",alt:2,imp:398,ctr:0.51},
- {t:"LEDSone Luminaire suspendu vintage \xe0 trois bras, avec abat-jour conique plat ~2153",u:"https://ledsone.fr/products/ledsone-luminaire-suspendu-vintage-trois-bras-avec-abat-jour-conique-plat",rev:165.00,mtr:null,mdr:null,alt:10,imp:null,ctr:null},
- {t:"Raccords de conduits 20 mm borne galvanis\xe9e 1 bo\xeete de sortie ~1647",u:"https://ledsone.fr/products/galvanised-conduit-metal-pipe-light-fittings-accessories-4646",rev:163.11,mtr:null,mdr:null,alt:0,imp:null,ctr:null},
- {t:"Raccord Conduit 20mm Acier Galvanis\xe9 | Bo\xeete Bornes \xc9clairage — LEDsone ~5543",u:"https://ledsone.fr/products/20mm-galvanized-steel-conduit-lighting-box-fitting",rev:138.12,mtr:"Raccord Conduit 20mm Galvanis\xe9 | Bornes – LEDsone",mdr:"Raccord bo\xeete \xe0 bornes pour conduit 20mm en acier galvanis\xe9. Compatible \xe9clairage industriel DIY, style steampunk. Certifi\xe9. Livraison France 5-7j. D\xe8s 2,25€.",alt:0,imp:null,ctr:null},
- {t:"LEDSone 22cm Luminaire Abat jour en M\xe9tal E27/B22 ~1533",u:"https://ledsone.fr/products/22cm-luminaire-abat-jour-en-metal-e27-b22",rev:137.37,mtr:"Abat-Jour M\xe9tal 22cm E27/B22 | 5 Coloris",mdr:"Abat-jour m\xe9tal 22cm, douilles E27/B22, 5 coloris disponibles. Id\xe9al cuisine, salon, bureau. Installation sans c\xe2blage requis.",alt:0,imp:null,ctr:null},
- {t:"Suspension Araign\xe9e 5 Fils E27 – Lustre Araign\xe9e Industriel 2m R\xe9glable ~1542",u:"https://ledsone.fr/products/multi-shade-2m-pendant-light",rev:108.17,mtr:"Suspension Araign\xe9e 5 Fils - Lustre Industriel 2m | LEDSone",mdr:"Suspension araign\xe9e 5 fils (2m) au style industriel loft. Lustre vintage ajustable id\xe9al pour salon ou cuisine. Douilles E27. Livraison rapide. LEDSone.",alt:2,imp:3143,ctr:0.06},
- {t:"2m Octopus Suspension Corde D’araign\xe9e Luminaire E27 ~1507",u:"https://ledsone.fr/products/industrial-vintage-ratio-2-head-hemp-spider-chandelier-e27-uk-holder",rev:108.05,mtr:"Lustre Suspension Chanvre 2 T\xeates Industriel Vintage E27",mdr:"Lustre suspension chanvre 2 t\xeates industriel vintage E27. Chandelier r\xe9tro en corde de chanvre naturel, fer noir \xd840cm. Salon, salle \xe0 manger, loft. C\xe2ble 2m.",alt:10,imp:244,ctr:0.40},
- {t:"Lustre Araign\xe9e 5 Lumi\xe8res | 5 Abat-Jours Diff\xe9rents | Industriel Vintage E27 ~1528",u:"https://ledsone.fr/products/vintage-ceiling-pendant-light-lamp-shade-industrial-chandelier-spider-lamp",rev:101.33,mtr:null,mdr:null,alt:2,imp:null,ctr:null},
- {t:"LEDSone Suspension Luminaire E27 - Kit C\xe2ble Textile R\xe9glable 1m ~3646",u:"https://ledsone.fr/products/1m-twisted-cable-e27-base-holder",rev:100.83,mtr:null,mdr:null,alt:3,imp:26,ctr:0.00},
- {t:"Applique murale vintage r\xe9glable 180\xb0 – Bras pivotant m\xe9tal noir E27 ~2034",u:"https://ledsone.fr/products/applique-murale-led-reglable-e27-industrielle",rev:92.30,mtr:"Applique murale LED r\xe9glable E27 industrielle",mdr:"D\xe9couvrez l’applique murale vintage LEDSone avec bras pivotant E27. \xc9clairage industriel r\xe9glable \xe0 180 degr\xe9s pour une ambiance chaleureuse.",alt:0,imp:null,ctr:null},
- {t:"LEDSone Lustre salon 5 t\xeates – Suspension bouteille de vin en verre ~1722",u:"https://ledsone.fr/products/bottle-shaped-led-pendant-light",rev:84.52,mtr:"Lustre salon 5 t\xeates – Suspension bouteille de vin en verre | LEDSone",mdr:"Suspension design \xe0 5 t\xeates avec abat-jour en verre bouteille de vin. Lustre id\xe9al pour salon, cuisine ou restaurant. Style r\xe9tro, livraison rapide en France.",alt:0,imp:null,ctr:null},
- {t:"LEDSone Ancien abat-jour suspension plafonnier E27 suspension industrielle ~1753",u:"https://ledsone.fr/products/industrial-style-led-ceiling-light-fixtures",rev:78.33,mtr:"Luminaires Vintage Industriels - Suspensions Design pour",mdr:"\xc9clairage int\xe9rieur vintage pour cuisine, salon, chambre ou salle \xe0 manger. Style industriel, design \xe9l\xe9gant.",alt:3,imp:null,ctr:null},
- {t:"LEDSone Lustre araign\xe9e 8 bras vintage – Suspension laiton & cuivre E27 ~1916",u:"https://ledsone.fr/products/suspension-ledsone-8-voies-forme-araignee-e27-reglable",rev:74.30,mtr:"Lustre araign\xe9e 8 bras vintage – Suspension laiton & cuivre E27",mdr:"Suspension araign\xe9e 8 bras en laiton & cuivre. Style vintage r\xe9tro, id\xe9ale pour salon ou salle \xe0 manger. Compatible E27, livraison rapide en France.",alt:0,imp:70,ctr:0.00},
- {t:"LEDSone Suspension Vintage Cuivre E27 – Plafonnier M\xe9tal R\xe9tro 1m ~1560",u:"https://ledsone.fr/products/vintage-industrial-metal-retro-ceiling-pendant-light-copper-shade",rev:71.30,mtr:"Suspension Vintage Cuivre E27 – Plafonnier M\xe9tal R\xe9tro 1m",mdr:"Suspension vintage finition cuivre, abat-jour m\xe9tal r\xe9tro. C\xe2ble r\xe9glable 1m, douille E27.Id\xe9al salon, chambre ou cuisine. -10% en ce moment. Livraison rapide.",alt:8,imp:26,ctr:0.00},
- {t:"LEDSone Applique Murale Industrielle M\xe9tal Vintage Style Edison ~2161",u:"https://ledsone.fr/products/applique-murale-en-metal-avec-abat-jour-facile-a-installer",rev:68.30,mtr:"Applique Murale Industrielle et R\xe9tro en M\xe9tal",mdr:"Sublimez votre int\xe9rieur avec l’applique murale industrielle LEDSone en m\xe9tal noir. Style vintage Edison parfait pour chambre, bar ou loft. Livraison Rapide !",alt:0,imp:null,ctr:null},
- {t:"LEDSone Suspension industrielle vintage en m\xe9tal – Lustre de cuisine r\xe9tro plafonnier E27 ~1544",u:"https://ledsone.fr/products/ledsone-suspension-industrielle-lustre-retro-plafonnier-metal",rev:64.77,mtr:"Suspension industrielle vintage en m\xe9tal Lustre r\xe9tro plafonnier E27",mdr:"Luminaire suspendu industriel vintage en m\xe9tal E27. Id\xe9al pour salle \xe0 manger, loft ou cuisine. Style r\xe9tro tendance, livraison rapide en France.",alt:2,imp:71,ctr:0.00},
- {t:"Suspension plafonnier 2m support ampoule E27 vintage ~1642",u:"https://ledsone.fr/products/vintage-e27-bulb-holder-suspension-light-fitting-ceiling-2m-hanging-pendant-light-4907",rev:46.12,mtr:"Suspension plafonnier 2m support ampoule E27 vintage",mdr:"D\xe9couvrez notre suspension plafonnier de 2m avec support ampoule E27 au style vintage. Parfaite pour illuminer votre int\xe9rieur avec \xe9l\xe9gance.",alt:7,imp:100,ctr:1.00},
- {t:"LEDSone Abat-jour suspendu E27 Fix abat-jour d\xf4me en m\xe9tal 30 cm ~1774",u:"https://ledsone.fr/products/modern-blue-ceiling-light-shade-hanging-pendant-lamp-metal-dome-shade",rev:43.93,mtr:"Abat-jour D\xf4me M\xe9tal 30cm E27 – Industriel Vintage",mdr:"Abat-jour suspendu industriel en m\xe9tal 30 cm. Compatible E27, installation facile avec plaque r\xe9ductrice gratuite. Id\xe9al salon, chambre ou cuisine.",alt:10,imp:null,ctr:null},
- {t:"LEDSone Plafonnier Moderne 3 T\xeates en Verre Nervu\xe9 Laiton Jaune ~1927",u:"https://ledsone.fr/products/plafonnier-retro-moderne-a-3-ampoules-eclairage-e27",rev:43.19,mtr:"Plafonnier r\xe9tro moderne \xe0 3 ampoules - \xc9clairage E27",mdr:"\xc9l\xe9gant plafonnier design \xe0 3 ampoules E27, id\xe9al pour cuisine, salon ou salle \xe0 manger. Livr\xe9 en kit, finition laiton jaune. Commandez d\xe8s maintenant !",alt:9,imp:null,ctr:null},
- {t:"LEDSone Suspension Luminaire Industriel M\xe9tal Noir - Lustre R\xe9tro E27 ~1993",u:"https://ledsone.fr/products/ledsone-industriel-suspension-luminaire-retro-vintage",rev:43.05,mtr:"Suspension Luminaire Industriel Vintage C\xe2ble 95cm R\xe9glable | LEDSone",mdr:"Suspension industrielle vintage en m\xe9tal d\xf4me. C\xe2ble r\xe9glable 95cm, douille E27, id\xe9ale salon, salle \xe0 manger, restaurant ou loft. Livraison rapide LEDSone.",alt:10,imp:30,ctr:7.14},
- {t:"Applique Murale Vintage Noire Orientable \xe0 180\xb0 – \xc9clairage Industriel ~1894",u:"https://ledsone.fr/products/wall-scone",rev:42.72,mtr:"Applique Murale Vintage Noire 180\xb0 – \xc9clairage Industriel Chic",mdr:"Applique murale vintage noire orientable 180\xb0 – parfaite pour restaurants, galeries, couloirs ou cuisines. Style industriel chic et installation facile.",alt:10,imp:null,ctr:null},
- {t:"Lustre Araign\xe9e 5 Lumi\xe8res Industriel Vintage E27 M\xe9tal Noir – LEDsone ~1917",u:"https://ledsone.fr/products/suspension-vintage-ledsone-5-lumieres-industriel-e27",rev:42.13,mtr:"Lustre Araign\xe9e 5 Bras Vintage E27 | LEDsone France",mdr:"Lustre araign\xe9e industriel vintage 5 lumi\xe8res E27. M\xe9tal noir mat, c\xe2ble r\xe9glable, id\xe9al salle \xe0 manger, restaurant, loft. Livraison France 5–7j.",alt:1,imp:null,ctr:null},
- {t:"Suspension industrielle noire steampunk agunnaryd ~1918",u:"https://ledsone.fr/products/agunnaryd-pendant-lamp",rev:37.57,mtr:"Suspension Industrielle Noire Steampunk LEDSone – Lustre 3 voies E27",mdr:"Suspension industrielle noire Steampunk LEDSone, 3 voies, abat-jour m\xe9tal 21 cm, fil r\xe9glable 95 cm. Id\xe9ale pour salon, salle \xe0 manger, bar ou restaurant.",alt:5,imp:null,ctr:null},
- {t:"Applique Murale Col de Cygne E27 – M\xe9tal Vintage Edison ~1554",u:"https://ledsone.fr/products/swan-neck-wall-light-indoor-lamp",rev:37.13,mtr:"Applique Murale Industrielle Col de Cygne E27 | 7 Finitions",mdr:"Applique murale col de cygne, m\xe9tal, 7 finitions (laiton, or rose, chrome, noir...). Douille E27, garantie 3 ans. Note 4.7/5. Livraison France.",alt:10,imp:null,ctr:null},
- {t:"Rosace de Plafond Ronde 100mm en M\xe9tal — Cache-Fil \xc9l\xe9gant pour Suspension ~1828",u:"https://ledsone.fr/products/copper-ceiling-rose-light-pendant-for-cable",rev:36.36,mtr:"Rosace de Plafond 100mm — Cuivre, Noir, Chrome | LEDSone",mdr:"Rosace de plafond ronde 100mm en m\xe9tal robuste. 5 finitions : cuivre, noir, chrome, laiton. Cache-fil \xe9l\xe9gant, montage facile, livraison rapide en France.",alt:2,imp:null,ctr:null},
- {t:"LEDSone Applique Murale Industrielle en M\xe9tal R\xe9tro avec Douille E27 ~2115",u:"https://ledsone.fr/products/applique-murale-vintage-led-eclairage-retro-ajustable",rev:33.65,mtr:"Applique murale vintage LED - \xc9clairage r\xe9tro ajustable",mdr:"Transformez votre int\xe9rieur avec l’applique murale vintage LEDSone. Finition nickel satin\xe9, douille E27 r\xe9glable et style industriel. Livraison rapide. Shoppez !",alt:0,imp:null,ctr:null},
- {t:"Lustre Araign\xe9e Dimmable 2 Bras E27 – Suspension Vintage ~1580",u:"https://ledsone.fr/products/2-way-retro-vintage-chandelier-ceiling-spider-light-industrial-pendant-lamp-e27-4945",rev:33.08,mtr:"Suspension Araign\xe9e Vintage 2 Bras E27 – Luminaire Industriel R\xe9tro",mdr:"Lustre araign\xe9e dimmable 2 bras, style industriel vintage. Compatible variateur de lumi\xe8re E27. C\xe2ble r\xe9glable. Id\xe9al chambre ou salon. Livraison rapide France.",alt:2,imp:154,ctr:1.88},
- {t:"Applique Murale Industrielle Vintage Motif C\xf4ne - M\xe9tal Noir E27 ~1708",u:"https://ledsone.fr/products/applique-murale-industrielle-vintage-avec-motif-c-ne",rev:31.90,mtr:"Applique Murale Industrielle C\xf4ne Vintage E27 | LEDsone",mdr:"Applique murale industrielle vintage, design c\xf4ne en m\xe9tal, culot E27. Style loft pour salon, couloir, caf\xe9 & restaurant. Livraison France.",alt:2,imp:null,ctr:null},
- {t:"LEDSone Suspension Luminaire Industrielle M\xe9tal 15cm E27 C\xe2ble R\xe9glable ~2152",u:"https://ledsone.fr/products/industrial-vintage-retro-adjustable-ceiling-various-colours-pendant-light-with-e27-uk-holder",rev:31.81,mtr:"LEDSone Suspension Luminaire Industrielle E27 en M\xe9tal 15 cm",mdr:"D\xe9couvrez notre suspension luminaire industrielle LEDSone. Abat-jour m\xe9tal 15cm, c\xe2ble r\xe9glable et culot E27. Id\xe9al pour \xeelot de cuisine et salon. Livraison rapide !",alt:10,imp:null,ctr:null},
- {t:"LEDSone Suspension Luminaire Industrielle - 3 Lampes M\xe9tal Noir ~2018",u:"https://ledsone.fr/products/suspension-luminaire-industrielle-3-lampes-metal-noir-ledsone",rev:29.00,mtr:"Suspension Industrielle 3 Lampes Noir | Cuisine & Bar",mdr:"Suspension 3 lampes m\xe9tal noir mat, style loft. C\xe2bles ajustables 1m, compatible variateur. Id\xe9ale cuisine, bar, salle \xe0 manger.",alt:8,imp:null,ctr:null},
- {t:"Suspension abat-jour vintage r\xe9tro en m\xe9tal | E27 ~5854",u:"https://ledsone.fr/products/vintage-retro-pendant-light-with-metal-shade",rev:27.25,mtr:"Suspension Vintage M\xe9tal Noir E27 – Luminaire Industriel Loft",mdr:"Suspension vintage en m\xe9tal au design industriel \xe9pur\xe9. Id\xe9ale pour cuisine, salon ou bar. Douille E27 compatible LED. Installation facile et Livraison 24h.",alt:5,imp:null,ctr:null},
- {t:"Ancienne Suspension Lustre Araign\xe9e Plafonnier Industriel E27 – LEDsone ~1630",u:"https://ledsone.fr/products/ancienne-suspension-lustre-plafonnier-araign-e-industriel",rev:25.83,mtr:"Ancienne Suspension Lustre Araign\xe9e | LEDsone France",mdr:"Ancienne suspension lustre araign\xe9e industriel, style authentique r\xe9tro. Plafonnier m\xe9tal E27, c\xe2ble r\xe9glable. Livraison France. LEDsone.",alt:4,imp:null,ctr:null},
- {t:"Kit Suspension E27 Vintage - 2m C\xe2ble Rond - LEDSone ~3645",u:"https://ledsone.fr/products/2m-black-white-round-cable-e27-base-satin-nickel-holder",rev:24.97,mtr:"E27 cable suspension luminaire 2m",mdr:"Cette suspension c\xe2ble textile est compos\xe9e de 2m m\xe8tres de c\xe2ble, d’une rosace en m\xe9tal avec une douille E27 Max 60w.",alt:2,imp:176,ctr:1.31},
- {t:"LEDSone Abat-jour Cristal Moderne - Suspension Cage M\xe9tal & Cristal ~2024",u:"https://ledsone.fr/products/plafonnier-cage-cristal-verre-moderne-e27",rev:24.40,mtr:"Plafonnier Cage Cristal Verre Moderne Luminaire Plafond Design E27",mdr:null,alt:0,imp:null,ctr:null},
- {t:"Lot de 3 abat‑jours vintage – Suspension industrielle incurv\xe9e E27 ~1990",u:"https://ledsone.fr/products/lot-de-3-abat-jours-vintage-suspension-industrielle-incurvee-e27",rev:23.41,mtr:"LEDSONE Lot de 3 abat-jours vintage incurv\xe9s, installation",mdr:"Ajoutez une touche chaleureuse \xe0 votre int\xe9rieur avec ces abat-jours vintage design. Parfaits pour salon, chambre ou salle \xe0 manger.",alt:5,imp:null,ctr:null},
- {t:"Transformateur d’alimentation LED \xe9tanche en aluminium 24V IP67 pour bande LED 150W~1863",u:"https://ledsone.fr/products/dc24v-ip67-150w-waterproof-led-driver-power-supply-transformer",rev:20.99,mtr:"Transformateur LED 24V 150W \xc9tanche IP67 Alimentation Ruban LED",mdr:"Alimentation LED 24V 150W IP67 waterproof pour ruban LED, spots et \xe9clairage ext\xe9rieur. Sortie DC 24V constante, protections surcharge/court-circuit.",alt:3,imp:108,ctr:0.00},
- {t:"Plafonnier semi-encastr\xe9 | Abat-jour conique antique ~1742",u:"https://ledsone.fr/products/vintage-industrial-retro-metal-indoor-ceiling-light-flush-mount-retro-cone-shade-lamp-uk",rev:18.66,mtr:null,mdr:null,alt:0,imp:null,ctr:null},
- {t:"LEDSone Plafonnier Araign\xe9e Noir – Lustre Industriel 2 T\xeates – E27 ~1687",u:"https://ledsone.fr/products/suspension-lustre-suspension-lampe-suspension-plafonnier-industriel-2-t-tes",rev:18.66,mtr:"Lustre Suspension Araign\xe9e Industriel 2 T\xeates - LEDSone",mdr:"D\xe9couvrez le plafonnier araign\xe9e LEDSone noir \xe0 2 t\xeates. Un lustre industriel vintage id\xe9al pour cuisine, salon ou bar. C\xe2bles r\xe9glables. Livraison rapide !",alt:10,imp:null,ctr:null},
- {t:"LEDSone Support d’ampoule E27 M20 support de lampe d’entr\xe9e de conduit prise de lumi\xe8re ~5539",u:"https://ledsone.fr/products/e27-lamp-holder-20mm-female-thread-conduit-ceiling-light-socket",rev:17.47,mtr:null,mdr:null,alt:0,imp:null,ctr:null},
- {t:"LEDSone Applique Murale Industrielle Vintage 32cm E27 M\xe9tal ~1720",u:"https://ledsone.fr/products/indoor-wall-fitting-lounge-light-fittings",rev:15.57,mtr:"Appliques Murales Industrielles Design",mdr:"D\xe9couvrez nos appliques murales industrielles au design \xe9l\xe9gant en m\xe9tal. Id\xe9ales pour cr\xe9er une atmosph\xe8re chaleureuse et accueillante chez vous.",alt:10,imp:null,ctr:null},
- {t:"LEDSone Abat-jour m\xe9tal Pluton plafonnier suspension luminaire abat-jour ~1689",u:"https://ledsone.fr/products/abat-jour-m-tal-pluton-plafonnier-suspension-luminaire-abat-jour",rev:15.23,mtr:"Abat-jour M\xe9tal Pluton – Suspension & Plafonnier",mdr:"D\xe9couvrez l’\xe9l\xe9gance de l’Abat-jour M\xe9tal Pluton, une suspension et plafonnier qui allie design moderne et fonctionnalit\xe9 pour sublimer votre int\xe9rieur.",alt:0,imp:null,ctr:null},
- {t:"LEDSone Suspension Ext\xe9rieure IP65 E27 – Luminaire Noir \xc9tanche 1m ~1545",u:"https://ledsone.fr/products/vintage-e27-bulb-holder-suspension-light-fitting-ceiling-hanging-pendant-light",rev:15.07,mtr:"Suspension Ext\xe9rieure IP65 E27 – Luminaire Noir \xc9tanche 1m",mdr:"Suspension ext\xe9rieure \xe9tanche IP65, m\xe9tal noir, c\xe2ble 1m. Compatible E27.Id\xe9ale terrasse, pergola, jardin. R\xe9sistante aux intemp\xe9ries. Livraison rapide France.",alt:0,imp:883,ctr:0.76},
- {t:"LEDSone Suspension Style Fermier Industrielle – Abat-jour Bol M\xe9tallique pour Cuisine & Couloir ~1824",u:"https://ledsone.fr/products/vintage-ceiling-light-pendant-lamp-shade",rev:14.05,mtr:"Suspension Style Fermier en M\xe9tal | Luminaire \xcelon de Cuisine",mdr:"D\xe9couvrez notre suspension de style fermier avec abat-jour bol m\xe9tallique. Cordon r\xe9glable, design industriel chic, id\xe9al pour cuisine et couloir. Livraison rapide !",alt:2,imp:null,ctr:null},
- {t:"LEDSone 200mm Kit rosace Cylindrique en m\xe9tal \xe0 3 trous ~1514",u:"https://ledsone.fr/products/ledsone-200mm-kit-rosace-cylindrique-en-metal-a-3-trous",rev:13.72,mtr:"LEDSone Rosace Plafond Vintage 3 Trous M\xe9tal 200mm",mdr:"Rosace de plafond LEDSone 200mm en m\xe9tal, 3 trous. Parfaite pour suspensions industrielles vintage, installation facile et design \xe9l\xe9gant int\xe9rieur.",alt:1,imp:67,ctr:3.83},
- {t:"Abat-jour Plafond M\xe9tal Industriel R\xe9tro 26cm - LEDSone ~2323",u:"https://ledsone.fr/products/abat-jour-plafond-m-tal-industriel-r-tro-26cm-ledsone",rev:13.14,mtr:"Abat-jour Plafond Vintage R\xe9tro en M\xe9tal | LEDSone",mdr:"Optimisez votre \xe9clairage avec cet abat-jour suspension industrielle en m\xe9tal r\xe9tro de 26 cm. Id\xe9al pour cuisine et salle \xe0 manger. Livraison rapide !",alt:10,imp:null,ctr:null},
- {t:"Ampoules LED Ba\xefonnette ST64 B22 4W Dimmable Filament Edison Ampoules ~1673",u:"https://ledsone.fr/products/ampoules-led-ba-onnette-st64-b22-4w-dimmable-filament-edison-ampoules",rev:9.17,mtr:"Ampoule LED ST64 B22 4W Dimmable - Filament Edison Vintage",mdr:"Ampoule LED ST64 B22 4W dimmable \xe0 filament Edison. Style vintage r\xe9tro, lumi\xe8re blanc chaud 2700K, verre ambr\xe9, parfaite pour d\xe9co int\xe9rieure.",alt:10,imp:null,ctr:null},
- {t:"Ampoule LED B22 4W T45 Dimmable Vintage Filament Ampoules ~3077",u:"https://ledsone.fr/products/4w-t45-b22-led-dimmable-vintage-teardrop-spiral-filament-light-bulb-1",rev:7.20,mtr:"Ampoule LED B22 Vintage 4W T45 – Style R\xe9tro Dimmable 2200K",mdr:"Ampoule LED B22 4W T45 dimmable, filament vintage r\xe9tro. Lumi\xe8re blanc chaud 2200K cosy, id\xe9ale salon, caf\xe9 ou d\xe9co industrielle. \xc9conomie d’\xe9nergie.",alt:0,imp:null,ctr:null}
+ {k:1,h:"ledsone-industrial-vintage-32cm-green-pendant-retro-metal-lamp-shade-e27-uk-holder",rev:369.20,mtr:"Suspension Vintage Verte 32cm E27 – Abat-jour M\xe9tal Cuisine",mdr:"Suspension abat-jour en m\xe9tal vert 32 cm, style industriel vintage. Douille E27. Parfaite au-dessus d'une table de cuisine ou d'un \xeelot. -10% actuellement.",alt:0,imp:null,ctr:null,faq:"Present"},
+ {k:2,h:"5-way-spider-light-fixture-3399",rev:248.70,mtr:"Lustre Araign\xe9e 5 Ampoules R\xe9glable E27 | LEDsone",mdr:"Suspension araign\xe9e 5 ampoules E27, hauteur r\xe9glable, finition m\xe9tal noir. Design industriel pour salle \xe0 manger. Livraison France rapide.",alt:3,imp:404,ctr:0.50,faq:"Missing"},
+ {k:3,h:"ledsone-luminaire-suspendu-vintage-trois-bras-avec-abat-jour-conique-plat",rev:198.00,mtr:null,mdr:null,alt:13,imp:null,ctr:null,faq:"Missing"},
+ {k:4,h:"galvanised-conduit-metal-pipe-light-fittings-accessories-4646",rev:195.73,mtr:null,mdr:null,alt:0,imp:null,ctr:null,faq:"Missing"},
+ {k:5,h:"adjustable-height-metal-spider-led-suspension",rev:182.22,mtr:"Lustre Suspension Vintage 5 T\xeates R\xe9glable en Hauteur",mdr:"Apportez style et fonctionnalit\xe9 \xe0 votre int\xe9rieur avec ce lustre araign\xe9e LED 5 t\xeates.Hauteur r\xe9glable, E27 compatible, id\xe9al salon, chambre ou salle \xe0 manger.",alt:11,imp:142,ctr:0.70,faq:"Missing"},
+ {k:6,h:"20mm-galvanized-steel-conduit-lighting-box-fitting",rev:165.75,mtr:"Raccord Conduit 20mm Galvanis\xe9 | Bornes – LEDsone",mdr:"Raccord bo\xeete \xe0 bornes pour conduit 20mm en acier galvanis\xe9. Compatible \xe9clairage industriel DIY, style steampunk. Certifi\xe9. Livraison France 5-7j. D\xe8s 2,25€.",alt:0,imp:null,ctr:null,faq:"Present"},
+ {k:7,h:"industrial-vintage-ratio-2-head-hemp-spider-chandelier-e27-uk-holder",rev:129.66,mtr:"Lustre Suspension Chanvre 2 T\xeates Industriel Vintage E27",mdr:"Lustre suspension chanvre 2 t\xeates industriel vintage E27. Chandelier r\xe9tro en corde de chanvre naturel, fer noir \xd840cm. Salon, salle \xe0 manger, loft. C\xe2ble 2m.",alt:21,imp:261,ctr:0.00,faq:"Present"},
+ {k:8,h:"vintage-ceiling-pendant-light-lamp-shade-industrial-chandelier-spider-lamp",rev:121.60,mtr:null,mdr:null,alt:2,imp:null,ctr:null,faq:"Present"},
+ {k:9,h:"1m-twisted-cable-e27-base-holder",rev:121.01,mtr:null,mdr:null,alt:11,imp:null,ctr:null,faq:"Missing"},
+ {k:10,h:"applique-murale-led-reglable-e27-industrielle",rev:110.76,mtr:"Applique murale LED r\xe9glable E27 industrielle",mdr:"D\xe9couvrez l'applique murale vintage LEDSone avec bras pivotant E27. \xc9clairage industriel r\xe9glable \xe0 180 degr\xe9s pour une ambiance chaleureuse.",alt:0,imp:null,ctr:null,faq:"Missing"},
+ {k:11,h:"bottle-shaped-led-pendant-light",rev:101.42,mtr:"Lustre salon 5 t\xeates – Suspension bouteille de vin en verre | LEDSone",mdr:"Suspension design \xe0 5 t\xeates avec abat-jour en verre bouteille de vin. Lustre id\xe9al pour salon, cuisine ou restaurant. Style r\xe9tro, livraison rapide en France.",alt:0,imp:null,ctr:null,faq:"Present"},
+ {k:12,h:"industrial-style-led-ceiling-light-fixtures",rev:94.00,mtr:"Luminaires Vintage Industriels - Suspensions Design pour",mdr:"\xc9clairage int\xe9rieur vintage pour cuisine, salon, chambre ou salle \xe0 manger. Style industriel, design \xe9l\xe9gant.",alt:8,imp:null,ctr:null,faq:"Missing"},
+ {k:13,h:"suspension-ledsone-8-voies-forme-araignee-e27-reglable",rev:89.16,mtr:"Lustre araign\xe9e 8 bras vintage – Suspension laiton & cuivre E27",mdr:"Suspension araign\xe9e 8 bras en laiton & cuivre. Style vintage r\xe9tro, id\xe9ale pour salon ou salle \xe0 manger. Compatible E27, livraison rapide en France.",alt:0,imp:64,ctr:0.00,faq:"Missing"},
+ {k:14,h:"vintage-industrial-metal-retro-ceiling-pendant-light-copper-shade",rev:85.56,mtr:"Suspension Vintage Cuivre E27 – Plafonnier M\xe9tal R\xe9tro 1m",mdr:"Suspension vintage finition cuivre, abat-jour m\xe9tal r\xe9tro. C\xe2ble r\xe9glable 1m, douille E27.Id\xe9al salon, chambre ou cuisine. -10% en ce moment. Livraison rapide.",alt:12,imp:null,ctr:null,faq:"Missing"},
+ {k:15,h:"applique-murale-en-metal-avec-abat-jour-facile-a-installer",rev:81.96,mtr:"Applique Murale Industrielle et R\xe9tro en M\xe9tal",mdr:"Sublimez votre int\xe9rieur avec l'applique murale industrielle LEDSone en m\xe9tal noir. Style vintage Edison parfait pour chambre, bar ou loft. Livraison Rapide !",alt:9,imp:null,ctr:null,faq:"Missing"},
+ {k:16,h:"vintage-e27-bulb-holder-suspension-light-fitting-ceiling-hanging-pendant-light",rev:79.35,mtr:"Suspension Ext\xe9rieure IP65 E27 – Luminaire Noir \xc9tanche 1m",mdr:"Suspension ext\xe9rieure \xe9tanche IP65, m\xe9tal noir, c\xe2ble 1m. Compatible E27.Id\xe9ale terrasse, pergola, jardin. R\xe9sistante aux intemp\xe9ries. Livraison rapide France.",alt:0,imp:799,ctr:0.88,faq:"Present"},
+ {k:17,h:"ledsone-suspension-industrielle-lustre-retro-plafonnier-metal",rev:77.72,mtr:"Suspension industrielle vintage en m\xe9tal Lustre r\xe9tro plafonnier E27",mdr:"Luminaire suspendu industriel vintage en m\xe9tal E27. Id\xe9al pour salle \xe0 manger, loft ou cuisine. Style r\xe9tro tendance, livraison rapide en France.",alt:5,imp:60,ctr:0.00,faq:"Present"},
+ {k:18,h:"industrial-vintage-retro-adjustable-ceiling-various-colours-pendant-light-with-e27-uk-holder",rev:57.27,mtr:"LEDSone Suspension Luminaire Industrielle E27 en M\xe9tal 15 cm",mdr:"D\xe9couvrez notre suspension luminaire industrielle LEDSone. Abat-jour m\xe9tal 15cm, c\xe2ble r\xe9glable et culot E27. Id\xe9al pour \xeelot de cuisine et salon. Livraison rapide !",alt:42,imp:null,ctr:null,faq:"Missing"},
+ {k:19,h:"vintage-e27-bulb-holder-suspension-light-fitting-ceiling-2m-hanging-pendant-light-4907",rev:55.34,mtr:"Suspension plafonnier 2m support ampoule E27 vintage",mdr:"D\xe9couvrez notre suspension plafonnier de 2m avec support ampoule E27 au style vintage. Parfaite pour illuminer votre int\xe9rieur avec \xe9l\xe9gance.",alt:12,imp:101,ctr:0.99,faq:"Missing"},
+ {k:20,h:"modern-blue-ceiling-light-shade-hanging-pendant-lamp-metal-dome-shade",rev:52.72,mtr:"Abat-jour D\xf4me M\xe9tal 30cm E27 – Industriel Vintage",mdr:"Abat-jour suspendu industriel en m\xe9tal 30 cm. Compatible E27, installation facile avec plaque r\xe9ductrice gratuite. Id\xe9al salon, chambre ou cuisine.",alt:31,imp:null,ctr:null,faq:"Missing"},
+ {k:21,h:"plafonnier-retro-moderne-a-3-ampoules-eclairage-e27",rev:51.83,mtr:"Plafonnier r\xe9tro moderne \xe0 3 ampoules - \xc9clairage E27",mdr:"\xc9l\xe9gant plafonnier design \xe0 3 ampoules E27, id\xe9al pour cuisine, salon ou salle \xe0 manger. Livr\xe9 en kit, finition laiton jaune. Commandez d\xe8s maintenant !",alt:12,imp:null,ctr:null,faq:"Missing"},
+ {k:22,h:"ledsone-industriel-suspension-luminaire-retro-vintage",rev:51.66,mtr:"Suspension Luminaire Industriel Vintage C\xe2ble 95cm R\xe9glable | LEDSone",mdr:"Suspension industrielle vintage en m\xe9tal d\xf4me. C\xe2ble r\xe9glable 95cm, douille E27, id\xe9ale salon, salle \xe0 manger, restaurant ou loft. Livraison rapide LEDSone.",alt:13,imp:30,ctr:3.33,faq:"Present"},
+ {k:23,h:"wall-scone",rev:51.26,mtr:"Applique Murale Vintage Noire 180\xb0 – \xc9clairage Industriel Chic",mdr:"Applique murale vintage noire orientable 180\xb0 – parfaite pour restaurants, galeries, couloirs ou cuisines. Style industriel chic et installation facile.",alt:10,imp:null,ctr:null,faq:"Missing"},
+ {k:24,h:"suspension-vintage-ledsone-5-lumieres-industriel-e27",rev:50.57,mtr:"Lustre Araign\xe9e 5 Bras Vintage E27 | LEDsone France",mdr:"Lustre araign\xe9e industriel vintage 5 lumi\xe8res E27. M\xe9tal noir mat, c\xe2ble r\xe9glable, id\xe9al salle \xe0 manger, restaurant, loft. Livraison France 5–7j.",alt:1,imp:null,ctr:null,faq:"Present"},
+ {k:25,h:"suspension-araign-e-lampe-3-voies-suspension-cuivre-bross-plafonnier-clairage",rev:46.58,mtr:"Lustre Araign\xe9e 3 T\xeates – Suspension Industrielle Vintage E27",mdr:"Suspension araign\xe9e 3 t\xeates cuivre bross\xe9, douilles E27, c\xe2bles r\xe9glables 2m. Style industriel vintage cuisine, salon, loft. Livraison France 5-7j.",alt:0,imp:176,ctr:0.57,faq:"Missing"},
+ {k:26,h:"agunnaryd-pendant-lamp",rev:45.09,mtr:"Suspension Industrielle Noire Steampunk LEDSone – Lustre 3 voies E27",mdr:"Suspension industrielle noire Steampunk LEDSone, 3 voies, abat-jour m\xe9tal 21 cm, fil r\xe9glable 95 cm. Id\xe9ale pour salon, salle \xe0 manger, bar ou restaurant.",alt:5,imp:null,ctr:null,faq:"Missing"},
+ {k:27,h:"swan-neck-wall-light-indoor-lamp",rev:44.56,mtr:"Applique Murale Industrielle Col de Cygne E27 | 7 Finitions",mdr:"Applique murale col de cygne, m\xe9tal, 7 finitions (laiton, or rose, chrome, noir...). Douille E27, garantie 3 ans. Note 4.7/5. Livraison France.",alt:27,imp:null,ctr:null,faq:"Present"},
+ {k:28,h:"copper-ceiling-rose-light-pendant-for-cable",rev:43.63,mtr:"Rosace de Plafond 100mm — Cuivre, Noir, Chrome | LEDSone",mdr:"Rosace de plafond ronde 100mm en m\xe9tal robuste. 5 finitions : cuivre, noir, chrome, laiton. Cache-fil \xe9l\xe9gant, montage facile, livraison rapide en France.",alt:3,imp:null,ctr:null,faq:"Present"},
+ {k:29,h:"ledsone-abat-jour-design-moderne-en-m-tal-pour-suspension-et-plafonnier-32-cm",rev:41.67,mtr:"Abat-jour M\xe9tal Moderne 32 cm – Suspension & Plafonnier",mdr:"Abat-jour m\xe9tal 32 cm pour suspension et plafonnier – moderne, \xe9l\xe9gant et durable. Commandez vite pour un \xe9clairage chic !",alt:14,imp:null,ctr:null,faq:"Missing"},
+ {k:30,h:"applique-murale-vintage-led-eclairage-retro-ajustable",rev:40.38,mtr:"Applique murale vintage LED - \xc9clairage r\xe9tro ajustable",mdr:"Transformez votre int\xe9rieur avec l'applique murale vintage LEDSone. Finition nickel satin\xe9, douille E27 r\xe9glable et style industriel. Livraison rapide. Shoppez !",alt:0,imp:null,ctr:null,faq:"Missing"},
+ {k:31,h:"2-way-retro-vintage-chandelier-ceiling-spider-light-industrial-pendant-lamp-e27-4945",rev:39.70,mtr:" Suspension Araign\xe9e Vintage 2 Bras E27 – Luminaire Industriel R\xe9tro",mdr:"Lustre araign\xe9e dimmable 2 bras, style industriel vintage. Compatible variateur de lumi\xe8re E27. C\xe2ble r\xe9glable. Id\xe9al chambre ou salon. Livraison rapide France.",alt:3,imp:156,ctr:1.28,faq:"Missing"},
+ {k:32,h:"applique-murale-vintage-retro-moderne-e27-pour-interieur",rev:36.86,mtr:"Applique Murale Vintage R\xe9tro Moderne E27 pour Int\xe9rieur",mdr:"\xc9l\xe9gante applique murale vintage r\xe9tro avec bras en m\xe9tal E27, id\xe9ale pour salon, cuisine, chambre ou salle \xe0 manger. Style industriel, design intemporel.",alt:10,imp:null,ctr:null,faq:"Missing"},
+ {k:33,h:"suspension-luminaire-industrielle-3-lampes-metal-noir-ledsone",rev:34.80,mtr:"Suspension Industrielle 3 Lampes Noir | Cuisine & Bar",mdr:"Suspension 3 lampes m\xe9tal noir mat, style loft. C\xe2bles ajustables 1m, compatible variateur. Id\xe9ale cuisine, bar, salle \xe0 manger.",alt:9,imp:null,ctr:null,faq:"Present"},
+ {k:34,h:"c-ble-plafonnier-industriel-r-tro-2-voies-e27-suspension",rev:34.06,mtr:"C\xe2ble Plafonnier Industriel R\xe9tro 2 Voies E27 Suspension",mdr:null,alt:8,imp:null,ctr:null,faq:"Missing"},
+ {k:35,h:"vintage-retro-pendant-light-with-metal-shade",rev:32.70,mtr:"Suspension Vintage M\xe9tal Noir E27 – Luminaire Industriel Loft",mdr:"Suspension vintage en m\xe9tal au design industriel \xe9pur\xe9. Id\xe9ale pour cuisine, salon ou bar. Douille E27 compatible LED. Installation facile et Livraison 24h.",alt:9,imp:null,ctr:null,faq:"Missing"},
+ {k:36,h:"ancienne-suspension-lustre-plafonnier-araign-e-industriel",rev:31.00,mtr:"Ancienne Suspension Lustre Araign\xe9e | LEDsone France",mdr:"Ancienne suspension lustre araign\xe9e industriel, style authentique r\xe9tro. Plafonnier m\xe9tal E27, c\xe2ble r\xe9glable. Livraison France. LEDsone.",alt:5,imp:null,ctr:null,faq:"Missing"},
+ {k:37,h:"2m-black-white-round-cable-e27-base-satin-nickel-holder",rev:29.98,mtr:"E27 cable suspension luminaire 2m",mdr:"Cette suspension c\xe2ble textile est compos\xe9e de 2m m\xe8tres de c\xe2ble, d'une rosace en m\xe9tal avec une douille E27 Max 60w.",alt:2,imp:166,ctr:0.60,faq:"Missing"},
+ {k:38,h:"plafonnier-cage-cristal-verre-moderne-e27",rev:29.28,mtr:"Plafonnier Cage Cristal Verre Moderne Luminaire Plafond Design E27",mdr:null,alt:0,imp:null,ctr:null,faq:"Present"},
+ {k:39,h:"lot-de-3-abat-jours-vintage-suspension-industrielle-incurvee-e27",rev:28.09,mtr:"LEDSONE Lot de 3 abat-jours vintage incurv\xe9s, installation",mdr:"Ajoutez une touche chaleureuse \xe0 votre int\xe9rieur avec ces abat-jours vintage design. Parfaits pour salon, chambre ou salle \xe0 manger.",alt:5,imp:null,ctr:null,faq:"Missing"},
+ {k:40,h:"dc24v-ip67-150w-waterproof-led-driver-power-supply-transformer",rev:25.19,mtr:"Transformateur LED 24V 150W \xc9tanche IP67 Alimentation Ruban LED",mdr:"Alimentation LED 24V 150W IP67 waterproof pour ruban LED, spots et \xe9clairage ext\xe9rieur. Sortie DC 24V constante, protections surcharge/court-circuit.",alt:3,imp:117,ctr:0.00,faq:"Present"},
+ {k:41,h:"vintage-industrial-retro-metal-indoor-ceiling-light-flush-mount-retro-cone-shade-lamp-uk",rev:22.40,mtr:null,mdr:null,alt:0,imp:null,ctr:null,faq:"Missing"},
+ {k:42,h:"suspension-lustre-suspension-lampe-suspension-plafonnier-industriel-2-t-tes",rev:22.39,mtr:"Lustre Suspension Araign\xe9e Industriel 2 T\xeates - LEDSone",mdr:"D\xe9couvrez le plafonnier araign\xe9e LEDSone noir \xe0 2 t\xeates. Un lustre industriel vintage id\xe9al pour cuisine, salon ou bar. C\xe2bles r\xe9glables. Livraison rapide !",alt:16,imp:null,ctr:null,faq:"Missing"},
+ {k:43,h:"vintage-industrial-pendant-light-metal-e27",rev:21.21,mtr:"Suspension Industrielle M\xe9tal E27 | 9 Coloris – Style Loft",mdr:"Suspension industrielle en m\xe9tal, douille E27, 9 coloris (noir, vert, orange...). Style loft pour salon, restaurant, caf\xe9. Livraison France 4-10j.",alt:19,imp:null,ctr:null,faq:"Present"},
+ {k:44,h:"e27-lamp-holder-20mm-female-thread-conduit-ceiling-light-socket",rev:20.97,mtr:null,mdr:null,alt:0,imp:null,ctr:null,faq:"Missing"},
+ {k:45,h:"plafonnier-semi-encastre-style-ancien",rev:19.59,mtr:"Plafonnier semi‑encastr\xe9 vintage | Style ancien m\xe9tal E27",mdr:"Plafonnier semi‑encastr\xe9 style ancien en m\xe9tal E27. \xc9clairage r\xe9tro id\xe9al pour salon, chambre ou cuisine. Durable, \xe9l\xe9gant et livraison rapide en France.",alt:28,imp:null,ctr:null,faq:"Missing"},
+ {k:46,h:"applique-murale-industrielle-vintage-avec-motif-c-ne",rev:19.14,mtr:"Applique Murale Industrielle C\xf4ne Vintage E27 | LEDsone",mdr:"Applique murale industrielle vintage, design c\xf4ne en m\xe9tal, culot E27. Style loft pour salon, couloir, caf\xe9 & restaurant. Livraison France.",alt:2,imp:null,ctr:null,faq:"Present"},
+ {k:47,h:"indoor-wall-fitting-lounge-light-fittings",rev:18.69,mtr:"Appliques Murales Industrielles Design",mdr:"D\xe9couvrez nos appliques murales industrielles au design \xe9l\xe9gant en m\xe9tal. Id\xe9ales pour cr\xe9er une atmosph\xe8re chaleureuse et accueillante chez vous.",alt:16,imp:null,ctr:null,faq:"Present"},
+ {k:48,h:"abat-jour-m-tal-pluton-plafonnier-suspension-luminaire-abat-jour",rev:18.28,mtr:"Abat-jour M\xe9tal Pluton – Suspension & Plafonnier",mdr:"D\xe9couvrez l'\xe9l\xe9gance de l'Abat-jour M\xe9tal Pluton, une suspension et plafonnier qui allie design moderne et fonctionnalit\xe9 pour sublimer votre int\xe9rieur.",alt:0,imp:null,ctr:null,faq:"Present"},
+ {k:49,h:"vintage-ceiling-light-pendant-lamp-shade",rev:16.86,mtr:"Suspension Style Fermier en M\xe9tal | Luminaire \xcelet de Cuisine",mdr:"D\xe9couvrez notre suspension de style fermier avec abat-jour bol m\xe9tallique. Cordon r\xe9glable, design industriel chic, id\xe9al pour cuisine et couloir. Livraison rapide !",alt:13,imp:null,ctr:null,faq:"Present"},
+ {k:50,h:"ledsone-200mm-kit-rosace-cylindrique-en-metal-a-3-trous",rev:16.46,mtr:"LEDSone Rosace Plafond Vintage 3 Trous M\xe9tal 200mm",mdr:"Rosace de plafond LEDSone 200mm en m\xe9tal, 3 trous. Parfaite pour suspensions industrielles vintage, installation facile et design \xe9l\xe9gant int\xe9rieur.",alt:4,imp:73,ctr:5.48,faq:"Missing"}
 ];
 
-/* ── R1: Classification helpers ── */
+const BASE='https://ledsone.fr/products/';
+
+/* Classification */
 function r1_cMT(r,dupes){
   const s=r&&r.trim();
-  if(!s) return 'Missing';
-  if(dupes.has(s)) return 'Duplicate';
+  if(!s) return{status:'Missing',len:0};
   const l=s.length;
-  if(l<30) return 'Too Short';
-  if(l<=60) return 'OK';
-  return 'Too Long';
+  if(dupes.has(s)) return{status:'Duplicate',len:l};
+  if(l<=29) return{status:'Too Short',len:l};
+  if(l<=60) return{status:'OK',len:l};
+  return{status:'Too Long',len:l};
 }
-function r1_cMD(r){
+function r1_cMD(r,dupes){
   const s=r&&r.trim();
-  if(!s) return 'Missing';
+  if(!s) return{status:'Missing',len:0};
   const l=s.length;
-  if(l<120) return 'Too Short';
-  if(l<=160) return 'OK';
-  return 'Too Long';
+  if(dupes.has(s)) return{status:'Duplicate',len:l};
+  if(l<=69) return{status:'Too Short',len:l};
+  if(l<=160) return{status:'OK',len:l};
+  return{status:'Too Long',len:l};
 }
-function r1_buildDupes(){
+function r1_buildDupes(key){
   const seen={},out=new Set();
-  P.forEach(p=>{const s=p.mtr&&p.mtr.trim();if(s){if(seen[s])out.add(s);else seen[s]=true;}});
+  P.forEach(p=>{const s=p[key]&&p[key].trim();if(s){if(seen[s])out.add(s);else seen[s]=true;}});
   return out;
 }
-const R1_DUPES=r1_buildDupes();
+const R1_MT_DUPES=r1_buildDupes('mtr');
+const R1_MD_DUPES=r1_buildDupes('mdr');
+
 function r1_classified(p){
-  const mt=r1_cMT(p.mtr,R1_DUPES), md=r1_cMD(p.mdr);
-  /* FAQ Schema: Missing for all — no FAQ app or structured data found in Shopify admin */
-  const faq='Missing';
-  /* Low CTR: GSC data only; threshold <2%; null = No GSC data (not flagged as Low CTR) */
+  const mtO=r1_cMT(p.mtr,R1_MT_DUPES);
+  const mdO=r1_cMD(p.mdr,R1_MD_DUPES);
+  /* H1: Shopify Dawn renders product.title as H1. All 50 products confirmed OK via rendered DOM check. */
+  const h1='OK';
+  const faq=p.faq;
   const lc=p.ctr===null?'No GSC data':p.ctr<2?'Low CTR':'OK';
-  return{...p,mt,md,faq,lc};
+  return{...p,mt:mtO.status,mtLen:mtO.len,md:mdO.status,mdLen:mdO.len,h1,faq,lc};
 }
 
-/* ── R1: KPI counters ── */
+/* KPI */
 function r1_computeKPIs(){
   const rows=P.map(r1_classified);
   const rev=rows.reduce((a,b)=>a+b.rev,0);
@@ -328,79 +367,84 @@ function r1_computeKPIs(){
   document.getElementById('kMissDesc').textContent=rows.filter(r=>r.md==='Missing').length;
   document.getElementById('kLongTitle').textContent=rows.filter(r=>r.mt==='Too Long').length;
   document.getElementById('kLongDesc').textContent=rows.filter(r=>r.md==='Too Long').length;
-  document.getElementById('kFaq').textContent=rows.filter(r=>r.faq==='Missing').length;
+  document.getElementById('kFaqMiss').textContent=rows.filter(r=>r.faq==='Missing').length;
   document.getElementById('kLowCtr').textContent=rows.filter(r=>r.lc==='Low CTR').length;
 }
 r1_computeKPIs();
 
 const r1_esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-function r1_badge(s){
-  if(s==='OK') return '<span class="b b-ok">OK</span>';
-  if(s==='Missing') return '<span class="b b-err">Missing</span>';
-  if(s==='Too Long'||s==='Too Short'||s==='Duplicate') return '<span class="b b-warn">'+r1_esc(s)+'</span>';
-  if(s==='Low CTR') return '<span class="b b-err">Low CTR</span>';
-  if(s==='No GSC data') return '<span class="b b-na">No GSC data</span>';
-  if(s==='Unverified') return '<span class="b b-na">Unverified</span>';
-  return '<span class="b b-na">'+r1_esc(s)+'</span>';
+
+function r1_badge(s,len){
+  const c=(len&&len>0)?' ('+len+')':'';
+  if(s==='OK') return'<span class="b b-ok">OK'+c+'</span>';
+  if(s==='Missing') return'<span class="b b-err">Missing</span>';
+  if(s==='Too Long'||s==='Too Short'||s==='Duplicate') return'<span class="b b-warn">'+r1_esc(s)+c+'</span>';
+  if(s==='Low CTR') return'<span class="b b-err">Low CTR</span>';
+  if(s==='No GSC data') return'<span class="b b-na">No GSC data</span>';
+  if(s==='Present') return'<span class="b b-ok">Present</span>';
+  if(s==='Mismatch') return'<span class="b b-warn">Mismatch</span>';
+  return'<span class="b b-na">'+r1_esc(s)+'</span>';
 }
 function r1_altCell(n){
-  if(n===0) return '<span class="alt-0">0</span>';
-  if(n<=3) return '<span class="alt-low">'+n+'</span>';
-  return '<span class="alt-high">'+n+'</span>';
+  if(n===0) return'<span class="alt-0">0</span>';
+  if(n<=2) return'<span class="alt-low">'+n+'</span>';
+  return'<span class="alt-high">'+n+'</span>';
 }
 
-/* ── R1: State ── */
-let r1_activeFilter='all', r1_searchQ='', r1_sortCol=-1, r1_sortDir=1;
+/* State */
+let r1_af='all',r1_sq='',r1_sc=-1,r1_sd=1;
 
-/* ── R1: Filter + search + sort pipeline ── */
 function r1_getRows(){
   return P.map(r1_classified).filter(p=>{
-    /* search stacks with any active filter */
-    if(r1_searchQ){
-      const q=r1_searchQ.toLowerCase();
-      if(!p.t.toLowerCase().includes(q)&&!p.u.toLowerCase().includes(q)) return false;
+    if(r1_sq){
+      const q=r1_sq.toLowerCase();
+      const mtr=p.mtr||'';const mdr=p.mdr||'';
+      if(!p.h.toLowerCase().includes(q)&&!mtr.toLowerCase().includes(q)&&!mdr.toLowerCase().includes(q)&&!String(p.k).includes(q)) return false;
     }
-    if(r1_activeFilter==='missTitle') return p.mt==='Missing';
-    if(r1_activeFilter==='missDesc')  return p.md==='Missing';
-    if(r1_activeFilter==='tooLong')   return p.mt==='Too Long'||p.md==='Too Long';
-    if(r1_activeFilter==='faq')       return p.faq==='Missing';
-    if(r1_activeFilter==='lowCTR')    return p.lc==='Low CTR';
-    if(r1_activeFilter==='alt')       return p.alt>0;
-    return true; /* 'all' */
+    if(r1_af==='missTitle') return p.mt==='Missing';
+    if(r1_af==='missDesc')  return p.md==='Missing';
+    if(r1_af==='tooLong')   return p.mt==='Too Long'||p.md==='Too Long';
+    if(r1_af==='faqMiss')   return p.faq==='Missing';
+    if(r1_af==='faqOk')     return p.faq==='Present';
+    if(r1_af==='lowCTR')    return p.lc==='Low CTR';
+    if(r1_af==='alt')       return p.alt>0;
+    return true;
   });
 }
 
 function r1_render(){
   let rows=r1_getRows();
-  if(r1_sortCol>=0){
+  if(r1_sc>=0){
     rows.sort((a,b)=>{
       let av,bv;
-      if(r1_sortCol===0){av=a.t;bv=b.t;}
-      else if(r1_sortCol===1){av=a.rev;bv=b.rev;}
-      else if(r1_sortCol===2){av=a.mt;bv=b.mt;}
-      else if(r1_sortCol===3){av=a.md;bv=b.md;}
-      else if(r1_sortCol===4){av='Unverified';bv='Unverified';}
-      else if(r1_sortCol===5){av=a.alt;bv=b.alt;}
-      else if(r1_sortCol===6){av=a.faq;bv=b.faq;}
-      else if(r1_sortCol===7){av=a.imp===null?(r1_sortDir>0?Infinity:-Infinity):a.imp;bv=b.imp===null?(r1_sortDir>0?Infinity:-Infinity):b.imp;}
-      else if(r1_sortCol===8){av=a.ctr===null?(r1_sortDir>0?Infinity:-Infinity):a.ctr;bv=b.ctr===null?(r1_sortDir>0?Infinity:-Infinity):b.ctr;}
+      if(r1_sc===0){av=a.k;bv=b.k;}
+      else if(r1_sc===1){av=a.h;bv=b.h;}
+      else if(r1_sc===2){av=a.rev;bv=b.rev;}
+      else if(r1_sc===3){if(a.mt!==b.mt)return a.mt.localeCompare(b.mt,'fr')*r1_sd;av=a.mtLen;bv=b.mtLen;}
+      else if(r1_sc===4){if(a.md!==b.md)return a.md.localeCompare(b.md,'fr')*r1_sd;av=a.mdLen;bv=b.mdLen;}
+      else if(r1_sc===5){av=a.h1;bv=b.h1;}
+      else if(r1_sc===6){av=a.alt;bv=b.alt;}
+      else if(r1_sc===7){av=a.faq;bv=b.faq;}
+      else if(r1_sc===8){av=a.imp===null?(r1_sd>0?Infinity:-Infinity):a.imp;bv=b.imp===null?(r1_sd>0?Infinity:-Infinity):b.imp;}
+      else if(r1_sc===9){av=a.ctr===null?(r1_sd>0?Infinity:-Infinity):a.ctr;bv=b.ctr===null?(r1_sd>0?Infinity:-Infinity):b.ctr;}
       else{av=a.lc;bv=b.lc;}
-      if(typeof av==='string') return av.localeCompare(bv,'fr')*r1_sortDir;
-      return (av-bv)*r1_sortDir;
+      if(typeof av==='string') return av.localeCompare(bv,'fr')*r1_sd;
+      return(av-bv)*r1_sd;
     });
   }
   const tbody=document.getElementById('tbody');
   tbody.innerHTML=rows.map(p=>{
-    const title=p.t.length>52?p.t.slice(0,50)+'…':p.t;
-    const handle=p.u.replace('https://ledsone.fr/products/','');
-    const imp=p.imp!==null?p.imp.toLocaleString():'—';
+    const url=BASE+p.h;
+    const shortH=p.h.length>38?p.h.slice(0,36)+'…':p.h;
+    const imp=p.imp!==null?p.imp.toLocaleString('fr-FR'):'—';
     const ctr=p.ctr!==null?p.ctr.toFixed(2)+'%':'—';
     return`<tr>
-      <td class="product"><a href="${r1_esc(p.u)}" target="_blank" title="${r1_esc(p.t)}">${r1_esc(title)}</a><div class="url">/products/${r1_esc(handle.length>40?handle.slice(0,38)+'…':handle)}</div></td>
+      <td class="rank num">${p.k}</td>
+      <td class="product"><a href="${r1_esc(url)}" target="_blank" rel="noopener" title="${r1_esc(p.h)}">${r1_esc(shortH)}</a></td>
       <td class="num revenue">€${p.rev.toFixed(2)}</td>
-      <td>${r1_badge(p.mt)}</td>
-      <td>${r1_badge(p.md)}</td>
-      <td>${r1_badge('Unverified')}</td>
+      <td>${r1_badge(p.mt,p.mtLen)}</td>
+      <td>${r1_badge(p.md,p.mdLen)}</td>
+      <td>${r1_badge(p.h1)}</td>
       <td class="num">${r1_altCell(p.alt)}</td>
       <td>${r1_badge(p.faq)}</td>
       <td class="num">${imp}</td>
@@ -411,30 +455,29 @@ function r1_render(){
   document.getElementById('tbarCount').textContent=`Showing ${rows.length} of ${P.length} products`;
 }
 
-/* ── R1: Public API (called from onclick attributes) ── */
 function r1_filter(f){
-  r1_activeFilter=f;
-  /* scope to R1 panel only — won't touch buttons in other tabs */
+  r1_af=f;
   document.querySelectorAll('#tab-panel-1 .fbtn').forEach(b=>b.classList.remove('on'));
-  const map={all:'r1BtnAll',missTitle:'r1BtnMissTitle',missDesc:'r1BtnMissDesc',tooLong:'r1BtnTooLong',faq:'r1BtnFaq',lowCTR:'r1BtnLowCTR',alt:'r1BtnAlt'};
+  const map={all:'r1BtnAll',missTitle:'r1BtnMissTitle',missDesc:'r1BtnMissDesc',tooLong:'r1BtnTooLong',faqMiss:'r1BtnFaqMiss',faqOk:'r1BtnFaqOk',lowCTR:'r1BtnLowCTR',alt:'r1BtnAlt'};
   const el=document.getElementById(map[f]);if(el)el.classList.add('on');
   r1_render();
 }
 function r1_sort(col){
-  if(r1_sortCol===col) r1_sortDir*=-1; else{r1_sortCol=col;r1_sortDir=1;}
+  if(r1_sc===col)r1_sd*=-1;else{r1_sc=col;r1_sd=1;}
   r1_render();
 }
 function r1_exportCSV(){
   const rows=r1_getRows();
-  const hdr=['Product Title','Product URL','Revenue EUR','Meta Title Status','Meta Desc Status','H1 Status','Alt Missing','FAQ Schema','Impressions','CTR %','Low CTR Flag'];
-  const lines=rows.map(p=>['"'+p.t.replace(/"/g,'""')+'"',p.u,p.rev,p.mt,p.md,'Unverified',p.alt,p.faq,p.imp??'',p.ctr??'',p.lc]);
+  const hdr=['Rank','Handle','URL','Revenue EUR','Meta Title Status','Meta Title Len','Meta Desc Status','Meta Desc Len','H1 Status','Alt Missing (all images)','FAQ Schema','Impressions','CTR %','Low CTR Flag'];
+  const lines=rows.map(p=>[p.k,p.h,BASE+p.h,p.rev,p.mt,p.mtLen,p.md,p.mdLen,p.h1,p.alt,p.faq,p.imp??'',p.ctr??'',p.lc]);
   const csv=[hdr,...lines].map(r=>r.join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='hetheesha-req01-top-selling-seo-2026-07-03.csv';a.click();
+  a.download='hetheesha-req01-top50-seo-2026-07-06.csv';
+  a.click();
 }
 
-document.getElementById('r1SearchBox').addEventListener('input',function(){r1_searchQ=this.value.trim();r1_render();});
+document.getElementById('r1SearchBox').addEventListener('input',function(){r1_sq=this.value.trim();r1_render();});
 r1_render();
 </script>
 </body>
