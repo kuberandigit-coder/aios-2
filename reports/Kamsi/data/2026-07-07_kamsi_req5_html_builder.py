@@ -69,31 +69,39 @@ h1{font-size:22px;}
 .pager .info{font-size:12.5px;color:var(--muted);font-weight:600;}
 .legend{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.8;}
 .legend strong{color:var(--ink);}
-.tablewrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;margin-bottom:16px;}
-table.rt{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1100px;}
-table.rt th{text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);background:#fafbfd;cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:0;}
-table.rt th:hover{color:var(--accent);}
-table.rt th .arrow{opacity:.4;font-size:10px;margin-left:3px;}
-table.rt td{padding:9px 14px;border-bottom:1px solid #eef1f6;vertical-align:top;max-width:260px;}
-table.rt td.url a{color:var(--accent);text-decoration:none;font-weight:600;word-break:break-all;}
-table.rt td.desc, table.rt td.title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;}
-table.rt td.num{text-align:right;white-space:nowrap;}
 .badge{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;color:#fff;}
 .b-ok{background:#0a7d4f;}
 .b-warn{background:#ef6c00;}
 .b-danger{background:#c62828;}
+#sortsel{padding:10px 16px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;min-width:170px;}
+details.prod{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:6px;overflow:hidden;}
+details.prod summary{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;list-style:none;flex-wrap:wrap;}
+details.prod summary::-webkit-details-marker{display:none;}
+details.prod summary:hover{background:var(--accent-soft);}
+details.prod .rowmain{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;min-width:0;}
+details.prod .t{font-size:13.5px;font-weight:600;flex:1;min-width:180px;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+details.prod .ct{font-size:11px;color:var(--muted);background:#f0f3f8;border-radius:999px;padding:3px 10px;white-space:nowrap;}
+details.prod .lens{font-size:11px;color:var(--muted);white-space:nowrap;}
+details.prod .caret{font-size:11px;color:var(--muted);margin-left:auto;flex-shrink:0;}
+.detail{padding:12px 16px 14px;border-top:1px solid var(--line);background:#fafbfd;font-size:12.5px;}
+.detail .row{margin-bottom:8px;}
+.detail .row:last-child{margin-bottom:0;}
+.detail .k{font-weight:700;color:var(--ink);display:block;font-size:11px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;color:#42506a;}
+.detail .v{color:var(--muted);line-height:1.55;word-break:break-word;}
+.detail .v a{color:var(--accent);text-decoration:none;font-weight:600;}
+.detail .v i{color:var(--na);font-style:normal;}
 .foot{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12.5px;color:var(--muted);line-height:1.65;}
 .foot strong{color:var(--ink);}
-@media(max-width:600px){h1{font-size:18px;}.card .v{font-size:17px;}}
+@media(max-width:600px){h1{font-size:18px;}.card .v{font-size:17px;}details.prod .t{max-width:100%;}}
 """
 
 JS = """
 const ROWS=__ROWS_JSON__;
 const PAGE_SIZE=100;
-const q=document.getElementById('q'),collsel=document.getElementById('collsel'),actionsel=document.getElementById('actionsel');
+const q=document.getElementById('q'),collsel=document.getElementById('collsel'),actionsel=document.getElementById('actionsel'),sortsel=document.getElementById('sortsel'),sortDirBtn=document.getElementById('sortDirBtn');
 const tmYes=document.getElementById('tm-yes'),tmNo=document.getElementById('tm-no'),tmAll=document.getElementById('tm-all');
 const dmYes=document.getElementById('dm-yes'),dmNo=document.getElementById('dm-no'),dmAll=document.getElementById('dm-all');
-const tbody=document.getElementById('tbody'),pageInfo=document.getElementById('pageInfo'),prevBtn=document.getElementById('prevPage'),nextBtn=document.getElementById('nextPage'),exportBtn=document.getElementById('exportCsv');
+const container=document.getElementById('rowsContainer'),pageInfo=document.getElementById('pageInfo'),prevBtn=document.getElementById('prevPage'),nextBtn=document.getElementById('nextPage'),exportBtn=document.getElementById('exportCsv');
 let tmMode='all',dmMode='all',page=0,filtered=ROWS,sortKey='t',sortDir=1;
 
 for(const r of ROWS){
@@ -108,24 +116,30 @@ function badgeClass(a){
 function debounce(fn,ms){let t;return function(...a){clearTimeout(t);t=setTimeout(()=>fn.apply(this,a),ms);};}
 
 function rowHtml(r){
-  return `<tr>
-    <td class="url"><a href="https://ledsone.co.uk${esc(r.u)}" target="_blank" rel="noopener">${esc(r.u)}</a></td>
-    <td>${esc(r.c)}</td>
-    <td class="title" title="${esc(r.t)}">${esc(r.t)}</td>
-    <td class="desc" title="${esc(r.d)}">${esc(r.d)}</td>
-    <td class="title" title="${esc(r.mt)}">${esc(r.mt)||'<i>(none)</i>'}</td>
-    <td class="desc" title="${esc(r.md)}">${esc(r.md)||'<i>(none)</i>'}</td>
-    <td class="num">${r.tl}</td>
-    <td class="num">${r.dl}</td>
-    <td>${esc((r.lu||'').slice(0,10))}</td>
-    <td><span class="badge ${badgeClass(r.a)}">${esc(r.a)}</span></td>
-  </tr>`;
+  return `<details class="prod">
+    <summary>
+      <div class="rowmain">
+        <span class="t" title="${esc(r.t)}">${esc(r.t)}</span>
+        <span class="ct">${esc(r.c)}</span>
+        <span class="lens">T:${r.tl} &middot; D:${r.dl}</span>
+      </div>
+      <span class="badge ${badgeClass(r.a)}">${esc(r.a)}</span>
+      <span class="caret">&#9662; details</span>
+    </summary>
+    <div class="detail">
+      <div class="row"><span class="k">Page URL</span><span class="v"><a href="https://ledsone.co.uk${esc(r.u)}" target="_blank" rel="noopener">${esc(r.u)}</a></span></div>
+      <div class="row"><span class="k">Product Description</span><span class="v">${esc(r.d)||'<i>(none)</i>'}</span></div>
+      <div class="row"><span class="k">Meta Title</span><span class="v">${esc(r.mt)||'<i>(none)</i>'}</span></div>
+      <div class="row"><span class="k">Meta Description</span><span class="v">${esc(r.md)||'<i>(none)</i>'}</span></div>
+      <div class="row"><span class="k">Last Updated</span><span class="v">${esc((r.lu||'').slice(0,10))||'<i>(none)</i>'}</span></div>
+    </div>
+  </details>`;
 }
 
 function render(){
   const start=page*PAGE_SIZE;
   const pageRows=filtered.slice(start,start+PAGE_SIZE);
-  tbody.innerHTML=pageRows.map(rowHtml).join('');
+  container.innerHTML=pageRows.map(rowHtml).join('');
   const shownFrom=filtered.length?start+1:0;
   const shownTo=Math.min(start+PAGE_SIZE,filtered.length);
   pageInfo.textContent=`Showing ${shownFrom.toLocaleString()}–${shownTo.toLocaleString()} of ${filtered.length.toLocaleString()} products`;
@@ -142,6 +156,12 @@ function applySort(){
     return 0;
   });
 }
+sortsel.addEventListener('change',()=>{sortKey=sortsel.value;applySort();page=0;render();});
+sortDirBtn.addEventListener('click',()=>{
+  sortDir*=-1;
+  sortDirBtn.textContent=sortDir===1?'\\u2191 Asc':'\\u2193 Desc';
+  applySort();page=0;render();
+});
 
 function applyFilter(){
   const s=q.value.trim().toLowerCase();
@@ -171,16 +191,6 @@ function wireToggle(yesBtn,noBtn,allBtn,setMode){
 }
 wireToggle(tmYes,tmNo,tmAll,(m)=>tmMode=m);
 wireToggle(dmYes,dmNo,dmAll,(m)=>dmMode=m);
-
-document.querySelectorAll('table.rt th[data-key]').forEach(th=>{
-  th.addEventListener('click',()=>{
-    const key=th.dataset.key;
-    if(sortKey===key){sortDir*=-1;}else{sortKey=key;sortDir=1;}
-    document.querySelectorAll('table.rt th .arrow').forEach(a=>a.textContent='');
-    th.querySelector('.arrow').textContent=sortDir===1?'▲':'▼';
-    applySort();page=0;render();
-  });
-});
 
 prevBtn.addEventListener('click',()=>{if(page>0){page--;render();window.scrollTo({top:0,behavior:'instant'});}});
 nextBtn.addEventListener('click',()=>{if((page+1)*PAGE_SIZE<filtered.length){page++;render();window.scrollTo({top:0,behavior:'instant'});}});
@@ -270,6 +280,18 @@ page = """<!DOCTYPE html>
     <button class="tbtn" id="dm-yes">Yes</button>
     <button class="tbtn" id="dm-no">No</button>
   </span>
+  <span class="tgroup">
+    <span class="glbl">Sort by:</span>
+    <select id="sortsel">
+      <option value="t">Product Title</option>
+      <option value="c">Collection Type</option>
+      <option value="tl">Title Length</option>
+      <option value="dl">Description Length</option>
+      <option value="lu">Last Updated</option>
+      <option value="a">Action Needed</option>
+    </select>
+    <button class="tbtn" id="sortDirBtn">&uarr; Asc</button>
+  </span>
   <button class="tbtn" id="exportCsv">&#8681; Export CSV</button>
 </div>
 
@@ -281,26 +303,11 @@ page = """<!DOCTYPE html>
 
 <div class="legend">
   <strong>Evidence note:</strong> Shopify auto-filled SEO metadata is treated as missing when it matches the product title or product description.<br>
-  <strong>How Action Needed is decided:</strong> <span class="badge b-danger">Add Meta Title and Meta Description</span> both fields blank &middot; <span class="badge b-warn">Add Meta Title</span> / <span class="badge b-warn">Add Meta Description</span> one field blank &middot; <span class="badge b-warn">Rewrite Meta Title</span> / <span class="badge b-warn">Rewrite Meta Description</span> field is present but auto-generated (matches the product title/description) &middot; <span class="badge b-ok">OK</span> both manually written and distinct from the source text.
+  <strong>How Action Needed is decided:</strong> <span class="badge b-danger">Add Meta Title and Meta Description</span> both fields blank &middot; <span class="badge b-warn">Add Meta Title</span> / <span class="badge b-warn">Add Meta Description</span> one field blank &middot; <span class="badge b-warn">Rewrite Meta Title</span> / <span class="badge b-warn">Rewrite Meta Description</span> field is present but auto-generated (matches the product title/description) &middot; <span class="badge b-ok">OK</span> both manually written and distinct from the source text.<br>
+  Each row shows Product Title, Collection Type, Title/Description character counts (T:/D:), and the Action Needed badge on one line &mdash; no horizontal scrolling. Click any row to expand the full Page URL, Product Description, Meta Title, Meta Description, and Last Updated date.
 </div>
 
-<div class="tablewrap">
-<table class="rt">
-<thead><tr>
-  <th data-key="u">Page URL<span class="arrow"></span></th>
-  <th data-key="c">Collection Type<span class="arrow"></span></th>
-  <th data-key="t">Product Title<span class="arrow"></span></th>
-  <th data-key="d">Product Description<span class="arrow"></span></th>
-  <th data-key="mt">Meta Title<span class="arrow"></span></th>
-  <th data-key="md">Meta Description<span class="arrow"></span></th>
-  <th data-key="tl">Title Length<span class="arrow"></span></th>
-  <th data-key="dl">Description Length<span class="arrow"></span></th>
-  <th data-key="lu">Last Updated<span class="arrow"></span></th>
-  <th data-key="a">Action Needed<span class="arrow"></span></th>
-</tr></thead>
-<tbody id="tbody"></tbody>
-</table>
-</div>
+<div id="rowsContainer"></div>
 
 <div class="foot">
   <strong>Detection logic:</strong> Meta Title is missing if the SEO title field is blank, or if it exactly matches the product title after normalizing (HTML stripped, whitespace collapsed, case-insensitive). Meta Description is missing if the SEO description field is blank, or if it exactly matches the product description (or the first 160 characters of it) after the same normalization.<br>
