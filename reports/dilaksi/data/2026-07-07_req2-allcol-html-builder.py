@@ -91,7 +91,7 @@ h1{font-size:22px;}
 #q, #collq, #collsel{flex:1;min-width:220px;padding:10px 16px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;}
 .tbtn{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);}
 .tbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
-details.prod{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:6px;overflow:hidden;}
+details.prod{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:6px;overflow:hidden;content-visibility:auto;contain-intrinsic-size:0 54px;}
 details.prod summary{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:11px 16px;cursor:pointer;list-style:none;flex-wrap:wrap;}
 details.prod summary::-webkit-details-marker{display:none;}
 details.prod summary:hover{background:var(--accent-soft);}
@@ -127,22 +127,34 @@ details.prod .t{font-size:13.5px;font-weight:600;flex:1;min-width:220px;}
 JS = """
 const q=document.getElementById('q'),collsel=document.getElementById('collsel'),collq=document.getElementById('collq'),openB=document.getElementById('f-open');
 let salesMode='all',priMode='all';
+
+// Cache dataset reads once into a plain array — avoids re-parsing dataset
+// (and re-querying the DOM) for all 5,179 rows on every keystroke.
+const records=Array.from(document.querySelectorAll('details.prod')).map(el=>({
+  el, name:el.dataset.name, sku:el.dataset.sku, coll:' '+el.dataset.coll+' ',
+  pri:el.dataset.pri, sold:el.dataset.sold, hidden:false
+}));
+
+function debounce(fn,ms){let t;return function(...a){clearTimeout(t);t=setTimeout(()=>fn.apply(this,a),ms);};}
+
 function apply(){
   const s=q.value.trim().toLowerCase();
   const cv=collsel.value;
   const cq=collq.value.trim().toLowerCase();
-  document.querySelectorAll('details.prod').forEach(d=>{
-    const textHit=!s||d.dataset.name.includes(s)||d.dataset.sku.includes(s);
-    const salesHit=salesMode==='all'||(salesMode==='sold'?d.dataset.sold==='1':d.dataset.sold==='0');
-    const priHit=priMode==='all'||d.dataset.pri===priMode;
-    const collHit=cv==='all'||(' '+d.dataset.coll+' ').includes(' '+cv+' ');
-    const collQHit=!cq||d.dataset.coll.includes(cq);
-    d.classList.toggle('hidden',!(textHit&&salesHit&&priHit&&collHit&&collQHit));
-  });
+  for(const r of records){
+    const textHit=!s||r.name.includes(s)||r.sku.includes(s);
+    const salesHit=salesMode==='all'||(salesMode==='sold'?r.sold==='1':r.sold==='0');
+    const priHit=priMode==='all'||r.pri===priMode;
+    const collHit=cv==='all'||r.coll.includes(' '+cv+' ');
+    const collQHit=!cq||r.coll.includes(cq);
+    const shouldHide=!(textHit&&salesHit&&priHit&&collHit&&collQHit);
+    if(shouldHide!==r.hidden){r.el.classList.toggle('hidden',shouldHide);r.hidden=shouldHide;}
+  }
 }
-q.addEventListener('input',apply);
+const debouncedApply=debounce(apply,180);
+q.addEventListener('input',debouncedApply);
+collq.addEventListener('input',debouncedApply);
 collsel.addEventListener('change',apply);
-collq.addEventListener('input',apply);
 document.getElementById('g-sales').addEventListener('click',e=>{
   const b=e.target.closest('.tbtn');if(!b)return;
   salesMode=b.dataset.sales;
@@ -156,7 +168,10 @@ document.getElementById('g-pri').addEventListener('click',e=>{
   apply();
 });
 let opened=false;
-openB.onclick=()=>{opened=!opened;openB.textContent=opened?'Collapse all':'Expand all';document.querySelectorAll('details.prod:not(.hidden)').forEach(d=>d.open=opened);};
+openB.onclick=()=>{
+  opened=!opened;openB.textContent=opened?'Collapse all':'Expand all';
+  for(const r of records){if(!r.hidden)r.el.open=opened;}
+};
 """
 
 page = """<!DOCTYPE html>
