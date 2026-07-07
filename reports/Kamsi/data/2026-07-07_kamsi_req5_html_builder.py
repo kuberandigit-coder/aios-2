@@ -98,10 +98,10 @@ details.prod .caret{font-size:11px;color:var(--muted);margin-left:auto;flex-shri
 JS = """
 const ROWS=__ROWS_JSON__;
 const PAGE_SIZE=100;
-const q=document.getElementById('q'),collsel=document.getElementById('collsel'),actionsel=document.getElementById('actionsel'),sortsel=document.getElementById('sortsel'),sortDirBtn=document.getElementById('sortDirBtn');
+const q=document.getElementById('q'),collsel=document.getElementById('collsel'),actionsel=document.getElementById('actionsel');
 const tmYes=document.getElementById('tm-yes'),tmNo=document.getElementById('tm-no'),tmAll=document.getElementById('tm-all');
 const dmYes=document.getElementById('dm-yes'),dmNo=document.getElementById('dm-no'),dmAll=document.getElementById('dm-all');
-const container=document.getElementById('rowsContainer'),pageInfo=document.getElementById('pageInfo'),prevBtn=document.getElementById('prevPage'),nextBtn=document.getElementById('nextPage'),exportBtn=document.getElementById('exportCsv');
+const container=document.getElementById('rowsContainer'),pageInfo=document.getElementById('pageInfo'),prevBtn=document.getElementById('prevPage'),nextBtn=document.getElementById('nextPage');
 let tmMode='all',dmMode='all',page=0,filtered=ROWS,sortKey='t',sortDir=1;
 
 for(const r of ROWS){
@@ -156,13 +156,6 @@ function applySort(){
     return 0;
   });
 }
-sortsel.addEventListener('change',()=>{sortKey=sortsel.value;applySort();page=0;render();});
-sortDirBtn.addEventListener('click',()=>{
-  sortDir*=-1;
-  sortDirBtn.textContent=sortDir===1?'\\u2191 Asc':'\\u2193 Desc';
-  applySort();page=0;render();
-});
-
 function applyFilter(){
   const s=q.value.trim().toLowerCase();
   const cv=collsel.value;
@@ -194,25 +187,6 @@ wireToggle(dmYes,dmNo,dmAll,(m)=>dmMode=m);
 
 prevBtn.addEventListener('click',()=>{if(page>0){page--;render();window.scrollTo({top:0,behavior:'instant'});}});
 nextBtn.addEventListener('click',()=>{if((page+1)*PAGE_SIZE<filtered.length){page++;render();window.scrollTo({top:0,behavior:'instant'});}});
-
-function csvEscape(v){
-  v=String(v==null?'':v);
-  if(/[",\\n]/.test(v)) return '"'+v.replace(/"/g,'""')+'"';
-  return v;
-}
-exportBtn.addEventListener('click',()=>{
-  const headers=['Page URL','Collection Type','Product Title','Product Description','Meta Title','Meta Description','Title Length','Description Length','Last Updated','Action Needed'];
-  const lines=[headers.join(',')];
-  for(const r of filtered){
-    lines.push([r.u,r.c,r.t,r.d,r.mt,r.md,r.tl,r.dl,r.lu,r.a].map(csvEscape).join(','));
-  }
-  const blob=new Blob([lines.join('\\n')],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='kamsi-req5-missing-meta-export.csv';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
 
 applySort();
 render();
@@ -280,19 +254,6 @@ page = """<!DOCTYPE html>
     <button class="tbtn" id="dm-yes">Yes</button>
     <button class="tbtn" id="dm-no">No</button>
   </span>
-  <span class="tgroup">
-    <span class="glbl">Sort by:</span>
-    <select id="sortsel">
-      <option value="t">Product Title</option>
-      <option value="c">Collection Type</option>
-      <option value="tl">Title Length</option>
-      <option value="dl">Description Length</option>
-      <option value="lu">Last Updated</option>
-      <option value="a">Action Needed</option>
-    </select>
-    <button class="tbtn" id="sortDirBtn">&uarr; Asc</button>
-  </span>
-  <button class="tbtn" id="exportCsv">&#8681; Export CSV</button>
 </div>
 
 <div class="pager">
