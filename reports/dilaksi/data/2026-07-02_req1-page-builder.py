@@ -4,13 +4,19 @@ BASE = "C:/Users/PC/OneDrive/Desktop/kuberan web/"
 OLD = BASE + "reports/digital-marketing-member-pages/pages/dilaksi.html"
 DATA = json.load(open(BASE + "reports/dilaksi/data/2026-07-02_req1-ga4-organic-windows.json", encoding="utf-8"))
 
-# GSC top-query map extracted from the existing Requirement 1 page (GSC last 30 days, to 2026-06-20)
+# GSC top-query map carried forward from the existing Requirement 1 page's embedded
+# JS DATA object (the page renders rows client-side, so there are no literal <td>
+# rows to scrape — the query strings only live inside `const DATA = {...}`).
 old = open(OLD, encoding="utf-8").read()
 QMAP = {}
-for lp, q in re.findall(r'<td class="lp">(.*?)</td><td class="q">(.*?)</td>', old):
-    lp = html.unescape(lp); q = html.unescape(q)
-    if q and q != "—":
-        QMAP[lp] = q
+m = re.search(r'const DATA = (\{.*?\});', old)
+if m:
+    old_data = json.loads(m.group(1))
+    for window in old_data.values():
+        for r in window.get("r", []):
+            lp, q = r[0], r[1]
+            if q and q != "—":
+                QMAP[lp] = q
 
 # compact datasets for embedding: per window -> {t: totals, n: page_count, r: top-50 rows}
 embed = {}
@@ -77,14 +83,32 @@ PAGE = """<!DOCTYPE html>
   .footnotes strong{color:var(--ink);}
   @media (max-width:700px){ h1{font-size:18px;} .card .value{font-size:19px;} }
 </style>
+<style>
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line,#e3e7ee);border-radius:9px;background:var(--card,#fff);color:var(--muted,#5b6577);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);border-color:var(--accent,#1f5eff);}
+.tab-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card,#fff);border:1px solid var(--line,#e3e7ee);border-radius:14px;padding:8px;}
+.tab-btn{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted,#5b6577);transition:background .15s,color .15s;white-space:nowrap;text-decoration:none;display:inline-block;text-align:center;font-family:inherit;}
+.tab-btn:hover{background:var(--accent-soft,#eaf0ff);color:var(--accent,#1f5eff);}
+.tab-btn.active{background:var(--accent,#1f5eff);color:#fff;}
+.tab-btn .tab-label{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
+@media(max-width:700px){.tab-btn{padding:7px 12px;font-size:12px;}}
+</style>
 </head>
 <body>
 <div class="wrap">
 
+<a class="back" href="../index.html">&larr; Back to all members</a>
+
+<nav class="tab-nav" role="tablist" aria-label="Dilaksi requirements">
+  <a class="tab-btn active" href="dilaksi.html">Requirement 1<span class="tab-label">GA4 SEO Organic Report</span></a>
+  <a class="tab-btn" href="dilaksi-req2-all-products.html">Requirement 2<span class="tab-label">Product Priority Guidance</span></a>
+  <a class="tab-btn" href="dilaksi-req3-pages-for-removal.html">Requirement 3<span class="tab-label">Pages for Removal</span></a>
+</nav>
+
   <header>
     <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 1 — Completed</div>
     <h1>Core GA4 Data for SEO — Organic Search Landing Page Performance</h1>
-    <div class="sub">Store: <strong>ledsone.co.uk</strong> (GA4 property 408110563) &nbsp;·&nbsp; Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Generated: <strong>2026-07-02</strong></div>
+    <div class="sub">Store: <strong>ledsone.co.uk</strong> (GA4 property 408110563) &nbsp;·&nbsp; Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Generated: <strong>2026-07-07</strong></div>
     <div class="filters">
       <span class="chip">Collection: All</span>
       <span class="chip">Channel: Organic Search only</span>
@@ -138,7 +162,7 @@ PAGE = """<!DOCTYPE html>
 
   <div class="footnotes">
     <h3>Notes</h3>
-    <strong>Date-range filter:</strong> each option (60 / 45 / 30 / 15 / 7 days) is a true rolling window ending today, fetched live from the GA4 Data API on 2026-07-02 — not a scaled or sampled slice of one export.<br>
+    <strong>Date-range filter:</strong> each option (60 / 45 / 30 / 15 / 7 days) is a true rolling window ending today, fetched live from the GA4 Data API on 2026-07-07 — not a scaled or sampled slice of one export.<br>
     <strong>Data source:</strong> GA4 Data API (service account, property 408110563), dimension landingPagePlusQueryString (query strings stripped for display), filter sessionDefaultChannelGroup = Organic Search. Engagement rate, average engagement time per session and pages/session are now included directly from GA4 (previously unavailable in the PostgreSQL export).<br>
     <strong>Query column:</strong> top Google Search Console query for the page (GSC last 30 days, to 2026-06-20); shown where a mapping exists — GSC does not provide per-window queries for every page. "—" = no GSC query mapped.<br>
     <strong>Table:</strong> top 50 landing pages by sessions in the selected window. (not set) = GA4 could not attribute a landing page.

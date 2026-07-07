@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 BASE = "C:/Users/PC/OneDrive/Desktop/kuberan web/"
 DATA = json.load(open(BASE + "reports/Kamsi/data/2026-07-06_kamsi_req3_ga4-organic-windows.json", encoding="utf-8"))
-GEN = "2026-07-06"
+GEN = "2026-07-07"
 
 # GSC top query per path, ALL pages, same 30-day window as the GA4 fetch
 QMAP = {}
