@@ -122,21 +122,24 @@ details.prod .t{font-size:13.5px;font-weight:600;flex:1;min-width:220px;}
 """
 
 JS = """
-const q=document.getElementById('q'),collsel=document.getElementById('collsel'),openB=document.getElementById('f-open');
+const q=document.getElementById('q'),collsel=document.getElementById('collsel'),collq=document.getElementById('collq'),openB=document.getElementById('f-open');
 let salesMode='all',priMode='all';
 function apply(){
   const s=q.value.trim().toLowerCase();
   const cv=collsel.value;
+  const cq=collq.value.trim().toLowerCase();
   document.querySelectorAll('details.prod').forEach(d=>{
     const textHit=!s||d.dataset.name.includes(s)||d.dataset.sku.includes(s);
     const salesHit=salesMode==='all'||(salesMode==='sold'?d.dataset.sold==='1':d.dataset.sold==='0');
     const priHit=priMode==='all'||d.dataset.pri===priMode;
     const collHit=cv==='all'||(' '+d.dataset.coll+' ').includes(' '+cv+' ');
-    d.classList.toggle('hidden',!(textHit&&salesHit&&priHit&&collHit));
+    const collQHit=!cq||d.dataset.coll.includes(cq);
+    d.classList.toggle('hidden',!(textHit&&salesHit&&priHit&&collHit&&collQHit));
   });
 }
 q.addEventListener('input',apply);
 collsel.addEventListener('change',apply);
+collq.addEventListener('input',apply);
 document.getElementById('g-sales').addEventListener('click',e=>{
   const b=e.target.closest('.tbtn');if(!b)return;
   salesMode=b.dataset.sales;
@@ -191,6 +194,7 @@ page = """<!DOCTYPE html>
 
 <div class="toolbar">
   <input id="q" type="text" placeholder="Search product name or SKU&hellip;">
+  <input id="collq" type="text" placeholder="Search by collection name&hellip;">
   <select id="collsel"><option value="all">All collections ({ncoll:,})</option>{coll_options}</select>
 </div>
 <div class="toolbar" style="top:auto;">
