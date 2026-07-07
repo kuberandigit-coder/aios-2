@@ -29,6 +29,9 @@ flag_n = pri_counts.get("Low — flag for review", 0)
 coll_options = "".join(
     '<option value="{h}">{name} ({n})</option>'.format(h=esc(c), name=esc(c), n=n)
     for c, n in coll_list)
+coll_datalist_options = "".join(
+    '<option value="{h}">{name} ({n} products)</option>'.format(h=esc(c), name=esc(c), n=n)
+    for c, n in coll_list)
 
 items = []
 for r in rows:
@@ -85,7 +88,7 @@ h1{font-size:22px;}
 .card .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
 .card .v{font-size:21px;font-weight:700;margin-top:5px;}
 .toolbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-#q, #collsel{flex:1;min-width:220px;padding:10px 16px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;}
+#q, #collq, #collsel{flex:1;min-width:220px;padding:10px 16px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;}
 .tbtn{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);}
 .tbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
 details.prod{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:6px;overflow:hidden;}
@@ -194,7 +197,8 @@ page = """<!DOCTYPE html>
 
 <div class="toolbar">
   <input id="q" type="text" placeholder="Search product name or SKU&hellip;">
-  <input id="collq" type="text" placeholder="Search by collection name&hellip;">
+  <input id="collq" type="text" list="colllist" autocomplete="off" placeholder="Search by collection name&hellip;">
+  <datalist id="colllist">{coll_datalist_options}</datalist>
   <select id="collsel"><option value="all">All collections ({ncoll:,})</option>{coll_options}</select>
 </div>
 <div class="toolbar" style="top:auto;">
@@ -241,7 +245,7 @@ page = """<!DOCTYPE html>
     css=CSS, js=JS, gen_date="2026-07-07", ncoll=len(coll_list), nprod=len(rows), nvar=sum(r["n_variants"] for r in rows),
     tot=total_sales, totdem=total_demand, totorg=total_organic,
     high=high_n, med=med_n, low=low_n, flag=flag_n,
-    coll_options=coll_options, maxsales=max(r["sales"] for r in rows),
+    coll_options=coll_options, coll_datalist_options=coll_datalist_options, maxsales=max(r["sales"] for r in rows),
     items="".join(items), nprod_old=1231, nsalesrows=1705, nkw=len(set(list(json.load(open(p("2026-07-07_req2-allcol-keyword-map.json")).items())))) if False else 1091,
 )
 
