@@ -46,7 +46,7 @@ CSS = """
 :root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--na:#9aa3b2;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:28px 16px;}
-.wrap{max-width:1100px;margin:0 auto;}
+.wrap{max-width:1400px;margin:0 auto;}
 header.top{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 28px;margin-bottom:16px;}
 h1{font-size:22px;}
 .sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
