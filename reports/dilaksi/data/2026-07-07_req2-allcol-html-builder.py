@@ -215,6 +215,8 @@ page = """<!DOCTYPE html>
   <button class="tbtn" id="f-open">Expand all</button>
 </div>
 
+{items}
+
 <div class="legend">
   <strong>How to read each product row</strong> (hover any badge for the full explanation):<br>
   <span class="dm">Demand: 6,600 searches/mo <i class="kw">&ldquo;pendant lights&rdquo;</i></span> = UK monthly Google searches for the keyword mapped to this product (Semrush). Grey <span class="dm dm0">Demand: 0 searches/mo</span> = mapped keyword has no measurable volume; "n/a" = no keyword could be derived.<br>
@@ -225,8 +227,6 @@ page = """<!DOCTYPE html>
 </div>
 
 <div class="rulenote"><strong>SEO Priority calculated using the approved Dilaksi Requirement 2 business rule (6 conditions, exact order).</strong> (1) Demand&lt;100 AND Sales&lt;&pound;2,000 &rarr; Low&mdash;flag &middot; (2) Sales&ge;&pound;10,000 AND Margin&ge;30% &rarr; High &middot; (3) Demand&ge;2,000 AND Organic&lt;50% of Demand &rarr; High &middot; (4) Sales&ge;&pound;4,000 AND Margin&ge;25% AND Demand&ge;500 &rarr; Medium &middot; (5) Demand&ge;500 AND Organic&ge;50% of Demand &rarr; Medium &middot; (6) else Low. Profit Margin is not available (COGS not yet in PostgreSQL) but is <strong>never required</strong> across the full catalog: the highest 30-day product sales is &pound;{maxsales:,.2f}, below both the &pound;4,000 and &pound;10,000 thresholds in rules 2 and 4 &mdash; so those rules cannot match any of the {nprod:,} rows. Nothing invented; documented in AIOS evidence.</div>
-
-{items}
 
 <div class="foot">
   <strong>Scope change:</strong> this page replaces the previous 5-collection scope (Pendant Lights, Wall Lights, Spider Lights, Plug-in Lighting, Table Lamps) with <strong>all {ncoll:,} Shopify collections</strong> on ledsone.co.uk, covering all {nprod:,} unique products in the catalog (previously {nprod_old:,}). Products belonging to multiple collections are shown once, with every collection they belong to listed as a pill under the title (use the dropdown to filter to one).<br>
