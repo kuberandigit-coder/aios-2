@@ -99,7 +99,7 @@ table.rt td.num{text-align:right;}
 <div class="tablewrap">
 <table class="rt">
 <thead><tr>
-  <th>Campaign</th><th>Product ID</th><th>Impressions</th><th>Clicks</th><th>CTR</th>
+  <th>Campaign</th><th>Product ID</th><th>Product</th><th>Impressions</th><th>Clicks</th><th>CTR</th>
   <th>Avg CPC</th><th>Cost</th><th>Conversions</th><th>Conv. Rate</th><th>Conv. Value</th><th>ROAS</th>
   <th>Product Price</th><th>Product Cost</th><th>Gross Profit</th><th>Profit After Ads</th>
   <th>Feed Status</th><th>Missing Attribute</th><th>Last 7 Days ROAS</th><th>Last 30 Days ROAS</th><th>Suggested Action</th>
@@ -162,6 +162,7 @@ function rowHtml(r){
   return `<tr>
     <td class="wrap-cell">${esc(r.c)}</td>
     <td class="wrap-cell">${esc(r.i)}</td>
+    <td class="wrap-cell">${r.t?esc(r.t):naSpan()}</td>
     <td class="num">${r.imp.toLocaleString()}</td>
     <td class="num">${r.cl.toLocaleString()}</td>
     <td class="num">${r.ctr}%</td>
