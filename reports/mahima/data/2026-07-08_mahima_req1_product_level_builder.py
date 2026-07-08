@@ -180,9 +180,6 @@ function rowHtml(r){
     <td class="num">&pound;${r.va.toFixed(2)}</td>
     <td class="num">${r.ro.toLocaleString()}%</td>
     <td class="num">${r.pr!=null?('&pound;'+Number(r.pr).toFixed(2)):naSpan()}</td>
-    <td class="num">${naSpan()}</td>
-    <td class="num">${naSpan()}</td>
-    <td class="num">${naSpan()}</td>
     <td>${naSpan()}</td>
     <td>${naSpan()}</td>
     <td class="num">${naSpan()}</td>
@@ -304,7 +301,7 @@ page_html = """<!DOCTYPE html>
 <thead><tr>
   <th>Campaign</th><th>Product ID</th><th>Impressions</th><th>Clicks</th><th>CTR</th>
   <th>Avg CPC</th><th>Cost</th><th>Conversions</th><th>Conv. Rate</th><th>Conv. Value</th><th>ROAS</th>
-  <th>Product Price</th><th>Product Cost</th><th>Gross Profit</th><th>Profit After Ads</th>
+  <th>Product Price</th>
   <th>Feed Status</th><th>Missing Attribute</th><th>Last 7 Days ROAS</th><th>Last 30 Days ROAS</th><th>Suggested Action</th>
 </tr></thead>
 <tbody id="tbody"></tbody>
