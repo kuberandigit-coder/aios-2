@@ -24,7 +24,7 @@ for r in rows_raw:
         "imp": r["impressions"] or 0, "clicks": clicks,
         "ctr": float(r["ctr"] or 0), "cpc": avg_cpc, "cost": spend, "conv": float(r["conversions"] or 0),
         "cvr": float(r["cvr"] or 0), "value": revenue, "roas": float(r["roas"] or 0),
-        "action": r["mahima_action"] or "Optimize", "attr": r["attribution_status"], "as_of": r["as_of"],
+        "action": r["mahima_action"] or "Data Missing", "attr": r["attribution_status"], "as_of": r["as_of"],
     })
 
 total = len(rows)
@@ -36,6 +36,8 @@ scale_n = action_counts.get("Scale", 0)
 pause_n = action_counts.get("Pause", 0)
 matched_title_n = sum(1 for r in rows if r["title"])
 active_campaigns = len(set(r["cid"] for r in rows))
+as_of_dates = sorted(set(r["as_of"] for r in rows if r["as_of"]))
+as_of_display = as_of_dates[-1] if len(as_of_dates) == 1 else (as_of_dates[0] + " to " + as_of_dates[-1] + ", varies by campaign")
 
 camp_counts = collections.Counter(r["cname"] for r in rows)
 camp_list = sorted(camp_counts.items(), key=lambda x: -x[1])
@@ -43,8 +45,6 @@ camp_options = "".join('<option value="{h}">{name} ({n})</option>'.format(h=esc(
 
 action_list = sorted(action_counts.items(), key=lambda x: -x[1])
 action_options = "".join('<option value="{h}">{name} ({n})</option>'.format(h=esc(a), name=esc(a), n=n) for a, n in action_list)
-
-as_of = max((r["as_of"] for r in rows if r["as_of"]), default="")
 
 rows_data = []
 for r in rows:
@@ -57,6 +57,10 @@ for r in rows:
     })
 rows_json = json.dumps(rows_data, separators=(",", ":"), ensure_ascii=False)
 rows_json = rows_json.replace("</script", "<\\/script").replace("<!--", "<\\!--")
+
+by_day = json.load(open(DATA + r"\2026-07-08_mahima_req1_janjun_by_day.json", encoding="utf-8"))
+day_json = json.dumps(by_day, separators=(",", ":"), ensure_ascii=False)
+day_json = day_json.replace("</script", "<\\/script").replace("<!--", "<\\!--")
 
 CSS = """
 :root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--na:#9aa3b2;}
@@ -93,7 +97,7 @@ table.rt td{padding:8px 12px;border-bottom:1px solid #eef1f6;vertical-align:top;
 table.rt td.wrap-cell{white-space:normal;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
 table.rt td.num{text-align:right;}
 .badge{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;color:#fff;}
-.b-scale{background:#0a7d4f;} .b-maintain{background:#1f5eff;} .b-optimize{background:#ef6c00;} .b-pause{background:#c62828;}
+.b-scale{background:#0a7d4f;} .b-maintain{background:#1f5eff;} .b-optimize{background:#ef6c00;} .b-pause{background:#c62828;} .b-namissing{background:#9aa3b2;}
 .na{color:var(--na);font-style:italic;}
 .foot{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12.5px;color:var(--muted);line-height:1.65;}
 .foot strong{color:var(--ink);}
@@ -102,17 +106,60 @@ table.rt td.num{text-align:right;}
 
 JS = """
 const ROWS=__ROWS_JSON__;
+const DAY=__DAY_JSON__;
 const PAGE_SIZE=100;
 const q=document.getElementById('q'),campsel=document.getElementById('campsel'),actionsel=document.getElementById('actionsel'),roassel=document.getElementById('roassel');
+const rangeStart=document.getElementById('rangeStart'),rangeEnd=document.getElementById('rangeEnd');
 const tbody=document.getElementById('tbody'),pageInfo=document.getElementById('pageInfo'),prevBtn=document.getElementById('prevPage'),nextBtn=document.getElementById('nextPage');
-let page=0,filtered=ROWS;
+let page=0,filtered=ROWS,F=ROWS;
 
 for(const r of ROWS){ r._i=(r.i||'').toLowerCase(); r._sk=(r.sk||'').toLowerCase(); r._c=(r.c||'').toLowerCase(); r._t=(r.t||'').toLowerCase(); }
+
+function daysBetween(start,end){
+  var out=[];
+  var cur=new Date(start+'T00:00:00Z');
+  var last=new Date(end+'T00:00:00Z');
+  while(cur.getTime()<=last.getTime()){
+    out.push(cur.toISOString().slice(0,10));
+    cur.setUTCDate(cur.getUTCDate()+1);
+  }
+  return out;
+}
+function rangeBase(start,end){
+  if(!start) return ROWS;
+  if(!end) end=start;
+  var days = start<=end ? daysBetween(start,end) : daysBetween(end,start);
+  var agg={};
+  days.forEach(function(day){
+    var rows=DAY[day]||[];
+    rows.forEach(function(e){
+      var idx=e[0];
+      if(!agg[idx]) agg[idx]={imp:0,clk:0,co:0,va:0,cv:0};
+      agg[idx].imp+=e[1]; agg[idx].clk+=e[2]; agg[idx].co+=e[3]; agg[idx].va+=e[4]; agg[idx].cv+=e[5];
+    });
+  });
+  return ROWS.map(function(r,i){
+    var a=agg[i];
+    if(!a) return Object.assign({},r,{imp:0,cl:0,ctr:0,cpc:0,co:0,cv:0,cvr:0,va:0,ro:0});
+    var ctr = a.imp>0 ? Math.round((a.clk/a.imp*100)*100)/100 : 0;
+    var cpc = a.clk>0 ? Math.round((a.co/a.clk)*100)/100 : 0;
+    var cvr = a.clk>0 ? Math.round((a.cv/a.clk*100)*100)/100 : 0;
+    var ro = a.co>0 ? Math.round((a.va/a.co*100)) : 0;
+    return Object.assign({},r,{imp:Math.round(a.imp),cl:Math.round(a.clk),ctr:ctr,cpc:cpc,co:Math.round(a.co*100)/100,cv:Math.round(a.cv*100)/100,cvr:cvr,va:Math.round(a.va*100)/100,ro:ro});
+  });
+}
+function pickRange(){
+  F=rangeBase(rangeStart.value,rangeEnd.value);
+  applyFilter();
+}
+window.pickRange=pickRange;
+
 function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function badgeClass(a){
   if(a==='Scale') return 'b-scale';
   if(a==='Maintain') return 'b-maintain';
   if(a==='Pause') return 'b-pause';
+  if(a==='Data Missing') return 'b-namissing';
   return 'b-optimize';
 }
 function debounce(fn,ms){let t;return function(...a){clearTimeout(t);t=setTimeout(()=>fn.apply(this,a),ms);};}
@@ -123,7 +170,6 @@ function rowHtml(r){
   return `<tr>
     <td class="wrap-cell">${esc(r.c)}</td>
     <td class="wrap-cell">${esc(r.i)}</td>
-    <td class="wrap-cell">${r.t?esc(r.t):naSpan()}</td>
     <td class="num">${r.imp.toLocaleString()}</td>
     <td class="num">${r.cl.toLocaleString()}</td>
     <td class="num">${r.ctr}%</td>
@@ -161,7 +207,7 @@ function applyFilter(){
   const cv=campsel.value;
   const av=actionsel.value;
   const rv=roassel.value;
-  filtered=ROWS.filter(r=>{
+  filtered=F.filter(r=>{
     const textHit=!s||r._i.includes(s)||r._sk.includes(s)||r._c.includes(s)||r._t.includes(s);
     const campHit=cv==='all'||r.c===cv;
     const actionHit=av==='all'||r.a===av;
@@ -184,7 +230,7 @@ prevBtn.addEventListener('click',()=>{if(page>0){page--;render();window.scrollTo
 nextBtn.addEventListener('click',()=>{if((page+1)*PAGE_SIZE<filtered.length){page++;render();window.scrollTo({top:0,behavior:'instant'});}});
 render();
 """
-JS = JS.replace("__ROWS_JSON__", rows_json)
+JS = JS.replace("__ROWS_JSON__", rows_json).replace("__DAY_JSON__", day_json)
 
 page_html = """<!DOCTYPE html>
 <html lang="en">
@@ -202,11 +248,11 @@ page_html = """<!DOCTYPE html>
 <header class="top">
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 1 &mdash; Product Performance Report</div>
   <h1>Mahima - Google Ads Reports</h1>
-  <div class="sub">Assess product-level profitability and feed health to guide Scale/Maintain/Optimize/Pause decisions &middot; Account: <strong>ledsone.de</strong> &middot; Data as of: <strong>{as_of}</strong></div>
+  <div class="sub">Assess product-level profitability and feed health to guide Scale/Maintain/Optimize/Pause decisions &middot; Account: <strong>ledsone.de</strong> &middot; Data as of: <strong>{as_of_display}</strong></div>
   <div class="chips">
-    <span class="chip">{total:,} product rows &middot; {active_campaigns} of 5 active campaigns (see limitations)</span>
+    <span class="chip">{total:,} product rows &middot; {active_campaigns} of 5 active campaigns</span>
     <span class="chip warn">PostgreSQL, read-only &mdash; no Google Ads/Merchant Center connector available yet</span>
-    <span class="chip warn">Data snapshot dated {as_of}, not live "last 30 days from today"</span>
+    <span class="chip warn">Freshness varies by campaign: {as_of_display}</span>
   </div>
 </header>
 
@@ -222,7 +268,7 @@ page_html = """<!DOCTYPE html>
   <div class="card"><div class="l">Overall ROAS</div><div class="v">{overall_roas:.0%}</div></div>
   <div class="card"><div class="l">Products to Scale</div><div class="v">{scale_n:,}</div></div>
   <div class="card"><div class="l">Products to Pause</div><div class="v">{pause_n:,}</div></div>
-  <div class="card"><div class="l">Data Freshness Date</div><div class="v" style="font-size:16px;">{as_of}</div></div>
+  <div class="card"><div class="l">Data Freshness Date</div><div class="v" style="font-size:14px;">{as_of_display}</div></div>
 </div>
 
 <div class="toolbar">
@@ -238,6 +284,15 @@ page_html = """<!DOCTYPE html>
   </select>
 </div>
 
+<div class="toolbar" style="padding-top:0;">
+  <label style="font-weight:700;color:#42506a;font-size:13px;">Date Range:
+    <input id="rangeStart" type="date" min="2026-01-01" max="2026-06-30" onchange="pickRange()" style="margin-left:8px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;">
+  </label>
+  <span style="color:var(--muted);">&ndash;</span>
+  <input id="rangeEnd" type="date" min="2026-01-01" max="2026-06-30" onchange="pickRange()" style="padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;">
+  <button class="tbtn" onclick="document.getElementById('rangeStart').value='';document.getElementById('rangeEnd').value='';pickRange();">Clear (Full 6 Months)</button>
+</div>
+
 <div class="pager">
   <button class="tbtn" id="prevPage">&larr; Prev</button>
   <span class="info" id="pageInfo"></span>
@@ -247,7 +302,7 @@ page_html = """<!DOCTYPE html>
 <div class="tablewrap">
 <table class="rt">
 <thead><tr>
-  <th>Campaign</th><th>Product ID</th><th>Product</th><th>Impressions</th><th>Clicks</th><th>CTR</th>
+  <th>Campaign</th><th>Product ID</th><th>Impressions</th><th>Clicks</th><th>CTR</th>
   <th>Avg CPC</th><th>Cost</th><th>Conversions</th><th>Conv. Rate</th><th>Conv. Value</th><th>ROAS</th>
   <th>Product Price</th><th>Product Cost</th><th>Gross Profit</th><th>Profit After Ads</th>
   <th>Feed Status</th><th>Missing Attribute</th><th>Last 7 Days ROAS</th><th>Last 30 Days ROAS</th><th>Suggested Action</th>
@@ -260,37 +315,37 @@ page_html = """<!DOCTYPE html>
   <strong>Suggested Action badges:</strong>
   <span class="badge b-scale">Scale</span> <span class="badge b-maintain">Maintain</span>
   <span class="badge b-optimize">Optimize</span> <span class="badge b-pause">Pause</span>
-  &mdash; taken as-is from the source table&#39;s <code>mahima_action</code> column. <strong>Suggested Action is taken from source table and not independently recalculated unless rule inputs are available.</strong> The exact rule logic behind these values has not been independently verified against the Scale/Maintain/Optimize/Pause criteria in this requirement &mdash; treat as provisional pending confirmation.
+  <span class="badge b-namissing">Data Missing</span>
+  &mdash; <strong>Suggested Action is Data Missing for every row in this Jan&ndash;Jun 2026 version.</strong> The prior single-month build sourced <code>mahima_action</code> from a different table (<code>staging_ai.cppc_workbook_product_performance_v1</code>) that only ever had one snapshot date and no history; switching to the Jan 1&ndash;Jun 30 2026 date range required moving to <code>public.ppc_etl_performance_data</code> instead (the only source with real daily history for all 5 campaigns), which does not carry a Suggested Action equivalent. Not invented &mdash; shown honestly as Data Missing rather than guessed.
 </div>
 
 <div class="sources">
   <strong>Data Sources &amp; Calculation Rules</strong><br>
-  <strong>Product-level source:</strong> PostgreSQL <code>staging_ai.cppc_workbook_product_performance_v1</code> &mdash; confirmed genuinely product-level (9,672 distinct products across 9,673 total rows in the full table). Filtered to campaign IDs 20763699505, 23684789991, 23053104908, 23431543574 (4 of Mahima&#39;s 5 ledsone.de campaigns with product-level rows; confirmed via <code>staging_ai.cppc_campaign_truth_registry_v1</code>, owner = "Mahi").<br>
+  <strong>Product-level source (all 5 campaigns, unified):</strong> PostgreSQL <code>public.ppc_etl_performance_data</code>, filtered to <code>record_type='product'</code> and <code>parent_id</code> in the 5 campaign IDs (20763699505, 23684789991, 23053104908, 23431543574, 23926509987), summed per product across <code>date between 2026-01-01 and 2026-06-30</code>. This table has real daily history back to 2025-01-01 for some campaigns, confirmed to cover all 5 of Mahima&#39;s campaigns consistently (unlike the single-snapshot workbook table used in the prior version, which had zero rows for the Shopping DE campaign).<br>
   <strong>Product Title &amp; Price:</strong> joined from <code>public.google_merchant_products</code> on <code>google_item_id = product_id</code>, restricted to ledsone.de&#39;s 4 merchant IDs AND <code>country = 'DE'</code> to guarantee exactly one matching row per product (see Known Limitations for why this restriction was necessary). Matched for <strong>{matched_title:,} of {total:,} rows ({match_pct:.0%})</strong> &mdash; the rest show "Data Missing", not a guess.<br>
-  <strong>CTR</strong> = Clicks &divide; Impressions &middot; <strong>Avg CPC</strong> = Cost &divide; Clicks &middot; <strong>Conv. Rate</strong> = Conversions &divide; Clicks &middot; <strong>ROAS</strong> = Conv. Value &divide; Cost. All computed directly from the source row&#39;s spend/clicks/impressions/conversions/revenue fields. Read-only SQL only &mdash; no data modified.
+  <strong>CTR</strong> = Clicks &divide; Impressions &middot; <strong>Avg CPC</strong> = Cost &divide; Clicks &middot; <strong>Conv. Rate</strong> = Conversions &divide; Clicks &middot; <strong>ROAS</strong> = Conv. Value &divide; Cost. All computed directly from the summed spend/clicks/impressions/orders/sales fields over the Jan 1&ndash;Jun 30 2026 window. Read-only SQL only &mdash; no data modified.
 </div>
 
 <div class="limits">
   <strong>Known Limitations</strong><br>
-  1. <strong>Data is not live &ldquo;last 30 days from today.&rdquo;</strong> The freshest available data across every Google Ads/product table checked in PostgreSQL is dated <strong>{as_of}</strong> (~4 weeks old). No Google Ads or Google Merchant Center API connector is available in this environment to pull live data; connecting one would require a Google-approved Developer Token and OAuth setup (see handover for details).<br>
-  2. <strong>Product Price matched for only {matched_title:,} of {total:,} rows ({match_pct:.0%}).</strong> The Merchant Center feed has up to 15 duplicate rows per product across different marketing "feed_label" segments (e.g. BLACKFRIDAY, TOPSALE, AOVU15), each carrying a <em>different price for the same product</em> (spot-checked example: one product had prices ranging &pound;6.49&ndash;&pound;13.37 across 15 feed-segment rows for the identical item). Restricting to the canonical <code>country = 'DE'</code> row avoids picking an arbitrary/wrong price, but most products don&#39;t have that specific row populated &mdash; shown honestly as Data Missing rather than guessed.<br>
-  3. <strong>Product Cost, Gross Profit, and Profit After Ads are Data Missing for every row.</strong> No table anywhere in the database has real populated product-cost/COGS values (checked <code>development.sku_cogs</code> &mdash; empty; <code>staging_ai.cppc_cogs_truth_model_v1</code> &mdash; all cost fields NULL for these products, and separately confirmed via <code>staging_ai.google_feed_field_discovery_v1</code> that internal_sku coverage in the cogs model is only 11.99% site-wide). Gross Profit and Profit After Ads cannot be calculated without real cost data and are not invented.<br>
-  4. <strong>Feed Status and Missing Attribute are Data Missing.</strong> The correct source table (<code>raw_data.gmc_product_diagnostics_daily</code>) is completely empty (0 rows) &mdash; no Feed Status/Missing Attribute data exists anywhere in the database.<br>
-  5. <strong>Last 7 Days ROAS / Last 30 Days ROAS are not shown separately.</strong> The source table stores one aggregate window per row with no day-level history to compute a rolling comparison from.<br>
-  6. <strong>Campaign coverage:</strong> only 4 of Mahima&#39;s 5 active ledsone.de campaigns have product-level rows in the source table; &ldquo;Shopping DE | Mahi | klarna | TOP-MAHI | Verkaufsprodukt | tROAS | 11/06&rdquo; (campaign 23926509987) has campaign-level totals but no product-level breakdown available.<br>
-  7. <strong>Suggested Action rule not independently verified</strong> &mdash; see note above the table.
+  1. <strong>Suggested Action is Data Missing for every row.</strong> Moving to a 6-month range required switching source tables (see Data Sources above); the new source has no Scale/Maintain/Optimize/Pause equivalent. This is a genuine trade-off versus the prior 1-month version, which had real Suggested Action values for 4 of 5 campaigns &mdash; flagging this clearly rather than losing the distinction silently.<br>
+  2. <strong>Data is not live.</strong> The range covers 2026-01-01 to 2026-06-30; no Google Ads or Google Merchant Center API connector is available in this environment to pull data through today. Connecting one would require a Google-approved Developer Token and OAuth setup (see handover for details).<br>
+  3. <strong>Product Price matched for only {matched_title:,} of {total:,} rows ({match_pct:.0%}).</strong> The Merchant Center feed has up to 15 duplicate rows per product across different marketing "feed_label" segments (e.g. BLACKFRIDAY, TOPSALE, AOVU15), each carrying a <em>different price for the same product</em> (spot-checked example: one product had prices ranging &pound;6.49&ndash;&pound;13.37 across 15 feed-segment rows for the identical item). Restricting to the canonical <code>country = 'DE'</code> row avoids picking an arbitrary/wrong price, but most products don&#39;t have that specific row populated &mdash; shown honestly as Data Missing rather than guessed.<br>
+  4. <strong>Product Cost, Gross Profit, and Profit After Ads are Data Missing for every row.</strong> No table anywhere in the database has real populated product-cost/COGS values (checked <code>development.sku_cogs</code> &mdash; empty; <code>staging_ai.cppc_cogs_truth_model_v1</code> &mdash; all cost fields NULL for these products, and separately confirmed via <code>staging_ai.google_feed_field_discovery_v1</code> that internal_sku coverage in the cogs model is only 11.99% site-wide). Gross Profit and Profit After Ads cannot be calculated without real cost data and are not invented.<br>
+  5. <strong>Feed Status and Missing Attribute are Data Missing.</strong> The correct source table (<code>raw_data.gmc_product_diagnostics_daily</code>) is completely empty (0 rows) &mdash; no Feed Status/Missing Attribute data exists anywhere in the database.<br>
+  6. <strong>Last 7 Days ROAS / Last 30 Days ROAS are not shown separately.</strong> This version shows one 6-month aggregate per product; a rolling 7d/30d comparison was not built for this pass.
 </div>
 
 <div class="foot">
-  <strong>Scope:</strong> Mahima Requirement 1 &mdash; Product Performance Report, ledsone.de Google Ads, product-level view (one row per product per campaign) across Mahima&#39;s active campaigns (see Data Sources above for exact IDs).<br>
-  <strong>PASS/FAIL note:</strong> the report is genuinely product-level (multiple rows per campaign, confirmed multiple products per campaign) with Product ID and Product Title columns visible. Product Cost, Feed Status, and Missing Attribute remain Data Missing by design (no source exists, not invented) &mdash; this build should be read as a <strong>partial, clearly-labeled product-level version</strong> pending the data-gap decisions documented in the AIOS evidence/handover files.
+  <strong>Scope:</strong> Mahima Requirement 1 &mdash; Product Performance Report, ledsone.de Google Ads, product-level view (one row per product per campaign) across <strong>all 5</strong> of Mahima&#39;s active campaigns, <strong>2026-01-01 to 2026-06-30</strong>.<br>
+  <strong>PASS/FAIL note:</strong> the report is genuinely product-level (multiple rows per campaign, confirmed multiple products per campaign) with Product ID visible for every row and Product Price recovered for {match_pct:.0%}. Product Cost, Feed Status, Missing Attribute, and (in this version) Suggested Action remain Data Missing by design (no source exists for the requested date range, not invented) &mdash; this build should be read as a <strong>partial, clearly-labeled product-level version</strong> pending the data-gap decisions documented in the AIOS evidence/handover files.
 </div>
 
 </div>
 <script>{js}</script>
 </body>
 </html>""".format(
-    css=CSS, js=JS, as_of=as_of, total=total, total_cost=total_cost, total_value=total_value,
+    css=CSS, js=JS, as_of_display=as_of_display, total=total, total_cost=total_cost, total_value=total_value,
     overall_roas=overall_roas, scale_n=scale_n, pause_n=pause_n, active_campaigns=active_campaigns,
     matched_title=matched_title_n, match_pct=(matched_title_n / total),
     camp_options=camp_options, action_options=action_options,
