@@ -192,7 +192,7 @@
               <th class="num">Conv. Value</th>
               <th class="num">ROAS %</th>
               <th>Segment</th>
-              <th>Stage of Ads — Last 30 Days / Before Last</th>
+              <th>Stage of Ads — 60 Days &amp; 90 Days</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -202,7 +202,7 @@
 
     <!-- Validation -->
     <div class="val-box">
-      <h3>Validation — 2026-07-08 (corrected: missing campaigns added)</h3>
+      <h3>Validation — 2026-07-08 (Stage updated: 60-day &amp; 90-day performance)</h3>
       <div class="val-grid">
         <div class="vi"><div class="vd pass"></div><strong>Source</strong> &nbsp;— public.ppc_etl_performance_data (daily grain, source=3)</div>
         <div class="vi"><div class="vd pass"></div><strong>9 campaigns (Sonya group)</strong> &nbsp;— 7 × ILIKE '%Sonya%' + English_EU (23914872425) + Muguntha DM 46 (20810136438)</div>
@@ -211,7 +211,7 @@
         <div class="vi"><div class="vd pass"></div><strong>Last 30 Days exact</strong> &nbsp;— 2026-06-08 to 2026-07-07 (30 calendar days)</div>
         <div class="vi"><div class="vd pass"></div><strong>Before Last exact</strong> &nbsp;— 2026-05-09 to 2026-06-07 (previous 30 days)</div>
         <div class="vi"><div class="vd pass"></div><strong>ROAS segments correct</strong> &nbsp;— Best/Better/OK/Bad/Worst rules applied per spreadsheet</div>
-        <div class="vi"><div class="vd pass"></div><strong>Stage column</strong> &nbsp;— Last 30 Days + Before Last blocks with Cost, ROAS, Conv, Conv Value</div>
+        <div class="vi"><div class="vd pass"></div><strong>Stage column</strong> &nbsp;— 60 Days Performance (2026-05-09–2026-07-07) + 90 Days Performance (2026-04-09–2026-07-07) with Cost, Conv Value, Conv, ROAS</div>
         <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> &nbsp;— read-only queries only</div>
         <div class="vi"><div class="vd warn"></div><strong>Budget</strong> &nbsp;— not available in ppc_etl_performance_data; shown as N/A</div>
         <div class="vi"><div class="vd warn"></div><strong>Campaign 22847654610</strong> &nbsp;— only 17 active days in last 30d window (minimal spend £2.48)</div>
@@ -226,7 +226,9 @@
         <li><strong>Primary source:</strong> <code>public.ppc_etl_performance_data</code> — daily-grain Google Ads data. Filter: record_type = 'campaign' AND source = 3.</li>
         <li><strong>Campaign inclusion rule:</strong> campaign_name ILIKE '%Sonya%' (7 campaigns) PLUS campaign ID 20810136438 (<em>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</em>) confirmed by Sonya as part of her group. Total: 9 campaigns. Other Muguntha campaigns are excluded.</li>
         <li><strong>English_EU campaign (23914872425):</strong> Name resolved from <code>staging_ai.pmax_18m_postmortem_fact_v1</code> — not yet in truth registry. Confirmed in ppc_etl_performance_data with L30 cost £253.88.</li>
-        <li><strong>Last 30 Days:</strong> date >= '2026-06-08' AND date <= '2026-07-07'. <strong>Before Last:</strong> date >= '2026-05-09' AND date <= '2026-06-07'.</li>
+        <li><strong>Last 30 Days (main table):</strong> date >= '2026-06-08' AND date <= '2026-07-07'.</li>
+        <li><strong>Stage — 60 Days:</strong> date >= '2026-05-09' AND date <= '2026-07-07' (rolling 60-day window ending 2026-07-07).</li>
+        <li><strong>Stage — 90 Days:</strong> date >= '2026-04-09' AND date <= '2026-07-07' (rolling 90-day window ending 2026-07-07).</li>
         <li><strong>ROAS:</strong> (SUM(sales) / SUM(spend)) × 100. Segments — Best ≥400%, Better 350–399%, OK 300–349%, Bad 200–299%, Worst &lt;200%.</li>
         <li><strong>Days:</strong> COUNT(DISTINCT date) with spend data in the last 30-day window.</li>
         <li><strong>Budget:</strong> Not available in ppc_etl_performance_data — shown as N/A.</li>
@@ -242,7 +244,7 @@
   <div class="tab-panel" id="panel-4"><div class="placeholder"><div class="ph-icon">&#128161;</div><h2>Opportunity</h2><p>Coming soon — awaiting requirement specification.</p></div></div>
   <div class="tab-panel" id="panel-5"><div class="placeholder"><div class="ph-icon">&#9940;</div><h2>Stop Waste Spend</h2><p>Coming soon — awaiting requirement specification.</p></div></div>
 
-  <footer class="site">Sonya · Google Ads Campaign Dashboard · AIOS · Requirement 1 · Updated 2026-07-08 (corrected: 9 campaigns)</footer>
+  <footer class="site">Sonya · Google Ads Campaign Dashboard · AIOS · Requirement 1 · Updated 2026-07-08 (Stage: 60-day &amp; 90-day performance)</footer>
 </div>
 
 <script>
@@ -257,8 +259,9 @@
             Sonya confirmed this Muguntha campaign belongs to her group.
             Other Muguntha campaigns are NOT included.
    Total:   9 campaigns
-   L30:     2026-06-08 to 2026-07-07 (Last 30 Days)
-   BL:      2026-05-09 to 2026-06-07 (Before Last)
+   L30:     2026-06-08 to 2026-07-07 (Last 30 Days — main table columns)
+   D60:     2026-05-09 to 2026-07-07 (Stage: 60 Days Performance)
+   D90:     2026-04-09 to 2026-07-07 (Stage: 90 Days Performance)
    ============================================================ */
 
 const RAW = [
@@ -266,64 +269,73 @@ const RAW = [
     id: '20810136438',
     name: 'Pmax  UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK',
     days: 30, budget: null,
-    l30: { cost: 7348.01, cv: 23814.41, conv: 765.11, roas: 324.09 },
-    bl:  { cost: 7580.19, cv: 27168.08, conv: 796.68, roas: 358.41 }
+    l30: { cost: 7348.01,  cv: 23814.41,  conv: 765.11,  roas: 324.09 },
+    d60: { cost: 14928.20, cv: 50982.49,  conv: 1561.79, roas: 341.52 },
+    d90: { cost: 23927.79, cv: 78582.17,  conv: 2396.03, roas: 328.41 }
   },
   {
     id: '21435967873',
     name: 'Pmax  UK | Sonya | Klarna | PH_ALL | Covertion > 2| MCV | UK',
     days: 30, budget: null,
-    l30: { cost: 1902.53, cv: 6098.94, conv: 209.92, roas: 320.57 },
-    bl:  { cost: 2713.00, cv: 10549.56, conv: 281.58, roas: 388.85 }
+    l30: { cost: 1902.53, cv: 6098.94,  conv: 209.92, roas: 320.57 },
+    d60: { cost: 4615.53, cv: 16648.50, conv: 491.50,  roas: 360.71 },
+    d90: { cost: 7285.39, cv: 27034.70, conv: 763.74,  roas: 371.08 }
   },
   {
     id: '22943583032',
     name: 'Pmax  UK |  Sonya  | Shoptimised |  SUMMER_TRENDS | Zombies | MCV | UK',
     days: 30, budget: null,
-    l30: { cost: 542.70, cv: 1190.44, conv: 23.55, roas: 219.36 },
-    bl:  { cost: 355.02, cv: 1198.25, conv: 28.89, roas: 337.52 }
+    l30: { cost: 542.70,  cv: 1190.44, conv: 23.55, roas: 219.36 },
+    d60: { cost: 897.72,  cv: 2388.69, conv: 52.44,  roas: 266.08 },
+    d90: { cost: 1380.73, cv: 3840.66, conv: 92.60,  roas: 278.16 }
   },
   {
     id: '23526695953',
     name: 'Pmax UK | Sonya | Klarna | EUR_76 | All | MCV | Ierland',
     days: 30, budget: null,
-    l30: { cost: 457.51, cv: 1834.88, conv: 31.99, roas: 401.06 },
-    bl:  { cost: 326.75, cv: 1042.30, conv: 27.21, roas: 318.99 }
+    l30: { cost: 457.51,  cv: 1834.88, conv: 31.99, roas: 401.06 },
+    d60: { cost: 784.26,  cv: 2877.18, conv: 59.20,  roas: 366.87 },
+    d90: { cost: 1045.28, cv: 3886.56, conv: 85.97,  roas: 371.82 }
   },
   {
     id: '23914872425',
     name: 'Pmax UK | Sonya | Shoptimised | English _EU | Top Selling | MC | Europe English',
     days: 30, budget: null,
-    l30: { cost: 253.88, cv: 327.41, conv: 9.00, roas: 128.96 },
-    bl:  { cost: 27.64,  cv: 75.35,  conv: 2.00, roas: 272.61 }
+    l30: { cost: 253.88, cv: 327.41, conv: 9.00,  roas: 128.96 },
+    d60: { cost: 281.52, cv: 402.76, conv: 11.00, roas: 143.07 },
+    d90: { cost: 281.52, cv: 402.76, conv: 11.00, roas: 143.07 }
   },
   {
     id: '23515806682',
     name: 'Pmax UK | Sonya | Shoptimised | SONYA2026 | Zombies > 35| MC | UK',
     days: 30, budget: null,
-    l30: { cost: 153.29, cv: 99.23,  conv: 2.73,  roas: 64.73 },
-    bl:  { cost: 271.18, cv: 2166.92, conv: 11.25, roas: 799.07 }
+    l30: { cost: 153.29, cv: 99.23,   conv: 2.73,  roas: 64.73  },
+    d60: { cost: 424.47, cv: 2266.15, conv: 13.98, roas: 533.88 },
+    d90: { cost: 459.99, cv: 2360.91, conv: 16.58, roas: 513.25 }
   },
   {
     id: '23729304135',
     name: 'Pmax UK | Sonya | Klarna | GB C1 | Zombies Dracarys | MCV | UK',
     days: 30, budget: null,
-    l30: { cost: 125.94, cv: 390.00, conv: 14.11, roas: 309.67 },
-    bl:  { cost: 387.12, cv: 1552.24, conv: 21.04, roas: 400.97 }
+    l30: { cost: 125.94,  cv: 390.00,  conv: 14.11, roas: 309.67 },
+    d60: { cost: 513.06,  cv: 1942.24, conv: 35.15, roas: 378.56 },
+    d90: { cost: 1461.58, cv: 3653.38, conv: 73.29, roas: 249.96 }
   },
   {
     id: '22847654610',
     name: 'Pmax UK | Sonya | GCSS | NICC_07 | Last Year Sold | MCV | UK',
     days: 17, budget: null,
-    l30: { cost: 2.48,  cv: 0.00, conv: 0.00, roas: 0.00 },
-    bl:  { cost: 158.43, cv: 351.28, conv: 14.42, roas: 221.73 }
+    l30: { cost: 2.48,   cv: 0.00,   conv: 0.00,  roas: 0.00   },
+    d60: { cost: 160.91, cv: 351.28, conv: 14.42, roas: 218.31 },
+    d90: { cost: 322.19, cv: 643.36, conv: 24.22, roas: 199.68 }
   },
   {
     id: '23793722836',
     name: 'D Gen | Sonya | Klarna| PLight | Pendant Light | MCV | UK',
     days: 0, budget: null,
     l30: { cost: 0.00,  cv: 0.00, conv: 0.00, roas: 0.00 },
-    bl:  { cost: 19.98, cv: 0.00, conv: 0.00, roas: 0.00 }
+    d60: { cost: 19.98, cv: 0.00, conv: 0.00, roas: 0.00 },
+    d90: { cost: 110.51, cv: 0.00, conv: 0.00, roas: 0.00 }
   }
 ];
 
@@ -353,19 +365,18 @@ function stageHTML(c) {
   const blk = (lbl, data) => {
     const seg = segFromRoas(data.roas);
     const sc  = segCls(seg);
-    const noData = data.cost === 0 && data.cv === 0;
     return `<div class="sp">
       <div class="sp-lbl">${lbl}</div>
       <div class="sm-row">
-        <div class="sm"><div class="sm-l">Cost</div><div class="sm-v">${noData && lbl.includes('Last 30') ? '£0.00' : fmt(data.cost)}</div></div>
+        <div class="sm"><div class="sm-l">Cost</div><div class="sm-v">${fmt(data.cost)}</div></div>
         <div class="sm"><div class="sm-l">Conv. Val</div><div class="sm-v">${fmt(data.cv)}</div></div>
         <div class="sm"><div class="sm-l">Conv.</div><div class="sm-v">${data.conv > 0 ? Number(data.conv).toFixed(2) : '—'}</div></div>
         <div class="sm"><div class="sm-l">ROAS</div><div class="sm-v">${data.roas > 0 ? '<span class="badge badge-' + sc + '">' + fmtPct(data.roas, 0) + '</span>' : '—'}</div></div>
       </div>
     </div>`;
   };
-  return blk('Last 30 Days (2026-06-08 – 2026-07-07)', c.l30)
-       + blk('Before Last (2026-05-09 – 2026-06-07)', c.bl);
+  return blk('60 Days Performance (2026-05-09 – 2026-07-07)', c.d60)
+       + blk('90 Days Performance (2026-04-09 – 2026-07-07)', c.d90);
 }
 
 /* ============================================================  SORT */
