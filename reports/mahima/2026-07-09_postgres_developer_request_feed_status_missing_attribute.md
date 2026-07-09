@@ -63,7 +63,16 @@ The table was clearly created for a GMC diagnostics import pipeline that **was n
 
 `public.google_merchant_products` (≈498k rows) was also checked: it holds the feed **content** (title, price, availability, feed_label, etc.) but has **no diagnostics columns** (no status/issues/approval fields) — it cannot supply this data.
 
-**Conclusion: the data does not exist anywhere in PostgreSQL, at any scale. This is a missing ingestion pipeline, not a missing query.**
+### 2d. The database's own audit view already documents this exact gap
+
+`staging_ai.v_pmax_18m_feed_failure_v1` (238,576 rows) — an internal feed-failure analysis view — carries the literal failure reason **`GMC_DIAGNOSTICS_SOURCE_EMPTY`** on its rows, with root cause: *"Feed readiness cannot be fully proven where GMC diagnostics are empty, or required Merchant Center fields are weak/missing."* The system itself has already flagged the missing ingestion.
+
+### 2e. Third-pass completeness checks (2026-07-09)
+
+- All **json/jsonb columns** database-wide (~130) enumerated — none holds GMC diagnostics (they are Wayfair raw payloads, IPC configs, evidence blobs for unrelated engines, etc.)
+- All **43 tables named** `%google%`/`%gmc%`/`%merchant%`/`%shopping%` enumerated; every one with real row counts opened and inspected (e.g. `cppc_google_ads_product_history_v1`, 80,850 rows = SKU/month spend history only, no status fields)
+
+**Conclusion: the data does not exist anywhere in PostgreSQL, at any scale — verified across three passes, and independently confirmed by the database's own audit view (`GMC_DIAGNOSTICS_SOURCE_EMPTY`). This is a missing ingestion pipeline, not a missing query.**
 
 ---
 
@@ -106,4 +115,4 @@ Missing-attribute information arrives as item-level issues with codes like `miss
 
 **Owner:** Mahima · **Reviewer:** Kuberan
 **Status:** Open — awaiting developer pipeline build
-**PASS / FAIL (verification that data is absent):** PASS — conclusively verified absent, 2 full passes (2026-07-08 and 2026-07-09)
+**PASS / FAIL (verification that data is absent):** PASS — conclusively verified absent, 3 full passes (2026-07-08 and 2026-07-09), including the database's own GMC_DIAGNOSTICS_SOURCE_EMPTY audit flag
