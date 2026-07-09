@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thivajini — Requirements Dashboard · LEDSone FR · Google Ads</title>
+<style>
+  :root{
+    --ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;
+    --card:#ffffff;--accent:#1f5eff;--accent-soft:#eaf0ff;
+    --good:#059669;--good-soft:#f0fdf4;
+    --warn:#d97706;--warn-soft:#fffbeb;
+    --fail:#b91c1c;--fail-soft:#fff5f5;
+    --pass-bg:#d4edda;--pass-txt:#155724;--pass-bd:#a3d9b9;
+    --review-bg:#fff3cd;--review-txt:#856404;--review-bd:#fde68a;
+    --fail-bg:#f8d7da;--fail-txt:#842029;--fail-bd:#fca5a5;
+    --nodata-bg:#e2e3e5;--nodata-txt:#383d41;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
+  .wrap{max-width:1440px;margin:0 auto;}
+
+  /* Back link */
+  .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+  .back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+
+  /* Requirement tab nav */
+  .top-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
+  .nav-btn{border:none;background:transparent;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;}
+  .nav-btn:hover{background:var(--accent-soft);color:var(--accent);}
+  .nav-btn.active{background:var(--accent);color:#fff;}
+  .nav-btn:disabled{opacity:.4;cursor:default;}
+  .nav-btn:disabled:hover{background:transparent;color:var(--muted);}
+  .nav-btn .nl{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* Section header card */
+  header.rpt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+  .req-tag{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+  h1{font-size:22px;font-weight:700;}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:4px 13px;font-size:12px;font-weight:600;}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+  .kpi .val{font-size:24px;font-weight:700;margin-top:5px;line-height:1;}
+  .kpi .note{font-size:11px;color:var(--muted);margin-top:4px;}
+  .kpi.ok .val{color:var(--good);}
+  .kpi.err .val{color:var(--fail);}
+  .kpi.warn .val{color:var(--warn);}
+  .kpi.info .val{color:var(--accent);}
+
+  /* Controls */
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+  .fbtn{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);transition:all .15s;}
+  .fbtn:hover,.fbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .sl{font-size:12px;color:var(--muted);font-weight:600;}
+  .exp{border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;margin-left:auto;transition:opacity .15s;}
+  .exp:hover{opacity:.85;}
+
+  /* Table box */
+  .tbox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px;}
+  .tbar{padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+  .scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;}
+  thead th.num,td.num{text-align:right;}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{filter:brightness(.97);}
+
+  /* Badges */
+  .badge{display:inline-block;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent;}
+  .badge.pass{background:var(--pass-bg);color:var(--pass-txt);border-color:var(--pass-bd);}
+  .badge.review{background:var(--review-bg);color:var(--review-txt);border-color:var(--review-bd);}
+  .badge.fail{background:var(--fail-bg);color:var(--fail-txt);border-color:var(--fail-bd);}
+  .badge.nodata{background:var(--nodata-bg);color:var(--nodata-txt);}
+  .badge.noshop{background:#dbeafe;color:#1e40af;border-color:#93c5fd;}
+  .badge.noads{background:#fce7f3;color:#9d174d;border-color:#f9a8d4;}
+
+  /* Campaign colours */
+  .camp-topsell{color:#1f5eff;font-weight:700;}
+  .camp-allproduct{color:#059669;font-weight:700;}
+  .camp-bestsell{color:#d97706;font-weight:700;}
+  .td-gap-pos{color:#059669;font-weight:700;}
+  .td-gap-neg{color:#b91c1c;font-weight:700;}
+
+  /* Info note */
+  .info-note{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;font-size:12px;color:#0c4a6e;margin-bottom:16px;line-height:1.6;}
+
+  /* Threshold row */
+  .thresh-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;}
+  .thresh{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:700;border:1px solid transparent;}
+  .thresh.pass{background:var(--pass-bg);color:var(--pass-txt);border-color:var(--pass-bd);}
+  .thresh.review{background:var(--review-bg);color:var(--review-txt);border-color:var(--review-bd);}
+  .thresh.fail{background:var(--fail-bg);color:var(--fail-txt);border-color:var(--fail-bd);}
+  .thresh-note{font-size:11px;color:var(--muted);}
+
+  /* Campaign legend */
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+  .leg-item{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;}
+  .leg-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .leg-dot.topsell{background:#1f5eff;}
+  .leg-dot.allproduct{background:#059669;}
+  .leg-dot.bestsell{background:#d97706;}
+
+  /* Notes grid */
+  .notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-bottom:16px;}
+  .fn{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12px;color:var(--muted);line-height:1.65;}
+  .fn h3{font-size:12.5px;color:var(--ink);margin-bottom:8px;font-weight:700;}
+  .fn ul{padding-left:16px;}
+  .fn li{margin-top:4px;}
+  .fn li strong{color:var(--ink);}
+
+  /* Evidence pill list */
+  .ev-list{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .ev-list li{font-size:11.5px;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:4px 10px;}
+
+  /* Section heading */
+  .section-hd{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#42506a;margin:22px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+
+  /* Placeholder (Req 2+) */
+  .placeholder{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:60px 30px;text-align:center;}
+  .placeholder .ph-icon{font-size:38px;margin-bottom:14px;}
+  .placeholder h2{font-size:18px;color:var(--ink);margin-bottom:8px;}
+  .placeholder p{color:var(--muted);font-size:13.5px;max-width:480px;margin:0 auto 24px;}
+  .ph-badge{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:20px;padding:4px 14px;margin-bottom:18px;}
+  .ph-metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-width:600px;margin:0 auto 20px;}
+  .ph-metric{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;text-align:left;}
+  .ph-metric .pm-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+  .ph-metric .pm-val{font-size:12.5px;font-weight:700;color:var(--ink);}
+  .ph-classes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .ph-cls{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+  .ph-cls.scale{background:#d4edda;color:#155724;}
+  .ph-cls.monitor{background:#fff3cd;color:#856404;}
+  .ph-cls.exclude{background:#f8d7da;color:#842029;}
+  .ph-cls.review-cls{background:#e2e3e5;color:#383d41;}
+
+  footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;}
+  @media(max-width:700px){
+    h1{font-size:17px;}
+    .kpi .val{font-size:20px;}
+    .nav-btn{padding:7px 12px;font-size:12px;}
+    body{padding:16px 12px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../index.html">&larr; Back to all members</a>
+
+  <!-- ── Requirement Navigation ── -->
+  <nav class="top-nav" role="tablist">
+    <button class="nav-btn active" id="nav-1" role="tab" aria-selected="true"  aria-controls="panel-1" onclick="showTab(1)">
+      Conversion Tracking
+      <span class="nl">Requirement 1</span>
+    </button>
+    <button class="nav-btn" id="nav-2" role="tab" aria-selected="false" aria-controls="panel-2" onclick="showTab(2)">
+      Product Performance
+      <span class="nl">Requirement 2</span>
+    </button>
+    <button class="nav-btn" id="nav-3" role="tab" aria-selected="false" aria-controls="panel-3" onclick="showTab(3)">
+      —
+      <span class="nl">Requirement 3</span>
+    </button>
+    <button class="nav-btn" id="nav-4" role="tab" aria-selected="false" aria-controls="panel-4" onclick="showTab(4)">
+      —
+      <span class="nl">Requirement 4</span>
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════
+       PANEL 1 — Conversion Tracking & Data Integrity
+       ══════════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-1" role="tabpanel">
+
+    <header class="rpt">
+      <div class="req-tag">Requirement 1 · Google Ads · LEDSone FR · Weekly Attribution Cross-Check</div>
+      <h1>Conversion Tracking &amp; Data Integrity</h1>
+      <div class="sub">
+        Staff: <strong>Thivajini</strong> &nbsp;·&nbsp;
+        Store: <strong>ledsone.fr (EUR)</strong> &nbsp;·&nbsp;
+        Period: <strong>2026-04-06 → 2026-07-08 (14 weeks)</strong> &nbsp;·&nbsp;
+        Sources: <strong>PostgreSQL + Shopify Admin API</strong>
+      </div>
+      <div class="chips">
+        <span class="chip">3 Campaigns</span>
+        <span class="chip">sub_source_id = 233 · LEDSone FR</span>
+        <span class="chip">public.ppc_etl_performance_data</span>
+        <span class="chip">record_type = campaign · source = 3</span>
+        <span class="chip">200 Shopify orders inspected</span>
+      </div>
+    </header>
+
+    <div class="info-note">
+      <strong>Business question:</strong> Does Google Ads reported conversion value align with Shopify UTM-attributed revenue each week?
+      &nbsp;·&nbsp;
+      <strong>Method:</strong> Any-touchpoint attribution — order counted if any customer journey moment contains <code>utm_source="google_ads"</code> &amp; <code>utm_medium="cpc"</code>. Campaign assigned to last google_ads touchpoint.
+      &nbsp;·&nbsp;
+      <strong>Ratio:</strong> Google Ads Conversion Value ÷ Shopify UTM Revenue. Thresholds are proposed — pending Thivajini approval.
+    </div>
+
+    <!-- KPI Summary cards -->
+    <div class="kpis">
+      <div class="kpi info"><div class="lbl">Weeks Analysed</div><div class="val">14</div><div class="note">2026-04-06 → 2026-07-08</div></div>
+      <div class="kpi info"><div class="lbl">Campaigns Tracked</div><div class="val">3</div><div class="note">Topsell · All Products · Best Sellers</div></div>
+      <div class="kpi info"><div class="lbl">Shopify UTM Orders</div><div class="val">66</div><div class="note">google_ads attributed</div></div>
+      <div class="kpi info"><div class="lbl">Shopify UTM Revenue</div><div class="val">€5,059</div><div class="note">EUR · any-touchpoint</div></div>
+      <div class="kpi ok">  <div class="lbl">PASS Rows</div><div class="val">4</div><div class="note">Ratio 0.95x – 1.05x</div></div>
+      <div class="kpi warn"><div class="lbl">REVIEW Rows</div><div class="val">7</div><div class="note">Ratio 0.80x – 1.20x</div></div>
+      <div class="kpi err"> <div class="lbl">FAIL Rows</div><div class="val">12</div><div class="note">&lt;0.80x or &gt;1.20x</div></div>
+      <div class="kpi">    <div class="lbl">Incomplete Data</div><div class="val">5</div><div class="note">One side missing</div></div>
+    </div>
+
+    <!-- Thresholds -->
+    <div class="thresh-row">
+      <span class="sl">Proposed thresholds:</span>
+      <span class="thresh pass">✓ PASS: 0.95x – 1.05x</span>
+      <span class="thresh review">⚠ REVIEW: 0.80x – 0.95x or 1.05x – 1.20x</span>
+      <span class="thresh fail">✗ FAIL: &lt;0.80x or &gt;1.20x</span>
+      <span class="thresh-note">Pending Thivajini approval</span>
+    </div>
+
+    <!-- Campaign legend -->
+    <div class="legend">
+      <div class="leg-item"><span class="leg-dot topsell"></span><strong>Topsell</strong> &nbsp;·&nbsp; UTM: <code>tr-pmax-topsell</code> &nbsp;·&nbsp; ID: 23103582865</div>
+      <div class="leg-item"><span class="leg-dot allproduct"></span><strong>All Products</strong> &nbsp;·&nbsp; UTM: <code>pmax_allproduct</code> &nbsp;·&nbsp; ID: 23533025729</div>
+      <div class="leg-item"><span class="leg-dot bestsell"></span><strong>Best Sellers</strong> &nbsp;·&nbsp; UTM: <code>pmax_bestselling_tr</code> &nbsp;·&nbsp; ID: 23405519670</div>
+    </div>
+
+    <!-- Campaign filter + export -->
+    <div class="controls">
+      <span class="sl">Filter:</span>
+      <button class="fbtn on" onclick="filterCamp('all',this)">All Campaigns</button>
+      <button class="fbtn" onclick="filterCamp('Topsell',this)">Topsell</button>
+      <button class="fbtn" onclick="filterCamp('All Products',this)">All Products</button>
+      <button class="fbtn" onclick="filterCamp('Best Sellers',this)">Best Sellers</button>
+      <button class="exp" onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <!-- Main table -->
+    <div class="tbox">
+      <div class="tbar">
+        <span>Weekly Google Ads vs Shopify UTM Attribution Cross-Check &nbsp;·&nbsp; LEDSone FR &nbsp;·&nbsp; EUR</span>
+        <span id="row-count"></span>
+      </div>
+      <div class="scroll">
+        <table id="main-table">
+          <thead>
+            <tr>
+              <th>Week Start</th>
+              <th>Campaign</th>
+              <th class="num">Ads Conv.</th>
+              <th class="num">Ads Value (€)</th>
+              <th class="num">Shopify UTM Orders</th>
+              <th class="num">Shopify UTM Rev (€)</th>
+              <th class="num">Order Gap (Ads−Shop)</th>
+              <th class="num">Attr. Ratio</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Data source notes -->
+    <div class="section-hd">Data Sources &amp; Method</div>
+    <div class="notes-grid">
+      <div class="fn">
+        <h3>Google Ads Side (PostgreSQL)</h3>
+        <ul>
+          <li><strong>Table:</strong> public.ppc_etl_performance_data</li>
+          <li><strong>Filter:</strong> source=3, sub_source_id=233, record_type='campaign'</li>
+          <li><strong>FR Verified:</strong> campaign names "Pmax FR | Thivajini…", EUR, LSFR prefix</li>
+          <li><strong>Aggregation:</strong> DATE_TRUNC('week', date) — Monday-start ISO weeks</li>
+          <li><strong>Coverage:</strong> 2026-04-06 → 2026-07-07 (14 weeks)</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Shopify UTM Side (Shopify Admin API)</h3>
+        <ul>
+          <li><strong>Source:</strong> Shopify Admin GraphQL API · ledsone.fr · 200 orders</li>
+          <li><strong>Field:</strong> customerJourney.{firstVisit, lastVisit, moments}.utmParameters</li>
+          <li><strong>Attribution:</strong> Any-touchpoint — utm_source="google_ads" &amp; utm_medium="cpc"</li>
+          <li><strong>Campaign:</strong> Last google_ads UTM touchpoint wins</li>
+          <li><strong>Range:</strong> LSFR1303 – LSFR1488 (Apr 6 – Jul 8 2026) · EUR only</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Campaign → UTM Mapping</h3>
+        <ul>
+          <li><strong>23103582865 ↔ tr-pmax-topsell:</strong> "Topsell" in both — high confidence</li>
+          <li><strong>23405519670 ↔ pmax_bestselling_tr:</strong> "Best Sellers / bestselling" — high confidence</li>
+          <li><strong>23533025729 ↔ pmax_allproduct:</strong> Remaining campaign — inferred, not confirmed via join</li>
+          <li><strong>⚠</strong> No direct join table between campaign_id and UTM name in PostgreSQL</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Known Limitations</h3>
+        <ul>
+          <li><strong>Conversion window:</strong> Google Ads uses 30-day click window; Shopify uses session UTM — weeks will not align exactly</li>
+          <li><strong>Multi-touch:</strong> Revenue assigned to last google_ads touchpoint only</li>
+          <li><strong>Conversion counting:</strong> Google Ads may record &gt;1 conversion per order</li>
+          <li><strong>Thresholds:</strong> 0.95x–1.05x / 0.80x–1.20x — proposed, not confirmed</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-hd">Evidence Files</div>
+    <ul class="ev-list">
+      <li>evidence/Thivajini/req2-attribution-dashboard-evidence-2026-07-09.md</li>
+      <li>evidence/Thivajini/req2-kpi-discovery-evidence-2026-07-09.md</li>
+      <li>evidence/Thivajini/req1-discovery-evidence-2026-07-09.md</li>
+      <li>validation/Thivajini/req2-attribution-dashboard-validation-2026-07-09.md</li>
+      <li>handover/Thivajini/req2-handover-2026-07-09.md</li>
+    </ul>
+
+  </div>
+  <!-- /PANEL 1 -->
+
+  <!-- ══════════════════════════════════════════
+       PANEL 2 — Product-Level Performance (Placeholder)
+       ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-2" role="tabpanel">
+    <div class="placeholder">
+      <div class="ph-icon">📦</div>
+      <span class="ph-badge">Ready for Implementation</span>
+      <h2>Product-Level Performance</h2>
+      <p>Winner / Loser Classification — this requirement will classify all active products using spend, price, conversion, and ROAS signals. Awaiting GPT approval to build.</p>
+      <div class="ph-metrics">
+        <div class="ph-metric"><div class="pm-label">Spend</div><div class="pm-val">€ per product</div></div>
+        <div class="ph-metric"><div class="pm-label">Product Price</div><div class="pm-val">EUR (GMP)</div></div>
+        <div class="ph-metric"><div class="pm-label">Conversions</div><div class="pm-val">Orders (raw)</div></div>
+        <div class="ph-metric"><div class="pm-label">Conv. Value</div><div class="pm-val">Sales € (raw)</div></div>
+        <div class="ph-metric"><div class="pm-label">ROAS</div><div class="pm-val">Sales ÷ Spend</div></div>
+        <div class="ph-metric"><div class="pm-label">Spend %</div><div class="pm-val">Spend ÷ Price</div></div>
+      </div>
+      <div class="ph-classes">
+        <span class="ph-cls scale">SCALE</span>
+        <span class="ph-cls monitor">MONITOR</span>
+        <span class="ph-cls exclude">EXCLUDE</span>
+        <span class="ph-cls review-cls">REVIEW</span>
+      </div>
+      <p style="margin-top:20px;font-size:12px;">
+        Data source confirmed: <code>public.ppc_etl_performance_data</code> · sub_source_id=233 · record_type='product' · 44,245 rows · 729 active SKUs · 89-day coverage
+      </p>
+    </div>
+  </div>
+  <!-- /PANEL 2 -->
+
+  <!-- ══════════════════════════════════════════
+       PANEL 3 — Placeholder
+       ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-3" role="tabpanel">
+    <div class="placeholder">
+      <div class="ph-icon">🔲</div>
+      <h2>Requirement 3</h2>
+      <p>Not yet defined. This tab will be activated once a requirement is submitted.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PANEL 4 — Placeholder
+       ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-4" role="tabpanel">
+    <div class="placeholder">
+      <div class="ph-icon">🔲</div>
+      <h2>Requirement 4</h2>
+      <p>Not yet defined. This tab will be activated once a requirement is submitted.</p>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<footer class="site">
+  Thivajini · Google Ads · LEDSone FR · AIOS Requirements Dashboard · 2026-07-09
+</footer>
+
+<script>
+/* ── Tab switching ─────────────────────────── */
+function showTab(n){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-selected','false');});
+  var p=document.getElementById('panel-'+n);
+  var b=document.getElementById('nav-'+n);
+  if(p) p.classList.add('active');
+  if(b){b.classList.add('active');b.setAttribute('aria-selected','true');}
+}
+
+/* ── Data ──────────────────────────────────── */
+const ROWS = [
+  {week:"2026-07-06",camp:"Topsell",     ads_conv:1, ads_val:47.52,  shop_ord:2, shop_rev:97.52},
+  {week:"2026-07-06",camp:"All Products",ads_conv:2, ads_val:20.11,  shop_ord:1, shop_rev:17.11},
+  {week:"2026-06-29",camp:"Topsell",     ads_conv:3, ads_val:80.56,  shop_ord:2, shop_rev:79.40},
+  {week:"2026-06-29",camp:"All Products",ads_conv:3, ads_val:58.89,  shop_ord:3, shop_rev:85.86},
+  {week:"2026-06-22",camp:"Topsell",     ads_conv:3, ads_val:144.35, shop_ord:2, shop_rev:71.05},
+  {week:"2026-06-22",camp:"All Products",ads_conv:4, ads_val:242.76, shop_ord:6, shop_rev:423.75},
+  {week:"2026-06-15",camp:"Topsell",     ads_conv:2, ads_val:40.38,  shop_ord:2, shop_rev:58.36},
+  {week:"2026-06-15",camp:"All Products",ads_conv:1, ads_val:81.96,  shop_ord:1, shop_rev:248.55},
+  {week:"2026-06-08",camp:"All Products",ads_conv:3, ads_val:179.84, shop_ord:4, shop_rev:223.67},
+  {week:"2026-06-01",camp:"Topsell",     ads_conv:4, ads_val:675.30, shop_ord:2, shop_rev:277.52},
+  {week:"2026-06-01",camp:"All Products",ads_conv:2, ads_val:124.96, shop_ord:2, shop_rev:143.94},
+  {week:"2026-05-25",camp:"All Products",ads_conv:0, ads_val:0,      shop_ord:1, shop_rev:111.41},
+  {week:"2026-05-18",camp:"Topsell",     ads_conv:1, ads_val:83.53,  shop_ord:0, shop_rev:0},
+  {week:"2026-05-18",camp:"All Products",ads_conv:3, ads_val:135.26, shop_ord:2, shop_rev:49.82},
+  {week:"2026-05-18",camp:"Best Sellers",ads_conv:0, ads_val:0,      shop_ord:1, shop_rev:27.25},
+  {week:"2026-05-11",camp:"Topsell",     ads_conv:5, ads_val:240.84, shop_ord:5, shop_rev:280.79},
+  {week:"2026-05-11",camp:"All Products",ads_conv:4, ads_val:170.33, shop_ord:3, shop_rev:175.04},
+  {week:"2026-05-04",camp:"Topsell",     ads_conv:3, ads_val:375.39, shop_ord:3, shop_rev:399.36},
+  {week:"2026-05-04",camp:"Best Sellers",ads_conv:1, ads_val:16.48,  shop_ord:1, shop_rev:24.47},
+  {week:"2026-05-04",camp:"All Products",ads_conv:3, ads_val:87.01,  shop_ord:3, shop_rev:110.98},
+  {week:"2026-04-27",camp:"Topsell",     ads_conv:4, ads_val:878.11, shop_ord:4, shop_rev:910.07},
+  {week:"2026-04-27",camp:"All Products",ads_conv:4, ads_val:292.38, shop_ord:4, shop_rev:324.34},
+  {week:"2026-04-20",camp:"Topsell",     ads_conv:1, ads_val:103.55, shop_ord:2, shop_rev:432.01},
+  {week:"2026-04-13",camp:"Topsell",     ads_conv:1, ads_val:61.26,  shop_ord:0, shop_rev:0},
+  {week:"2026-04-13",camp:"All Products",ads_conv:2, ads_val:112.30, shop_ord:2, shop_rev:128.28},
+  {week:"2026-04-06",camp:"Topsell",     ads_conv:2, ads_val:31.56,  shop_ord:3, shop_rev:97.51},
+  {week:"2026-04-06",camp:"Best Sellers",ads_conv:0, ads_val:0,      shop_ord:1, shop_rev:62.86},
+  {week:"2026-04-06",camp:"All Products",ads_conv:5, ads_val:207.68, shop_ord:4, shop_rev:197.66},
+];
+
+/* ── Helpers ───────────────────────────────── */
+function campClass(c){
+  return c==="Topsell"?"camp-topsell":c==="All Products"?"camp-allproduct":"camp-bestsell";
+}
+function fmt(n){
+  if(n===0) return '<span style="color:var(--muted)">—</span>';
+  return '€'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+}
+function fmtGap(r){
+  var g=r.ads_conv-r.shop_ord;
+  if(g===0) return '<span style="color:var(--muted)">0</span>';
+  return '<span class="'+(g>0?'td-gap-pos':'td-gap-neg')+'">'+(g>0?'+':'')+g+'</span>';
+}
+function fmtRatio(r){
+  if(r.ads_conv===0||r.shop_ord===0||r.shop_rev===0) return '<span style="color:var(--muted)">N/A</span>';
+  var ratio=r.ads_val/r.shop_rev;
+  var col=ratio>=0.95&&ratio<=1.05?'var(--good)':ratio>=0.80&&ratio<=1.20?'var(--warn)':'var(--fail)';
+  return '<span style="color:'+col+';font-weight:800">'+ratio.toFixed(2)+'x</span>';
+}
+function statusBadge(r){
+  if(r.ads_conv===0&&r.shop_ord===0) return '<span class="badge nodata">—</span>';
+  if(r.ads_conv===0&&r.shop_ord>0)   return '<span class="badge noads">NO ADS CONV</span>';
+  if(r.shop_ord===0&&r.ads_conv>0)   return '<span class="badge noshop">NO SHOPIFY UTM</span>';
+  var ratio=r.ads_val/r.shop_rev;
+  if(ratio>=0.95&&ratio<=1.05) return '<span class="badge pass">PASS</span>';
+  if(ratio>=0.80&&ratio<=1.20) return '<span class="badge review">REVIEW</span>';
+  return '<span class="badge fail">FAIL</span>';
+}
+
+/* ── Table render ──────────────────────────── */
+var activeFilter='all';
+function renderTable(filter){
+  var tbody=document.getElementById('tbl-body');
+  tbody.innerHTML='';
+  var shown=0;
+  ROWS.forEach(function(r){
+    if(filter&&filter!=='all'&&r.camp!==filter) return;
+    shown++;
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td style="color:var(--muted);font-size:11px;">'+r.week+'</td>'+
+      '<td class="'+campClass(r.camp)+'">'+r.camp+'</td>'+
+      '<td class="num">'+(r.ads_conv===0?'<span style="color:var(--muted)">0</span>':r.ads_conv)+'</td>'+
+      '<td class="num">'+(r.ads_val===0?'<span style="color:var(--muted)">—</span>':fmt(r.ads_val))+'</td>'+
+      '<td class="num">'+(r.shop_ord===0?'<span style="color:var(--muted)">0</span>':r.shop_ord)+'</td>'+
+      '<td class="num">'+(r.shop_rev===0?'<span style="color:var(--muted)">—</span>':fmt(r.shop_rev))+'</td>'+
+      '<td class="num">'+fmtGap(r)+'</td>'+
+      '<td class="num">'+fmtRatio(r)+'</td>'+
+      '<td>'+statusBadge(r)+'</td>';
+    tbody.appendChild(tr);
+  });
+  var rc=document.getElementById('row-count');
+  if(rc) rc.textContent=shown+' row'+(shown!==1?'s':'');
+}
+
+function filterCamp(camp,btn){
+  activeFilter=camp;
+  document.querySelectorAll('.fbtn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  renderTable(camp==='all'?null:camp);
+}
+
+/* ── CSV export ────────────────────────────── */
+function exportCSV(){
+  var rows=[['Week Start','Campaign','Ads Conversions','Ads Conversion Value (EUR)','Shopify UTM Orders','Shopify UTM Revenue (EUR)','Order Gap (Ads-Shopify)','Attribution Ratio','Status']];
+  ROWS.forEach(function(r){
+    var ratio='N/A';
+    if(r.ads_conv>0&&r.shop_ord>0&&r.shop_rev>0) ratio=(r.ads_val/r.shop_rev).toFixed(4);
+    var status='—';
+    if(r.ads_conv===0&&r.shop_ord>0) status='NO ADS CONV';
+    else if(r.shop_ord===0&&r.ads_conv>0) status='NO SHOPIFY UTM';
+    else if(ratio!=='N/A'){var rv=parseFloat(ratio);status=rv>=0.95&&rv<=1.05?'PASS':rv>=0.80&&rv<=1.20?'REVIEW':'FAIL';}
+    rows.push([r.week,r.camp,r.ads_conv,r.ads_val,r.shop_ord,r.shop_rev,r.ads_conv-r.shop_ord,ratio,status]);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return'"'+c+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='thivajini-attribution-cross-check-2026-07-09.csv';
+  a.click();
+}
+
+/* ── Init ──────────────────────────────────── */
+renderTable(null);
+</script>
+</body>
+</html>
