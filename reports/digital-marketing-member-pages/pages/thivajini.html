@@ -181,6 +181,22 @@
   #r3-search:focus{border-color:var(--accent);}
   select.r3sel{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;color:var(--ink);background:var(--card);outline:none;cursor:pointer;}
   select.r3sel:focus{border-color:var(--accent);}
+
+  /* ── Req 4 Order Data ── */
+  .r4-ads-driven { background:#fff0f0; }
+  .r4-balanced   { background:#fff8e1; }
+  .r4-org-heavy  { background:#f0fff0; }
+  .r4-org-only   { background:#f0f4ff; }
+  .r4-no-orders  { background:#fafafa; }
+  .badge-ads-driven { background:#dc2626;color:#fff; }
+  .badge-balanced   { background:#d97706;color:#fff; }
+  .badge-org-heavy  { background:#16a34a;color:#fff; }
+  .badge-org-only   { background:#2563eb;color:#fff; }
+  .badge-no-orders  { background:#9ca3af;color:#fff; }
+  .r4-hi { font-weight:700;color:#dc2626; }
+  .r4-url a { color:var(--acc);font-size:11px; }
+  #r4-search { width:200px; }
+  .r4sel { font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer; }
 </style>
 </head>
 <body>
@@ -202,10 +218,7 @@
       Stock-Spend Tracker
       <span class="nl">Req 3</span>
     </button>
-    <button class="nav-btn" id="nav-4" role="tab" aria-selected="false" aria-controls="panel-4" onclick="showTab(4)">
-      —
-      <span class="nl">Requirement 4</span>
-    </button>
+    <button class="nav-btn" onclick="showTab(4)" role="tab" aria-selected="false">Order Data<span class="nl">Req 4</span></button>
   </nav>
 
   <!-- ══════════════════════════════════════════
@@ -658,13 +671,85 @@
   <!-- ══════════════════════════════════════════
        PANEL 4 — Placeholder
        ══════════════════════════════════════════ -->
-  <div class="tab-panel" id="panel-4" role="tabpanel">
-    <div class="placeholder">
-      <div class="ph-icon">🔲</div>
-      <h2>Requirement 4</h2>
-      <p>Not yet defined. This tab will be activated once a requirement is submitted.</p>
+    <div class="tab-panel" id="panel-4" role="tabpanel">
+
+    <!-- KPI ROW -->
+    <div class="kpis" id="r4-kpis">
+      <div class="tbox"><div class="fn" id="r4-k-total">—</div><div class="fn-label">Products Tracked</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-sh30">—</div><div class="fn-label">Shopify Orders (30d)</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-ad30">—</div><div class="fn-label">Ads Orders (30d)</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-pct">—</div><div class="fn-label">Ads Contribution %</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-sh90">—</div><div class="fn-label">Shopify Orders (90d)</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-ad90">—</div><div class="fn-label">Ads Orders (90d)</div></div>
     </div>
+
+    <!-- LEGEND -->
+    <div class="legend" style="margin:8px 0 4px">
+      <span><span class="badge badge-ads-driven">Ads Driven</span> ≥80% ads contribution</span>
+      <span><span class="badge badge-balanced">Balanced</span> 40–79%</span>
+      <span><span class="badge badge-org-heavy">Organic Heavy</span> &lt;40%</span>
+      <span><span class="badge badge-org-only">Organic Only</span> Shopify orders, no Ads</span>
+      <span><span class="badge badge-no-orders">No Orders</span> 0 Shopify orders (30d)</span>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls" style="gap:6px;flex-wrap:wrap;margin:8px 0">
+      <input id="r4-search" class="r4sel" type="search" placeholder="Search product…" oninput="r4Render()">
+      <select class="r4sel" id="r4-status" onchange="r4Render()">
+        <option value="">All Status</option>
+        <option value="Ads Driven">Ads Driven</option>
+        <option value="Balanced">Balanced</option>
+        <option value="Organic Heavy">Organic Heavy</option>
+        <option value="Organic Only">Organic Only</option>
+        <option value="No Orders">No Orders</option>
+      </select>
+      <select class="r4sel" id="r4-win" onchange="r4Render()">
+        <option value="30">30 Days</option>
+        <option value="60">60 Days</option>
+        <option value="90">90 Days</option>
+      </select>
+      <select class="r4sel" id="r4-sort" onchange="r4Render()">
+        <option value="status">Sort: Status</option>
+        <option value="sh_desc">Sort: Shopify Orders ↓</option>
+        <option value="ad_desc">Sort: Ads Orders ↓</option>
+        <option value="pct_desc">Sort: Ads Contribution ↓</option>
+        <option value="diff_desc">Sort: Difference ↓</option>
+      </select>
+      <button class="nav-btn" onclick="r4CSV()" style="font-size:12px;padding:4px 10px;">Export CSV</button>
+      <span style="font-size:12px;color:var(--muted);align-self:center;" id="r4-count"></span>
+    </div>
+
+    <!-- TABLE -->
+    <div style="overflow-x:auto;margin-top:4px;">
+    <table class="rpt" id="r4-tbl">
+      <thead><tr>
+        <th>Product</th>
+        <th class="num">Price</th>
+        <th class="num">Shopify<br>90d</th>
+        <th class="num">Ads<br>90d</th>
+        <th class="num">Shopify<br>60d</th>
+        <th class="num">Ads<br>60d</th>
+        <th class="num">Shopify<br>30d</th>
+        <th class="num">Ads<br>30d</th>
+        <th class="num">Diff<br>(30d)</th>
+        <th class="num">Ads %<br>(30d)</th>
+        <th>Status</th>
+      </tr></thead>
+      <tbody id="r4-body"></tbody>
+    </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="r3-note" style="margin-top:12px;font-size:11px;color:var(--muted)">
+      <b>Data sources:</b> Shopify orders via ShopifyQL analytics (product-level, paid orders) ·
+      Ads orders via public.ppc_etl_performance_data (sub_source_id=233) ·
+      <b>Matching key:</b> Product Title (Shopify product title matched to Ads product title via Shopify Product ID lookup) ·
+      <b>Status (30d):</b> Ads Driven ≥80% · Balanced 40–79% · Organic Heavy &lt;40% · Organic Only = Shopify &gt;0, Ads=0 · No Orders = Shopify=0 in 30d window ·
+      Data as of 2026-07-09 · Snapshot only — refresh required for live decisions.
+    </div>
+
   </div>
+
 
 </div><!-- /wrap -->
 
@@ -2005,6 +2090,98 @@ function r3CSV(){
 }
 
 document.addEventListener("DOMContentLoaded",r3Render);
+
+const R4PRODUCTS=[{"id": "ampoule led b22 4w t", "t": "Ampoule LED B22 4W T45 Dimmable Vintage Filament Ampoules ~3077", "pr": 7.16, "sh90": 5, "sh60": 3, "sh30": 2, "ad90": 2, "ad60": 2, "ad30": 2, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre araignée 8 bras vintage – Suspension laiton & cuivre E27 ~1916", "pr": 73.74, "sh90": 3, "sh60": 3, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 2, "diff": -1, "pct": 200.0, "st": "Ads Driven"}, {"id": "câble plafonnier ind", "t": "Câble Plafonnier Industriel Rétro 2 Voies E27 Suspension Suspension ~1567", "pr": 25.15, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 2, "diff": -1, "pct": 200.0, "st": "Ads Driven"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Vintage Col de Cygne - Bras Métal E27 ~1971", "pr": 38.67, "sh90": 4, "sh60": 3, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ampoule led vintage ", "t": "Ampoule LED vintage B22 G125 – Filament ambré dimmable 8W ~ 3217", "pr": 6.77, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone 200mm kit ro", "t": "LEDSone 200mm Kit rosace Cylindrique en métal à 3 trous ~1514", "pr": 10.96, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension industrielle vintage en métal – Lustre de cuisine rétro plafonnier E27 ~1544", "pr": 36.11, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 2, "diff": -1, "pct": 200.0, "st": "Ads Driven"}, {"id": "ledsone lustre salon", "t": "LEDSone Lustre salon 5 têtes – Suspension bouteille de vin en verre  ~1722", "pr": 82.05, "sh90": 3, "sh60": 2, "sh30": 1, "ad90": 2, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone éclairage mu", "t": "LEDSone Éclairage mural de salon Appliques élégantes modernes ~1749", "pr": 32.4, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone suspension v", "t": "LEDSone Suspension Vintage Cuivre E27 – Plafonnier Métal Rétro 1m ~1560", "pr": 64.64, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 2, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone plafonnier m", "t": "LEDSone Plafonnier métal semi‑encastré vintage – Style ancien E27 ~1653", "pr": 15.49, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle Vintage 32cm E27 Métal ~1720", "pr": 15.57, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension Industrielle Vintage Métal E27 – Style Loft & Ancien ~ 5934", "pr": 26.21, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone abat-jour su", "t": "LEDSone Abat-jour suspendu E27 Fix abat-jour dôme en métal 30 cm ~1774", "pr": 17.89, "sh90": 3, "sh60": 2, "sh30": 2, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 1, "pct": 50.0, "st": "Balanced"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industrielle Métal 15cm E27 Câble Réglable ~2152", "pr": 23.86, "sh90": 2, "sh60": 2, "sh30": 2, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 1, "pct": 50.0, "st": "Balanced"}, {"id": "ledsone suspension e", "t": "LEDSone Suspension Extérieure IP65 E27 – Luminaire Noir Étanche 1m ~1545", "pr": 34.45, "sh90": 6, "sh60": 5, "sh30": 3, "ad90": 2, "ad60": 2, "ad30": 1, "diff": 2, "pct": 33.3, "st": "Organic Heavy"}, {"id": "ledsone luminaire ar", "t": "LEDSone Luminaire Araignée Industriel 5 Ampoules E27 – Métal Réglable ~1541", "pr": 71.33, "sh90": 9, "sh60": 7, "sh30": 3, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 3, "pct": 0.0, "st": "Organic Only"}, {"id": "kit suspension lumin", "t": "Kit Suspension Luminaire E27 en Câble Textile – Réglable 1m ~ 3646", "pr": 42.64, "sh90": 3, "sh60": 2, "sh30": 2, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "rosace de plafond ro", "t": "Rosace de Plafond Ronde 100mm en Métal — Cache-Fil Élégant pour Suspension ~1828", "pr": 18.18, "sh90": 2, "sh60": 2, "sh30": 2, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle en Métal Rétro avec Douille E27 ~2115", "pr": 16.55, "sh90": 3, "sh60": 3, "sh30": 2, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle Métal Vintage Style Edison ~2161", "pr": 51.23, "sh90": 2, "sh60": 2, "sh30": 2, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "douille e27 filetage", "t": "Douille E27 Filetage 20mm pour Tube Conduit – Support Ampoule Vintage ~ 5539", "pr": 17.47, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone ampoule led ", "t": "LEDSone Ampoule LED vintage T185 E27 – filament tubulaire LED dimmable ~1932", "pr": 13.1, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone rosace plafo", "t": "LEDSone Rosace Plafond Vintage 105mm Métal Antique avec Accessoires ~1935", "pr": 7.28, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lustre araignée 5 lu", "t": "Lustre Araignée 5 Lumières Industriel Vintage E27 Métal Noir – LEDsone ~1917", "pr": 41.3, "sh90": 2, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone plafonnier a", "t": "LEDSone Plafonnier au-dessus de l'évier de la cuisine – lampe vintage  ~1948", "pr": 17.08, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industriel Métal Noir - Lustre Rétro E27 ~1993", "pr": 43.05, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour de", "t": "LEDSone Abat-jour Design Moderne en Métal pour Suspension et Plafonnier 32 cm ~1898", "pr": 34.72, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle Métal – Abat-jour Vintage Rétro E27 ~ 4080", "pr": 53.91, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lot de 3 abat‑jours ", "t": "Lot de 3 abat‑jours vintage – Suspension industrielle incurvée E27 ~1990", "pr": 23.41, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "rose de plafond mult", "t": "Rose de Plafond Multi-sorties 3 Voies en Cuivre ~3083", "pr": 8.72, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "applique murale vint", "t": "Applique Murale Vintage Noire Orientable à 180° – Éclairage Industriel ~1894", "pr": 31.2, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ancienne suspension ", "t": "Ancienne Suspension Lustre Araignée Industriel E27 – LEDsone ~1630", "pr": 25.83, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "alimentation led 7w ", "t": "Alimentation LED 7W Courant Constant | Driver Compact pour Spots & Projets DIY ~3322", "pr": 6.56, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "raccord conduit 20mm", "t": "Raccord Conduit 20mm Acier Galvanisé | Boîte Bornes Éclairage — LEDsone ~5543", "pr": 138.12, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "suspension led vinta", "t": "Suspension LED Vintage 5 Têtes – Lustre Araignée Réglable en Hauteur pour Salon et Salle à Manger ~1553", "pr": 101.23, "sh90": 3, "sh60": 2, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour mé", "t": "LEDSone Abat-jour métal Pluton plafonnier suspension luminaire abat-jour ~1689", "pr": 96.4, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Vintage Métal Noir E27 pour Cuisine ~2168", "pr": 44.95, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lustre araignée 5 fi", "t": "Lustre Araignée 5 Fils Vintage – Suspension Industrielle | LEDsone ~1528", "pr": 101.33, "sh90": 1, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension v", "t": "LEDSone Suspension Vintage Verte 32cm E27 – Abat-jour Métal Cuisine ~1900", "pr": 170.05, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 3, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Vintage Motif Cône - Métal Noir E27 ~1708", "pr": 25.47, "sh90": 3, "sh60": 2, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension industrielle rétro – Lustre vintage bleu marine E27 ~1875", "pr": 26.68, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industrielle - 3 Lampes Métal Noir ~2018", "pr": 29.0, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "transformateur d'ali", "t": "Transformateur d'alimentation LED étanche en aluminium 24V IP67 pour bande LED 150W~1863", "pr": 20.99, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone ancien abat-", "t": "LEDSone Ancien abat-jour suspension plafonnier E27 suspension industrielle ~1753", "pr": 78.33, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "plafonnier semi-enca", "t": "Plafonnier semi-encastré | Abat-jour conique antique ~1742", "pr": 18.66, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "applique murale vint", "t": "Applique murale vintage réglable 180° – Bras pivotant métal noir E27 ~2034", "pr": 92.3, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour cr", "t": "LEDSone Abat-jour Cristal Moderne - Suspension Cage Métal & Cristal ~2024", "pr": 24.4, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "fil pour suspension ", "t": "Fil pour Suspension Luminaire E27 – Câble Textile Rond 2m  ~3645", "pr": 24.14, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone plafonnier m", "t": "LEDSone Plafonnier Moderne 3 Têtes en Verre Nervuré Laiton Jaune  ~1927", "pr": 42.35, "sh90": 2, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone plafonnier a", "t": "LEDSone Plafonnier Araignée Noir – Lustre Industriel 2 Têtes – E27 ~1687", "pr": 18.66, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "raccords de conduits", "t": "Raccords de conduits 20 mm borne galvanisée 1 boîte de sortie ~ 1647", "pr": 163.11, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "luminaire suspendu v", "t": "Luminaire Suspendu Vintage à Trois Bras – Abat-jour Conique Plat, Finition Dorée ~2153", "pr": 165.0, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension i", "t": "Ledsone Suspension Industrielle Noire Steampunk – Lustre 3 Voies E27~1918", "pr": 41.38, "sh90": 2, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lustre araignée 3 fi", "t": "Lustre Araignée 3 Fils Cuivre Brossé – Suspension Industrielle E27 2m Réglable ~1628", "pr": 38.82, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension s", "t": "LEDSone Suspension Style Fermier Industrielle – Abat-jour Bol Métallique pour Cuisine & Couloir ~1824", "pr": 13.21, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre Araignée Dimmable 2 Bras E27 – Suspension Vintage ~1580", "pr": 33.08, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour pl", "t": "LEDSone Abat-jour Plafond Métal Industriel Rétro 26cm ~ 2323", "pr": 13.14, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone ampoule led ", "t": "LEDSone Ampoule LED Vintage G95 E27 8W – Globe Rétro Verre Ambré Filament 2700K ~2074", "pr": 14.51, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "driver led 18w–100w ", "t": "Driver LED 18W–100W DC 12V – Alimentation LED 220V vers 12V – Transformateur pour bandeau LED – LEDsone ~2129", "pr": 15.3, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Vintage Noire - Bras Col de Cygne Métal E27 - LEDSone ~3911", "pr": 25.76, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lustre araignée indu", "t": "Lustre Araignée Industriel 8 Têtes E27 Décoration Intérieure – LEDsone ~1637", "pr": 57.45, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre Araignée Blanc - Suspension 3 Têtes Câble Réglable ~1878", "pr": 16.62, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone 22cm luminai", "t": "LEDSone 22cm Luminaire Abat jour en Métal E27/B22 ~1533", "pr": 137.37, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "filament led e27 g95", "t": "Filament LED E27 G95 4W Ampoule Dimmable Vis Vintage Globe Ampoule Décorative ~1896", "pr": 2.95, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "crochets de câble en", "t": "Crochets de câble en V pour murs et plafonds-4429", "pr": 3.5, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée 5 Fils E27 – Lustre Araignée Industriel 2m Réglable ~1542", "pr": 266.67, "sh90": 4, "sh60": 1, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "crochet swag de plaf", "t": "Crochet Swag de plafond blanc pour suspension ~ 4428", "pr": 17.5, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension s", "t": "LEDSone Suspension support interrupteur plafond métal industriel rotatif vintage ~1654", "pr": 76.03, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lustre suspension bo", "t": "Lustre Suspension Bouteilles de Vin Vintage E27 Plafonnier Grappe Cave à Vin, Bar, Restaurant ~1529", "pr": 84.52, "sh90": 1, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension globe rot", "t": "Suspension Globe Rotin Tressé Jaune — Style Bohème & Naturel, E27 ~ 3642", "pr": 14.64, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "abat-jour industriel", "t": "Abat-jour Industriel Dôme Courbé – Suspension Rétro Vintage en Métal ~1835", "pr": 7.19, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lot de 3 suspensions", "t": "Lot de 3 suspensions vintage en métal Ø30 cm – Luminaires LEDSone ~1691", "pr": 66.9, "sh90": 5, "sh60": 3, "sh30": 0, "ad90": 2, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ancien crochet de pl", "t": "Ancien crochet de plafond en fer cuivre pour suspensions luminaires lustre suspension support lampe", "pr": 1.98, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre Araignée 3 Fils E27 – Suspension Industrielle Vintage 2m Réglable pour Salon & Loft ~1543", "pr": 44.49, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industrielle Cuivre Antique Martelé E27 réglable ~1979", "pr": 58.0, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension araignée multi flamante pieuvre noire ~1634", "pr": 40.36, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale rétr", "t": "Applique murale rétro industrielle avec support en bois et abat-jour en métal ~1715", "pr": 20.57, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lustre indus", "t": "LEDSone Lustre industriel 5 lampes tuyau – Suspension vintage métal E27 ~1730", "pr": 45.55, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 2, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule vintage à fi", "t": "Ampoule vintage à filament LED G95 4W B22 Edison globe vintage ~4072", "pr": 4.42, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoules led baïonne", "t": "Ampoules LED Baïonnette ST64 B22 4W Dimmable Filament Edison Ampoules ~1673", "pr": 9.17, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led filament", "t": "Ampoule LED filament E27 4W–8W – Éclairage décoratif rétro ~1777", "pr": 6.98, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale col ", "t": "Applique Murale Col de Cygne E27 – Métal Vintage Edison ~1554", "pr": 28.95, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension lumineuse", "t": "Suspension lumineuse de style industriel vintage ~1826", "pr": 86.29, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension Industrielle Lampes Chanvre E27 ~2019", "pr": 37.67, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "rosace de plafond no", "t": "Rosace de Plafond Noire à 9 Sorties – Support Métal 120mm pour Lustre et Applique ~1834", "pr": 9.32, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone ampoule led ", "t": "LEDSone Ampoule LED Vintage Filament G80 — Culot B22 4W Blanc Chaud ~1829", "pr": 2.54, "sh90": 2, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée Industrielle Noire - Lustre Métal 2 Têtes E27, 29cm ~1563", "pr": 34.98, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée Industrielle à Poulie - 3 Têtes Réglables E27 ~1937", "pr": 0.0, "sh90": 0, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone support file", "t": "LEDSone Support filetage 20 mm E27 pour éclairage de conduit ~1682", "pr": 18.27, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "câble électrique tor", "t": "Câble électrique torsadé noir 5 m tissu recouvert 0,75 mm ~ 1152", "pr": 14.57, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "2m octopus suspensio", "t": "2m Octopus Suspension Corde D'araignée Luminaire E27 ~1507", "pr": 47.91, "sh90": 3, "sh60": 3, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension industrie", "t": "Suspension Industrielle Incurvée Noire E27 Câble Tissu 2m – LEDsone ~2033", "pr": 38.01, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "appliques murales d'", "t": "Appliques murales d'intérieur lampes vintage salon chambre ~2053", "pr": 13.9, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée Noire Industrielle Câble Caoutchouc E27 ~1627", "pr": 42.02, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "tapis de porte en ca", "t": "Tapis de porte en caoutchouc - Tapis de porte de bienvenue antidérapants résistants-5148", "pr": 11.47, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led cœur vin", "t": "Ampoule LED Cœur Vintage E27 – Filament en Forme de Cœur ~1713", "pr": 13.73, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "dc 5v 60a 300w inter", "t": "DC 5V 60A 300W Interrupteur Alimentation AC 110V/220V Convertisseur Commutation ~1746", "pr": 403.5, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone alimentation", "t": "LEDSone Alimentation à courant constant 4-7W DC 12-26V 300mAmp ~ 3316", "pr": 7.9, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "abat-jour plafonnier", "t": "Abat-jour plafonnier style rétro métal incurvé 36 cm ~1776", "pr": 13.4, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lot de 2 suspension ", "t": "Lot de 2 Suspension Luminaire Vintage Métal Industriel - LEDSone ~2020", "pr": 21.99, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale exté", "t": "Applique murale extérieure imperméable avec élégant design incurvé 29 cm ~2094", "pr": 16.05, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "câble tissu torsadé ", "t": "Câble tissu torsadé marron 3 conducteurs — Câble électrique textile vintage ~ 3192", "pr": 5.72, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led vintage ", "t": "Ampoule LED Vintage G125 E27 4W – Filament Note de Musique ~ 1041", "pr": 6.8, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone applique mur", "t": "LEDSone Applique murale Vintage de style industriel rétro | Ø 21 cm | E27 ~1755", "pr": 0.0, "sh90": 0, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "plafonnier à tuyaux ", "t": "Plafonnier à tuyaux encastrés steampunk 4 lumières ~1883", "pr": 44.08, "sh90": 2, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Col de Cygne | Métal | E27 | Vintage Rétro | LEDsone ~2107", "pr": 18.85, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Chrome Poli E27 - Lampe Murale Vintage Couloir Salon ~1754", "pr": 16.27, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone amber led ed", "t": "LEDSone Amber LED Edison Bulb E27 G125 8W  - Dimmable 2700K Warm White (800lm)~1871", "pr": 4.99, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension abat-jour", "t": "Suspension abat-jour vintage rétro en métal E27 ~ 5854", "pr": 27.25, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension p", "t": "LEDSone Suspension plafonnier 2m support ampoule E27 vintage ~1642", "pr": 29.73, "sh90": 2, "sh60": 2, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension Industrielle Vintage Plafonnier Métal E27 ~ 1504", "pr": 14.66, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ancienne ampoule led", "t": "Ancienne Ampoule LED Edison 4W E27 Ampoule Décorative Non Dimmable ~1761", "pr": 6.46, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale cond", "t": "Applique murale conduit nautique exposée E27 métal ~1887", "pr": 29.28, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone kit de suspe", "t": "LEDSone Kit de Suspension E27 Vintage avec Chaîne – Câble Textile Ajustable 1m ~1960", "pr": 31.65, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone support de l", "t": "LEDSone Support de lampe extérieur E27 imperméable IP44 - 2 fils~1899", "pr": 25.56, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension rétro vin", "t": "Suspension rétro vintage industriel plafonnier E27 ~1506", "pr": 16.34, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industriel - Abat-jour Métal Rétro Vintage E27 ~1876", "pr": 32.62, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension plafonnie", "t": "Suspension plafonnier métal LED moderne abat-jour suspension ~5870", "pr": 18.66, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lustre araignée 8 br", "t": "Lustre Araignée 8 Bras E27 – Suspension Araignee Multi Abatjour Industrielle 2m DIY ~1539", "pr": 132.0, "sh90": 4, "sh60": 4, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lot de 3 sus", "t": "LEDSone Lot de 3 suspensions vintage – luminaires style industriel Ø300mm blanc 240V ~1710", "pr": 83.91, "sh90": 8, "sh60": 2, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led b22 g95 ", "t": "Ampoule LED B22 G95 4W Filament Dimmable Blanc Chaud 2700K (Économie d'énergie) ~2076", "pr": 8.96, "sh90": 2, "sh60": 2, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "black/white e27, e14", "t": "Black/White E27, E14 Vintage Industrial Lamp Holder Pack", "pr": 20.42, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led baïonnet", "t": "Ampoule LED Baïonnette Vintage ST64 4W/8W B22 Dimmable Cage Écureuil Ampoule ~2116", "pr": 13.75, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone plafonniers ", "t": "LEDSone Plafonniers industriels chromés vintage rétro suspension abat-jour applique ~1782", "pr": 31.45, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "douille gu10 rotativ", "t": "Douille GU10 Rotative 180° en Métal Support Orientable pour Spot Encastré~ 1669", "pr": 20.2, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone abat-jour in", "t": "LEDSone Abat-jour Industriel en Métal Brillant Ø21cm – Suspension Rétro E27 ~1549", "pr": 32.16, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension industrie", "t": "Suspension industrielle 3 voies plafonnier à roues ~ 5844", "pr": 19.41, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}];
+
+var R4_ROW={
+  'Ads Driven':'r4-ads-driven',
+  'Balanced':'r4-balanced',
+  'Organic Heavy':'r4-org-heavy',
+  'Organic Only':'r4-org-only',
+  'No Orders':'r4-no-orders'
+};
+var R4_BADGE={
+  'Ads Driven':'badge-ads-driven',
+  'Balanced':'badge-balanced',
+  'Organic Heavy':'badge-org-heavy',
+  'Organic Only':'badge-org-only',
+  'No Orders':'badge-no-orders'
+};
+var R4_ORD={'Ads Driven':0,'Balanced':1,'Organic Heavy':2,'Organic Only':3,'No Orders':4};
+function r4Win(p,w){
+  if(w==='90') return {sh:p.sh90,ad:p.ad90};
+  if(w==='60') return {sh:p.sh60,ad:p.ad60};
+  return {sh:p.sh30,ad:p.ad30};
+}
+function r4Render(){
+  var q   =document.getElementById('r4-search').value.trim().toLowerCase();
+  var st  =document.getElementById('r4-status').value;
+  var win =document.getElementById('r4-win').value||'30';
+  var srt =document.getElementById('r4-sort').value;
+  var rows=R4PRODUCTS.filter(function(p){
+    if(st && p.st!==st) return false;
+    if(q && p.t.toLowerCase().indexOf(q)===-1) return false;
+    return true;
+  });
+  if(srt==='sh_desc')  rows.sort(function(a,b){return r4Win(b,win).sh-r4Win(a,win).sh;});
+  else if(srt==='ad_desc')  rows.sort(function(a,b){return r4Win(b,win).ad-r4Win(a,win).ad;});
+  else if(srt==='pct_desc') rows.sort(function(a,b){return b.pct-a.pct;});
+  else if(srt==='diff_desc') rows.sort(function(a,b){return (r4Win(b,win).sh-r4Win(b,win).ad)-(r4Win(a,win).sh-r4Win(a,win).ad);});
+  else rows.sort(function(a,b){return R4_ORD[a.st]-R4_ORD[b.st]||(r4Win(b,'30').sh-r4Win(a,'30').sh);});
+
+  var tbody=document.getElementById('r4-body');
+  tbody.innerHTML='';
+  var totSh30=0,totAd30=0,totSh90=0,totAd90=0;
+  rows.forEach(function(p){
+    var w=r4Win(p,win);
+    var diff=p.sh30-p.ad30;
+    var tr=document.createElement('tr');
+    tr.className=R4_ROW[p.st]||'';
+    var prDisp=p.pr>0?('€'+p.pr.toFixed(2)):'—';
+    var diffDisp=diff>0?'+'+diff:(diff<0?String(diff):'0');
+    var pctDisp=p.pct>0?p.pct.toFixed(1)+'%':'—';
+    tr.innerHTML=
+      '<td><span style="font-size:12px;font-weight:600;">'+p.t+'</span></td>'
+      +'<td class="num">'+prDisp+'</td>'
+      +'<td class="num">'+p.sh90+'</td>'
+      +'<td class="num">'+p.ad90+'</td>'
+      +'<td class="num">'+p.sh60+'</td>'
+      +'<td class="num">'+p.ad60+'</td>'
+      +'<td class="num">'+(p.sh30>0?'<b>'+p.sh30+'</b>':p.sh30)+'</td>'
+      +'<td class="num">'+(p.ad30>0?'<b>'+p.ad30+'</b>':p.ad30)+'</td>'
+      +'<td class="num"><span class="'+(diff<0?'r4-hi':'')+'">'+diffDisp+'</span></td>'
+      +'<td class="num">'+pctDisp+'</td>'
+      +'<td><span class="badge '+(R4_BADGE[p.st]||'')+'">'+p.st+'</span></td>';
+    tbody.appendChild(tr);
+    totSh30+=p.sh30; totAd30+=p.ad30;
+    totSh90+=p.sh90; totAd90+=p.ad90;
+  });
+
+  // KPIs
+  var totPct=totSh30>0?Math.round(totAd30/totSh30*100):0;
+  document.getElementById('r4-k-total').textContent=rows.length;
+  document.getElementById('r4-k-sh30').textContent=totSh30;
+  document.getElementById('r4-k-ad30').textContent=totAd30;
+  document.getElementById('r4-k-pct').textContent=totPct+'%';
+  document.getElementById('r4-k-sh90').textContent=totSh90;
+  document.getElementById('r4-k-ad90').textContent=totAd90;
+  var cnt=document.getElementById('r4-count');
+  if(cnt)cnt.textContent=rows.length+' product'+(rows.length!==1?'s':'');
+}
+function r4CSV(){
+  var hdr=['Product Title','Price EUR','Shopify 90d','Ads 90d','Shopify 60d','Ads 60d','Shopify 30d','Ads 30d','Diff (30d)','Ads Contribution % (30d)','Status'];
+  var lines=[hdr];
+  R4PRODUCTS.forEach(function(p){
+    lines.push([p.t,p.pr,p.sh90,p.ad90,p.sh60,p.ad60,p.sh30,p.ad30,(p.sh30-p.ad30),p.pct,p.st]);
+  });
+  var csv=lines.map(function(r){return r.map(function(c){return '"'+(c+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='thivajini-order-data-req4-2026-07-09.csv';
+  a.click();
+}
+document.addEventListener('DOMContentLoaded',r4Render);
+
 </script>
 </body>
 </html>
