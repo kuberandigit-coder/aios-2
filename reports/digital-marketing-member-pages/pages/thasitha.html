@@ -77,12 +77,12 @@ table.t1-table td.num{text-align:right;}
       <input id="t1Start" type="date" min="2026-04-20" max="2026-07-10" value="2026-04-20">
     </label>
     <label class="t1-field">End Date
-      <input id="t1End" type="date" min="2026-04-20" max="2026-07-10" value="2026-07-10">
+      <input id="t1End" type="date" min="2026-04-20" max="2026-07-10" value="2026-07-09">
     </label>
     <button class="t1-btn primary" id="t1Apply">Apply</button>
     <button class="t1-btn" id="t1Reset">Reset</button>
-    <button class="t1-btn on" id="t1ViewAgg" data-view="agg">Aggregate View</button>
-    <button class="t1-btn" id="t1ViewDaily" data-view="daily">Daily View</button>
+    <button class="t1-btn" id="t1ViewAgg" data-view="agg">Aggregate View</button>
+    <button class="t1-btn on" id="t1ViewDaily" data-view="daily">Daily View</button>
   </div>
   <div class="t1-row">
     <label class="t1-field" style="flex:2;min-width:220px;">Search
@@ -249,9 +249,10 @@ function computeDaily(start,end){
   return rows;
 }
 
-let ROWS = computeRange(MIN_DATE, MAX_DATE);
-let DAILY_ROWS = computeDaily(MIN_DATE, MAX_DATE);
-let currentView = 'agg';
+const DEFAULT_END = "2026-07-09";
+let ROWS = computeRange(MIN_DATE, DEFAULT_END);
+let DAILY_ROWS = computeDaily(MIN_DATE, DEFAULT_END);
+let currentView = 'daily';
 
 function render(){
   const q = document.getElementById('t1Search').value.trim().toLowerCase();
@@ -374,7 +375,7 @@ function applyRange(){
 document.getElementById('t1Apply').addEventListener('click', applyRange);
 document.getElementById('t1Reset').addEventListener('click', function(){
   document.getElementById('t1Start').value = MIN_DATE;
-  document.getElementById('t1End').value = MAX_DATE;
+  document.getElementById('t1End').value = DEFAULT_END;
   applyRange();
 });
 document.getElementById('t1Search').addEventListener('input', render);
