@@ -1,4 +1,42 @@
-<!DOCTYPE html>
+# -*- coding: utf-8 -*-
+import json, io
+
+SP = r"C:\Users\PC\AppData\Local\Temp\claude\C--Users-PC-OneDrive-Desktop-kuberan-web\18f4c0f8-1aae-4623-9a3a-a13693d41601\scratchpad"
+OUT = r"C:\Users\PC\OneDrive\Desktop\kuberan web\reports\digital-marketing-member-pages\pages\thasitha.html"
+
+daily = json.load(io.open(SP + r"\thasitha_fresh_clean.json", encoding="utf-8"))["rows"]
+
+CAMPAIGNS = {
+    "23765634627": {
+        "name": "Pmax | Thasi |  Shoptimised | THT | NewProduct | MCV -20/04",
+        "tags": "THT",
+        "budget": 5.00,
+    },
+    "23791285134": {
+        "name": "Pmax | Thasi |  Shoptimised | MT | Metal Product | MCV -27/04",
+        "tags": "MT",
+        "budget": 12.00,
+    },
+}
+CAMPAIGN_IDS = list(CAMPAIGNS.keys())
+
+MIN_DATE = min(r["date"][:10] for r in daily)
+MAX_DATE = max(r["date"][:10] for r in daily)
+
+DAY = {}
+for r in daily:
+    idx = CAMPAIGN_IDS.index(r["campaign_id"])
+    date = r["date"][:10]
+    entry = [idx, int(r["impressions"]), int(r["clicks"]), round(r["cost"], 2), round(r["conversion_value"], 4), round(r["conversions"], 4)]
+    DAY.setdefault(date, []).append(entry)
+
+campaigns_json = json.dumps([
+    {"id": cid, "name": c["name"], "tags": c["tags"], "budget": c["budget"]}
+    for cid, c in CAMPAIGNS.items()
+], ensure_ascii=False)
+day_json = json.dumps(DAY, ensure_ascii=False, separators=(",", ":"))
+
+html_out = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,46 +44,46 @@
 <title>Thasitha — Digital Marketing Member Reports</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 <style>
-:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--na:#9aa3b2;}
-.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
-.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
-.t1-wrap{max-width:1400px;margin:0 auto;font-family:"Segoe UI",system-ui,Arial,sans-serif;color:var(--ink);}
-.t1-header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:16px;}
-.t1-header h1{font-size:21px;margin-bottom:4px;}
-.t1-header .sub{color:var(--muted);font-size:13px;}
-.t1-period{display:inline-block;margin-top:10px;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
-.t1-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;}
-.t1-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;}
-.t1-card .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
-.t1-card .v{font-size:20px;font-weight:700;margin-top:5px;}
-.t1-filterbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;display:flex;flex-direction:column;gap:14px;}
-.t1-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
-.t1-field{display:flex;flex-direction:column;gap:5px;font-size:10.5px;font-weight:700;color:#42506a;text-transform:uppercase;letter-spacing:.4px;flex:1 1 160px;min-width:140px;}
-.t1-field input, .t1-field select{text-transform:none;letter-spacing:normal;font-weight:500;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;color:var(--ink);height:38px;}
-.t1-btn{height:38px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);white-space:nowrap;}
-.t1-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-.t1-btn.on{background:var(--ink);color:#fff;border-color:var(--ink);}
-.t1-legend{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:16px;font-size:12.5px;color:var(--muted);line-height:1.9;}
-.t1-legend strong{color:var(--ink);}
-.t1-legend .lg-item{display:inline-flex;align-items:center;gap:6px;margin-right:18px;}
-.t1-tablewrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;margin-bottom:16px;}
-table.t1-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1300px;}
-table.t1-table th{text-align:left;padding:11px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);background:#fafbfd;white-space:nowrap;cursor:pointer;user-select:none;}
-table.t1-table th.sortable:hover{color:var(--accent);}
-table.t1-table td{padding:9px 12px;border-bottom:1px solid #eef1f6;vertical-align:top;white-space:nowrap;}
-table.t1-table td.wrap{white-space:normal;max-width:260px;}
-table.t1-table td.num{text-align:right;}
-.t1-badge{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:4px 12px;white-space:nowrap;color:#fff;}
-.b-poor{background:#c62828;}
-.b-average{background:#ef6c00;}
-.b-good{background:#1f5eff;}
-.b-hero{background:#0a7d4f;}
-.b-check{background:#6b7280;}
-.t1-na{color:var(--na);font-style:italic;}
-.t1-empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
-.t1-statusnote{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-size:12px;color:var(--muted);line-height:1.8;}
-.t1-statusnote strong{color:var(--ink);}
-@media(max-width:640px){.t1-header h1{font-size:18px;}.t1-card .v{font-size:17px;}}
+:root{{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--na:#9aa3b2;}}
+.back{{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}}
+.back:hover{{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}}
+.t1-wrap{{max-width:1400px;margin:0 auto;font-family:"Segoe UI",system-ui,Arial,sans-serif;color:var(--ink);}}
+.t1-header{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:16px;}}
+.t1-header h1{{font-size:21px;margin-bottom:4px;}}
+.t1-header .sub{{color:var(--muted);font-size:13px;}}
+.t1-period{{display:inline-block;margin-top:10px;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}}
+.t1-cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;}}
+.t1-card{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;}}
+.t1-card .l{{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}}
+.t1-card .v{{font-size:20px;font-weight:700;margin-top:5px;}}
+.t1-filterbox{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;display:flex;flex-direction:column;gap:14px;}}
+.t1-row{{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}}
+.t1-field{{display:flex;flex-direction:column;gap:5px;font-size:10.5px;font-weight:700;color:#42506a;text-transform:uppercase;letter-spacing:.4px;flex:1 1 160px;min-width:140px;}}
+.t1-field input, .t1-field select{{text-transform:none;letter-spacing:normal;font-weight:500;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;color:var(--ink);height:38px;}}
+.t1-btn{{height:38px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);white-space:nowrap;}}
+.t1-btn.primary{{background:var(--accent);color:#fff;border-color:var(--accent);}}
+.t1-btn.on{{background:var(--ink);color:#fff;border-color:var(--ink);}}
+.t1-legend{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:16px;font-size:12.5px;color:var(--muted);line-height:1.9;}}
+.t1-legend strong{{color:var(--ink);}}
+.t1-legend .lg-item{{display:inline-flex;align-items:center;gap:6px;margin-right:18px;}}
+.t1-tablewrap{{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;margin-bottom:16px;}}
+table.t1-table{{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1300px;}}
+table.t1-table th{{text-align:left;padding:11px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);background:#fafbfd;white-space:nowrap;cursor:pointer;user-select:none;}}
+table.t1-table th.sortable:hover{{color:var(--accent);}}
+table.t1-table td{{padding:9px 12px;border-bottom:1px solid #eef1f6;vertical-align:top;white-space:nowrap;}}
+table.t1-table td.wrap{{white-space:normal;max-width:260px;}}
+table.t1-table td.num{{text-align:right;}}
+.t1-badge{{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:4px 12px;white-space:nowrap;color:#fff;}}
+.b-poor{{background:#c62828;}}
+.b-average{{background:#ef6c00;}}
+.b-good{{background:#1f5eff;}}
+.b-hero{{background:#0a7d4f;}}
+.b-check{{background:#6b7280;}}
+.t1-na{{color:var(--na);font-style:italic;}}
+.t1-empty{{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}}
+.t1-statusnote{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-size:12px;color:var(--muted);line-height:1.8;}}
+.t1-statusnote strong{{color:var(--ink);}}
+@media(max-width:640px){{.t1-header h1{{font-size:18px;}}.t1-card .v{{font-size:17px;}}}}
 </style>
 </head>
 <body>
@@ -74,10 +112,10 @@ table.t1-table td.num{text-align:right;}
 <div class="t1-filterbox">
   <div class="t1-row">
     <label class="t1-field">Start Date
-      <input id="t1Start" type="date" min="2026-04-20" max="2026-07-10" value="2026-04-20">
+      <input id="t1Start" type="date" min="{MIN_DATE}" max="{MAX_DATE}" value="{MIN_DATE}">
     </label>
     <label class="t1-field">End Date
-      <input id="t1End" type="date" min="2026-04-20" max="2026-07-10" value="2026-07-10">
+      <input id="t1End" type="date" min="{MIN_DATE}" max="{MAX_DATE}" value="{MAX_DATE}">
     </label>
     <button class="t1-btn primary" id="t1Apply">Apply</button>
     <button class="t1-btn" id="t1Reset">Reset</button>
@@ -156,54 +194,55 @@ table.t1-table td.num{text-align:right;}
 
 <div class="t1-statusnote">
   <strong>Data source:</strong> PostgreSQL (read-only) <code>google_ads.campaign_performance</code> joined to <code>google_ads.campaigns</code>, filtered to <code>account_id = 9031058245</code> (ledsone.de) and <code>group_name = 'Thasi'</code> &mdash; the explicit internal campaign-ownership field synced from Google Ads.<br>
-  <strong>Latest available data:</strong> 2026-07-10 &middot; <strong>Full data range available:</strong> 2026-04-20 to 2026-07-10 &middot; <strong>Refresh status:</strong> re-pulled fresh from PostgreSQL at build time; synced hourly from Google Ads via the existing AIOS pipeline. This page is a static snapshot, not a live query.<br>
+  <strong>Latest available data:</strong> {MAX_DATE} &middot; <strong>Full data range available:</strong> {MIN_DATE} to {MAX_DATE} &middot; <strong>Refresh status:</strong> re-pulled fresh from PostgreSQL at build time; synced hourly from Google Ads via the existing AIOS pipeline. This page is a static snapshot, not a live query.<br>
   <strong>Why numbers may differ slightly from the Google Ads UI:</strong> Google Ads revises conversion values retroactively for days/weeks after the click as attribution data is finalised (delayed and cross-device attribution). Our hourly sync captures a point-in-time snapshot &mdash; the most recent 1&ndash;7 days are the most likely to still be revised upward by Google after this page was built. Cost and Impressions/Clicks/CTR are not affected by this lag; only Conversion Value and ROAS on recent days may shift.
 </div>
 
 </div>
+</div>
 
 <script>
-const CAMPAIGNS = [{"id": "23765634627", "name": "Pmax | Thasi |  Shoptimised | THT | NewProduct | MCV -20/04", "tags": "THT", "budget": 5.0}, {"id": "23791285134", "name": "Pmax | Thasi |  Shoptimised | MT | Metal Product | MCV -27/04", "tags": "MT", "budget": 12.0}];
-const DAY = {"2026-04-20":[[0,525,15,5.14,34.62,1]],"2026-04-21":[[0,290,6,2.89,0,0]],"2026-04-22":[[0,379,12,7.39,0,0]],"2026-04-23":[[0,600,13,3.33,44.19,1]],"2026-04-24":[[0,856,18,8.01,0,0]],"2026-04-25":[[0,572,15,4.35,0,0]],"2026-04-26":[[0,903,19,5.35,12.5834,0.3333]],"2026-04-27":[[0,845,20,4.84,0,0],[1,359,6,2.96,0,0]],"2026-04-28":[[0,506,6,1.92,0,0],[1,1650,26,13.48,0.1115,0.0068]],"2026-04-29":[[0,1239,18,7.88,0,0],[1,342,3,9.78,199.22,1]],"2026-04-30":[[1,59,0,0,0,0],[0,559,8,3.23,16.1399,0.9932]],"2026-05-01":[[1,1066,15,8.65,0,0],[0,756,11,3.73,0,0]],"2026-05-02":[[0,1254,21,6.78,0,0],[1,636,15,10.78,0,0]],"2026-05-03":[[1,827,14,4.82,0,0],[0,375,12,3.85,50.39,1.5]],"2026-05-04":[[0,961,19,7.53,0,0],[1,2105,15,6.97,0,0]],"2026-05-05":[[0,187,6,1.21,0,0],[1,1666,21,7.83,0,0]],"2026-05-06":[[1,1334,13,5.04,61.1908,1.9619],[0,396,12,7.64,0,0]],"2026-05-07":[[1,1523,22,12.39,4.298,0.0189],[0,440,8,1.92,0,0]],"2026-05-08":[[0,905,17,6.57,5.98,1],[1,730,11,7.5,0.3488,0.0202]],"2026-05-09":[[1,1600,23,9.37,0,0],[0,1600,15,7.71,0,0]],"2026-05-10":[[0,835,16,5.59,0,0],[1,1328,23,6.55,51.22,1]],"2026-05-11":[[0,537,12,2.41,0.3719,0.0189],[1,2321,21,6.77,28.6975,0.5]],"2026-05-12":[[0,230,7,2.56,0,0],[1,2470,17,7.35,0,0]],"2026-05-13":[[0,930,12,4.4,0,0],[1,2816,48,23.98,33.74,0.6667]],"2026-05-14":[[0,326,3,1.81,0,0],[1,1519,28,9.09,0.1873,0]],"2026-05-15":[[0,565,13,4.74,0,0],[1,2273,27,12.05,103.85,1]],"2026-05-16":[[0,318,8,2.42,0,0],[1,1986,38,12.95,4.09,0.2436]],"2026-05-17":[[0,419,4,1.6,0,0],[1,2127,34,13.01,49.322,1.9628]],"2026-05-18":[[0,343,10,5.71,31.42,1],[1,1196,22,14.24,0,0]],"2026-05-19":[[0,25,0,0,0,0],[1,1608,25,9.8,0,0]],"2026-05-20":[[1,2065,33,13.34,0,0],[0,87,3,1.26,0,0]],"2026-05-21":[[0,84,1,0.14,0,0],[1,1722,24,12.44,0,0]],"2026-05-22":[[0,68,1,0.26,0,0],[1,1433,13,5.28,0,0]],"2026-05-23":[[1,2227,54,20.97,0,0],[0,100,1,0.12,0,0]],"2026-05-24":[[1,1598,22,6.99,137.14,1],[0,87,1,0.23,0,0]],"2026-05-25":[[0,91,2,0.3,0,0],[1,1876,35,15.95,30.7178,0.9801]],"2026-05-26":[[1,1402,18,10.32,17.32,1],[0,41,0,0,0,0]],"2026-05-27":[[0,82,3,0.5,105.653,0.9833],[1,1936,28,12.8,9.88,1]],"2026-05-28":[[0,79,5,1.03,0,0],[1,872,22,10.8,44.25,0.8333]],"2026-05-29":[[1,1046,23,11.18,19.95,0.5],[0,142,2,0.2,0,0]],"2026-05-30":[[0,250,1,1.9,0,0],[1,1993,27,9.76,0,0]],"2026-05-31":[[0,472,17,5.88,22.05,1],[1,2223,31,13.11,215.977,2.6541]],"2026-06-01":[[0,143,4,1.27,0,0],[1,2408,31,10.9,0,0]],"2026-06-02":[[0,415,19,3.76,0,0],[1,1396,29,13.02,19.06,1]],"2026-06-03":[[1,2329,36,14.2,81.72,1.7],[0,541,8,1.83,0,0]],"2026-06-04":[[0,710,16,4.99,0,0],[1,1292,26,12.97,0.2163,0.0209]],"2026-06-05":[[0,363,4,0.77,0,0],[1,1149,13,3.8,0,0]],"2026-06-06":[[1,1673,36,21.66,8.3057,1],[0,532,15,5.27,38.7067,0.6667]],"2026-06-07":[[0,445,6,0.89,0,0],[1,1295,24,12.88,15.69,1]],"2026-06-08":[[1,1071,27,7.59,24.0715,0.3328],[0,280,8,1.57,0,0]],"2026-06-09":[[1,2009,35,11.61,131,1],[0,964,12,5.94,0,0]],"2026-06-10":[[0,139,3,5.58,0,0],[1,3594,49,18.2,295.16,2]],"2026-06-11":[[0,13,0,0,0,0],[1,499,10,10.3,0,0]],"2026-06-12":[[1,1660,27,10.13,0,0],[0,611,17,5.25,75.98,1]],"2026-06-13":[[0,658,16,3.92,0,0],[1,2062,36,18.42,35.96,1]],"2026-06-14":[[1,899,19,7.62,0,0],[0,123,5,2.99,0,0]],"2026-06-15":[[0,267,10,3.23,0,0],[1,1595,33,14.74,0,0]],"2026-06-16":[[0,143,2,0.05,0,0],[1,1310,25,7.27,21.48,1]],"2026-06-17":[[1,3336,40,17.74,0,0],[0,359,6,6,0,0]],"2026-06-18":[[1,897,25,5.57,19.45,1],[0,67,3,1.85,0,0]],"2026-06-19":[[1,2063,40,21,0,0],[0,150,2,0.43,27.61,1]],"2026-06-20":[[1,827,13,5.46,33.95,1],[0,792,13,6,0,0]],"2026-06-21":[[0,650,8,2.76,0,0],[1,1769,35,17.24,37.187,0.9993]],"2026-06-22":[[1,1029,17,3.82,0,0],[0,318,5,4.31,0,0]],"2026-06-23":[[0,271,9,2.04,0,0],[1,2131,34,17.19,23.18,0.3333]],"2026-06-24":[[1,2486,39,12.87,159.19,1],[0,762,11,3.58,0,0]],"2026-06-25":[[0,477,9,2.84,0,0],[1,1482,29,13.39,53.07,1]],"2026-06-26":[[0,261,8,2.6,0,0],[1,1581,28,11.49,0.3093,0.0148]],"2026-06-27":[[1,2358,35,13.13,0,0],[0,367,5,1.39,0,0]],"2026-06-28":[[1,2357,34,8.96,0,0],[0,305,3,1.09,0,0]],"2026-06-29":[[0,396,11,3.35,0,0],[1,1883,29,11.98,47.95,1]],"2026-06-30":[[0,369,10,2.89,0,0],[1,1438,23,10.7,20.2414,0.9703]],"2026-07-01":[[0,390,9,2.15,0,0],[1,1161,22,10.65,38.25,1]],"2026-07-02":[[1,1691,37,14.88,0,0],[0,346,6,0.97,0,0]],"2026-07-03":[[1,964,23,8.99,6.6299,0.3333],[0,420,5,1.58,0,0]],"2026-07-04":[[1,1564,16,10.41,0,0],[0,417,7,1.11,0,0]],"2026-07-05":[[0,395,6,1.35,0,0],[1,2529,37,10.35,10.88,1]],"2026-07-06":[[0,764,17,5.48,0,0],[1,1854,29,6.11,80.62,1]],"2026-07-07":[[1,2109,25,7.41,0,0],[0,388,11,9.94,0,0]],"2026-07-08":[[1,2179,34,12.18,66.9899,2.1965],[0,418,15,5.81,69.34,2]],"2026-07-09":[[0,893,16,6.13,0,0],[1,799,13,23.31,0,0]],"2026-07-10":[[0,136,4,1.37,0,0],[1,183,2,0.59,0,0]]};
-const MIN_DATE = "2026-04-20";
-const MAX_DATE = "2026-07-10";
+const CAMPAIGNS = {campaigns_json};
+const DAY = {day_json};
+const MIN_DATE = "{MIN_DATE}";
+const MAX_DATE = "{MAX_DATE}";
 
-function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function eur(v){return '&euro;'+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
-function num(v){return Number(v).toLocaleString();}
+function esc(s){{return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}}
+function eur(v){{return '&euro;'+Number(v).toLocaleString(undefined,{{minimumFractionDigits:2,maximumFractionDigits:2}});}}
+function num(v){{return Number(v).toLocaleString();}}
 
-function daysBetween(start,end){
+function daysBetween(start,end){{
   var out=[];
   var cur=new Date(start+'T00:00:00Z');
   var last=new Date(end+'T00:00:00Z');
-  while(cur.getTime()<=last.getTime()){
+  while(cur.getTime()<=last.getTime()){{
     out.push(cur.toISOString().slice(0,10));
     cur.setUTCDate(cur.getUTCDate()+1);
-  }
+  }}
   return out;
-}
+}}
 
-function actionFor(roas){
+function actionFor(roas){{
   if(roas===null) return 'Data Check Required';
   if(roas<200) return 'Poor';
   if(roas<350) return 'Average';
   if(roas<=500) return 'Good';
   return 'Hero';
-}
-function actionClass(a){
+}}
+function actionClass(a){{
   if(a==='Poor') return 'b-poor';
   if(a==='Average') return 'b-average';
   if(a==='Good') return 'b-good';
   if(a==='Hero') return 'b-hero';
   return 'b-check';
-}
+}}
 
-function computeRange(start,end){
+function computeRange(start,end){{
   const days = daysBetween(start,end);
-  const agg = CAMPAIGNS.map(()=>({impressions:0,clicks:0,cost:0,value:0,conversions:0,activeDays:0}));
-  days.forEach(function(day){
+  const agg = CAMPAIGNS.map(()=>({{impressions:0,clicks:0,cost:0,value:0,conversions:0,activeDays:0}}));
+  days.forEach(function(day){{
     const entries = DAY[day]||[];
-    entries.forEach(function(e){
+    entries.forEach(function(e){{
       const idx=e[0];
       agg[idx].impressions += e[1];
       agg[idx].clicks += e[2];
@@ -211,9 +250,9 @@ function computeRange(start,end){
       agg[idx].value += e[4];
       agg[idx].conversions += e[5];
       agg[idx].activeDays += 1;
-    });
-  });
-  return CAMPAIGNS.map(function(c,i){
+    }});
+  }});
+  return CAMPAIGNS.map(function(c,i){{
     const a = agg[i];
     const cost = Math.round(a.cost*100)/100;
     const value = Math.round(a.value*100)/100;
@@ -221,66 +260,66 @@ function computeRange(start,end){
     let roas = null;
     if(cost>0) roas = Math.round((value/cost*100)*100)/100;
     const action = actionFor(roas);
-    return {
+    return {{
       id:c.id, name:c.name, tags:c.tags, budget:c.budget,
       activeDays:a.activeDays, impressions:a.impressions, clicks:a.clicks, ctr:ctr,
       cost:cost, value:value, roas:roas, action:action
-    };
-  });
-}
+    }};
+  }});
+}}
 
-function computeDaily(start,end){
+function computeDaily(start,end){{
   const days = daysBetween(start,end);
   const rows = [];
-  days.forEach(function(day){
+  days.forEach(function(day){{
     const entries = DAY[day]||[];
-    entries.forEach(function(e){
+    entries.forEach(function(e){{
       const c = CAMPAIGNS[e[0]];
       const impressions=e[1], clicks=e[2], cost=Math.round(e[3]*100)/100, value=Math.round(e[4]*100)/100;
       const ctr = impressions>0 ? Math.round((clicks/impressions*100)*100)/100 : 0;
       let roas = null;
       if(cost>0) roas = Math.round((value/cost*100)*100)/100;
-      rows.push({
+      rows.push({{
         date:day, id:c.id, name:c.name, tags:c.tags,
         impressions:impressions, clicks:clicks, ctr:ctr, cost:cost, value:value, roas:roas, action:actionFor(roas)
-      });
-    });
-  });
+      }});
+    }});
+  }});
   return rows;
-}
+}}
 
 let ROWS = computeRange(MIN_DATE, MAX_DATE);
 let DAILY_ROWS = computeDaily(MIN_DATE, MAX_DATE);
 let currentView = 'agg';
 
-function render(){
+function render(){{
   const q = document.getElementById('t1Search').value.trim().toLowerCase();
   const af = document.getElementById('t1ActionFilter').value;
   const sort = document.getElementById('t1Sort').value;
 
-  if(currentView==='agg'){
-    let rows = ROWS.filter(function(r){
+  if(currentView==='agg'){{
+    let rows = ROWS.filter(function(r){{
       const textHit = !q || r.name.toLowerCase().includes(q) || r.id.includes(q) || (r.tags||'').toLowerCase().includes(q) || r.action.toLowerCase().includes(q);
       const actionHit = af==='all' || r.action===af;
       return textHit && actionHit;
-    });
-    const sortMap = {
+    }});
+    const sortMap = {{
       cost_desc: (a,b)=>b.cost-a.cost, cost_asc: (a,b)=>a.cost-b.cost,
       value_desc: (a,b)=>b.value-a.value, value_asc: (a,b)=>a.value-b.value,
       roas_desc: (a,b)=>(b.roas??-1)-(a.roas??-1), roas_asc: (a,b)=>(a.roas??-1)-(b.roas??-1),
       days_desc: (a,b)=>b.activeDays-a.activeDays, days_asc: (a,b)=>a.activeDays-b.activeDays
-    };
+    }};
     rows.sort(sortMap[sort]||sortMap.cost_desc);
 
     const tbody = document.getElementById('t1Tbody');
     const emptyEl = document.getElementById('t1Empty');
     document.getElementById('t1TableAgg').style.display='';
     document.getElementById('t1TableDaily').style.display='none';
-    if(rows.length===0){
+    if(rows.length===0){{
       tbody.innerHTML=''; emptyEl.style.display='block';
-    } else {
+    }} else {{
       emptyEl.style.display='none';
-      tbody.innerHTML = rows.map(function(r){
+      tbody.innerHTML = rows.map(function(r){{
         return '<tr>'
           + '<td class="wrap">'+esc(r.name)+'</td>'
           + '<td>'+esc(r.id)+'</td>'
@@ -295,8 +334,8 @@ function render(){
           + '<td class="num">'+(r.roas===null?'<span class="t1-na">N/A</span>':r.roas.toFixed(2)+'%')+'</td>'
           + '<td><span class="t1-badge '+actionClass(r.action)+'">'+esc(r.action)+'</span></td>'
           + '</tr>';
-      }).join('');
-    }
+      }}).join('');
+    }}
 
     const count = rows.length;
     const totalImpr = rows.reduce((s,r)=>s+r.impressions,0);
@@ -309,26 +348,26 @@ function render(){
     document.getElementById('kpiImpr').textContent = totalImpr.toLocaleString();
     document.getElementById('kpiClicks').textContent = totalClicks.toLocaleString();
     document.getElementById('kpiCtr').textContent = overallCtr.toFixed(2)+'%';
-    document.getElementById('kpiCost').textContent = eur(totalCost).replace('&euro;','\u20ac');
-    document.getElementById('kpiValue').textContent = eur(totalValue).replace('&euro;','\u20ac');
+    document.getElementById('kpiCost').textContent = eur(totalCost).replace('&euro;','\\u20ac');
+    document.getElementById('kpiValue').textContent = eur(totalValue).replace('&euro;','\\u20ac');
     document.getElementById('kpiRoas').textContent = overallRoas===null ? 'N/A' : overallRoas.toFixed(2)+'%';
-  } else {
-    let rows = DAILY_ROWS.filter(function(r){
+  }} else {{
+    let rows = DAILY_ROWS.filter(function(r){{
       const textHit = !q || r.name.toLowerCase().includes(q) || r.id.includes(q) || (r.tags||'').toLowerCase().includes(q) || r.action.toLowerCase().includes(q);
       const actionHit = af==='all' || r.action===af;
       return textHit && actionHit;
-    });
+    }});
     rows.sort((a,b)=> a.date<b.date ? 1 : (a.date>b.date ? -1 : 0));
 
     const tbodyD = document.getElementById('t1TbodyDaily');
     const emptyEl = document.getElementById('t1Empty');
     document.getElementById('t1TableAgg').style.display='none';
     document.getElementById('t1TableDaily').style.display='';
-    if(rows.length===0){
+    if(rows.length===0){{
       tbodyD.innerHTML=''; emptyEl.style.display='block';
-    } else {
+    }} else {{
       emptyEl.style.display='none';
-      tbodyD.innerHTML = rows.map(function(r){
+      tbodyD.innerHTML = rows.map(function(r){{
         return '<tr>'
           + '<td>'+r.date+'</td>'
           + '<td class="wrap">'+esc(r.name)+'</td>'
@@ -342,8 +381,8 @@ function render(){
           + '<td class="num">'+(r.roas===null?'<span class="t1-na">N/A</span>':r.roas.toFixed(2)+'%')+'</td>'
           + '<td><span class="t1-badge '+actionClass(r.action)+'">'+esc(r.action)+'</span></td>'
           + '</tr>';
-      }).join('');
-    }
+      }}).join('');
+    }}
 
     const totalImpr = rows.reduce((s,r)=>s+r.impressions,0);
     const totalClicks = rows.reduce((s,r)=>s+r.clicks,0);
@@ -356,54 +395,54 @@ function render(){
     document.getElementById('kpiImpr').textContent = totalImpr.toLocaleString();
     document.getElementById('kpiClicks').textContent = totalClicks.toLocaleString();
     document.getElementById('kpiCtr').textContent = overallCtr.toFixed(2)+'%';
-    document.getElementById('kpiCost').textContent = eur(totalCost).replace('&euro;','\u20ac');
-    document.getElementById('kpiValue').textContent = eur(totalValue).replace('&euro;','\u20ac');
+    document.getElementById('kpiCost').textContent = eur(totalCost).replace('&euro;','\\u20ac');
+    document.getElementById('kpiValue').textContent = eur(totalValue).replace('&euro;','\\u20ac');
     document.getElementById('kpiRoas').textContent = overallRoas===null ? 'N/A' : overallRoas.toFixed(2)+'%';
-  }
-}
+  }}
+}}
 
-function applyRange(){
+function applyRange(){{
   const start = document.getElementById('t1Start').value || MIN_DATE;
   const end = document.getElementById('t1End').value || MAX_DATE;
   ROWS = computeRange(start, end);
   DAILY_ROWS = computeDaily(start, end);
   document.getElementById('t1Period').textContent = 'Reporting period: '+start+' to '+end;
   render();
-}
+}}
 
 document.getElementById('t1Apply').addEventListener('click', applyRange);
-document.getElementById('t1Reset').addEventListener('click', function(){
+document.getElementById('t1Reset').addEventListener('click', function(){{
   document.getElementById('t1Start').value = MIN_DATE;
   document.getElementById('t1End').value = MAX_DATE;
   applyRange();
-});
+}});
 document.getElementById('t1Search').addEventListener('input', render);
 document.getElementById('t1ActionFilter').addEventListener('change', render);
 document.getElementById('t1Sort').addEventListener('change', render);
 
-document.getElementById('t1ViewAgg').addEventListener('click', function(){
+document.getElementById('t1ViewAgg').addEventListener('click', function(){{
   currentView='agg';
   document.getElementById('t1ViewAgg').classList.add('on');
   document.getElementById('t1ViewDaily').classList.remove('on');
   render();
-});
-document.getElementById('t1ViewDaily').addEventListener('click', function(){
+}});
+document.getElementById('t1ViewDaily').addEventListener('click', function(){{
   currentView='daily';
   document.getElementById('t1ViewDaily').classList.add('on');
   document.getElementById('t1ViewAgg').classList.remove('on');
   render();
-});
+}});
 
-document.querySelectorAll('table.t1-table th.sortable').forEach(function(th){
-  th.addEventListener('click', function(){
+document.querySelectorAll('table.t1-table th.sortable').forEach(function(th){{
+  th.addEventListener('click', function(){{
     const key = th.getAttribute('data-sort');
     const sortSel = document.getElementById('t1Sort');
     const current = sortSel.value;
     const desc = key+'_desc', asc = key+'_asc';
     sortSel.value = (current===desc) ? asc : desc;
     render();
-  });
-});
+  }});
+}});
 
 applyRange();
 </script>
@@ -412,3 +451,9 @@ applyRange();
 </div>
 </body>
 </html>
+"""
+
+with io.open(OUT, "w", encoding="utf-8") as f:
+    f.write(html_out)
+
+print("wrote", OUT, len(html_out), "bytes")
