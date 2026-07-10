@@ -40,8 +40,10 @@ PASS — `validation/mahima/2026-07-10_mahima_req1_rebuild_validation.md`
 Owner: Mahima · Reviewer: Kuberan
 
 ## Status
-Done, local repo only, **not yet deployed to Vercel** — pending review before promotion
-(previous Tab 1/2/3 baseline is still live in production).
+**Done and deployed to production.** Live at https://digital-marketing-member-pages.vercel.app/pages/mahima.html
+as of 2026-07-10 (commit `7417e52`, deployment `dpl_6owYHkKZRfE6o5KL9BetrCriRPgX`). See
+`vercel/mahima/2026-07-10_mahima_req1_production_deployment_evidence.md` for full deployment
+record.
 
 ## Result summary
 | Metric | Value |
