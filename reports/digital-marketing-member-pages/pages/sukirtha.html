@@ -206,12 +206,6 @@ async function load(){
       }
       chip.style.display = '';
     })();
-    document.getElementById('cTotal').textContent = num(SUMMARY.totalPages);
-    document.getElementById('cTotalNote').textContent = num(SUMMARY.collectionCount) + ' collections · ' + num(SUMMARY.blogCount) + ' blog pages · ' + num(SUMMARY.relatedCount) + ' related (hidden)';
-    document.getElementById('cLow').textContent = num(SUMMARY.lowCtrCount);
-    document.getElementById('cCtr').textContent = SUMMARY.avgCtr.toFixed(2) + '%';
-    document.getElementById('cImpr').textContent = num(SUMMARY.totalImpressions);
-    document.getElementById('cClicks').textContent = num(SUMMARY.totalClicks);
     document.getElementById('lastRefresh').textContent = new Date(data.generatedAt).toLocaleString();
     pg = 1;
     render();
@@ -266,9 +260,29 @@ function maxpg(rows){
   return Math.max(1, Math.ceil(rows.length / size));
 }
 
+function updateSummaryCards(rows){
+  const totalClicks = rows.reduce((s, r) => s + r.clicks, 0);
+  const totalImpressions = rows.reduce((s, r) => s + r.impressions, 0);
+  const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions * 100) : 0;
+  const lowCtrCount = rows.filter(r => r.lowCtr).length;
+  const collectionCount = rows.filter(r => r.type === 'Collection').length;
+  const blogCount = rows.filter(r => r.type === 'Blog').length;
+  const visibleRelatedCount = rows.filter(r => r.related).length;
+  const hiddenRelatedCount = ALL.filter(r => r.related && HIDDEN_REASONS.has(r.relatedReason)).length;
+
+  document.getElementById('cTotal').textContent = num(rows.length);
+  document.getElementById('cTotalNote').textContent = num(collectionCount) + ' collections · ' + num(blogCount) + ' blog pages · ' +
+    num(hiddenRelatedCount) + ' related (hidden)' + (visibleRelatedCount ? ' · ' + num(visibleRelatedCount) + ' related (shown)' : '');
+  document.getElementById('cLow').textContent = num(lowCtrCount);
+  document.getElementById('cCtr').textContent = avgCtr.toFixed(2) + '%';
+  document.getElementById('cImpr').textContent = num(totalImpressions);
+  document.getElementById('cClicks').textContent = num(totalClicks);
+}
+
 function render(){
   document.getElementById('brokenNote').style.display = 'none';
   const rows = filteredRows();
+  updateSummaryCards(rows);
   const size = parseInt(document.getElementById('psize').value, 10);
   const mp = maxpg(rows);
   if (pg > mp) pg = mp;

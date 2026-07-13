@@ -88,13 +88,15 @@ function typeOf(url) {
 // Each reason gets its own key so the UI can let a user reveal one specific
 // category at a time (e.g. "show pagination URLs but keep tag pages hidden").
 const RELATED_REASONS = [
-  { key: 'pagination', label: 'Pagination (?page=)', test: (u) => /[?&]page=\d+/i.test(u) },
+  { key: 'pagination', label: 'Pagination (?page= / ?ccp-page=)', test: (u) => /[?&][a-z-]*page=\d+/i.test(u) },
   { key: 'product', label: 'Product pages (/products/)', test: (u) => u.includes('/products/') },
   { key: 'tagged', label: 'Blog tag pages (/tagged/)', test: (u) => u.includes('/tagged/') },
   { key: 'locale', label: 'Locale duplicates (/xx/...)', test: (u) => /^https?:\/\/[^/]+\/[a-z]{2}\/(blogs|collections)\//i.test(u) },
   { key: 'filter', label: 'Faceted filter query (?filter.)', test: (u) => /[?&]filter\./i.test(u) },
   { key: 'facetAll', label: '"/collections/all/<tag>" facet views', test: (u) => /\/collections\/all\//i.test(u) },
-  { key: 'nestedCollection', label: 'Nested collection sub-paths (/collections/a/b)', test: (u) => /^https?:\/\/[^/]+\/collections\/[^/?]+\/[^/?]+/i.test(u) }
+  { key: 'nestedCollection', label: 'Nested collection sub-paths (/collections/a/b)', test: (u) => /^https?:\/\/[^/]+\/collections\/[^/?]+\/[^/?]+/i.test(u) },
+  { key: 'searchQuery', label: 'Search query filter (?q=)', test: (u) => /[?&]q=/i.test(u) },
+  { key: 'recTracking', label: 'Recommendation-widget tracking (pr_*)', test: (u) => /[?&]pr_[a-z_]+=/i.test(u) }
 ];
 
 function relatedReasonOf(url) {
