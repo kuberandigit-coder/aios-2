@@ -95,7 +95,6 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
       <option value="clicks_desc">Clicks (High &rarr; Low)</option>
     </select>
     <button id="resetFilters">Reset filters</button>
-    <button id="exportCsv" class="primary">Export CSV</button>
   </div>
   <div class="scroll">
     <table>
@@ -253,25 +252,6 @@ function render(){
   document.getElementById('pinfo').textContent = 'Showing ' + (from + 1) + '–' + Math.min(from + size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + pg + ' of ' + mp + ')';
 }
 
-function exportCsv(){
-  const rows = filteredRows();
-  const header = ['Page URL','Type','Impressions','Clicks','CTR %','Average Position','Status'];
-  const lines = [header.join(',')];
-  rows.forEach(r => {
-    lines.push([
-      '"' + r.url.replace(/"/g,'""') + '"',
-      r.type, r.impressions, r.clicks, r.ctr.toFixed(2), r.position.toFixed(1), r.status
-    ].join(','));
-  });
-  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'sukirtha-req1-low-ctr-' + new Date().toISOString().slice(0,10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
 document.getElementById('rangeStart').addEventListener('change', load);
 document.getElementById('rangeEnd').addEventListener('change', load);
 document.getElementById('clearRange').addEventListener('click', () => {
@@ -292,7 +272,6 @@ document.getElementById('resetFilters').addEventListener('click', () => {
   pg = 1;
   render();
 });
-document.getElementById('exportCsv').addEventListener('click', exportCsv);
 document.getElementById('pgFirst').addEventListener('click', () => { pg = 1; render(); });
 document.getElementById('pgPrev').addEventListener('click', () => { if (pg > 1) { pg--; render(); } });
 document.getElementById('pgNext').addEventListener('click', () => { if (pg < maxpg(filteredRows())) { pg++; render(); } });
