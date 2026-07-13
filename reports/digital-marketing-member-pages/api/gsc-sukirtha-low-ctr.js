@@ -84,20 +84,24 @@ function typeOf(url) {
   return 'Other';
 }
 
-// "Related" = noise URLs that aren't real, canonical Blog/Collection content:
-// pagination, product pages nested under a collection path, blog tag/archive
-// pages, locale-variant duplicates, Shopify faceted-filter query strings,
-// "/collections/all/<tag>" facet views, and nested/2-segment collection
-// sub-paths (e.g. /collections/parent/child — not a standalone collection).
-function isRelated(url) {
-  if (/[?&]page=\d+/i.test(url)) return true; // pagination, e.g. ?page=2
-  if (url.includes('/products/')) return true; // product page nested under /collections/
-  if (url.includes('/tagged/')) return true; // blog tag/archive listing
-  if (/^https?:\/\/[^/]+\/[a-z]{2}\/(blogs|collections)\//i.test(url)) return true; // locale-prefixed duplicate, e.g. /da/blogs/...
-  if (/[?&]filter\./i.test(url)) return true; // Shopify faceted filter query, e.g. ?filter.p.m.custom.kategorien=...
-  if (/\/collections\/all\//i.test(url)) return true; // /collections/all/<tag> facet view, not a real collection
-  if (/^https?:\/\/[^/]+\/collections\/[^/?]+\/[^/?]+/i.test(url)) return true; // /collections/parent/child nested sub-path
-  return false;
+// "Related" = noise URLs that aren't real, canonical Blog/Collection content.
+// Each reason gets its own key so the UI can let a user reveal one specific
+// category at a time (e.g. "show pagination URLs but keep tag pages hidden").
+const RELATED_REASONS = [
+  { key: 'pagination', label: 'Pagination (?page=)', test: (u) => /[?&]page=\d+/i.test(u) },
+  { key: 'product', label: 'Product pages (/products/)', test: (u) => u.includes('/products/') },
+  { key: 'tagged', label: 'Blog tag pages (/tagged/)', test: (u) => u.includes('/tagged/') },
+  { key: 'locale', label: 'Locale duplicates (/xx/...)', test: (u) => /^https?:\/\/[^/]+\/[a-z]{2}\/(blogs|collections)\//i.test(u) },
+  { key: 'filter', label: 'Faceted filter query (?filter.)', test: (u) => /[?&]filter\./i.test(u) },
+  { key: 'facetAll', label: '"/collections/all/<tag>" facet views', test: (u) => /\/collections\/all\//i.test(u) },
+  { key: 'nestedCollection', label: 'Nested collection sub-paths (/collections/a/b)', test: (u) => /^https?:\/\/[^/]+\/collections\/[^/?]+\/[^/?]+/i.test(u) }
+];
+
+function relatedReasonOf(url) {
+  for (const r of RELATED_REASONS) {
+    if (r.test(url)) return r.key;
+  }
+  return null;
 }
 
 module.exports = async (req, res) => {
@@ -151,6 +155,7 @@ module.exports = async (req, res) => {
         const impressions = r.impressions;
         const ctr = r.ctr;
         const position = r.position;
+        const relatedReason = relatedReasonOf(url);
         return {
           url,
           type: typeOf(url),
@@ -160,7 +165,8 @@ module.exports = async (req, res) => {
           position: Math.round(position * 10) / 10,
           lowCtr: ctr < CTR_THRESHOLD,
           status: ctr < CTR_THRESHOLD ? 'Low CTR' : 'OK',
-          related: isRelated(url)
+          related: relatedReason !== null,
+          relatedReason
         };
       })
       .sort((a, b) => a.ctr - b.ctr);
@@ -197,6 +203,7 @@ module.exports = async (req, res) => {
         totalClicks,
         relatedCount
       },
+      relatedReasons: RELATED_REASONS.map((r) => ({ key: r.key, label: r.label })),
       pages: scoped
     });
   } catch (err) {

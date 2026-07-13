@@ -92,9 +92,12 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
       <option value="">All</option><option value="0">0% (no clicks)</option><option value="a">0&ndash;1%</option><option value="b">1&ndash;2%</option><option value="c">2&ndash;5%</option><option value="d">5%+</option></select></label>
     <label>Click Range <select id="f_clicks">
       <option value="">All</option><option value="0">0 (no clicks)</option><option value="a">1&ndash;5</option><option value="b">6&ndash;20</option><option value="c">21&ndash;50</option><option value="d">50+</option></select></label>
-    <label style="display:flex;align-items:center;gap:4px;font-weight:600;color:#42506a;cursor:pointer;">
-      <input type="checkbox" id="hideRelated" checked style="width:auto;flex:none;min-width:0;padding:0;"> Hide Related
-    </label>
+    <div style="position:relative;">
+      <button id="hideRelatedBtn" type="button">Hide Related &#9662;</button>
+      <div id="hideRelatedPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 16px rgba(12,26,48,.12);padding:10px 14px;min-width:260px;">
+        <div id="hideRelatedList" style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--ink);"></div>
+      </div>
+    </div>
     <button id="resetFilters">Reset filters</button>
   </div>
   <div class="scroll">
@@ -141,6 +144,29 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 let ALL = [];
 let SUMMARY = null;
 let pg = 1;
+let HIDDEN_REASONS = new Set(); // reason keys currently hidden; all reasons start hidden
+let REASONS_BUILT = false;
+
+function buildRelatedPanel(reasons){
+  if (REASONS_BUILT) return;
+  REASONS_BUILT = true;
+  reasons.forEach(r => HIDDEN_REASONS.add(r.key));
+  const list = document.getElementById('hideRelatedList');
+  list.innerHTML = reasons.map(r => (
+    '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">' +
+    '<input type="checkbox" class="reasonChk" data-key="' + esc(r.key) + '" checked style="width:auto;flex:none;min-width:0;padding:0;">' +
+    esc(r.label) +
+    '</label>'
+  )).join('');
+  list.querySelectorAll('.reasonChk').forEach(chk => {
+    chk.addEventListener('change', () => {
+      const key = chk.getAttribute('data-key');
+      if (chk.checked) HIDDEN_REASONS.add(key); else HIDDEN_REASONS.delete(key);
+      pg = 1;
+      render();
+    });
+  });
+}
 
 function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function num(v){return Number(v).toLocaleString();}
@@ -161,6 +187,7 @@ async function load(){
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     ALL = data.pages;
     SUMMARY = data.summary;
+    buildRelatedPanel(data.relatedReasons || []);
     document.getElementById('rangeStart').min = '2024-01-01';
     document.getElementById('rangeStart').max = data.dateRange.requested;
     document.getElementById('rangeEnd').min = '2024-01-01';
@@ -215,7 +242,6 @@ function filteredRows(){
   const q = document.getElementById('q').value.trim().toLowerCase();
   const statusF = document.getElementById('f_status').value;
   const typeF = document.getElementById('f_type').value;
-  const hideRelated = document.getElementById('hideRelated').checked;
   const minImprRaw = document.getElementById('f_minImpr').value;
   const minImpr = minImprRaw === '' ? null : Number(minImprRaw);
   const ctrF = document.getElementById('f_ctr').value;
@@ -225,9 +251,9 @@ function filteredRows(){
     const textHit = !q || r.url.toLowerCase().includes(q);
     const statusHit = !statusF || r.status === statusF;
     const typeHit = !typeF || r.type === typeF;
-    // Checked: show only clean canonical URLs (hide the related/noise ones).
-    // Unchecked: flip the view to show ONLY what's hidden, for review.
-    const relatedHit = hideRelated ? !r.related : r.related;
+    // Clean (non-related) rows always pass. Related rows only pass if their
+    // specific reason has been unchecked in the "Hide Related" dropdown.
+    const relatedHit = !r.related || !HIDDEN_REASONS.has(r.relatedReason);
     const imprHit = minImpr === null || r.impressions >= minImpr;
     const ctrHit = !ctrF || ctrBucket(r.ctr) === ctrF;
     const clicksHit = !clicksF || clickBucket(r.clicks) === clicksF;
@@ -317,7 +343,17 @@ document.getElementById('clearRange').addEventListener('click', () => {
 document.getElementById('q').addEventListener('input', () => { pg = 1; render(); });
 document.getElementById('f_status').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('f_type').addEventListener('change', () => { pg = 1; render(); });
-document.getElementById('hideRelated').addEventListener('change', () => { pg = 1; render(); });
+document.getElementById('hideRelatedBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const panel = document.getElementById('hideRelatedPanel');
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+});
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('hideRelatedPanel');
+  if (panel.style.display !== 'none' && !panel.contains(e.target) && e.target.id !== 'hideRelatedBtn') {
+    panel.style.display = 'none';
+  }
+});
 document.getElementById('f_minImpr').addEventListener('input', () => { pg = 1; render(); });
 document.getElementById('f_ctr').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('f_clicks').addEventListener('change', () => { pg = 1; render(); });
@@ -329,7 +365,7 @@ document.getElementById('resetFilters').addEventListener('click', () => {
   document.getElementById('f_minImpr').value = '';
   document.getElementById('f_ctr').value = '';
   document.getElementById('f_clicks').value = '';
-  document.getElementById('hideRelated').checked = true;
+  document.querySelectorAll('.reasonChk').forEach(chk => { chk.checked = true; HIDDEN_REASONS.add(chk.getAttribute('data-key')); });
   pg = 1;
   render();
 });
