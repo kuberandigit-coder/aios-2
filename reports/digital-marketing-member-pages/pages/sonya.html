@@ -135,7 +135,7 @@
     <button class="nav-btn"        id="nav-2" role="tab" aria-selected="false" aria-controls="panel-2" onclick="showTab(2)">Product Data<span class="nl">Requirement 2</span></button>
     <button class="nav-btn"        id="nav-3" role="tab" aria-selected="false" aria-controls="panel-3" onclick="showTab(3)">Trend<span class="nl">Requirement 3</span></button>
     <button class="nav-btn"        id="nav-4" role="tab" aria-selected="false" aria-controls="panel-4" onclick="showTab(4)">Opportunity<span class="nl">Requirement 4</span></button>
-    <button class="nav-btn"        id="nav-5" role="tab" aria-selected="false" aria-controls="panel-5" onclick="showTab(5)">Stop Waste Spend<span class="nl">Coming soon</span></button>
+    <button class="nav-btn"        id="nav-5" role="tab" aria-selected="false" aria-controls="panel-5" onclick="showTab(5)">Stop Waste Spend<span class="nl">Requirement 5</span></button>
   </nav>
 
   <!-- PANEL 1 -->
@@ -373,7 +373,7 @@
   <div id="trendShowMore" style="display:none;text-align:center;margin-top:10px">
     <button onclick="tPage++;tRender()" style="padding:8px 20px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;cursor:pointer;font-size:13px">Show Next 300</button>
   </div>
-</div><h2>Trend</h2><p>Coming soon — awaiting requirement specification.</p></div></div>
+  </div>
   <div class="tab-panel" id="panel-4" role="tabpanel">
 
     <header class="rpt">
@@ -523,7 +523,69 @@
     </div>
 
   </div>
-  <div class="tab-panel" id="panel-5"><div class="placeholder"><div class="ph-icon">&#9940;</div><h2>Stop Waste Spend</h2><p>Coming soon — awaiting requirement specification.</p></div></div>
+  <div class="tab-panel" id="panel-5" role="tabpanel">
+    <div class="section-header">
+      <h2>Stop Waste Spend</h2>
+      <div class="date-range" id="swsDateRange">As of: 2026-07-13 | Last 30 / Prev 30 / Prev 60–90 day comparison</div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="lbl">Sonya Campaigns</div><div class="val" id="swsKpiCampaigns">—</div></div>
+      <div class="kpi err"><div class="lbl">Wasteful Products</div><div class="val" id="swsKpiProducts">—</div></div>
+      <div class="kpi err"><div class="lbl">Wasteful Assets</div><div class="val" id="swsKpiAssets">—</div></div>
+      <div class="kpi err"><div class="lbl">Neg Keyword Candidates</div><div class="val" id="swsKpiKeywords">—</div></div>
+      <div class="kpi"><div class="lbl">Geo Review Candidates (GSC)</div><div class="val" id="swsKpiGeo">—</div></div>
+    </div>
+    <div class="filter-row">
+      <input class="srch" id="swsSearch" type="text" placeholder="&#128269; Search campaign name or ID…" oninput="swsApplyFilters()">
+      <select class="fsel" id="swsSegFilter" onchange="swsApplyFilters()">
+        <option value="">All Segments</option>
+        <option value="OK">OK</option>
+        <option value="Bad">Bad</option>
+        <option value="New">New</option>
+      </select>
+      <select class="fsel" id="swsStageFilter" onchange="swsApplyFilters()">
+        <option value="">All Stages</option>
+        <option value="Green">Green</option>
+        <option value="Amber">Amber</option>
+        <option value="Orange">Orange</option>
+        <option value="Red">Red</option>
+        <option value="No Data">No Data</option>
+      </select>
+      <select class="fsel" id="swsStatusFilter" onchange="swsApplyFilters()">
+        <option value="">All Status</option>
+        <option value="ENABLED">Active (Enabled)</option>
+        <option value="PAUSED">Paused</option>
+      </select>
+      <button class="exp-btn" onclick="swsExportCSV()">Export CSV</button>
+    </div>
+    <div style="overflow-x:auto;margin-top:12px">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:middle">Campaign Name</th>
+            <th rowspan="2" style="vertical-align:middle">Campaign ID</th>
+            <th rowspan="2" style="vertical-align:middle">Budget</th>
+            <th rowspan="2" style="vertical-align:middle">Segment</th>
+            <th rowspan="2" style="vertical-align:middle">Stage (30d)</th>
+            <th colspan="4" style="text-align:center;border-left:2px solid #aaa;background:#e8f4fd">Last 30 Days</th>
+            <th colspan="4" style="text-align:center;border-left:2px solid #aaa;background:#fdf6e8">Prev 30 Days</th>
+            <th colspan="4" style="text-align:center;border-left:2px solid #aaa;background:#f0f8e8">Prev 60–90 Days</th>
+            <th rowspan="2" style="vertical-align:middle">Wasteful Products</th>
+            <th rowspan="2" style="vertical-align:middle">Wasteful Assets</th>
+            <th rowspan="2" style="vertical-align:middle">Neg Keywords</th>
+            <th rowspan="2" style="vertical-align:middle">Geo Exclude</th>
+          </tr>
+          <tr>
+            <th style="border-left:2px solid #aaa;background:#e8f4fd">Cost</th><th style="background:#e8f4fd">ROAS%</th><th style="background:#e8f4fd">Conv.</th><th style="background:#e8f4fd">Conv Val</th>
+            <th style="border-left:2px solid #aaa;background:#fdf6e8">Cost</th><th style="background:#fdf6e8">ROAS%</th><th style="background:#fdf6e8">Conv.</th><th style="background:#fdf6e8">Conv Val</th>
+            <th style="border-left:2px solid #aaa;background:#f0f8e8">Cost</th><th style="background:#f0f8e8">ROAS%</th><th style="background:#f0f8e8">Conv.</th><th style="background:#f0f8e8">Conv Val</th>
+          </tr>
+        </thead>
+        <tbody id="swsTbody"></tbody>
+      </table>
+    </div>
+    <div id="swsEmpty" style="display:none;text-align:center;padding:30px;color:#888">No campaigns match the current filter.</div>
+  </div>
 
   <footer class="site">Sonya · Google Ads Campaign Dashboard · AIOS · Requirement 1 · Updated 2026-07-08 (Stage: accordion — 4 periods per row)</footer>
 </div>
@@ -18316,6 +18378,166 @@ showTab=function(n){
     pPage=0;pRender();pUpdateKpis();
     const dr=document.getElementById('pDateRange');
     if(dr)dr.textContent='Data window: '+PROD_DATE_FROM+' → '+PROD_DATE_TO+' (60 days, Sonya campaigns)';
+  }
+};
+
+// ===== REQUIREMENT 5 — STOP WASTE SPEND =====
+// Data source: google_ads.campaign_performance + asset_performance + campaign_search_term_data
+// Date: as_of 2026-07-13 | Sonya campaigns only (campaign_name ILIKE '%sonya%')
+// Wasteful products: cost>99, clicks>2, cvr<0.01% (last 90d) — 0 found in DB
+// Wasteful assets: cost>3, clicks>2, conversions=0 (last 90d) — 17 found in DB
+// Neg keywords: clicks>5, conversions=0 (last 90d) — 44 found in DB
+// Geo excludes: no geo/geographic table found in DB — No Data Available
+const SWS_AS_OF='2026-07-13';
+// SWS_GEO: site-wide low-performance countries from google_search_console.country (L90d, clicks>40, avg_position>10)
+// Source: google_search_console.country — NOT Google Ads geo; site-wide organic signal only
+const SWS_GEO=['GBR (pos 27.2, 12815 clk)','DEU (pos 25.8, 3893 clk)','FRA (pos 23.4, 2238 clk)','USA (pos 30.3, 599 clk)','LKA (pos 16.8, 392 clk)','NLD (pos 27.3, 373 clk)','ESP (pos 25.6, 338 clk)','IND (pos 29.0, 291 clk)','AUT (pos 24.5, 274 clk)','BEL (pos 26.7, 259 clk)'];
+const SWS_CAMPAIGNS=[
+{name:'Pmax  UK | Sonya | Klarna | PH_ALL | Covertion > 2| MCV | UK',id:'21435967873',budget:140,status:'ENABLED',cost30:2134.76,conv30:232.05,cv30:7073.15,imp30:327554,clk30:4869,cost60:2273.61,conv60:239.22,cv60:8450.02,cost90:2397.90,conv90:247.68,cv90:8840.21,wasteful_products:[],wasteful_assets:['256278224260','66365260396','135608169877','259200709906','202642236934','156650804034','145026465870','288813460011','327827050731'],neg_keywords:['industrial lighting','spider ceiling light','plug in wall lights','copper pendant light','black pendant light','industrial light fittings','ledsone ltd','wire cage wall light','composite decking tiles','steampunk ceiling light','industrial hanging lights','pool table lights for sale','e27 dimmable bulb','rope pendant light','brass ceiling rose','edison screw lamp holder','industrial style lighting','conduit wall lights','artificial grass tiles','plug in pendant light cord','black metal light shade','e27 edison screw bulb','ledone','snooker table lights','vintage industrial pendant lighting','plug in pendant lamp','ceiling light','pool table light fixture','copper light fitting','light pendant fitting','lamp holder','vintage copper lights','ledzone lighting'],geo_excludes:SWS_GEO},
+{name:'Pmax  UK |  Sonya  | Shoptimised |  SUMMER_TRENDS | Zombies | MCV | UK',id:'22943583032',budget:35,status:'ENABLED',cost30:623.72,conv30:24.42,cv30:1101.40,imp30:78814,clk30:1071,cost60:221.51,conv60:21.05,cv60:914.57,cost90:564.46,conv90:43.86,cv90:1625.43,wasteful_products:[],wasteful_assets:['281655712047','281655712044'],neg_keywords:['wall lights','spider lights','spider pendant light'],geo_excludes:SWS_GEO},
+{name:'Pmax UK | Sonya | Klarna | EUR_76 | All | MCV | Ierland',id:'23526695953',budget:30,status:'ENABLED',cost30:403.14,conv30:25.96,cv30:964.35,imp30:118597,clk30:1381,cost60:325.00,conv60:31.00,cv60:1904.20,cost90:278.68,conv90:27.01,cv90:1031.66,wasteful_products:[],wasteful_assets:[],neg_keywords:['pool table lights','wall lights','plug in wall lights','e27 lamp holder','ceiling light shades'],geo_excludes:SWS_GEO},
+{name:'Pmax UK | Sonya | Shoptimised | English _EU | Top Selling | MC | Europe English',id:'23914872425',budget:15,status:'ENABLED',cost30:153.91,conv30:5.00,cv30:199.87,imp30:44201,clk30:511,cost60:130.48,conv60:6.00,cv60:202.90,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:SWS_GEO},
+{name:'ES Pmax UK | Sonya | GCSS | BATTLE | A Son For A Son | TRoas | UK',id:'21441847678',budget:16,status:'ENABLED',cost30:115.63,conv30:4.00,cv30:33.38,imp30:18599,clk30:205,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:SWS_GEO},
+{name:'Pmax UK | Sonya | Klarna | GB C1 | Zombies Dracarys | MCV | UK',id:'23729304135',budget:25,status:'ENABLED',cost30:100.03,conv30:10.79,cv30:224.92,imp30:8440,clk30:166,cost60:383.52,conv60:24.38,cv60:1717.46,cost90:734.59,conv90:29.09,cv90:1353.40,wasteful_products:[],wasteful_assets:[],neg_keywords:['ledsone uk','pendant lights','wall lights'],geo_excludes:SWS_GEO},
+{name:'Pmax UK | Sonya | Shoptimised | SONYA2026 | Zombies > 35| MC | UK',id:'23515806682',budget:10,status:'ENABLED',cost30:96.76,conv30:2.72,cv30:99.23,imp30:25480,clk30:216,cost60:318.51,conv60:10.76,cv60:2145.97,cost90:50.20,conv90:3.10,cv90:115.70,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:SWS_GEO},
+{name:'Pmax UK | Sonya | GCSS | NICC_07 | Last Year Sold | MCV | UK',id:'22847654610',budget:15,status:'PAUSED',cost30:1.04,conv30:0,cv30:0,imp30:538,clk30:4,cost60:76.64,conv60:6.94,cv60:164.00,cost90:200.36,conv90:15.11,cv90:407.75,wasteful_products:[],wasteful_assets:['40530256194','358906682760','354956396537','354956396540','358906682766','179046405474'],neg_keywords:[],geo_excludes:[]},
+{name:'Pmax UK | Sonya | Shoptimised | SONYA_BLACK |New Arival| MCV | UK',id:'23540461146',budget:6,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:22.79,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'D Gen | Sonya | Klarna| PLight | Pendant Light | MCV | UK',id:'23793722836',budget:5,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:19.98,conv60:0,cv60:0,cost90:90.53,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Pmax UK | Sonya | GCSS| Agu Unseen',id:'22938859864',budget:7,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Pmax UK | Sonya | Klarna | Spain',id:'23526543529',budget:8,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Pmax UK | Sonya | Klarna| Pendant',id:'22915581765',budget:25,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Pmax UK | Sonya | Shoptimised | On vacation',id:'23486045715',budget:7,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Pmax UK | Sonya | Shoptimised | Wall Ligth',id:'22921596713',budget:7,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Pmax UK | Sonya | Shoptimised |Home Improvement',id:'23484694697',budget:7,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Shopping UK | Sonya | GCSS | CPPC | Bulb',id:'22914082485',budget:3,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Shopping UK | Sonya | Shoptimised | Old Top Selling',id:'23589331333',budget:10,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Sonya- GCC All Shopping (Testing Ad schedule, Location bidding)',id:'22986761167',budget:8,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]},
+{name:'Sonya AOV GCSS Sho Eng 03-12-2024',id:'21985208302',budget:4,status:'PAUSED',cost30:0,conv30:0,cv30:0,imp30:0,clk30:0,cost60:0,conv60:0,cv60:0,cost90:0,conv90:0,cv90:0,wasteful_products:[],wasteful_assets:[],neg_keywords:[],geo_excludes:[]}
+];
+
+var swsActiveData=[];
+
+function swsGetRoas(cv,cost){return cost>0?(cv/cost*100):0;}
+function swsGetSegment(c){
+  const r30=swsGetRoas(c.cv30,c.cost30);
+  const r60=swsGetRoas(c.cv60,c.cost60);
+  if(c.cost30===0&&c.cost60===0)return'New';
+  return r30>=r60?'OK':'Bad';
+}
+function swsGetStage(c){
+  const r=swsGetRoas(c.cv30,c.cost30);
+  if(c.cost30===0)return'No Data';
+  if(r>=400)return'Green';
+  if(r>=300)return'Amber';
+  if(r>=250)return'Orange';
+  return'Red';
+}
+function swsSegClass(seg){return{OK:'seg-gr',Bad:'seg-bl',New:'seg-le'}[seg]||'';}
+function swsStageClass(s){return{Green:'seg-gr',Amber:'seg-am',Orange:'seg-or',Red:'seg-bl','No Data':'seg-z'}[s]||'';}
+
+function swsRender(){
+  const tbody=document.getElementById('swsTbody');
+  const empty=document.getElementById('swsEmpty');
+  if(!tbody)return;
+  if(swsActiveData.length===0){
+    tbody.innerHTML='';
+    if(empty)empty.style.display='block';
+    swsUpdateKpis();
+    return;
+  }
+  if(empty)empty.style.display='none';
+  let html='';
+  swsActiveData.forEach(c=>{
+    const seg=swsGetSegment(c),stage=swsGetStage(c);
+    const r30=swsGetRoas(c.cv30,c.cost30).toFixed(1);
+    const r60=swsGetRoas(c.cv60,c.cost60).toFixed(1);
+    const r90=swsGetRoas(c.cv90,c.cost90).toFixed(1);
+    const wp=c.wasteful_products&&c.wasteful_products.length?c.wasteful_products.join('<br>'):'None';
+    const wa=c.wasteful_assets&&c.wasteful_assets.length?c.wasteful_assets.join('<br>'):'None';
+    const nk=c.neg_keywords&&c.neg_keywords.length?c.neg_keywords.join('<br>'):'None';
+    const ge=c.geo_excludes&&c.geo_excludes.length?c.geo_excludes.join('<br>')+'<br><em style="font-size:0.75em;color:#888">Source: GSC site-wide</em>':'No Data Available';
+    const statusBadge=c.status==='ENABLED'?'<span style="background:#22c55e;color:#fff;padding:1px 6px;border-radius:3px;font-size:0.75em">ACTIVE</span>':'<span style="background:#9ca3af;color:#fff;padding:1px 6px;border-radius:3px;font-size:0.75em">PAUSED</span>';
+    html+=`<tr>
+      <td style="min-width:220px;font-size:0.82em">${c.name} ${statusBadge}</td>
+      <td>${c.id}</td>
+      <td>£${(+c.budget).toFixed(2)}/day</td>
+      <td><span class="seg-badge ${swsSegClass(seg)}">${seg}</span></td>
+      <td><span class="seg-badge ${swsStageClass(stage)}">${stage}</span></td>
+      <td style="border-left:2px solid #ddd;background:#f7fbff">£${(+c.cost30).toFixed(2)}</td>
+      <td style="background:#f7fbff">${r30}%</td>
+      <td style="background:#f7fbff">${(+c.conv30).toFixed(1)}</td>
+      <td style="background:#f7fbff">£${(+c.cv30).toFixed(2)}</td>
+      <td style="border-left:2px solid #ddd;background:#fffcf0">£${(+c.cost60).toFixed(2)}</td>
+      <td style="background:#fffcf0">${r60}%</td>
+      <td style="background:#fffcf0">${(+c.conv60).toFixed(1)}</td>
+      <td style="background:#fffcf0">£${(+c.cv60).toFixed(2)}</td>
+      <td style="border-left:2px solid #ddd;background:#f7fff0">£${(+c.cost90).toFixed(2)}</td>
+      <td style="background:#f7fff0">${r90}%</td>
+      <td style="background:#f7fff0">${(+c.conv90).toFixed(1)}</td>
+      <td style="background:#f7fff0">£${(+c.cv90).toFixed(2)}</td>
+      <td style="max-width:180px;white-space:normal;font-size:0.78em;line-height:1.5">${wp}</td>
+      <td style="max-width:180px;white-space:normal;font-size:0.78em;line-height:1.5">${wa}</td>
+      <td style="max-width:220px;white-space:normal;font-size:0.78em;line-height:1.5">${nk}</td>
+      <td style="max-width:160px;white-space:normal;font-size:0.78em;line-height:1.5">${ge}</td>
+    </tr>`;
+  });
+  tbody.innerHTML=html;
+  swsUpdateKpis();
+}
+
+function swsUpdateKpis(){
+  const totalWP=swsActiveData.reduce((s,c)=>s+(c.wasteful_products?c.wasteful_products.length:0),0);
+  const totalWA=swsActiveData.reduce((s,c)=>s+(c.wasteful_assets?c.wasteful_assets.length:0),0);
+  const totalNK=swsActiveData.reduce((s,c)=>s+(c.neg_keywords?c.neg_keywords.length:0),0);
+  const totalGE=swsActiveData.reduce((s,c)=>s+(c.geo_excludes?c.geo_excludes.length:0),0);
+  const se=id=>document.getElementById(id);
+  if(se('swsKpiCampaigns'))se('swsKpiCampaigns').textContent=swsActiveData.length;
+  if(se('swsKpiProducts'))se('swsKpiProducts').textContent=totalWP;
+  if(se('swsKpiAssets'))se('swsKpiAssets').textContent=totalWA;
+  if(se('swsKpiKeywords'))se('swsKpiKeywords').textContent=totalNK;
+  if(se('swsKpiGeo'))se('swsKpiGeo').textContent=totalGE>0?totalGE:'N/A';
+}
+
+function swsApplyFilters(){
+  const search=(document.getElementById('swsSearch')||{}).value||'';
+  const seg=(document.getElementById('swsSegFilter')||{}).value||'';
+  const stage=(document.getElementById('swsStageFilter')||{}).value||'';
+  const status=(document.getElementById('swsStatusFilter')||{}).value||'';
+  swsActiveData=SWS_CAMPAIGNS.filter(c=>{
+    if(search){const q=search.toLowerCase();if(!c.name.toLowerCase().includes(q)&&!c.id.includes(q))return false;}
+    if(seg&&swsGetSegment(c)!==seg)return false;
+    if(stage&&swsGetStage(c)!==stage)return false;
+    if(status&&c.status!==status)return false;
+    return true;
+  });
+  swsRender();
+}
+
+function swsExportCSV(){
+  const hdr='Campaign Name,Campaign ID,Budget/day,Segment,Stage (30d),Cost 30d,ROAS% 30d,Conv 30d,CV 30d,Cost Prev30d,ROAS% Prev30d,Conv Prev30d,CV Prev30d,Cost Prev60-90d,ROAS% Prev60-90d,Conv Prev60-90d,CV Prev60-90d,Wasteful Assets,Neg Keywords';
+  const body=SWS_CAMPAIGNS.map(c=>{
+    const seg=swsGetSegment(c),stage=swsGetStage(c);
+    return[
+      '"'+c.name+'"',c.id,'£'+c.budget+'/day',seg,stage,
+      c.cost30.toFixed(2),swsGetRoas(c.cv30,c.cost30).toFixed(1),c.conv30.toFixed(1),c.cv30.toFixed(2),
+      c.cost60.toFixed(2),swsGetRoas(c.cv60,c.cost60).toFixed(1),c.conv60.toFixed(1),c.cv60.toFixed(2),
+      c.cost90.toFixed(2),swsGetRoas(c.cv90,c.cost90).toFixed(1),c.conv90.toFixed(1),c.cv90.toFixed(2),
+      '"'+(c.wasteful_assets||[]).join('; ')+'"',
+      '"'+(c.neg_keywords||[]).join('; ')+'"'
+    ].join(',');
+  }).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+body);
+  a.download='sonya_req5_stop_waste_spend.csv';
+  a.click();
+}
+
+const _origShowTabR5=showTab;
+showTab=function(n){
+  _origShowTabR5(n);
+  if(n===5&&swsActiveData.length===0){
+    swsActiveData=[...SWS_CAMPAIGNS];
+    swsRender();
   }
 };
 
