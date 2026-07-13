@@ -4,16 +4,31 @@
 // than the full dataset — checking thousands of URLs live on every page
 // load isn't feasible (timeouts, load on the origin site).
 const MAX_URLS = 200;
-const TIMEOUT_MS = 4000;
+const TIMEOUT_MS = 6000;
 const CONCURRENCY = 10;
+
+// Only 404/410 count as "broken" per the requirement ("do not add any 404
+// broken links"). Any other non-2xx (403, 429, 503, etc.) is far more
+// likely bot-protection/rate-limiting on the checking request itself
+// (Vercel's serverless IPs get treated differently than a normal browser)
+// than a genuinely dead page — so those are treated as "assume ok" to
+// avoid false positives wiping out real, live pages.
+const BROKEN_STATUSES = [404, 410];
 
 async function checkOne(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: controller.signal });
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
     clearTimeout(timer);
-    return { url, ok: res.status < 400, status: res.status };
+    return { url, ok: !BROKEN_STATUSES.includes(res.status), status: res.status };
   } catch (e) {
     clearTimeout(timer);
     // Network error / timeout: don't assume broken, just report unknown-ok
