@@ -1,8 +1,8 @@
 const crypto = require('crypto');
 
-const SITE_URL = 'sc-domain:ledsone.co.uk';
+const SITE_URL = 'https://ledsone.de/';
 const SCOPE_PATTERNS = ['/collections/', '/blogs/', '/blog/'];
-const CTR_THRESHOLD = 0.02;
+const CTR_THRESHOLD = 0.015;
 
 function base64url(input) {
   return Buffer.from(input).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -78,14 +78,17 @@ function inScope(url) {
   return SCOPE_PATTERNS.some((p) => url.includes(p));
 }
 
+function typeOf(url) {
+  if (url.includes('/collections/')) return 'Collection';
+  if (url.includes('/blogs/') || url.includes('/blog/')) return 'Blog';
+  return 'Other';
+}
+
 module.exports = async (req, res) => {
   try {
     const fmt = (d) => d.toISOString().slice(0, 10);
     const isValidDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
-    // Ask Google for through yesterday — GSC silently returns only what it actually has,
-    // so requesting the tightest possible window means new data shows up the moment
-    // Google publishes it, instead of waiting an extra artificial buffer.
     const requestEnd = new Date();
     requestEnd.setUTCDate(requestEnd.getUTCDate() - 1);
 
@@ -94,7 +97,7 @@ module.exports = async (req, res) => {
       startDate = req.query.start;
       endDate = req.query.end;
     } else {
-      const days = Math.min(Math.max(parseInt(req.query.days, 10) || 180, 1), 365);
+      const days = Math.min(Math.max(parseInt(req.query.days, 10) || 182, 1), 365);
       const start = new Date(requestEnd);
       start.setUTCDate(start.getUTCDate() - days);
       startDate = fmt(start);
@@ -105,8 +108,6 @@ module.exports = async (req, res) => {
     const token = await getAccessToken(key);
     const allRows = await queryGSC(token, startDate, endDate);
 
-    // Ask Google what the actual most-recent date with data is (cheap, single 'date' dimension
-    // query) so the UI can report the real cutoff instead of guessing at a fixed lag.
     let realLatestDate = startDate;
     let firstIncompleteDate = null;
     try {
@@ -134,25 +135,25 @@ module.exports = async (req, res) => {
         const impressions = r.impressions;
         const ctr = r.ctr;
         const position = r.position;
-        const isCollection = url.includes('/collections/');
-        const isBlog = url.includes('/blogs/') || url.includes('/blog/');
         return {
           url,
-          type: isCollection ? 'collection' : isBlog ? 'blog' : 'other',
+          type: typeOf(url),
           clicks,
           impressions,
           ctr: Math.round(ctr * 10000) / 100,
           position: Math.round(position * 10) / 10,
-          lowCtr: ctr < CTR_THRESHOLD
+          lowCtr: ctr < CTR_THRESHOLD,
+          status: ctr < CTR_THRESHOLD ? 'Low CTR' : 'OK'
         };
-      });
+      })
+      .sort((a, b) => a.ctr - b.ctr);
 
     const totalClicks = scoped.reduce((s, r) => s + r.clicks, 0);
     const totalImpressions = scoped.reduce((s, r) => s + r.impressions, 0);
     const avgCtr = totalImpressions > 0 ? Math.round((totalClicks / totalImpressions) * 10000) / 100 : 0;
     const lowCtrCount = scoped.filter((r) => r.lowCtr).length;
-    const collectionCount = scoped.filter((r) => r.type === 'collection').length;
-    const blogCount = scoped.filter((r) => r.type === 'blog').length;
+    const collectionCount = scoped.filter((r) => r.type === 'Collection').length;
+    const blogCount = scoped.filter((r) => r.type === 'Blog').length;
 
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     res.status(200).json({
