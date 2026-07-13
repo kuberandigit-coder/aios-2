@@ -87,7 +87,6 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
       <option value="">All</option><option value="Low CTR">Low CTR</option><option value="OK">OK</option></select></label>
     <label>Page Type <select id="f_type">
       <option value="">All</option><option value="Collection">Collection</option><option value="Blog">Blog</option></select></label>
-    <label>Min Impressions <input type="number" id="f_minImpr" min="0" placeholder="0" style="width:90px;flex:none;min-width:0;padding:7px 10px;"></label>
     <label>CTR Range <select id="f_ctr">
       <option value="">All</option><option value="0">0% (no clicks)</option><option value="a">0&ndash;1%</option><option value="b">1&ndash;2%</option><option value="c">2&ndash;5%</option><option value="d">5%+</option></select></label>
     <label>Click Range <select id="f_clicks">
@@ -242,8 +241,6 @@ function filteredRows(){
   const q = document.getElementById('q').value.trim().toLowerCase();
   const statusF = document.getElementById('f_status').value;
   const typeF = document.getElementById('f_type').value;
-  const minImprRaw = document.getElementById('f_minImpr').value;
-  const minImpr = minImprRaw === '' ? null : Number(minImprRaw);
   const ctrF = document.getElementById('f_ctr').value;
   const clicksF = document.getElementById('f_clicks').value;
 
@@ -254,10 +251,9 @@ function filteredRows(){
     // Clean (non-related) rows always pass. Related rows only pass if their
     // specific reason has been unchecked in the "Hide Related" dropdown.
     const relatedHit = !r.related || !HIDDEN_REASONS.has(r.relatedReason);
-    const imprHit = minImpr === null || r.impressions >= minImpr;
     const ctrHit = !ctrF || ctrBucket(r.ctr) === ctrF;
     const clicksHit = !clicksF || clickBucket(r.clicks) === clicksF;
-    return textHit && statusHit && typeHit && relatedHit && imprHit && ctrHit && clicksHit;
+    return textHit && statusHit && typeHit && relatedHit && ctrHit && clicksHit;
   });
 
   // Sort by CTR ascending, per the requirement's fixed sort rule.
@@ -303,7 +299,11 @@ function render(){
   )).join('');
   document.getElementById('pinfo').textContent = 'Showing ' + (from + 1) + '–' + Math.min(from + size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + pg + ' of ' + mp + ')';
 
-  checkVisibleLinksForBroken(pageRows.map(r => r.url));
+  // Only check clean canonical rows — related/noise URLs shown via the
+  // "Hide Related" dropdown are for review, not further filtering, and many
+  // (pagination, faceted-filter, nested sub-paths) aren't meaningful to
+  // 404-check anyway, which was making revealed rows vanish right away.
+  checkVisibleLinksForBroken(pageRows.filter(r => !r.related).map(r => r.url));
 }
 
 async function checkVisibleLinksForBroken(urls){
@@ -354,7 +354,6 @@ document.addEventListener('click', (e) => {
     panel.style.display = 'none';
   }
 });
-document.getElementById('f_minImpr').addEventListener('input', () => { pg = 1; render(); });
 document.getElementById('f_ctr').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('f_clicks').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('psize').addEventListener('change', () => { pg = 1; render(); });
@@ -362,7 +361,6 @@ document.getElementById('resetFilters').addEventListener('click', () => {
   document.getElementById('q').value = '';
   document.getElementById('f_status').value = '';
   document.getElementById('f_type').value = '';
-  document.getElementById('f_minImpr').value = '';
   document.getElementById('f_ctr').value = '';
   document.getElementById('f_clicks').value = '';
   document.querySelectorAll('.reasonChk').forEach(chk => { chk.checked = true; HIDDEN_REASONS.add(chk.getAttribute('data-key')); });
