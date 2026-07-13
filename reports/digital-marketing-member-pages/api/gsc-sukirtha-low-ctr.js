@@ -86,12 +86,17 @@ function typeOf(url) {
 
 // "Related" = noise URLs that aren't real, canonical Blog/Collection content:
 // pagination, product pages nested under a collection path, blog tag/archive
-// pages, and locale-variant duplicates of the canonical (no-prefix) URL.
+// pages, locale-variant duplicates, Shopify faceted-filter query strings,
+// "/collections/all/<tag>" facet views, and nested/2-segment collection
+// sub-paths (e.g. /collections/parent/child — not a standalone collection).
 function isRelated(url) {
   if (/[?&]page=\d+/i.test(url)) return true; // pagination, e.g. ?page=2
   if (url.includes('/products/')) return true; // product page nested under /collections/
   if (url.includes('/tagged/')) return true; // blog tag/archive listing
   if (/^https?:\/\/[^/]+\/[a-z]{2}\/(blogs|collections)\//i.test(url)) return true; // locale-prefixed duplicate, e.g. /da/blogs/...
+  if (/[?&]filter\./i.test(url)) return true; // Shopify faceted filter query, e.g. ?filter.p.m.custom.kategorien=...
+  if (/\/collections\/all\//i.test(url)) return true; // /collections/all/<tag> facet view, not a real collection
+  if (/^https?:\/\/[^/]+\/collections\/[^/?]+\/[^/?]+/i.test(url)) return true; // /collections/parent/child nested sub-path
   return false;
 }
 
