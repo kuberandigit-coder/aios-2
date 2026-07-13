@@ -94,6 +94,9 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
       <option value="impr_asc">Impressions (Low &rarr; High)</option>
       <option value="clicks_desc">Clicks (High &rarr; Low)</option>
     </select>
+    <label style="display:flex;align-items:center;gap:6px;font-weight:600;color:#42506a;cursor:pointer;">
+      <input type="checkbox" id="hideRelated" checked style="width:auto;flex:none;"> Hide Related
+    </label>
     <button id="resetFilters">Reset filters</button>
   </div>
   <div class="scroll">
@@ -107,6 +110,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
     </table>
   </div>
   <div class="empty" id="empty" style="display:none;">No pages match the current filters.</div>
+  <div id="brokenNote" style="display:none;padding:8px 20px;font-size:12px;color:var(--bad);background:#fdecea;"></div>
   <div class="tbar" style="border-top:1px solid var(--line);border-bottom:0;justify-content:space-between;">
     <span id="pinfo"></span>
     <span style="display:flex;gap:8px;align-items:center;">
@@ -125,6 +129,8 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <strong>Update frequency:</strong> not a scheduled/cached snapshot &mdash; this page calls the live GSC API directly every time it loads or the date range changes. It is always as current as Google Search Console's own data allows. No PostgreSQL used, per requirement.<br>
   <strong>Reporting freshness:</strong> this page requests GSC's fresh/provisional data (not just fully-finalized data), so it can show yesterday's numbers &mdash; matching what the Google Search Console UI's default view shows. The most recent 1&ndash;2 days shown are still provisional and may be revised slightly as Google finishes processing; data through the "final through" date is fully settled and won't change. This distinction is disclosed in the chip above, not hidden.<br>
   <strong>Status rule:</strong> CTR &lt; 1.5% &rarr; <span class="pill low">Low CTR</span>, else <span class="pill ok">OK</span>. Sorted by CTR ascending by default.<br>
+  <strong>Hide Related:</strong> checked (default) hides noise URLs that aren't real canonical Blog/Collection pages &mdash; pagination (<code>?page=2</code>), product pages nested under a collection path (<code>/products/</code>), blog tag/archive pages (<code>/tagged/</code>), and locale-prefixed duplicates (e.g. <code>/da/blogs/...</code>). Unchecking flips the view to show <em>only</em> those hidden items, for review. Summary cards always reflect clean canonical pages only.<br>
+  <strong>Broken links:</strong> URLs currently visible in the table are checked live for a 404/error response and removed if broken &mdash; this only covers the current page of results, not the full dataset ahead of time.<br>
   <strong>Last refresh timestamp:</strong> <span id="lastRefresh">&ndash;</span><br>
   <strong>Evidence:</strong> Discovery, PostgreSQL vs. live-API source comparison, and GSC access-grant history for the <code>ledsone.de</code> property are recorded in
   <code>evidence/sukirtha/2026-07-13_req1_discovery_and_gsc_access_gap_evidence.md</code> and
@@ -177,7 +183,7 @@ async function load(){
       chip.style.display = '';
     })();
     document.getElementById('cTotal').textContent = num(SUMMARY.totalPages);
-    document.getElementById('cTotalNote').textContent = num(SUMMARY.collectionCount) + ' collections · ' + num(SUMMARY.blogCount) + ' blog pages';
+    document.getElementById('cTotalNote').textContent = num(SUMMARY.collectionCount) + ' collections · ' + num(SUMMARY.blogCount) + ' blog pages · ' + num(SUMMARY.relatedCount) + ' related (hidden)';
     document.getElementById('cLow').textContent = num(SUMMARY.lowCtrCount);
     document.getElementById('cCtr').textContent = SUMMARY.avgCtr.toFixed(2) + '%';
     document.getElementById('cImpr').textContent = num(SUMMARY.totalImpressions);
@@ -197,12 +203,16 @@ function filteredRows(){
   const statusF = document.getElementById('f_status').value;
   const typeF = document.getElementById('f_type').value;
   const sort = document.getElementById('sortSel').value;
+  const hideRelated = document.getElementById('hideRelated').checked;
 
   let rows = ALL.filter(r => {
     const textHit = !q || r.url.toLowerCase().includes(q);
     const statusHit = !statusF || r.status === statusF;
     const typeHit = !typeF || r.type === typeF;
-    return textHit && statusHit && typeHit;
+    // Checked: show only clean canonical URLs (hide the related/noise ones).
+    // Unchecked: flip the view to show ONLY what's hidden, for review.
+    const relatedHit = hideRelated ? !r.related : r.related;
+    return textHit && statusHit && typeHit && relatedHit;
   });
 
   const sortMap = {
@@ -220,6 +230,7 @@ function maxpg(rows){
 }
 
 function render(){
+  document.getElementById('brokenNote').style.display = 'none';
   const rows = filteredRows();
   const size = parseInt(document.getElementById('psize').value, 10);
   const mp = maxpg(rows);
@@ -239,7 +250,7 @@ function render(){
   const from = (pg - 1) * size;
   const pageRows = rows.slice(from, from + size);
   tbody.innerHTML = pageRows.map(r => (
-    '<tr>' +
+    '<tr data-url="' + esc(r.url) + '">' +
     '<td class="urlcell"><a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.url) + '</a></td>' +
     '<td>' + esc(r.type) + '</td>' +
     '<td class="num">' + num(r.impressions) + '</td>' +
@@ -250,6 +261,35 @@ function render(){
     '</tr>'
   )).join('');
   document.getElementById('pinfo').textContent = 'Showing ' + (from + 1) + '–' + Math.min(from + size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + pg + ' of ' + mp + ')';
+
+  checkVisibleLinksForBroken(pageRows.map(r => r.url));
+}
+
+async function checkVisibleLinksForBroken(urls){
+  if (!urls.length) return;
+  try {
+    const res = await fetch('/api/check-urls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    let removed = 0;
+    Object.keys(data.statusByUrl || {}).forEach(url => {
+      if (data.statusByUrl[url] === false) {
+        const tr = document.querySelector('tbody#tbody tr[data-url="' + CSS.escape(url) + '"]');
+        if (tr) { tr.remove(); removed++; }
+      }
+    });
+    if (removed > 0) {
+      const note = document.getElementById('brokenNote');
+      note.textContent = removed + ' broken link' + (removed===1?'':'s') + ' hidden from this page.';
+      note.style.display = '';
+    }
+  } catch (e) {
+    // Silent — link-check is a best-effort enhancement, never blocks the table.
+  }
 }
 
 document.getElementById('rangeStart').addEventListener('change', load);
@@ -262,6 +302,7 @@ document.getElementById('clearRange').addEventListener('click', () => {
 document.getElementById('q').addEventListener('input', () => { pg = 1; render(); });
 document.getElementById('f_status').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('f_type').addEventListener('change', () => { pg = 1; render(); });
+document.getElementById('hideRelated').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('sortSel').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('psize').addEventListener('change', () => { pg = 1; render(); });
 document.getElementById('resetFilters').addEventListener('click', () => {
@@ -269,6 +310,7 @@ document.getElementById('resetFilters').addEventListener('click', () => {
   document.getElementById('f_status').value = '';
   document.getElementById('f_type').value = '';
   document.getElementById('sortSel').value = 'ctr_asc';
+  document.getElementById('hideRelated').checked = true;
   pg = 1;
   render();
 });

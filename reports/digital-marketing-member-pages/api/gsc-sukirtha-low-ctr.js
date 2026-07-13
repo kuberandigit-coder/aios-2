@@ -84,6 +84,17 @@ function typeOf(url) {
   return 'Other';
 }
 
+// "Related" = noise URLs that aren't real, canonical Blog/Collection content:
+// pagination, product pages nested under a collection path, blog tag/archive
+// pages, and locale-variant duplicates of the canonical (no-prefix) URL.
+function isRelated(url) {
+  if (/[?&]page=\d+/i.test(url)) return true; // pagination, e.g. ?page=2
+  if (url.includes('/products/')) return true; // product page nested under /collections/
+  if (url.includes('/tagged/')) return true; // blog tag/archive listing
+  if (/^https?:\/\/[^/]+\/[a-z]{2}\/(blogs|collections)\//i.test(url)) return true; // locale-prefixed duplicate, e.g. /da/blogs/...
+  return false;
+}
+
 module.exports = async (req, res) => {
   try {
     const fmt = (d) => d.toISOString().slice(0, 10);
@@ -143,17 +154,22 @@ module.exports = async (req, res) => {
           ctr: Math.round(ctr * 10000) / 100,
           position: Math.round(position * 10) / 10,
           lowCtr: ctr < CTR_THRESHOLD,
-          status: ctr < CTR_THRESHOLD ? 'Low CTR' : 'OK'
+          status: ctr < CTR_THRESHOLD ? 'Low CTR' : 'OK',
+          related: isRelated(url)
         };
       })
       .sort((a, b) => a.ctr - b.ctr);
 
-    const totalClicks = scoped.reduce((s, r) => s + r.clicks, 0);
-    const totalImpressions = scoped.reduce((s, r) => s + r.impressions, 0);
+    // Summary cards reflect clean canonical content only (related/noise
+    // URLs excluded), since they're not real distinct SEO-relevant pages.
+    const clean = scoped.filter((r) => !r.related);
+    const totalClicks = clean.reduce((s, r) => s + r.clicks, 0);
+    const totalImpressions = clean.reduce((s, r) => s + r.impressions, 0);
     const avgCtr = totalImpressions > 0 ? Math.round((totalClicks / totalImpressions) * 10000) / 100 : 0;
-    const lowCtrCount = scoped.filter((r) => r.lowCtr).length;
-    const collectionCount = scoped.filter((r) => r.type === 'Collection').length;
-    const blogCount = scoped.filter((r) => r.type === 'Blog').length;
+    const lowCtrCount = clean.filter((r) => r.lowCtr).length;
+    const collectionCount = clean.filter((r) => r.type === 'Collection').length;
+    const blogCount = clean.filter((r) => r.type === 'Blog').length;
+    const relatedCount = scoped.filter((r) => r.related).length;
 
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     res.status(200).json({
@@ -167,13 +183,14 @@ module.exports = async (req, res) => {
         firstIncompleteDate
       },
       summary: {
-        totalPages: scoped.length,
+        totalPages: clean.length,
         collectionCount,
         blogCount,
         lowCtrCount,
         avgCtr,
         totalImpressions,
-        totalClicks
+        totalClicks,
+        relatedCount
       },
       pages: scoped
     });
