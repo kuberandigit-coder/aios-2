@@ -38,7 +38,7 @@ h1{font-size:22px;letter-spacing:.2px;}
 .tbar button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
 .scroll{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:13px;min-width:1000px;}
-thead th{background:#f0f3f8;text-align:left;padding:12px 14px;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap;}
+thead th{background:#f0f3f8;text-align:left;padding:12px 14px;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;z-index:2;}
 thead th.num,td.num{text-align:right;}
 tbody td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45;}
 tbody tr:nth-child(even){background:#fafbfd;}
@@ -95,6 +95,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <div class="reqtab active" id="tabBtn1" onclick="showReqTab(1)">Requirement 1 · Low CTR Blog Posts &amp; Collections</div>
   <div class="reqtab" id="tabBtn2" onclick="showReqTab(2)">Requirement 2 · Duplicate Listing &amp; Price Check</div>
   <div class="reqtab" id="tabBtn3" onclick="showReqTab(3)">Requirement 3 · Slow-Moving Stock</div>
+  <div class="reqtab" id="tabBtn4" onclick="showReqTab(4)">Requirement 4 · Core GA4 Data for SEO</div>
 </div>
 
 <div id="reqTab1">
@@ -365,6 +366,97 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <strong>Last refresh timestamp:</strong> <span id="r3lastRefresh">–</span><br>
   <strong>Evidence:</strong> full discovery, Shopify data-source mapping, 90-day sales method, and validation for this requirement are recorded under
   <code>evidence/sukirtha/SUK-R3-*.md</code> and <code>validation/sukirtha/SUK-R3-validation-report.md</code>.
+</div>
+</div>
+
+<div id="reqTab4" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sukirtha — Requirement 4 (Live)</div>
+  <h1>Core GA4 Data for SEO</h1>
+  <div class="sub">Which landing pages on ledsone.de receive Organic Search traffic, how are users engaging with those pages, and what search queries generate that traffic during the last 30 days? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Sukirtha</strong></div>
+  <div class="filters">
+    <span class="chip">Source: GA4 Data API (Organic Search) + Search Console API (read-only)</span>
+    <span class="chip" id="r4liveChip">Fetching live from GA4/GSC…</span>
+    <span class="chip live" id="r4lastChecked" style="display:none;"></span>
+    <span class="chip" id="r4dateRange" style="display:none;"></span>
+    <button id="r4refreshBtn" class="primary" type="button">Refresh</button>
+  </div>
+</header>
+
+<div class="cards r2cards" id="r4cards" style="grid-template-columns:repeat(8,1fr);">
+  <div class="card"><div class="label">Organic Sessions</div><div class="value" id="r4cSessions">–</div></div>
+  <div class="card"><div class="label">Organic Users</div><div class="value" id="r4cUsers">–</div></div>
+  <div class="card"><div class="label">Landing Pages</div><div class="value" id="r4cPages">–</div></div>
+  <div class="card"><div class="label">Queries</div><div class="value" id="r4cQueries">–</div></div>
+  <div class="card"><div class="label">Purchase Revenue</div><div class="value" id="r4cRevenue">–</div></div>
+  <div class="card"><div class="label">Avg Engagement Rate</div><div class="value" id="r4cEngRate">–</div></div>
+  <div class="card"><div class="label">Avg Engagement Time</div><div class="value" id="r4cEngTime">–</div></div>
+  <div class="card"><div class="label">Pages / Session</div><div class="value" id="r4cPagesPerSession">–</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="r4cnt">–</span>
+    <input type="text" id="r4q_page" placeholder="Search landing page…">
+    <input type="text" id="r4q_query" placeholder="Search query…">
+    <button id="r4exportCsv" class="primary">Export CSV</button>
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Page Type <select id="r4f_type">
+      <option value="">All</option><option value="Home">Home</option><option value="Product">Product</option><option value="Collection">Collection</option><option value="Blog">Blog</option><option value="Page">Page</option><option value="Other">Other</option></select></label>
+    <label>Sessions <select id="r4f_sessions">
+      <option value="">All</option><option value="0">0</option><option value="1-9">1–9</option><option value="10-49">10–49</option><option value="50+">50+</option></select></label>
+    <label>Revenue <select id="r4f_revenue">
+      <option value="">All</option><option value="0">€0</option><option value="1+">&gt; €0</option></select></label>
+    <label>CTR <select id="r4f_ctr">
+      <option value="">All</option><option value="0-1">0–1%</option><option value="1-5">1–5%</option><option value="5+">5%+</option></select></label>
+    <button id="r4resetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th onclick="r4sortBy('landingPage')">Landing Page</th>
+        <th onclick="r4sortBy('pageType')">Page Type</th>
+        <th onclick="r4sortBy('topQuery')">Top Query</th>
+        <th class="num" onclick="r4sortBy('sessions')">Sessions</th>
+        <th class="num" onclick="r4sortBy('users')">Users</th>
+        <th class="num" onclick="r4sortBy('engagementRate')">Engagement Rate</th>
+        <th class="num" onclick="r4sortBy('avgEngagementTimeSec')">Avg Engagement Time</th>
+        <th class="num" onclick="r4sortBy('pagesPerSession')">Pages / Session</th>
+        <th class="num" onclick="r4sortBy('purchaseRevenue')">Purchase Revenue (€)</th>
+        <th class="num" onclick="r4sortBy('clicks')">Clicks</th>
+        <th class="num" onclick="r4sortBy('impressions')">Impressions</th>
+        <th class="num" onclick="r4sortBy('ctr')">CTR</th>
+        <th class="num" onclick="r4sortBy('avgPosition')">Avg Position</th>
+        <th>Last Refreshed</th>
+      </tr></thead>
+      <tbody id="r4tbody"><tr><td colspan="14" class="loading">Loading live data from GA4/GSC…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r4empty" style="display:none;">No landing pages match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);border-bottom:0;justify-content:space-between;">
+    <span id="r4pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="r4psize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="r4pgFirst">&laquo;</button>
+      <button id="r4pgPrev">&lsaquo; Prev</button>
+      <button id="r4pgNext">Next &rsaquo;</button>
+      <button id="r4pgLast">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Google Analytics 4 Data API (Organic Search channel, read-only) + Google Search Console API (read-only) &middot; store <code>ledsone.de</code> &middot; fetched via a server-side serverless function (<code>/api/sukirtha-req4-ga4-seo</code>) using a GA4 service-account key stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>GA4 Property:</strong> <span id="r4ga4Property">–</span> (ledsone.de) &middot; <strong>GSC Property:</strong> <span id="r4gscProperty">–</span><br>
+  <strong>Update frequency:</strong> not a scheduled/cached snapshot on first load &mdash; this page calls GA4/GSC live once per tab visit, then caches locally; "Refresh" always re-fetches live. The 30-day window is calculated from the retrieval date, not a fixed historical date.<br>
+  <strong>Data grain:</strong> one row per GA4 Landing Page path, filtered to Session Default Channel Group = Organic Search. Search Console rows are matched to the same landing-page path and aggregated (summed clicks/impressions, impression-weighted average position); Top Query is the Search Console query with the most clicks for that page.<br>
+  <strong>Page Type rule:</strong> derived from the landing page URL path — <code>/</code> = Home, <code>/products/*</code> = Product, <code>/collections/*</code> = Collection, <code>/blogs/*</code> = Blog, <code>/pages/*</code> = Page, else Other.<br>
+  <strong>Governance:</strong> GA4 and Search Console remain the sole authoritative sources for this data. This dashboard is a read-only analytical view; no GA4 or Search Console configuration, property, or record was created, changed, or merged by this page or its build process.<br>
+  <strong>Last refresh timestamp:</strong> <span id="r4lastRefresh">–</span><br>
+  <strong>Evidence:</strong> full discovery, GA4/GSC property confirmation, and validation for this requirement are recorded under
+  <code>evidence/sukirtha/SUK-R4-*.md</code> and <code>validation/sukirtha/SUK-R4-validation-report.md</code>.
 </div>
 </div>
 </div>
@@ -664,11 +756,14 @@ function showReqTab(n){
   document.getElementById('reqTab1').style.display = n === 1 ? '' : 'none';
   document.getElementById('reqTab2').style.display = n === 2 ? '' : 'none';
   document.getElementById('reqTab3').style.display = n === 3 ? '' : 'none';
+  document.getElementById('reqTab4').style.display = n === 4 ? '' : 'none';
   document.getElementById('tabBtn1').classList.toggle('active', n === 1);
   document.getElementById('tabBtn2').classList.toggle('active', n === 2);
   document.getElementById('tabBtn3').classList.toggle('active', n === 3);
+  document.getElementById('tabBtn4').classList.toggle('active', n === 4);
   if (n === 2 && !r2Loaded) { r2Loaded = true; r2loadCachedOrFetch(); }
   if (n === 3 && !r3Loaded) { r3Loaded = true; r3loadCachedOrFetch(); }
+  if (n === 4 && !r4Loaded) { r4Loaded = true; r4loadCachedOrFetch(); }
 }
 
 function eur(v){ return v === null || v === undefined ? '—' : '€' + Number(v).toFixed(2); }
@@ -1177,6 +1272,254 @@ document.getElementById('r3pgPrev').addEventListener('click', () => { if (r3pg >
 document.getElementById('r3pgNext').addEventListener('click', () => { if (r3pg < r3maxpg(r3filteredRows())) { r3pg++; r3render(); } });
 document.getElementById('r3pgLast').addEventListener('click', () => { r3pg = r3maxpg(r3filteredRows()); r3render(); });
 document.getElementById('r3exportCsv').addEventListener('click', r3exportCsv);
+
+// ===================== Requirement 4 — Core GA4 Data for SEO =====================
+
+const R4_CACHE_KEY = 'suk_r4_cache_v1';
+let R4_SUMMARY = null;
+let R4_ROWS = [];
+let r4pg = 1;
+let r4Loaded = false;
+let r4SortKey = null;
+let r4SortDir = 1;
+
+function pct(v){ return v === null || v === undefined ? '—' : (v * 100).toFixed(2) + '%'; }
+
+function r4applyLoadedData(fromCache){
+  document.getElementById('r4liveChip').textContent = fromCache
+    ? 'Cached — last updated ' + new Date(R4_SUMMARY.retrievedAt).toLocaleString()
+    : 'Live — fetched just now';
+  document.getElementById('r4liveChip').className = fromCache ? 'chip stale' : 'chip live';
+  document.getElementById('r4lastChecked').textContent = 'Last checked: ' + new Date(R4_SUMMARY.retrievedAt).toLocaleString();
+  document.getElementById('r4lastChecked').style.display = '';
+  document.getElementById('r4dateRange').textContent = '30-day window: ' + R4_SUMMARY.dateRangeStart + ' to ' + R4_SUMMARY.dateRangeEnd;
+  document.getElementById('r4dateRange').style.display = '';
+  document.getElementById('r4lastRefresh').textContent = new Date(R4_SUMMARY.retrievedAt).toLocaleString();
+  document.getElementById('r4ga4Property').textContent = R4_SUMMARY.ga4Property;
+  document.getElementById('r4gscProperty').textContent = R4_SUMMARY.gscProperty;
+  r4pg = 1;
+  r4render();
+}
+
+async function r4loadCachedOrFetch(){
+  try {
+    const cached = await idbGet(R4_CACHE_KEY);
+    if (cached && cached.summary && cached.rows) {
+      R4_SUMMARY = cached.summary;
+      R4_ROWS = cached.rows;
+      r4applyLoadedData(true);
+      return;
+    }
+  } catch (e) { /* fall through to live fetch */ }
+  r4load();
+}
+
+async function r4load(){
+  const btn = document.getElementById('r4refreshBtn');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing…';
+  document.getElementById('r4liveChip').textContent = 'Fetching live from GA4/GSC…';
+  document.getElementById('r4liveChip').className = 'chip';
+  document.getElementById('r4tbody').innerHTML = '<tr><td colspan="14" class="loading">Loading live data from GA4/GSC…</td></tr>';
+  try {
+    const res = await fetch('/api/sukirtha-req4-ga4-seo');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    R4_SUMMARY = data.summary;
+    R4_ROWS = data.rows;
+    try { await idbSet(R4_CACHE_KEY, { summary: R4_SUMMARY, rows: R4_ROWS }); } catch (e) { /* storage unavailable — ignore */ }
+    r4applyLoadedData(false);
+  } catch (e) {
+    document.getElementById('r4liveChip').textContent = 'Failed to load: ' + e.message;
+    document.getElementById('r4liveChip').className = 'chip stale';
+    document.getElementById('r4tbody').innerHTML = '<tr><td colspan="14" class="loading">Could not load live GA4/GSC data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Refresh';
+  }
+}
+document.getElementById('r4refreshBtn').addEventListener('click', r4load);
+
+function r4renderCards(rows){
+  const sessions = rows.reduce((s, r) => s + r.sessions, 0);
+  const users = rows.reduce((s, r) => s + r.users, 0);
+  const revenue = rows.reduce((s, r) => s + r.purchaseRevenue, 0);
+  const engRate = rows.length ? rows.reduce((s, r) => s + r.engagementRate, 0) / rows.length : 0;
+  const engTime = rows.length ? rows.reduce((s, r) => s + r.avgEngagementTimeSec, 0) / rows.length : 0;
+  const pagesPerSession = rows.length ? rows.reduce((s, r) => s + r.pagesPerSession, 0) / rows.length : 0;
+  const queries = new Set(rows.map(r => r.topQuery).filter(Boolean));
+
+  document.getElementById('r4cSessions').textContent = num(sessions);
+  document.getElementById('r4cUsers').textContent = num(users);
+  document.getElementById('r4cPages').textContent = num(rows.length);
+  document.getElementById('r4cQueries').textContent = R4_SUMMARY ? num(R4_SUMMARY.queries) : num(queries.size);
+  document.getElementById('r4cRevenue').textContent = eur(revenue);
+  document.getElementById('r4cEngRate').textContent = pct(engRate);
+  document.getElementById('r4cEngTime').textContent = fmtSec(engTime);
+  document.getElementById('r4cPagesPerSession').textContent = pagesPerSession.toFixed(2);
+}
+
+function fmtSec(sec){
+  const s = Math.round(sec);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return m > 0 ? (m + 'm ' + r + 's') : (r + 's');
+}
+
+function r4filteredRows(){
+  const qPage = document.getElementById('r4q_page').value.trim().toLowerCase();
+  const qQuery = document.getElementById('r4q_query').value.trim().toLowerCase();
+  const typeF = document.getElementById('r4f_type').value;
+  const sessionsF = document.getElementById('r4f_sessions').value;
+  const revenueF = document.getElementById('r4f_revenue').value;
+  const ctrF = document.getElementById('r4f_ctr').value;
+
+  let rows = R4_ROWS.filter(r => {
+    const pageHit = !qPage || (r.landingPage||'').toLowerCase().includes(qPage);
+    const queryHit = !qQuery || (r.topQuery||'').toLowerCase().includes(qQuery);
+    const typeHit = !typeF || r.pageType === typeF;
+    const s = r.sessions;
+    const sessionsHit = !sessionsF
+      || (sessionsF === '0' && s === 0)
+      || (sessionsF === '1-9' && s >= 1 && s <= 9)
+      || (sessionsF === '10-49' && s >= 10 && s <= 49)
+      || (sessionsF === '50+' && s >= 50);
+    const rev = r.purchaseRevenue;
+    const revenueHit = !revenueF
+      || (revenueF === '0' && rev === 0)
+      || (revenueF === '1+' && rev > 0);
+    const ctrPct = r.ctr * 100;
+    const ctrHit = !ctrF
+      || (ctrF === '0-1' && ctrPct >= 0 && ctrPct < 1)
+      || (ctrF === '1-5' && ctrPct >= 1 && ctrPct < 5)
+      || (ctrF === '5+' && ctrPct >= 5);
+    return pageHit && queryHit && typeHit && sessionsHit && revenueHit && ctrHit;
+  });
+
+  if (r4SortKey) {
+    rows = rows.slice().sort((a, b) => {
+      const av = a[r4SortKey], bv = b[r4SortKey];
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * r4SortDir;
+      return String(av||'').localeCompare(String(bv||'')) * r4SortDir;
+    });
+  }
+  return rows;
+}
+
+function r4sortBy(key){
+  if (r4SortKey === key) { r4SortDir *= -1; } else { r4SortKey = key; r4SortDir = 1; }
+  r4pg = 1;
+  r4render();
+}
+
+function r4maxpg(rows){
+  const size = parseInt(document.getElementById('r4psize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function r4render(){
+  const rows = r4filteredRows();
+  r4renderCards(rows);
+  const size = parseInt(document.getElementById('r4psize').value, 10);
+  const mp = r4maxpg(rows);
+  if (r4pg > mp) r4pg = mp;
+  if (r4pg < 1) r4pg = 1;
+
+  document.getElementById('r4cnt').textContent = rows.length.toLocaleString() + ' of ' + R4_ROWS.length.toLocaleString() + ' landing pages';
+  const tbody = document.getElementById('r4tbody');
+  const emptyEl = document.getElementById('r4empty');
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('r4pinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (r4pg - 1) * size;
+  const pageRows = rows.slice(from, from + size);
+  const lastChecked = new Date(R4_SUMMARY.retrievedAt).toLocaleString();
+
+  tbody.innerHTML = pageRows.map(r => {
+    return (
+      '<tr>' +
+      '<td class="urlcell"><a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.landingPage) + '</a></td>' +
+      '<td>' + esc(r.pageType) + '</td>' +
+      '<td>' + esc(r.topQuery || '—') + '</td>' +
+      '<td class="num">' + num(r.sessions) + '</td>' +
+      '<td class="num">' + num(r.users) + '</td>' +
+      '<td class="num">' + pct(r.engagementRate) + '</td>' +
+      '<td class="num">' + esc(r.avgEngagementTimeLabel) + '</td>' +
+      '<td class="num">' + r.pagesPerSession.toFixed(2) + '</td>' +
+      '<td class="num">' + eur(r.purchaseRevenue) + '</td>' +
+      '<td class="num">' + num(r.clicks) + '</td>' +
+      '<td class="num">' + num(r.impressions) + '</td>' +
+      '<td class="num">' + pct(r.ctr) + '</td>' +
+      '<td class="num">' + (r.avgPosition === null ? '—' : r.avgPosition.toFixed(1)) + '</td>' +
+      '<td>' + lastChecked + '</td>' +
+      '</tr>'
+    );
+  }).join('');
+  document.getElementById('r4pinfo').textContent = 'Showing ' + (from + 1) + '–' + Math.min(from + size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + r4pg + ' of ' + mp + ')';
+}
+
+function r4csvEscape(v){
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function r4exportCsv(){
+  const rows = r4filteredRows();
+  const header = ['Landing Page','Page Type','Top Query','Sessions','Users','Engagement Rate','Avg Engagement Time','Pages / Session','Purchase Revenue (€)','Clicks','Impressions','CTR','Avg Position','Last Refreshed'];
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    const row = [
+      r.landingPage,
+      r.pageType,
+      r.topQuery || '',
+      r.sessions,
+      r.users,
+      (r.engagementRate * 100).toFixed(2) + '%',
+      r.avgEngagementTimeLabel,
+      r.pagesPerSession.toFixed(2),
+      r.purchaseRevenue,
+      r.clicks,
+      r.impressions,
+      (r.ctr * 100).toFixed(2) + '%',
+      r.avgPosition === null ? '' : r.avgPosition.toFixed(1),
+      R4_SUMMARY ? R4_SUMMARY.retrievedAt : '',
+    ].map(r4csvEscape);
+    lines.push(row.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SUK-R4_ga4_seo_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('r4q_page').addEventListener('input', () => { r4pg = 1; r4render(); });
+document.getElementById('r4q_query').addEventListener('input', () => { r4pg = 1; r4render(); });
+document.getElementById('r4f_type').addEventListener('change', () => { r4pg = 1; r4render(); });
+document.getElementById('r4f_sessions').addEventListener('change', () => { r4pg = 1; r4render(); });
+document.getElementById('r4f_revenue').addEventListener('change', () => { r4pg = 1; r4render(); });
+document.getElementById('r4f_ctr').addEventListener('change', () => { r4pg = 1; r4render(); });
+document.getElementById('r4psize').addEventListener('change', () => { r4pg = 1; r4render(); });
+document.getElementById('r4resetFilters').addEventListener('click', () => {
+  document.getElementById('r4q_page').value = '';
+  document.getElementById('r4q_query').value = '';
+  document.getElementById('r4f_type').value = '';
+  document.getElementById('r4f_sessions').value = '';
+  document.getElementById('r4f_revenue').value = '';
+  document.getElementById('r4f_ctr').value = '';
+  r4pg = 1;
+  r4render();
+});
+document.getElementById('r4pgFirst').addEventListener('click', () => { r4pg = 1; r4render(); });
+document.getElementById('r4pgPrev').addEventListener('click', () => { if (r4pg > 1) { r4pg--; r4render(); } });
+document.getElementById('r4pgNext').addEventListener('click', () => { if (r4pg < r4maxpg(r4filteredRows())) { r4pg++; r4render(); } });
+document.getElementById('r4pgLast').addEventListener('click', () => { r4pg = r4maxpg(r4filteredRows()); r4render(); });
+document.getElementById('r4exportCsv').addEventListener('click', r4exportCsv);
 </script>
 </body>
 </html>
