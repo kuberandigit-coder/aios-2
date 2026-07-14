@@ -46,6 +46,19 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 .footnotes strong{color:var(--ink);}
 .loading{padding:60px 20px;text-align:center;color:var(--muted);}
 @media(max-width:700px){h1{font-size:18px;}.card .value{font-size:19px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+.reqtabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.reqtab{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
+.reqtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.badge-missing{background:#fdecea;color:var(--bad);border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:700;}
+.badge-na{background:#eef1f6;color:var(--na);border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:700;}
+.pill.yes{background:#c62828;}
+.pill.no{background:#2e7d32;}
+.pill.dup{background:#b9770e;}
+.detailrow td{background:#f7f9fc;padding:10px 16px 14px 16px;}
+.detailtbl{width:100%;font-size:12px;border-collapse:collapse;}
+.detailtbl th{text-align:left;color:var(--muted);font-weight:700;padding:5px 8px;text-transform:uppercase;font-size:10.5px;}
+.detailtbl td{padding:5px 8px;border-top:1px solid var(--line);}
+.moreBtn{background:none;border:1px solid var(--line);border-radius:7px;padding:3px 9px;font-size:11.5px;cursor:pointer;color:var(--accent);}
 </style>
 </head>
 <body>
@@ -55,6 +68,12 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 <span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Kuberan</span>
 </div>
 
+<div class="reqtabs">
+  <div class="reqtab active" id="tabBtn1" onclick="showReqTab(1)">Requirement 1 · Low CTR Blog Posts &amp; Collections</div>
+  <div class="reqtab" id="tabBtn2" onclick="showReqTab(2)">Requirement 2 · Duplicate Listing &amp; Price Check</div>
+</div>
+
+<div id="reqTab1">
 <header>
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sukirtha — Requirement 1 (Live)</div>
   <h1>Low CTR Blog Posts &amp; Collections Identification</h1>
@@ -139,7 +158,92 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <code>evidence/sukirtha/2026-07-13_req1_discovery_and_gsc_access_gap_evidence.md</code> and
   <code>evidence/sukirtha/2026-07-13_req1_live_dashboard_build_evidence.md</code>.
 </div>
+</div>
 
+<div id="reqTab2" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sukirtha — Requirement 2 (Live)</div>
+  <h1>Duplicate Listing &amp; Price Check</h1>
+  <div class="sub">Which Shopify product variants on ledsone.de use the same SKU across multiple listings, and do those duplicate listings have different current prices or compare-at prices? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Sukirtha</strong></div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin API (read-only)</span>
+    <span class="chip" id="r2liveChip">Fetching live from Shopify…</span>
+    <span class="chip live" id="r2lastChecked" style="display:none;"></span>
+  </div>
+</header>
+
+<div class="cards" id="r2cards">
+  <div class="card"><div class="label">Total Products</div><div class="value" id="r2cProducts">–</div></div>
+  <div class="card"><div class="label">Total Variants</div><div class="value" id="r2cVariants">–</div></div>
+  <div class="card"><div class="label">Variants with SKU</div><div class="value" id="r2cWithSku">–</div></div>
+  <div class="card warn"><div class="label">Missing SKU</div><div class="value" id="r2cMissing">–</div></div>
+  <div class="card"><div class="label">Unique SKUs</div><div class="value" id="r2cUnique">–</div></div>
+  <div class="card warn"><div class="label">Duplicate SKUs</div><div class="value" id="r2cDupSkus">–</div></div>
+  <div class="card"><div class="label">Duplicate Listings</div><div class="value" id="r2cDupListings">–</div></div>
+  <div class="card warn"><div class="label">Current Price Mismatches</div><div class="value" id="r2cPriceMismatch">–</div></div>
+  <div class="card warn"><div class="label">Compare-at Price Mismatches</div><div class="value" id="r2cCompareMismatch">–</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="r2cnt">–</span>
+    <input type="text" id="r2q_sku" placeholder="Search SKU…">
+    <input type="text" id="r2q_title" placeholder="Search product title…">
+    <button id="r2exportCsv" class="primary">Export CSV</button>
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Duplicate? <select id="r2f_dup">
+      <option value="">All</option><option value="yes">Yes</option><option value="no">No</option><option value="nc">Not Checked</option></select></label>
+    <label>Price Mismatch? <select id="r2f_price">
+      <option value="">All</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+    <label>Compare-at Mismatch? <select id="r2f_compare">
+      <option value="">All</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+    <label>Status <select id="r2f_status">
+      <option value="">All</option><option value="ACTIVE">Active</option><option value="DRAFT">Draft</option><option value="ARCHIVED">Archived</option></select></label>
+    <label>Missing SKU <select id="r2f_missing">
+      <option value="">All</option><option value="yes">Missing only</option><option value="no">Has SKU only</option></select></label>
+    <button id="r2resetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th>SKU</th><th>Product Title</th><th>Listing URL 1</th><th>Listing URL 2</th>
+        <th class="num">Price 1 (€)</th><th class="num">Compare-at 1 (€)</th>
+        <th class="num">Price 2 (€)</th><th class="num">Compare-at 2 (€)</th>
+        <th>Duplicate?</th><th>Price Mismatch?</th><th>Compare-at Mismatch?</th>
+        <th class="num">Additional Listings</th><th>Product Status</th><th>Last Checked</th>
+      </tr></thead>
+      <tbody id="r2tbody"><tr><td colspan="14" class="loading">Loading live data from Shopify…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r2empty" style="display:none;">No SKU groups match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);border-bottom:0;justify-content:space-between;">
+    <span id="r2pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="r2psize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="r2pgFirst">&laquo;</button>
+      <button id="r2pgPrev">&lsaquo; Prev</button>
+      <button id="r2pgNext">Next &rsaquo;</button>
+      <button id="r2pgLast">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only) &middot; store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sukirtha-req2-duplicate-check</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Update frequency:</strong> not a scheduled/cached snapshot &mdash; this page calls Shopify live every time it loads. "Last checked" below reflects the actual retrieval timestamp of that call.<br>
+  <strong>SKU normalisation:</strong> SKUs are trimmed and compared case-insensitively for matching only; the original SKU is always displayed. Blank/missing SKUs are never grouped as duplicates &mdash; they show <span class="badge-missing">Missing SKU</span> and Duplicate/Price Mismatch = <span class="badge-na">Not Checked</span>.<br>
+  <strong>Duplicate rule:</strong> Duplicate = Yes when the same normalised, non-empty SKU is assigned to more than one distinct Shopify variant. Product title is never used as the duplicate key.<br>
+  <strong>Price Mismatch rule:</strong> only evaluated when Duplicate = Yes; Yes when more than one distinct numeric current price exists in that SKU's listing group.<br>
+  <strong>Compare-at Price Mismatch rule:</strong> only evaluated when Duplicate = Yes; a listing having a compare-at price and another having none counts as a mismatch, same as two different non-null compare-at values.<br>
+  <strong>More than 2 listings:</strong> the table shows Listing 1 and Listing 2; any further listings are counted in "Additional Listings" and fully visible/exportable via the "+N more" expand control on that row &mdash; nothing is silently discarded.<br>
+  <strong>Governance:</strong> Shopify remains the sole authoritative source for products/variants/SKUs/prices. This dashboard is a read-only audit view; no product, variant, price, or inventory record was created, changed, or merged by this page or its build process.<br>
+  <strong>Last refresh timestamp:</strong> <span id="r2lastRefresh">–</span><br>
+  <strong>Evidence:</strong> full discovery, Shopify data-source mapping, and validation for this requirement are recorded under
+  <code>evidence/sukirtha/SUK-R2-*.md</code> and <code>validation/sukirtha/SUK-R2-validation-report.md</code>.
+</div>
+</div>
 </div>
 
 <script>
@@ -390,6 +494,222 @@ document.getElementById('pgNext').addEventListener('click', () => { if (pg < max
 document.getElementById('pgLast').addEventListener('click', () => { pg = maxpg(filteredRows()); render(); });
 
 load();
+
+// ===================== Requirement 2 — Duplicate Listing & Price Check =====================
+
+let R2_GROUPS = [];
+let R2_SUMMARY = null;
+let r2pg = 1;
+let r2Loaded = false;
+const r2OpenRows = new Set();
+
+function showReqTab(n){
+  document.getElementById('reqTab1').style.display = n === 1 ? '' : 'none';
+  document.getElementById('reqTab2').style.display = n === 2 ? '' : 'none';
+  document.getElementById('tabBtn1').classList.toggle('active', n === 1);
+  document.getElementById('tabBtn2').classList.toggle('active', n === 2);
+  if (n === 2 && !r2Loaded) { r2Loaded = true; r2load(); }
+}
+
+function eur(v){ return v === null || v === undefined ? '—' : '€' + Number(v).toFixed(2); }
+
+async function r2load(){
+  document.getElementById('r2liveChip').textContent = 'Fetching live from Shopify…';
+  document.getElementById('r2liveChip').className = 'chip';
+  document.getElementById('r2tbody').innerHTML = '<tr><td colspan="14" class="loading">Loading live data from Shopify…</td></tr>';
+  try {
+    const res = await fetch('/api/sukirtha-req2-duplicate-check');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    R2_SUMMARY = data.summary;
+    R2_GROUPS = data.groups;
+    document.getElementById('r2liveChip').textContent = 'Live — fetched just now';
+    document.getElementById('r2liveChip').className = 'chip live';
+    document.getElementById('r2lastChecked').textContent = 'Last checked: ' + new Date(R2_SUMMARY.retrievedAt).toLocaleString();
+    document.getElementById('r2lastChecked').style.display = '';
+    document.getElementById('r2lastRefresh').textContent = new Date(R2_SUMMARY.retrievedAt).toLocaleString();
+    r2renderCards(R2_SUMMARY);
+    r2pg = 1;
+    r2render();
+  } catch (e) {
+    document.getElementById('r2liveChip').textContent = 'Failed to load: ' + e.message;
+    document.getElementById('r2liveChip').className = 'chip stale';
+    document.getElementById('r2tbody').innerHTML = '<tr><td colspan="14" class="loading">Could not load live Shopify data. ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+function r2renderCards(s){
+  document.getElementById('r2cProducts').textContent = num(s.totalProducts);
+  document.getElementById('r2cVariants').textContent = num(s.totalVariants);
+  document.getElementById('r2cWithSku').textContent = num(s.withSku);
+  document.getElementById('r2cMissing').textContent = num(s.missingSku);
+  document.getElementById('r2cUnique').textContent = num(s.uniqueSkus);
+  document.getElementById('r2cDupSkus').textContent = num(s.duplicateSkus);
+  document.getElementById('r2cDupListings').textContent = num(s.duplicateListings);
+  document.getElementById('r2cPriceMismatch').textContent = num(s.priceMismatches);
+  document.getElementById('r2cCompareMismatch').textContent = num(s.compareMismatches);
+}
+
+function r2filteredGroups(){
+  const qSku = document.getElementById('r2q_sku').value.trim().toLowerCase();
+  const qTitle = document.getElementById('r2q_title').value.trim().toLowerCase();
+  const dupF = document.getElementById('r2f_dup').value;
+  const priceF = document.getElementById('r2f_price').value;
+  const compareF = document.getElementById('r2f_compare').value;
+  const statusF = document.getElementById('r2f_status').value;
+  const missingF = document.getElementById('r2f_missing').value;
+
+  return R2_GROUPS.filter(g => {
+    const skuHit = !qSku || g.skuRaw.toLowerCase().includes(qSku);
+    const titleHit = !qTitle || g.listings.some(l => (l.productTitle||'').toLowerCase().includes(qTitle));
+    const dupVal = g.missingSku ? 'nc' : (g.duplicate ? 'yes' : 'no');
+    const dupHit = !dupF || dupVal === dupF;
+    const priceVal = g.missingSku ? null : (g.priceMismatch ? 'yes' : 'no');
+    const priceHit = !priceF || priceVal === priceF;
+    const compareVal = g.missingSku ? null : (g.compareMismatch ? 'yes' : 'no');
+    const compareHit = !compareF || compareVal === compareF;
+    const statusHit = !statusF || g.listings.some(l => l.status === statusF);
+    const missingHit = !missingF || (missingF === 'yes' ? !!g.missingSku : !g.missingSku);
+    return skuHit && titleHit && dupHit && priceHit && compareHit && statusHit && missingHit;
+  });
+}
+
+function r2maxpg(rows){
+  const size = parseInt(document.getElementById('r2psize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function r2badge(g, field){
+  if (g.missingSku) return '<span class="badge-na">Not Checked</span>';
+  const val = g[field];
+  if (field === 'duplicate') return val ? '<span class="pill dup">Yes</span>' : '<span class="pill no">No</span>';
+  return val ? '<span class="pill yes">Yes</span>' : '<span class="pill no">No</span>';
+}
+
+function r2rowKey(g, idx){ return g.skuNorm + '__' + idx; }
+
+function r2render(){
+  const groups = r2filteredGroups();
+  const size = parseInt(document.getElementById('r2psize').value, 10);
+  const mp = r2maxpg(groups);
+  if (r2pg > mp) r2pg = mp;
+  if (r2pg < 1) r2pg = 1;
+
+  document.getElementById('r2cnt').textContent = 'All ' + R2_GROUPS.length.toLocaleString() + ' SKUs';
+  const tbody = document.getElementById('r2tbody');
+  const emptyEl = document.getElementById('r2empty');
+  if (groups.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('r2pinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (r2pg - 1) * size;
+  const pageGroups = groups.slice(from, from + size);
+  const lastChecked = new Date(R2_SUMMARY.retrievedAt).toLocaleString();
+
+  let html = '';
+  pageGroups.forEach((g, idx) => {
+    const l1 = g.listings[0];
+    const l2 = g.listings[1];
+    const extra = g.listings.slice(2);
+    const key = r2rowKey(g, from + idx);
+    const skuLabel = g.missingSku ? esc(g.skuRaw || '(blank)') + ' <span class="badge-missing">Missing SKU</span>' : esc(g.skuRaw);
+    html +=
+      '<tr>' +
+      '<td>' + skuLabel + '</td>' +
+      '<td>' + esc(l1.productTitle) + '</td>' +
+      '<td class="urlcell"><a href="' + esc(l1.url) + '" target="_blank" rel="noopener">' + esc(l1.url) + '</a></td>' +
+      '<td class="urlcell">' + (l2 ? '<a href="' + esc(l2.url) + '" target="_blank" rel="noopener">' + esc(l2.url) + '</a>' : '—') + '</td>' +
+      '<td class="num">' + eur(l1.price) + '</td>' +
+      '<td class="num">' + eur(l1.compareAtPrice) + '</td>' +
+      '<td class="num">' + (l2 ? eur(l2.price) : '—') + '</td>' +
+      '<td class="num">' + (l2 ? eur(l2.compareAtPrice) : '—') + '</td>' +
+      '<td>' + r2badge(g, 'duplicate') + '</td>' +
+      '<td>' + r2badge(g, 'priceMismatch') + '</td>' +
+      '<td>' + r2badge(g, 'compareMismatch') + '</td>' +
+      '<td class="num">' + (extra.length ? '<button class="moreBtn" onclick="r2toggleDetail(\'' + key + '\')">' + extra.length + ' more &#9662;</button>' : '0') + '</td>' +
+      '<td>' + esc(l1.status) + '</td>' +
+      '<td>' + lastChecked + '</td>' +
+      '</tr>';
+    if (extra.length) {
+      html += '<tr class="detailrow" id="detail_' + key + '" style="display:none;"><td colspan="14"><table class="detailtbl"><thead><tr><th>Listing URL</th><th>Price (€)</th><th>Compare-at (€)</th><th>Status</th></tr></thead><tbody>' +
+        extra.map(l => '<tr><td><a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.url) + '</a></td><td>' + eur(l.price) + '</td><td>' + eur(l.compareAtPrice) + '</td><td>' + esc(l.status) + '</td></tr>').join('') +
+        '</tbody></table></td></tr>';
+    }
+  });
+  tbody.innerHTML = html;
+  document.getElementById('r2pinfo').textContent = 'Showing ' + (from + 1) + '–' + Math.min(from + size, groups.length) + ' of ' + groups.length.toLocaleString() + ' (page ' + r2pg + ' of ' + mp + ')';
+}
+
+function r2toggleDetail(key){
+  const row = document.getElementById('detail_' + key);
+  if (!row) return;
+  row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+function r2csvEscape(v){
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function r2exportCsv(){
+  const groups = r2filteredGroups();
+  const lastChecked = R2_SUMMARY ? R2_SUMMARY.retrievedAt : '';
+  const header = ['Requirement ID','Store','SKU','Product IDs','Variant IDs','Product Titles','Product URLs','Current Prices','Compare-at Prices','Duplicate','Price Mismatch','Compare-at Mismatch','Product Statuses','Last Checked'];
+  const lines = [header.join(',')];
+  groups.forEach(g => {
+    const row = [
+      'SUK-R2',
+      'ledsone.de',
+      g.skuRaw,
+      g.listings.map(l => l.productId).join(' | '),
+      g.listings.map(l => l.variantId).join(' | '),
+      g.listings.map(l => l.productTitle).join(' | '),
+      g.listings.map(l => l.url).join(' | '),
+      g.listings.map(l => l.price === null ? '' : l.price).join(' | '),
+      g.listings.map(l => l.compareAtPrice === null ? '' : l.compareAtPrice).join(' | '),
+      g.missingSku ? 'Not Checked' : (g.duplicate ? 'Yes' : 'No'),
+      g.missingSku ? 'Not Checked' : (g.priceMismatch ? 'Yes' : 'No'),
+      g.missingSku ? 'Not Checked' : (g.compareMismatch ? 'Yes' : 'No'),
+      g.listings.map(l => l.status).join(' | '),
+      lastChecked,
+    ].map(r2csvEscape);
+    lines.push(row.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SUK-R2_duplicate_listing_price_check_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('r2q_sku').addEventListener('input', () => { r2pg = 1; r2render(); });
+document.getElementById('r2q_title').addEventListener('input', () => { r2pg = 1; r2render(); });
+document.getElementById('r2f_dup').addEventListener('change', () => { r2pg = 1; r2render(); });
+document.getElementById('r2f_price').addEventListener('change', () => { r2pg = 1; r2render(); });
+document.getElementById('r2f_compare').addEventListener('change', () => { r2pg = 1; r2render(); });
+document.getElementById('r2f_status').addEventListener('change', () => { r2pg = 1; r2render(); });
+document.getElementById('r2f_missing').addEventListener('change', () => { r2pg = 1; r2render(); });
+document.getElementById('r2psize').addEventListener('change', () => { r2pg = 1; r2render(); });
+document.getElementById('r2resetFilters').addEventListener('click', () => {
+  document.getElementById('r2q_sku').value = '';
+  document.getElementById('r2q_title').value = '';
+  document.getElementById('r2f_dup').value = '';
+  document.getElementById('r2f_price').value = '';
+  document.getElementById('r2f_compare').value = '';
+  document.getElementById('r2f_status').value = '';
+  document.getElementById('r2f_missing').value = '';
+  r2pg = 1;
+  r2render();
+});
+document.getElementById('r2pgFirst').addEventListener('click', () => { r2pg = 1; r2render(); });
+document.getElementById('r2pgPrev').addEventListener('click', () => { if (r2pg > 1) { r2pg--; r2render(); } });
+document.getElementById('r2pgNext').addEventListener('click', () => { if (r2pg < r2maxpg(r2filteredGroups())) { r2pg++; r2render(); } });
+document.getElementById('r2pgLast').addEventListener('click', () => { r2pg = r2maxpg(r2filteredGroups()); r2render(); });
+document.getElementById('r2exportCsv').addEventListener('click', r2exportCsv);
 </script>
 </body>
 </html>
