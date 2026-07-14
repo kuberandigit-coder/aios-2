@@ -3,22 +3,1062 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sajeepan — Digital Marketing Member Reports</title>
-<link rel="stylesheet" href="../assets/css/style.css">
+<title>Sajeepan — Google Ads Product Intelligence Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f0f2f5;
+  --card:#ffffff;--accent:#1a73e8;--accent2:#34a853;--accent3:#ea4335;--accent4:#fbbc04;
+  --accent-soft:#e8f0fe;--red-bg:#fce8e6;--red-bd:#f28b82;--red-tx:#b31412;
+  --amber-bg:#fef3e2;--amber-bd:#fdd663;--amber-tx:#7d4e00;
+  --green-bg:#e6f4ea;--green-bd:#81c995;--green-tx:#137333;
+  --blue-bg:#e8f0fe;--blue-bd:#aecbfa;--blue-tx:#1967d2;
+  --grey-bg:#f1f3f4;--grey-tx:#3c4043;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Google Sans",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh;}
+a{text-decoration:none;color:inherit;}
+
+/* Layout */
+.wrap{max-width:1600px;margin:0 auto;padding:20px 16px;}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--muted);font-size:13px;font-weight:600;transition:all .15s;cursor:pointer;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+
+/* Header */
+.dash-header{background:var(--card);border-radius:16px;padding:24px 28px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.dash-header h1{font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.dash-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;}
+.chip.green{background:var(--green-bg);color:var(--green-tx);}
+.chip.amber{background:var(--amber-bg);color:var(--amber-tx);}
+.chip.red{background:var(--red-bg);color:var(--red-tx);}
+.chip.grey{background:var(--grey-bg);color:var(--grey-tx);}
+
+/* Controls bar */
+.ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;background:var(--card);border-radius:12px;padding:12px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ctrl-bar label{font-size:12px;font-weight:600;color:var(--muted);margin-right:4px;}
+select.fsel{border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--ink);background:var(--card);outline:none;cursor:pointer;transition:border .15s;}
+select.fsel:focus{border-color:var(--accent);}
+.search-wrap{position:relative;flex:1;min-width:180px;max-width:320px;}
+.search-wrap input{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 12px 7px 32px;font-size:13px;color:var(--ink);background:var(--card);outline:none;transition:border .15s;}
+.search-wrap input:focus{border-color:var(--accent);}
+.search-wrap .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
+.last-upd{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;}
+
+/* KPI Grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+.kpi{background:var(--card);border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:3px solid transparent;transition:box-shadow .2s;}
+.kpi:hover{box-shadow:0 3px 10px rgba(0,0,0,.1);}
+.kpi.k-blue{border-left-color:var(--accent);}
+.kpi.k-green{border-left-color:var(--accent2);}
+.kpi.k-red{border-left-color:var(--accent3);}
+.kpi.k-amber{border-left-color:var(--accent4);}
+.kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px;}
+.kpi .val{font-size:26px;font-weight:700;line-height:1;color:var(--ink);}
+.kpi .note{font-size:11px;color:var(--muted);margin-top:5px;}
+.kpi .trend{font-size:11px;margin-top:3px;font-weight:600;}
+.trend-up{color:var(--accent2);}
+.trend-dn{color:var(--accent3);}
+
+/* Campaign Cards */
+.section-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-title .cnt{background:var(--accent-soft);color:var(--accent);border-radius:20px;padding:2px 9px;font-size:12px;font-weight:700;}
+.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:24px;}
+.camp-card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid var(--line);transition:all .2s;cursor:pointer;}
+.camp-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);transform:translateY(-1px);}
+.camp-card.eligible{border-top:3px solid var(--accent2);}
+.camp-card.limited{border-top:3px solid var(--accent4);}
+.camp-card.paused{border-top:3px solid var(--muted);}
+.camp-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.3;}
+.camp-short{font-size:11px;color:var(--muted);margin-bottom:12px;font-weight:600;}
+.camp-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.cm{text-align:center;}
+.cm .cv{font-size:18px;font-weight:700;color:var(--ink);}
+.cm .cl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+.roas-bar{background:#f1f3f4;border-radius:6px;height:6px;margin-bottom:12px;overflow:hidden;}
+.roas-fill{height:100%;border-radius:6px;transition:width .6s ease;}
+.roas-fill.good{background:var(--accent2);}
+.roas-fill.warn{background:var(--accent4);}
+.roas-fill.bad{background:var(--accent3);}
+.roas-label{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;}
+.camp-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.status-badge{font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px;border:1px solid transparent;}
+.sb-eligible{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd);}
+.sb-limited{background:var(--amber-bg);color:var(--amber-tx);border-color:var(--amber-bd);}
+.sb-paused{background:var(--grey-bg);color:var(--grey-tx);}
+.view-btn{font-size:12px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:5px 12px;background:var(--accent-soft);cursor:pointer;transition:all .15s;}
+.view-btn:hover{background:var(--accent);color:#fff;}
+
+/* Action Centre */
+.action-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
+.action-item{background:var(--card);border-radius:12px;padding:14px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid transparent;display:grid;grid-template-columns:36px 1fr 160px 120px auto;gap:12px;align-items:center;}
+.action-item.pri-red{border-left-color:var(--accent3);}
+.action-item.pri-amber{border-left-color:var(--accent4);}
+.action-item.pri-green{border-left-color:var(--accent2);}
+.pri-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.pri-red .pri-dot{background:var(--red-bg);color:var(--red-tx);}
+.pri-amber .pri-dot{background:var(--amber-bg);color:var(--amber-tx);}
+.pri-green .pri-dot{background:var(--green-bg);color:var(--green-tx);}
+.action-product{font-size:12.5px;font-weight:700;color:var(--ink);}
+.action-reason{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.action-camp{font-size:11px;color:var(--muted);font-weight:600;}
+.action-rec{font-size:12px;font-weight:700;color:var(--ink);}
+.action-impact{font-size:11px;font-weight:700;border-radius:6px;padding:3px 9px;border:1px solid transparent;}
+.impact-high{background:var(--red-bg);color:var(--red-tx);border-color:var(--red-bd);}
+.impact-med{background:var(--amber-bg);color:var(--amber-tx);border-color:var(--amber-bd);}
+.impact-low{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd);}
+
+/* Charts */
+.chart-section{background:var(--card);border-radius:16px;padding:20px 24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.chart-tabs{display:flex;gap:4px;}
+.ctab{border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);transition:all .15s;}
+.ctab.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chart-wrap{position:relative;height:260px;}
+
+/* Top Products */
+.top-prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px;}
+.tp-section{background:var(--card);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.tp-title{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--ink);display:flex;align-items:center;gap:6px;}
+.tp-icon{font-size:16px;}
+.tp-list{display:flex;flex-direction:column;gap:8px;}
+.tp-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;background:var(--bg);transition:background .15s;cursor:pointer;}
+.tp-row:hover{background:var(--accent-soft);}
+.tp-rank{font-size:11px;font-weight:700;color:var(--muted);width:16px;flex-shrink:0;}
+.tp-img{width:36px;height:36px;border-radius:6px;object-fit:cover;background:#e8eaf0;flex-shrink:0;}
+.tp-info{flex:1;min-width:0;}
+.tp-pname{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tp-meta{font-size:11px;color:var(--muted);}
+.tp-val{font-size:13px;font-weight:700;color:var(--ink);flex-shrink:0;}
+
+/* Needs Attention */
+.attn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px;}
+.attn-card{background:var(--card);border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.07);cursor:pointer;transition:all .2s;border:1px solid var(--line);}
+.attn-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-1px);}
+.attn-icon{font-size:22px;margin-bottom:8px;}
+.attn-label{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.attn-count{font-size:28px;font-weight:700;line-height:1;}
+.attn-count.red{color:var(--accent3);}
+.attn-count.amber{color:#e37400;}
+.attn-count.blue{color:var(--accent);}
+.attn-desc{font-size:11.5px;color:var(--muted);margin-top:5px;}
+
+/* Product Table */
+.tbox{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:20px;}
+.tbar{padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:#f8f9fa;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1400px;}
+thead th{position:sticky;top:0;background:#f8f9fb;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{background:#eef0f7;}
+thead th::after{content:' ⇅';color:#aaa;font-size:10px;}
+thead th.sort-asc::after{content:' ↑';color:var(--accent);}
+thead th.sort-desc::after{content:' ↓';color:var(--accent);}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--accent-soft);}
+.prod-img-cell{width:38px;height:38px;border-radius:6px;object-fit:cover;background:#e8eaf0;}
+.prod-name{font-weight:600;color:var(--ink);max-width:200px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.prod-id{font-size:10.5px;color:var(--muted);}
+.badge{display:inline-block;border-radius:6px;padding:2px 8px;font-size:10.5px;font-weight:700;border:1px solid transparent;}
+.b-active{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd);}
+.b-outstock{background:var(--red-bg);color:var(--red-tx);border-color:var(--red-bd);}
+.b-lowstock{background:var(--amber-bg);color:var(--amber-tx);border-color:var(--amber-bd);}
+.b-feed-ok{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd);}
+.b-feed-warn{background:var(--amber-bg);color:var(--amber-tx);border-color:var(--amber-bd);}
+.roas-pill{display:inline-block;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;}
+.roas-great{background:#e6f4ea;color:#137333;}
+.roas-ok{background:#e8f0fe;color:#1967d2;}
+.roas-warn{background:#fef3e2;color:#7d4e00;}
+.roas-bad{background:#fce8e6;color:#b31412;}
+.act-btn{border:1px solid var(--accent);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-soft);cursor:pointer;transition:all .15s;}
+.act-btn:hover{background:var(--accent);color:#fff;}
+.pg-wrap{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--line);background:#f8f9fa;}
+.pg-info{font-size:12.5px;color:var(--muted);}
+.pg-btns{display:flex;gap:4px;}
+.pg-btn{border:1px solid var(--line);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);transition:all .15s;}
+.pg-btn:hover{background:var(--accent-soft);color:var(--accent);}
+.pg-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.pg-btn:disabled{opacity:.4;cursor:default;}
+
+/* Product Drawer */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;opacity:0;pointer-events:none;transition:opacity .25s;}
+.drawer-overlay.open{opacity:1;pointer-events:all;}
+.drawer{position:fixed;right:-580px;top:0;bottom:0;width:560px;background:var(--card);z-index:1001;box-shadow:-4px 0 20px rgba(0,0,0,.15);transition:right .3s ease;overflow-y:auto;display:flex;flex-direction:column;}
+.drawer.open{right:0;}
+.drawer-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px;background:#f8f9fa;flex-shrink:0;}
+.drawer-close{border:none;background:none;font-size:20px;cursor:pointer;color:var(--muted);padding:2px;line-height:1;border-radius:6px;transition:background .15s;flex-shrink:0;}
+.drawer-close:hover{background:var(--line);}
+.drawer-body{padding:20px 24px;flex:1;}
+.dr-img{width:100%;height:200px;object-fit:cover;border-radius:12px;background:#e8eaf0;margin-bottom:16px;}
+.dr-section{margin-bottom:18px;}
+.dr-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600;margin-bottom:8px;}
+.dr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.dr-metric{background:var(--bg);border-radius:10px;padding:10px 14px;}
+.dr-metric .dv{font-size:20px;font-weight:700;color:var(--ink);}
+.dr-metric .dl{font-size:11px;color:var(--muted);margin-top:2px;}
+.dr-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.dr-row:last-child{border-bottom:none;}
+.dr-row .dk{color:var(--muted);font-size:12px;}
+.dr-row .dv2{font-weight:600;color:var(--ink);}
+.rec-list{display:flex;flex-direction:column;gap:8px;}
+.rec-item{background:var(--bg);border-radius:10px;padding:10px 14px;border-left:3px solid transparent;}
+.rec-high{border-left-color:var(--accent3);}
+.rec-med{border-left-color:var(--accent4);}
+.rec-low{border-left-color:var(--accent2);}
+.rec-title{font-size:13px;font-weight:700;color:var(--ink);}
+.rec-desc{font-size:12px;color:var(--muted);margin-top:3px;}
+.feed-check{display:flex;flex-direction:column;gap:6px;}
+.fc-item{display:flex;align-items:center;gap:8px;font-size:12.5px;}
+.fc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.fc-pass{background:var(--accent2);}
+.fc-warn{background:var(--accent4);}
+.fc-fail{background:var(--accent3);}
+
+/* Loading skeleton */
+.skel{background:linear-gradient(90deg,#e8eaf0 25%,#f1f3f4 50%,#e8eaf0 75%);background-size:200%;animation:skel 1.4s infinite;}
+@keyframes skel{0%{background-position:200%}100%{background-position:-200%}}
+
+/* Empty / Error states */
+.state-empty{text-align:center;padding:48px 24px;color:var(--muted);}
+.state-empty .ico{font-size:36px;margin-bottom:12px;}
+.state-empty h3{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.state-err{background:#fce8e6;border:1px solid #f28b82;border-radius:10px;padding:12px 16px;font-size:13px;color:#b31412;margin-bottom:12px;}
+
+/* Responsive */
+@media(max-width:900px){
+  .action-item{grid-template-columns:36px 1fr;grid-template-rows:auto auto auto;}
+  .action-item>*:nth-child(3),.action-item>*:nth-child(4),.action-item>*:nth-child(5){grid-column:2;}
+  .drawer{width:100%;right:-100%;}
+}
+@media(max-width:600px){
+  h1{font-size:17px!important;}
+  .kpi .val{font-size:20px;}
+  .camp-grid{grid-template-columns:1fr;}
+  .ctrl-bar{flex-direction:column;align-items:stretch;}
+  .search-wrap{max-width:100%;}
+  .top-prod-grid{grid-template-columns:1fr;}
+}
+footer.site{margin-top:24px;color:var(--muted);font-size:12px;text-align:center;padding-bottom:24px;}
+</style>
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="../index.html">&larr; Back to all members</a>
-  <div class="placeholder">
-    <h2>Sajeepan</h2>
-    <span class="badge pending">Pending</span>
-    <dl>
-      <dt>Status</dt><dd>Pending requirement — page not built yet.</dd>
-      <dt>Source required</dt><dd>Google Sheet / MD requirement from Sajeepan (Digital Marketing team).</dd>
-      <dt>Next step</dt><dd>Create a PostgreSQL-backed report page once the requirement is received.</dd>
-    </dl>
+
+<a class="back" href="../index.html">← Back to all members</a>
+
+<!-- Header -->
+<div class="dash-header">
+  <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;">Requirement 1 · Google Ads Product Intelligence Dashboard</div>
+  <h1>Sajeepan — Google Ads PMax Performance Dashboard</h1>
+  <div class="dash-meta">
+    <span class="chip">6 PMax Campaigns</span>
+    <span class="chip green">All ENABLED</span>
+    <span class="chip grey">Source: google_ads.campaign_performance + product_performance + merchant_products</span>
+    <span class="chip grey">Last 30 Days: 2026-06-14 – 2026-07-13</span>
+    <span class="chip grey">Latest Data: 2026-07-13</span>
+    <span class="chip grey">ROAS = Conv Value ÷ Cost × 100 (percentage format throughout)</span>
+    <span class="chip grey">Ad Contribution = Conv Value − Ad Cost (profit not shown — COGS unverified)</span>
   </div>
-  <footer class="site">Digital Marketing Member Reports · AIOS · generated 2026-07-02</footer>
 </div>
+
+<!-- Controls -->
+<div class="ctrl-bar" id="ctrlBar">
+  <div>
+    <label>Campaign</label>
+    <select class="fsel" id="campFilter" onchange="applyFilters()">
+      <option value="all">All Campaigns</option>
+      <option value="21069663519">SJ_PENDANT_KLARNA</option>
+      <option value="23110323532">HIGH REVENUE PH</option>
+      <option value="23516313256">SJ_TOP_20</option>
+      <option value="23590572906">zero conv2</option>
+      <option value="22079334413">SJALL HERO</option>
+      <option value="21242723265">ALLACRSJ2 Accessories</option>
+    </select>
+  </div>
+  <div>
+    <label>Status</label>
+    <select class="fsel" id="statusFilter" onchange="applyFilters()">
+      <option value="all">All Status</option>
+      <option value="ELIGIBLE">Eligible</option>
+      <option value="LIMITED">Limited</option>
+    </select>
+  </div>
+  <div>
+    <label>Feed</label>
+    <select class="fsel" id="feedFilter" onchange="applyFilters()">
+      <option value="all">All Feed</option>
+      <option value="in stock">In Stock</option>
+      <option value="out of stock">Out of Stock</option>
+    </select>
+  </div>
+  <div class="search-wrap">
+    <span class="si">🔍</span>
+    <input type="text" id="productSearch" placeholder="Search product, SKU, item ID…" oninput="applyFilters()">
+  </div>
+  <div class="last-upd">Last updated: <strong>2026-07-13</strong></div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid" id="kpiGrid">
+  <div class="kpi k-green">
+    <div class="lbl">Total Sales (30d)</div>
+    <div class="val">£9,550</div>
+    <div class="trend trend-dn">▼ vs £11,574 prev period</div>
+    <div class="note">6 campaigns · Conv Value</div>
+  </div>
+  <div class="kpi k-blue">
+    <div class="lbl">ROAS</div>
+    <div class="val">261%</div>
+    <div class="trend trend-dn">▼ vs 318% prev period</div>
+    <div class="note">Revenue ÷ Cost × 100</div>
+  </div>
+  <div class="kpi k-red">
+    <div class="lbl">Total Cost (30d)</div>
+    <div class="val">£3,660</div>
+    <div class="trend trend-dn">▲ vs £3,642 prev period</div>
+    <div class="note">Spend across all campaigns</div>
+  </div>
+  <div class="kpi k-blue">
+    <div class="lbl">Conversions</div>
+    <div class="val">271</div>
+    <div class="trend trend-dn">▼ vs 318 prev period</div>
+    <div class="note">30-day total</div>
+  </div>
+  <div class="kpi k-blue">
+    <div class="lbl">Clicks</div>
+    <div class="val">7,139</div>
+    <div class="note">30-day total</div>
+  </div>
+  <div class="kpi k-blue">
+    <div class="lbl">Impressions</div>
+    <div class="val">441K</div>
+    <div class="note">30-day total</div>
+  </div>
+  <div class="kpi k-amber">
+    <div class="lbl">CTR</div>
+    <div class="val">1.62%</div>
+    <div class="note">Clicks ÷ Impressions</div>
+  </div>
+  <div class="kpi k-green">
+    <div class="lbl">Distinct Products (30d)</div>
+    <div class="val">1,154</div>
+    <div class="note">Normalized IDs · 284 matched to Merchant</div>
+  </div>
+</div>
+
+<!-- Campaign Cards -->
+<div class="section-title">Campaign Overview <span class="cnt">6</span></div>
+<div class="camp-grid" id="campGrid"></div>
+
+<!-- Action Centre -->
+<div class="section-title">🎯 Action Centre — What to do today</div>
+<div class="action-grid" id="actionGrid"></div>
+
+<!-- Performance Trend -->
+<div class="chart-section">
+  <div class="chart-header">
+    <div class="section-title" style="margin:0">📈 30-Day Performance Trend</div>
+    <div class="chart-tabs">
+      <button class="ctab on" onclick="switchChart('roas')">ROAS %</button>
+      <button class="ctab" onclick="switchChart('sales')">Sales £</button>
+      <button class="ctab" onclick="switchChart('cost')">Cost £</button>
+      <button class="ctab" onclick="switchChart('conv')">Conversions</button>
+    </div>
+  </div>
+  <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+</div>
+
+<!-- Top Products -->
+<div class="section-title">🏆 Top Products</div>
+<div class="top-prod-grid">
+  <div class="tp-section">
+    <div class="tp-title"><span class="tp-icon">💰</span> Top Revenue (30d)</div>
+    <div class="tp-list" id="topRevList"></div>
+  </div>
+  <div class="tp-section">
+    <div class="tp-title"><span class="tp-icon">📊</span> Top ROAS</div>
+    <div class="tp-list" id="topRoasList"></div>
+  </div>
+  <div class="tp-section">
+    <div class="tp-title"><span class="tp-icon">🎯</span> Top Conversions</div>
+    <div class="tp-list" id="topConvList"></div>
+  </div>
+</div>
+
+<!-- Needs Attention -->
+<div class="section-title">⚠️ Needs Attention</div>
+<div class="attn-grid">
+  <div class="attn-card" onclick="filterTable('zero-conv')">
+    <div class="attn-icon">🔴</div>
+    <div class="attn-label">Zero Conversion Products</div>
+    <div class="attn-count red" id="attnZeroConv">4</div>
+    <div class="attn-desc">Spending with zero conversions (>£10 spend, 30d)</div>
+  </div>
+  <div class="attn-card" onclick="filterTable('poor-roas')">
+    <div class="attn-icon">📉</div>
+    <div class="attn-label">Poor ROAS (&lt;150%)</div>
+    <div class="attn-count amber" id="attnPoorRoas">—</div>
+    <div class="attn-desc">Products with ROAS below 150% (30d)</div>
+  </div>
+  <div class="attn-card" onclick="filterTable('low-ctr')">
+    <div class="attn-icon">👁️</div>
+    <div class="attn-label">High Impressions / Low CTR</div>
+    <div class="attn-count amber" id="attnLowCtr">—</div>
+    <div class="attn-desc">Products with CTR &lt;0.5% and imps &gt;1000</div>
+  </div>
+  <div class="attn-card" onclick="filterTable('limited')">
+    <div class="attn-icon">🟡</div>
+    <div class="attn-label">LIMITED Campaigns</div>
+    <div class="attn-count amber">2</div>
+    <div class="attn-desc">SJ_PENDANT_KLARNA · zero conv2 — limiting reason not in DB, investigate in Google Ads UI</div>
+  </div>
+</div>
+
+<!-- Product Table -->
+<div class="section-title">📋 Product Table <span class="cnt" id="tableCountLabel">Top 50 Products</span></div>
+<div class="tbox">
+  <div class="tbar">
+    <span id="tableInfo">Loading…</span>
+    <span style="font-size:11px;">Source: google_ads.product_performance · Period: 2026-06-14 to 2026-07-13 · Sorted by Revenue</span>
+  </div>
+  <div class="scroll">
+    <table id="prodTable">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Image</th>
+          <th onclick="sortTable('title')">Product</th>
+          <th onclick="sortTable('campaign')">Campaign</th>
+          <th onclick="sortTable('availability')">Stock</th>
+          <th onclick="sortTable('impressions')" class="num">Impressions</th>
+          <th onclick="sortTable('clicks')" class="num">Clicks</th>
+          <th onclick="sortTable('ctr')" class="num">CTR %</th>
+          <th onclick="sortTable('cost')" class="num">Cost £</th>
+          <th onclick="sortTable('conversions')" class="num">Conv.</th>
+          <th onclick="sortTable('cv')" class="num">Revenue £</th>
+          <th onclick="sortTable('roas')" class="num">ROAS %</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="prodTbody"></tbody>
+    </table>
+  </div>
+  <div class="pg-wrap">
+    <span class="pg-info" id="pgInfo">—</span>
+    <div class="pg-btns">
+      <button class="pg-btn" id="pgPrev" onclick="changePage(-1)">← Prev</button>
+      <span id="pgNums" style="display:flex;gap:4px;"></span>
+      <button class="pg-btn" id="pgNext" onclick="changePage(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Product Detail Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="productDrawer">
+  <div class="drawer-head">
+    <div style="flex:1">
+      <div id="drTitle" style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.3;"></div>
+      <div id="drSub" style="font-size:12px;color:var(--muted);margin-top:4px;"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <img id="drImg" class="dr-img" src="" alt="Product Image" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%23e8eaf0%22 width=%22100%22 height=%22100%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%2212%22 fill=%22%23aaa%22 text-anchor=%22middle%22 dy=%22.3em%22>No Image</text></svg>'">
+
+    <div class="dr-section">
+      <div class="dr-label">Performance Metrics (30d)</div>
+      <div class="dr-grid">
+        <div class="dr-metric"><div class="dv" id="drRevenue">—</div><div class="dl">Revenue</div></div>
+        <div class="dr-metric"><div class="dv" id="drRoas">—</div><div class="dl">ROAS %</div></div>
+        <div class="dr-metric"><div class="dv" id="drCost">—</div><div class="dl">Cost</div></div>
+        <div class="dr-metric"><div class="dv" id="drConv">—</div><div class="dl">Conversions</div></div>
+        <div class="dr-metric"><div class="dv" id="drClicks">—</div><div class="dl">Clicks</div></div>
+        <div class="dr-metric"><div class="dv" id="drCtr">—</div><div class="dl">CTR %</div></div>
+        <div class="dr-metric"><div class="dv" id="drImps">—</div><div class="dl">Impressions</div></div>
+        <div class="dr-metric"><div class="dv" id="drCvr">—</div><div class="dl">Conv. Rate %</div></div>
+      </div>
+    </div>
+
+    <div class="dr-section">
+      <div class="dr-label">Product Details</div>
+      <div>
+        <div class="dr-row"><span class="dk">Item ID</span><span class="dv2" id="drItemId">—</span></div>
+        <div class="dr-row"><span class="dk">Campaign</span><span class="dv2" id="drCampaign">—</span></div>
+        <div class="dr-row"><span class="dk">Availability</span><span class="dv2" id="drAvail">—</span></div>
+        <div class="dr-row"><span class="dk">Price</span><span class="dv2" id="drPrice">—</span></div>
+        <div class="dr-row"><span class="dk">Brand</span><span class="dv2" id="drBrand">—</span></div>
+        <div class="dr-row"><span class="dk">Product Type</span><span class="dv2" id="drType">—</span></div>
+        <div class="dr-row"><span class="dk">Ad Contribution</span><span class="dv2" id="drProfit">Conv Value − Ad Cost</span></div>
+      </div>
+    </div>
+
+    <div class="dr-section">
+      <div class="dr-label">Feed Checklist</div>
+      <div class="feed-check" id="drFeedCheck"></div>
+    </div>
+
+    <div class="dr-section">
+      <div class="dr-label">AI Recommendations</div>
+      <div class="rec-list" id="drRecs"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="site">Sajeepan · Google Ads PMax Product Intelligence Dashboard · AIOS · Requirement 1 · 2026-07-14</footer>
+</div>
+
+<script>
+/* ============================================================
+   DATA — Read-only · PostgreSQL: ledsone-db-mcp
+   Sources: google_ads.campaigns, campaign_performance,
+            product_performance, merchant_products
+   Filter: 6 Sajeepan PMax campaigns by campaign_id
+   Period: 2026-06-14 to 2026-07-13 (30 days)
+   Latest DB date: 2026-07-13
+   AIOS: Requirement 1 · Sajeepan · 2026-07-14
+   ============================================================ */
+
+/* ============================================================
+   PRODUCT COUNT VERIFICATION (30-day window: 2026-06-14 to 2026-07-13)
+   Source: google_ads.product_performance
+
+   Per campaign (distinct product_item_id / 30d):
+     21069663519  raw rows: 5856  distinct_item_ids: 289
+     21242723265  raw rows: 1982  distinct_item_ids: 223
+     22079334413  raw rows: 4779  distinct_item_ids: 354
+     23110323532  raw rows: 5018  distinct_item_ids: 221
+     23516313256  raw rows: 5093  distinct_item_ids: 311
+     23590572906  raw rows: 1685  distinct_item_ids: 225
+
+   Combined (all 6 campaigns, UPPER + strip -sh suffix):
+     Total distinct normalized IDs: 1,154
+     Matched to merchant_products:   284  (24.6%)
+     Unmatched:                       870  (75.4%)
+     Duplicate merchant snapshots:  45,647 product_ids with >1 row
+
+   Join logic: UPPER(REPLACE(product_item_id,'-sh','')) = merchant_products.product_id
+   Dedup: use DISTINCT ON (product_id) ORDER BY updated_at DESC (latest record)
+   ============================================================ */
+
+/* Campaign master data */
+const CAMPAIGNS = [
+  { id:'21069663519', name:'Pmax | Sajeepan | Klarna CSS | SJ_PENDANT_KLARNA | Zero Conv | MCV | UK',
+    short:'SJ_PENDANT_KLARNA', status:'ENABLED', primary:'LIMITED', budget:100, target_roas:3.20,
+    l30:{ cost:1609.79, cv:4462.18, conv:138.41, clicks:3518, imps:237288, roas:277.19 },
+    prev:{ cost:1156.91, cv:3508.71, conv:108.29, roas:303.28 }
+  },
+  { id:'23110323532', name:'Pmax | Sajeepan | SHOPTIMISED CSS | SJGB | HIGH REVENUE PH | MCV | UK',
+    short:'HIGH REVENUE PH', status:'ENABLED', primary:'ELIGIBLE', budget:100, target_roas:3.20,
+    l30:{ cost:1129.64, cv:2880.09, conv:70.82, clicks:1775, imps:88776, roas:254.96 },
+    prev:{ cost:963.02, cv:2578.36, conv:79.54, roas:267.74 }
+  },
+  { id:'23516313256', name:'Pmax | Sajeepan | Klarna CSS | SJ_TOP_20 | TOP 20% PH | MCV | UK',
+    short:'SJ_TOP_20', status:'ENABLED', primary:'ELIGIBLE', budget:36, target_roas:4.00,
+    l30:{ cost:342.45, cv:918.37, conv:29.97, clicks:816, imps:60152, roas:268.18 },
+    prev:{ cost:888.45, cv:3303.99, conv:81.32, roas:371.88 }
+  },
+  { id:'23590572906', name:'Pmax | Sajeepan | Shoptimised CSS | SJGB | zero conv2 | MCV | UK',
+    short:'zero conv2', status:'ENABLED', primary:'LIMITED', budget:40, target_roas:4.00,
+    l30:{ cost:171.37, cv:545.63, conv:10.26, clicks:321, imps:16309, roas:318.39 },
+    prev:{ cost:182.65, cv:610.67, conv:13.26, roas:334.34 }
+  },
+  { id:'22079334413', name:'Pmax | Sajeepan | G CSS SJALL | SJALL | HERO | MCV | UK',
+    short:'SJALL HERO', status:'ENABLED', primary:'ELIGIBLE', budget:40, target_roas:3.80,
+    l30:{ cost:291.85, cv:393.76, conv:13.83, clicks:438, imps:22897, roas:134.92 },
+    prev:{ cost:200.93, cv:623.23, conv:14.63, roas:310.17 }
+  },
+  { id:'21242723265', name:'Pmax | Sajeepan | Klarna CSS | ALLACRSJ2 | Accessories | MCV | UK',
+    short:'ALLACRSJ2 Access.', status:'ENABLED', primary:'ELIGIBLE', budget:22, target_roas:3.80,
+    l30:{ cost:114.74, cv:349.93, conv:7.65, clicks:271, imps:15830, roas:304.97 },
+    prev:{ cost:249.81, cv:948.73, conv:20.92, roas:379.78 }
+  }
+];
+
+/* Daily trend data (30 days, all campaigns combined) */
+const TREND = [
+  {d:'06/14',cost:66.12,cv:102.29,conv:5.82,roas:154.71},
+  {d:'06/15',cost:94.51,cv:390.44,conv:8.02,roas:413.12},
+  {d:'06/16',cost:132.23,cv:235.30,conv:9.99,roas:177.95},
+  {d:'06/17',cost:125.30,cv:208.04,conv:8.97,roas:166.03},
+  {d:'06/18',cost:74.38,cv:50.57,conv:1.31,roas:67.99},
+  {d:'06/19',cost:57.52,cv:106.24,conv:3.25,roas:184.71},
+  {d:'06/20',cost:49.37,cv:108.31,conv:3.95,roas:219.38},
+  {d:'06/21',cost:24.09,cv:10.57,conv:1.02,roas:43.86},
+  {d:'06/22',cost:54.50,cv:165.74,conv:4.50,roas:304.10},
+  {d:'06/23',cost:51.23,cv:84.74,conv:3.70,roas:165.41},
+  {d:'06/24',cost:44.14,cv:53.04,conv:1.75,roas:120.17},
+  {d:'06/25',cost:39.04,cv:242.59,conv:5.65,roas:621.39},
+  {d:'06/26',cost:62.87,cv:92.37,conv:4.82,roas:146.92},
+  {d:'06/27',cost:84.98,cv:206.64,conv:7.46,roas:243.17},
+  {d:'06/28',cost:80.40,cv:109.65,conv:5.25,roas:136.39},
+  {d:'06/29',cost:110.82,cv:979.67,conv:15.23,roas:884.01},
+  {d:'06/30',cost:121.03,cv:627.29,conv:13.07,roas:518.29},
+  {d:'07/01',cost:130.35,cv:360.30,conv:13.50,roas:276.41},
+  {d:'07/02',cost:145.45,cv:499.37,conv:10.51,roas:343.32},
+  {d:'07/03',cost:138.14,cv:239.18,conv:7.57,roas:173.14},
+  {d:'07/04',cost:182.25,cv:396.02,conv:15.58,roas:217.29},
+  {d:'07/05',cost:234.10,cv:472.56,conv:19.83,roas:201.86},
+  {d:'07/06',cost:199.95,cv:673.15,conv:12.38,roas:336.66},
+  {d:'07/07',cost:182.42,cv:598.34,conv:14.45,roas:328.00},
+  {d:'07/08',cost:217.35,cv:308.87,conv:12.88,roas:142.11},
+  {d:'07/09',cost:194.45,cv:434.34,conv:11.63,roas:223.37},
+  {d:'07/10',cost:166.03,cv:441.47,conv:12.47,roas:265.90},
+  {d:'07/11',cost:175.03,cv:394.42,conv:11.27,roas:225.35},
+  {d:'07/12',cost:220.00,cv:609.24,conv:13.09,roas:276.93},
+  {d:'07/13',cost:201.79,cv:349.21,conv:12.05,roas:173.05}
+];
+
+/* Top 50 products by revenue — google_ads.product_performance (30d) */
+const PRODUCTS = [
+  {item:'shopify_gb_14877951099266_54868256915842',cid:'21069663519',cost:50.10,cv:483.87,conv:9.97,clicks:134,imps:11800,roas:965.81,title:'Vintage LED Edison Bulb 4W E27 Non Dimmable ~5614',brand:'LEDSone',price:6.45,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/Diamond_Bulb.png?v=1776054181',type:'Bulb'},
+  {item:'shopify_gb_7855951184122_43721073033466',cid:'21069663519',cost:51.20,cv:316.47,conv:8.81,clicks:73,imps:7415,roas:618.11,title:'LED A60 E27 4W Bulb Filament Dimmable Globe ~4095',brand:'LEDSone',price:15.10,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/products/15898.png?v=1669959090',type:'E27 Base Bulb B'},
+  {item:'shopify_gb_7053693649057_41040744087713',cid:'23110323532',cost:59.86,cv:313.57,conv:3.49,clicks:97,imps:4455,roas:523.84,title:'Modern 5-Arm Spider Pendant Light Adjustable Vintage',brand:'LEDSone',price:83.59,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/products/multi_arm_ceiling_light.jpg?v=1738574242',type:'Spider Lights > Pendant Light'},
+  {item:'14935131783554',cid:'23516313256',cost:19.92,cv:274.82,conv:1.98,clicks:45,imps:3153,roas:1379.62,title:'Industrial Steampunk 3 Way Ceiling Lights Black ~901',brand:'LEDSone',price:41.99,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/4588-2.jpg?v=1775723641',type:'Pendant Lighting'},
+  {item:'shopify_gb_7977117679866_44244143341818',cid:'21069663519',cost:49.91,cv:255.49,conv:3.30,clicks:65,imps:4859,roas:511.90,title:'6 Pack G125 E27 8W Dimmable Globe Vintage LED Bulb~4164',brand:'LEDSone',price:28.55,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/LEDSone_G125_LED_Filament_Globe_Bulb_E27_8W_Dimmable_Pack_of_6_2.webp?v=1782119640',type:'Bulb'},
+  {item:'shopify_gb_14877123543426_54866687951234',cid:'21242723265',cost:3.71,cv:244.40,conv:1.00,clicks:8,imps:443,roas:6587.60,title:'IP68 Waterproof 3 Way Junction Box Connector ~5609',brand:'LEDSone',price:1.95,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/image_84.jpg?v=1767697151',type:'Junction Boxes & Connectors'},
+  {item:'shopify_gb_14877932093826_54868154155394',cid:'21069663519',cost:72.27,cv:241.29,conv:10.98,clicks:197,imps:14724,roas:333.87,title:'LED Filament ST64 E27 Dimmable Squirrel Cage Edison Bulb ~5610',brand:'LEDSone',price:3.19,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/LED_Filament_ST64_E27_Bulb_Dimmable_LED_Squirrel_Cage_Edison_Decorative_Bulb.webp?v=1782130200',type:'Bulb'},
+  {item:'shopify_gb_15319604593026_56569753829762',cid:'21069663519',cost:46.68,cv:179.40,conv:4.15,clicks:219,imps:11751,roas:384.32,title:'2 Pack Crystal Glass Ceiling Pendant Light Shade with Bulb',brand:'LEDSone',price:22.29,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/2_Pack_Crystal_Glass_Ceiling_Pendant_Light_Shade_with_Bulb_gold.png?v=1776413855',type:'Lampshade'},
+  {item:'shopify_gb_15176571552130_55954496979330',cid:'21069663519',cost:24.68,cv:174.66,conv:3.83,clicks:81,imps:6136,roas:707.70,title:'IP68 Waterproof Electrical Junction Box Cable Connector ~6452',brand:'LEDSone',price:5.39,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/1762854547_691306933dc36.webp?v=1762859097',type:'Water Proof Junction Box'},
+  {item:'shopify_gb_14935131783554_55056431841666',cid:'21069663519',cost:25.11,cv:166.21,conv:3.54,clicks:41,imps:2864,roas:661.93,title:'Industrial Steampunk 3 Way Ceiling Lights Black ~901',brand:'LEDSone',price:41.99,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/4588-2.jpg?v=1775723641',type:'Pendant Lighting'},
+  {item:'shopify_gb_14879664472450_54873813123458',cid:'21069663519',cost:32.08,cv:141.93,conv:2.00,clicks:47,imps:2892,roas:442.43,title:'Cylinder Adjustable Ceiling Spotlight for Conduit Lighting~5633',brand:'LEDSone',price:10.99,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/3_1734586098_6763aef27bf65.jpg?v=1742445795',type:'Wall Light'},
+  {item:'shopify_gb_15069349151106_55576282366338',cid:'21069663519',cost:11.47,cv:130.73,conv:2.00,clicks:15,imps:739,roas:1139.76,title:'Rainproof Outdoor Wall Light 29cm Curved Design~6227',brand:'ledsone',price:16.69,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/51_nGDGKUTL.jpg?v=1755583364',type:'Wall Light'},
+  {item:'shopify_gb_7982927741178_44271707422970',cid:'21069663519',cost:13.74,cv:130.43,conv:1.51,clicks:10,imps:775,roas:949.27,title:'10Pack Brushed Copper Pendant Light E27 Lamp Holder~4254',brand:'LEDSone UK Ltd',price:55.89,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/17499-0.webp?v=1686213255',type:'Pendant Lighting'},
+  {item:'shopify_gb_6765700219041_40060022292641',cid:'21069663519',cost:0.66,cv:125.95,conv:1.08,clicks:3,imps:119,roas:19083.33,title:'Retro Wall Light Holder Swan Neck Wall Sconce',brand:'LEDSone',price:6.89,avail:'out of stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/products/swan_neck_lights_outdoor.jpg?v=1733461806',type:'Wall Light'},
+  {item:'shopify_gb_14935131783554_55056431874434',cid:'21069663519',cost:47.74,cv:124.75,conv:2.68,clicks:75,imps:4070,roas:261.31,title:'Ceiling Fitting Variant ~5548',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'shopify_gb_7977115615482_44687446769914',cid:'23110323532',cost:35.23,cv:121.15,conv:6.00,clicks:54,imps:4799,roas:343.88,title:'4W Retro E27 Filament LED Edison Bulb Dimmable~4160',brand:'LEDSone',price:18.19,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/15785_3_11zon_3_11zon.webp?v=1715065824',type:'LED Bulbs'},
+  {item:'shopify_gb_7855905931514_43720782676218',cid:'21069663519',cost:27.95,cv:112.59,conv:3.49,clicks:17,imps:2155,roas:402.83,title:'Bulb A60 LED Dimmable E27 8W 2700K Filament ~4094',brand:'LEDSone',price:20.53,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/products/15897.png?v=1669959244',type:'E27 Base Bulb B'},
+  {item:'shopify_gb_14929097884034_55032168579458',cid:'21069663519',cost:28.75,cv:95.70,conv:3.24,clicks:61,imps:4284,roas:332.87,title:'Ceiling Pendant (New) ~5548',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_14935131783554_55056431841666',cid:'23110323532',cost:7.37,cv:94.38,conv:1.00,clicks:6,imps:664,roas:1280.60,title:'Industrial Steampunk 3 Way Ceiling Lights Black ~901 (Var2)',brand:'LEDSone',price:47.19,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/Industrial_Steampunk_3_Way_Ceiling_Lights_Black_1.webp?v=1781526162',type:'Pendant Lighting'},
+  {item:'shopify_gb_4417265893472_44035050569978',cid:'23110323532',cost:31.88,cv:91.15,conv:3.18,clicks:94,imps:4954,roas:285.92,title:'LED G125 8W Vintage Filament Dimmable E27 Globe Bulb',brand:'LEDSone',price:8.49,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/LED_G125_8W_Vintage_Filament_Dimmable_E27_Globe_Bulb.png?v=1779951549',type:'E27 Base Bulb B'},
+  {item:'54884383293826',cid:'23516313256',cost:1.43,cv:90.68,conv:1.00,clicks:9,imps:335,roas:6341.26,title:'Product #54884383293826',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'shopify_gb_6052094935201_44526437171450',cid:'21069663519',cost:12.13,cv:84.55,conv:1.00,clicks:10,imps:909,roas:697.03,title:'Pendant Lamp Shade ~1277',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_14907263746434_54970753515906',cid:'23110323532',cost:31.63,cv:84.24,conv:2.98,clicks:28,imps:1792,roas:266.33,title:'Industrial Black Inner Gold Ceiling Pendant | Easy Fit Retro ~5713',brand:'ledsone',price:20.79,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/Industrial_Pendant_Light_Single_E27_Metal_Dome_Easy_Fit.jpg?v=1783414779',type:'Pendant Lighting'},
+  {item:'shopify_gb_7630664532218_42832272556282',cid:'21069663519',cost:11.15,cv:83.91,conv:0.65,clicks:17,imps:740,roas:752.56,title:'Multi Pendant Light ~3490',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_4417275592800_31497558229088',cid:'21069663519',cost:9.43,cv:70.97,conv:1.00,clicks:7,imps:676,roas:752.60,title:'LED Bulb Fitting ~2380',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'LED Lighting'},
+  {item:'shopify_gb_8161314111738_55116699402626',cid:'21069663519',cost:45.36,cv:70.10,conv:2.12,clicks:130,imps:6163,roas:154.54,title:'Pendant Light Set ~5548',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_8000785416442_44542984978682',cid:'22079334413',cost:1.53,cv:66.46,conv:2.00,clicks:5,imps:114,roas:4343.79,title:'Square Glass Semi Flush Mount Ceiling Light ~4506',brand:'LEDSone UK Ltd',price:19.19,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/products/images_fcf09566-b07c-4f5e-bacf-422a32decc82_15_11zon_15_11zon.webp?v=1742452479',type:'Ceiling_Lamp_Lighting'},
+  {item:'shopify_gb_4417255178336_31497524412512',cid:'21069663519',cost:11.80,cv:65.98,conv:1.83,clicks:18,imps:1801,roas:559.15,title:'Ceiling Rose Fitting ~2380',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_4417258324064_31497530507360',cid:'21069663519',cost:2.25,cv:62.95,conv:1.00,clicks:9,imps:455,roas:2797.78,title:'Cable Pendant E27 ~2380',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_14877951099266_54868256850306',cid:'21069663519',cost:18.07,cv:61.68,conv:4.11,clicks:60,imps:3732,roas:341.34,title:'Pendant Light Variant ~5548',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_15319604593026_56569753764226',cid:'21069663519',cost:31.68,cv:61.57,conv:2.50,clicks:164,imps:9658,roas:194.35,title:'2 Pack Crystal Glass Ceiling Pendant Light Shade with Bulb (Var2)',brand:'LEDSone',price:21.89,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/2_Pack_Crystal_Glass_Ceiling_Pendant_Light_Shade_with_Bulb.png?v=1776413195',type:'Lampshade'},
+  {item:'shopify_gb_7585585332474_42621052616954',cid:'21069663519',cost:31.60,cv:57.96,conv:1.00,clicks:51,imps:2939,roas:183.42,title:'Spider Lamp Pendant ~3490',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Multi_Outlet_Spider_Lamp'},
+  {item:'shopify_gb_7470952055034_42115888283898',cid:'23110323532',cost:3.95,cv:56.73,conv:2.66,clicks:17,imps:1461,roas:1436.20,title:'Wall Light Fitting ~3490',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Wall Lighting'},
+  {item:'44271707422970',cid:'23516313256',cost:1.57,cv:55.99,conv:1.00,clicks:2,imps:198,roas:3566.24,title:'Product #44271707422970',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'43721073033466',cid:'23516313256',cost:19.98,cv:54.59,conv:2.58,clicks:39,imps:4083,roas:273.22,title:'Product #43721073033466',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'shopify_gb_15048390214018_55493767954818',cid:'21069663519',cost:14.20,cv:52.11,conv:0.77,clicks:68,imps:2996,roas:366.97,title:'Modern Ceiling Light ~5548',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Ceiling Lighting'},
+  {item:'shopify_gb_4417272086624_44616905326842',cid:'21069663519',cost:21.84,cv:50.32,conv:2.85,clicks:59,imps:3870,roas:230.40,title:'Fitting Rose E27 ~2380',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_7977119580410_44244146880762',cid:'21069663519',cost:35.32,cv:49.56,conv:2.58,clicks:57,imps:5505,roas:140.32,title:'Pendant Lamp 3-Way ~1277',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_6798979760289_41949504635130',cid:'23110323532',cost:1.44,cv:48.17,conv:1.24,clicks:3,imps:153,roas:3345.14,title:'High Revenue Accessory ~3490',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting Accessories'},
+  {item:'shopify_gb_4417265893472_44035050569978',cid:'21069663519',cost:37.33,cv:47.27,conv:3.40,clicks:74,imps:5254,roas:126.63,title:'LED G125 8W Vintage Filament Dimmable E27 Globe Bulb',brand:'LEDSone',price:8.49,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/LED_G125_8W_Vintage_Filament_Dimmable_E27_Globe_Bulb.png?v=1779951549',type:'E27 Base Bulb B'},
+  {item:'shopify_gb_4417286635616_31497603121248',cid:'21069663519',cost:5.61,cv:42.85,conv:1.67,clicks:8,imps:546,roas:763.81,title:'Ceiling Rose E27 ~2380',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'8162308653306',cid:'23516313256',cost:2.50,cv:42.58,conv:1.00,clicks:5,imps:145,roas:1703.20,title:'Product #8162308653306',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'shopify_gb_7983934669050_44276551647482',cid:'22079334413',cost:2.86,cv:41.72,conv:1.49,clicks:10,imps:65,roas:1458.74,title:'Hero Light Fitting ~5548',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'42621052584186',cid:'23516313256',cost:8.13,cv:40.69,conv:1.48,clicks:19,imps:1098,roas:500.49,title:'Product #42621052584186',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'shopify_gb_4599649140832_42731028054266',cid:'21069663519',cost:6.41,cv:40.29,conv:1.00,clicks:17,imps:914,roas:628.55,title:'Decorative Pendant ~2380',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_8012324143354_44525818937594',cid:'23110323532',cost:6.63,cv:39.91,conv:1.17,clicks:24,imps:1191,roas:601.96,title:'High Rev Ceiling Light ~3490',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Ceiling Lighting'},
+  {item:'shopify_gb_7684507730170_45197100450042',cid:'21069663519',cost:6.06,cv:38.25,conv:2.00,clicks:18,imps:1392,roas:631.19,title:'Pendant Lamp (Modern) ~3490',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Pendant Lighting'},
+  {item:'shopify_gb_7661573800186_44525986218234',cid:'21069663519',cost:8.21,cv:37.36,conv:1.00,clicks:19,imps:1266,roas:455.05,title:'Ceiling Lamp Shade ~3792',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Ceiling Lighting'},
+  {item:'44515372269818',cid:'23516313256',cost:4.47,cv:36.57,conv:1.00,clicks:7,imps:193,roas:818.12,title:'Product #44515372269818',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'41040744087713',cid:'23516313256',cost:28.04,cv:36.31,conv:0.78,clicks:40,imps:2385,roas:129.49,title:'Product #41040744087713',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  /* Zero-conversion products with spend > £10 */
+  {item:'shopify_gb_4436070793312_44589245563130',cid:'21069663519',cost:23.82,cv:0,conv:0,clicks:0,imps:689,roas:0,title:'Zero Conv Product #4436070793312',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'shopify_gb_15260848095618_56318107779458',cid:'23590572906',cost:14.32,cv:0,conv:0,clicks:0,imps:508,roas:0,title:'Zero Conv Product #15260848095618',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'4417255538784',cid:'23516313256',cost:13.34,cv:0,conv:0,clicks:0,imps:1706,roas:0,title:'Zero Conv Product #4417255538784',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
+  {item:'shopify_gb_8649884762362_46784256934138',cid:'21069663519',cost:10.40,cv:0,conv:0,clicks:0,imps:1304,roas:0,title:'Zero Conv Product #8649884762362',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'}
+];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const CAMP_MAP = {};
+CAMPAIGNS.forEach(c=>{ CAMP_MAP[c.id]=c; });
+
+function fmt(n,dec=2,prefix=''){
+  if(n==null||isNaN(n))return '—';
+  if(n>=1000000) return prefix+(n/1000000).toFixed(1)+'M';
+  if(n>=1000) return prefix+(n/1000).toFixed(1)+'K';
+  return prefix+n.toFixed(dec);
+}
+function fmtGbp(n){ if(n==null||isNaN(n))return '—'; return '£'+n.toFixed(2); }
+function fmtPct(n){ if(n==null||isNaN(n))return '—'; return n.toFixed(1)+'%'; }
+function campShort(id){ return CAMP_MAP[id]?CAMP_MAP[id].short:id; }
+function roasClass(r){ if(r>=400)return 'roas-great'; if(r>=200)return 'roas-ok'; if(r>=100)return 'roas-warn'; return 'roas-bad'; }
+
+/* ============================================================
+   CAMPAIGN CARDS
+   ============================================================ */
+function renderCampaigns(){
+  const filter = document.getElementById('campFilter').value;
+  const grid = document.getElementById('campGrid');
+  const camps = filter==='all' ? CAMPAIGNS : CAMPAIGNS.filter(c=>c.id===filter);
+  grid.innerHTML = camps.map(c=>{
+    const targetPct = c.target_roas*100;
+    const pct = Math.min(c.l30.roas/targetPct*100,100);
+    const fillClass = pct>=90?'good':pct>=60?'warn':'bad';
+    const statusBadge = c.primary==='ELIGIBLE'?'sb-eligible sb':c.primary==='LIMITED'?'sb-limited sb':'sb-paused sb';
+    const prevDelta = ((c.l30.roas - c.prev.roas)/c.prev.roas*100).toFixed(1);
+    const deltaIcon = prevDelta>=0?'▲':'▼';
+    const deltaClass = prevDelta>=0?'trend-up':'trend-dn';
+    return `<div class="camp-card ${c.primary.toLowerCase()}" onclick="openCampaignFilter('${c.id}')">
+      <div class="camp-name">${c.short}</div>
+      <div class="camp-short">Budget: £${c.budget}/day · Target ROAS: ${(c.target_roas*100).toFixed(0)}%</div>
+      <div class="camp-metrics">
+        <div class="cm"><div class="cv">£${(c.l30.cv/1000).toFixed(1)}K</div><div class="cl">Revenue</div></div>
+        <div class="cm"><div class="cv">${c.l30.roas.toFixed(0)}%</div><div class="cl">ROAS</div></div>
+        <div class="cm"><div class="cv">£${c.l30.cost.toFixed(0)}</div><div class="cl">Cost</div></div>
+      </div>
+      <div class="roas-label">
+        <span>ROAS vs Target</span>
+        <span class="${deltaClass}">${deltaIcon} ${Math.abs(prevDelta)}% vs prev</span>
+      </div>
+      <div class="roas-bar"><div class="roas-fill ${fillClass}" style="width:${pct}%"></div></div>
+      <div class="camp-footer">
+        <span class="${statusBadge}">${c.primary}</span>
+        <span style="font-size:11px;color:var(--muted)">${c.l30.conv.toFixed(1)} conv</span>
+        <button class="view-btn" onclick="event.stopPropagation();openCampaignFilter('${c.id}')">View Products</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   ACTION CENTRE
+   ============================================================ */
+const ACTIONS = [
+  { pri:'red', product:'SJALL HERO Campaign', campaign:'22079334413',
+    reason:'ROAS 135% — far below target 380% (only £1.35 returned per £1 spent)',
+    rec:'Pause / Review products', impact:'high' },
+  { pri:'red', product:'SJ_TOP_20 Campaign — ROAS collapsed',campaign:'23516313256',
+    reason:'ROAS dropped from 372% (prev period) to 268% — 28% decline, below 400% target',
+    rec:'Audit product exclusions', impact:'high' },
+  { pri:'red', product:'Zero Conv: Product #4436070793312', campaign:'21069663519',
+    reason:'£23.82 spent, 0 conversions, 689 impressions (30d)',
+    rec:'Pause / Review feed', impact:'high' },
+  { pri:'red', product:'Zero Conv: Product #15260848095618', campaign:'23590572906',
+    reason:'£14.32 spent, 0 conversions, 508 impressions (30d)',
+    rec:'Pause / Review feed', impact:'high' },
+  { pri:'red', product:'Zero Conv: Product #4417255538784', campaign:'23516313256',
+    reason:'£13.34 spent, 0 conversions, 1,706 impressions (30d)',
+    rec:'Improve title / image', impact:'high' },
+  { pri:'amber', product:'SJ_PENDANT_KLARNA — LIMITED Delivery', campaign:'21069663519',
+    reason:'campaign_primary_status = LIMITED · budget_status = ENABLED · Limiting reason not available in verified source (no limiting_reason field in DB)',
+    rec:'Investigate in Google Ads UI', impact:'med' },
+  { pri:'amber', product:'zero conv2 — LIMITED Delivery', campaign:'23590572906',
+    reason:'campaign_primary_status = LIMITED · budget_status = ENABLED · Limiting reason not available in verified source (no limiting_reason field in DB)',
+    rec:'Investigate in Google Ads UI', impact:'med' },
+  { pri:'amber', product:'ALLACRSJ2 Accessories — ROAS declining', campaign:'21242723265',
+    reason:'ROAS dropped from 380% to 305% — now below 380% target',
+    rec:'Review product mix / bids', impact:'med' },
+  { pri:'green', product:'Product #14877123543426 — Outstanding ROAS', campaign:'21242723265',
+    reason:'ROAS 6,588% — £244 revenue from £3.71 spend (30d)',
+    rec:'Increase budget / scale', impact:'low' },
+  { pri:'green', product:'Retro Swan Neck Wall Sconce — Exceptional ROAS', campaign:'21069663519',
+    reason:'ROAS 19,083% — £125.95 conv value from £0.66 spend (30d) · Note: product is out of stock per Merchant data',
+    rec:'Restock and scale', impact:'low' }
+];
+
+function renderActions(){
+  const el = document.getElementById('actionGrid');
+  const impMap={high:'impact-high',med:'impact-med',low:'impact-low'};
+  el.innerHTML = ACTIONS.map((a,i)=>`
+    <div class="action-item pri-${a.pri}">
+      <div class="pri-dot">${i+1}</div>
+      <div>
+        <div class="action-product">${a.product}</div>
+        <div class="action-reason">${a.reason}</div>
+      </div>
+      <div class="action-camp">${campShort(a.campaign)}</div>
+      <div class="action-rec">${a.rec}</div>
+      <span class="action-impact ${impMap[a.impact]}">${a.impact.toUpperCase()}</span>
+    </div>`).join('');
+}
+
+/* ============================================================
+   CHART
+   ============================================================ */
+let chartInst=null;
+let currentChart='roas';
+function buildChart(metric='roas'){
+  currentChart=metric;
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  const labels=TREND.map(r=>r.d);
+  const dataMap={
+    roas:{label:'ROAS %',data:TREND.map(r=>r.roas),color:'#1a73e8',yLabel:'ROAS %'},
+    sales:{label:'Revenue £',data:TREND.map(r=>r.cv),color:'#34a853',yLabel:'£'},
+    cost:{label:'Cost £',data:TREND.map(r=>r.cost),color:'#ea4335',yLabel:'£'},
+    conv:{label:'Conversions',data:TREND.map(r=>r.conv),color:'#fbbc04',yLabel:'Conv'}
+  };
+  const cfg=dataMap[metric]||dataMap.roas;
+  if(chartInst)chartInst.destroy();
+  chartInst=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:cfg.label,data:cfg.data,
+        borderColor:cfg.color,backgroundColor:cfg.color+'18',
+        borderWidth:2.5,pointRadius:3,pointHoverRadius:6,fill:true,tension:.35
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{label:ctx=>{
+          const v=ctx.raw;
+          if(metric==='roas')return 'ROAS: '+v.toFixed(1)+'%';
+          if(metric==='sales')return 'Revenue: £'+v.toFixed(2);
+          if(metric==='cost')return 'Cost: £'+v.toFixed(2);
+          return 'Conv: '+v.toFixed(2);
+        }}
+      }},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},
+              y:{grid:{color:'#e3e7ee'},ticks:{font:{size:10}}}}
+    }
+  });
+}
+function switchChart(m){
+  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+  buildChart(m);
+}
+
+/* ============================================================
+   TOP PRODUCTS PANELS
+   ============================================================ */
+function renderTopPanels(){
+  const byRev=[...PRODUCTS].filter(p=>p.cv>0).sort((a,b)=>b.cv-a.cv).slice(0,5);
+  const byRoas=[...PRODUCTS].filter(p=>p.cost>0&&p.cv>0).sort((a,b)=>b.roas-a.roas).slice(0,5);
+  const byConv=[...PRODUCTS].filter(p=>p.conv>0).sort((a,b)=>b.conv-a.conv).slice(0,5);
+  function rows(arr,valFn){
+    return arr.map((p,i)=>`
+      <div class="tp-row" onclick="openDrawer(${PRODUCTS.indexOf(p)})">
+        <span class="tp-rank">${i+1}</span>
+        <img class="tp-img" src="${p.img}" onerror="this.style.display='none'">
+        <div class="tp-info">
+          <div class="tp-pname" title="${p.title}">${p.title}</div>
+          <div class="tp-meta">${campShort(p.cid)}</div>
+        </div>
+        <span class="tp-val">${valFn(p)}</span>
+      </div>`).join('');
+  }
+  document.getElementById('topRevList').innerHTML=rows(byRev,p=>'£'+p.cv.toFixed(0));
+  document.getElementById('topRoasList').innerHTML=rows(byRoas,p=>p.roas.toFixed(0)+'%');
+  document.getElementById('topConvList').innerHTML=rows(byConv,p=>p.conv.toFixed(2));
+}
+
+/* ============================================================
+   NEEDS ATTENTION COUNTS
+   ============================================================ */
+function renderAttn(){
+  const poorRoas=PRODUCTS.filter(p=>p.cost>0&&p.roas>0&&p.roas<150).length;
+  const lowCtr=PRODUCTS.filter(p=>p.imps>1000&&(p.clicks/p.imps*100)<0.5).length;
+  document.getElementById('attnPoorRoas').textContent=poorRoas;
+  document.getElementById('attnLowCtr').textContent=lowCtr;
+}
+
+/* ============================================================
+   PRODUCT TABLE
+   ============================================================ */
+let filteredProds=[...PRODUCTS];
+let sortCol=null,sortDir=1,pgNum=0;
+const PG_SIZE=20;
+let activeFilter='all';
+
+function applyFilters(){
+  const camp=document.getElementById('campFilter').value;
+  const status=document.getElementById('statusFilter').value;
+  const feed=document.getElementById('feedFilter').value;
+  const q=document.getElementById('productSearch').value.trim().toLowerCase();
+
+  filteredProds=PRODUCTS.filter(p=>{
+    const c=CAMP_MAP[p.cid];
+    if(camp!=='all'&&p.cid!==camp)return false;
+    if(status!=='all'&&c&&c.primary!==status)return false;
+    if(feed!=='all'&&p.avail!==feed)return false;
+    if(q&&!p.title.toLowerCase().includes(q)&&!p.item.toLowerCase().includes(q)&&!campShort(p.cid).toLowerCase().includes(q))return false;
+    if(activeFilter==='zero-conv'&&p.conv!==0)return false;
+    if(activeFilter==='poor-roas'&&(p.roas===0||p.roas>=150))return false;
+    if(activeFilter==='low-ctr'&&!(p.imps>1000&&(p.clicks/p.imps*100)<0.5))return false;
+    if(activeFilter==='limited'){const c2=CAMP_MAP[p.cid];if(!c2||c2.primary!=='LIMITED')return false;}
+    return true;
+  });
+  if(sortCol)sortProducts();
+  pgNum=0;
+  renderTable();
+  renderCampaigns();
+}
+
+function filterTable(type){
+  activeFilter=activeFilter===type?'all':type;
+  applyFilters();
+}
+function openCampaignFilter(id){
+  document.getElementById('campFilter').value=id;
+  applyFilters();
+}
+
+function sortProducts(){
+  filteredProds.sort((a,b)=>{
+    let av,bv;
+    switch(sortCol){
+      case 'title':av=a.title;bv=b.title;return sortDir*(av<bv?-1:1);
+      case 'campaign':av=campShort(a.cid);bv=campShort(b.cid);return sortDir*(av<bv?-1:1);
+      case 'availability':av=a.avail;bv=b.avail;return sortDir*(av<bv?-1:1);
+      case 'impressions':return sortDir*(b.imps-a.imps);
+      case 'clicks':return sortDir*(b.clicks-a.clicks);
+      case 'ctr':return sortDir*((b.clicks/b.imps||0)-(a.clicks/a.imps||0));
+      case 'cost':return sortDir*(b.cost-a.cost);
+      case 'conversions':return sortDir*(b.conv-a.conv);
+      case 'cv':return sortDir*(b.cv-a.cv);
+      case 'roas':return sortDir*(b.roas-a.roas);
+      default:return 0;
+    }
+  });
+}
+function sortTable(col){
+  if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=-1;}
+  document.querySelectorAll('thead th').forEach(th=>{th.classList.remove('sort-asc','sort-desc');});
+  const ths=document.querySelectorAll('thead th');
+  const cols=['#','img','title','campaign','avail','impressions','clicks','ctr','cost','conversions','cv','roas','action'];
+  const idx=cols.indexOf(col);
+  if(idx>=0)ths[idx].classList.add(sortDir>0?'sort-asc':'sort-desc');
+  sortProducts();
+  renderTable();
+}
+function renderTable(){
+  const total=filteredProds.length;
+  const pages=Math.ceil(total/PG_SIZE);
+  const start=pgNum*PG_SIZE;
+  const slice=filteredProds.slice(start,start+PG_SIZE);
+  const tbody=document.getElementById('prodTbody');
+
+  if(total===0){
+    tbody.innerHTML=`<tr><td colspan="13"><div class="state-empty"><div class="ico">🔍</div><h3>No products match</h3><p>Try adjusting your filters.</p></div></td></tr>`;
+  } else {
+    tbody.innerHTML=slice.map((p,i)=>{
+      const ctr=p.imps>0?(p.clicks/p.imps*100):0;
+      const cvr=p.clicks>0?(p.conv/p.clicks*100):0;
+      const availBadge=p.avail==='in stock'?'b-active':'b-outstock';
+      const globalIdx=PRODUCTS.indexOf(p);
+      return `<tr>
+        <td class="num">${start+i+1}</td>
+        <td><img class="prod-img-cell" src="${p.img}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2238%22 height=%2238%22><rect fill=%22%23e8eaf0%22 width=%2238%22 height=%2238%22/></svg>'"></td>
+        <td>
+          <span class="prod-name" title="${p.title}">${p.title}</span>
+          <span class="prod-id">${p.item.replace('shopify_gb_','').split('_')[0]}</span>
+        </td>
+        <td><span style="font-size:12px;font-weight:600">${campShort(p.cid)}</span></td>
+        <td><span class="badge ${availBadge}">${p.avail}</span></td>
+        <td class="num">${fmt(p.imps,0)}</td>
+        <td class="num">${fmt(p.clicks,0)}</td>
+        <td class="num">${fmtPct(ctr)}</td>
+        <td class="num">£${p.cost.toFixed(2)}</td>
+        <td class="num">${p.conv.toFixed(2)}</td>
+        <td class="num">£${p.cv.toFixed(2)}</td>
+        <td class="num"><span class="roas-pill ${roasClass(p.roas)}">${p.roas.toFixed(0)}%</span></td>
+        <td><button class="act-btn" onclick="openDrawer(${globalIdx})">Detail</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('tableInfo').textContent=`Showing ${start+1}–${Math.min(start+PG_SIZE,total)} of ${total} products`;
+  document.getElementById('pgInfo').textContent=`Page ${pgNum+1} of ${Math.max(pages,1)}`;
+  document.getElementById('pgPrev').disabled=pgNum===0;
+  document.getElementById('pgNext').disabled=pgNum>=pages-1;
+
+  const nums=document.getElementById('pgNums');
+  nums.innerHTML='';
+  const maxBtns=5;
+  let s=Math.max(0,pgNum-2);let e=Math.min(pages-1,s+maxBtns-1);s=Math.max(0,e-maxBtns+1);
+  for(let j=s;j<=e;j++){
+    const btn=document.createElement('button');
+    btn.className='pg-btn'+(j===pgNum?' on':'');
+    btn.textContent=j+1;
+    btn.onclick=(()=>{const jj=j;return()=>{pgNum=jj;renderTable();}})();
+    nums.appendChild(btn);
+  }
+  document.getElementById('tableCountLabel').textContent=`${total} Products`;
+}
+function changePage(dir){pgNum=Math.max(0,pgNum+dir);renderTable();}
+
+/* ============================================================
+   PRODUCT DRAWER
+   ============================================================ */
+function openDrawer(idx){
+  const p=PRODUCTS[idx];
+  const c=CAMP_MAP[p.cid];
+  const ctr=p.imps>0?(p.clicks/p.imps*100):0;
+  const cvr=p.clicks>0?(p.conv/p.clicks*100):0;
+  const adContribution=p.cv-p.cost;
+
+  document.getElementById('drTitle').textContent=p.title;
+  document.getElementById('drSub').textContent=`Item ID: ${p.item} · Campaign: ${campShort(p.cid)}`;
+  document.getElementById('drImg').src=p.img||'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23e8eaf0" width="100" height="100"/></svg>';
+  document.getElementById('drRevenue').textContent=fmtGbp(p.cv);
+  document.getElementById('drRoas').textContent=fmtPct(p.roas);
+  document.getElementById('drCost').textContent=fmtGbp(p.cost);
+  document.getElementById('drConv').textContent=p.conv.toFixed(2);
+  document.getElementById('drClicks').textContent=fmt(p.clicks,0);
+  document.getElementById('drCtr').textContent=fmtPct(ctr);
+  document.getElementById('drImps').textContent=fmt(p.imps,0);
+  document.getElementById('drCvr').textContent=fmtPct(cvr);
+  document.getElementById('drItemId').textContent=p.item;
+  document.getElementById('drCampaign').textContent=c?c.name:p.cid;
+  document.getElementById('drAvail').textContent=p.avail;
+  document.getElementById('drPrice').textContent=p.price?('£'+p.price):'—';
+  document.getElementById('drBrand').textContent=p.brand||'—';
+  document.getElementById('drType').textContent=p.type||'—';
+  document.getElementById('drProfit').textContent=fmtGbp(adContribution)+' (Conv Value − Ad Cost only. Profit unavailable — product cost not verified)';
+
+  /* Feed checklist */
+  const feedItems=[
+    {pass:!!p.title,label:'Product title present'},
+    {pass:!!p.img,label:'Image link present'},
+    {pass:p.avail==='in stock',label:'In stock (availability)'},
+    {pass:!!p.price,label:'Price set'},
+    {pass:!!p.brand,label:'Brand set'},
+    {pass:!!p.type,label:'Product type set'},
+    {pass:!p.item.startsWith('shopify_gb'),label:'GTIN / MPN available',warn:true}
+  ];
+  document.getElementById('drFeedCheck').innerHTML=feedItems.map(f=>`
+    <div class="fc-item">
+      <div class="fc-dot ${f.pass?'fc-pass':f.warn?'fc-warn':'fc-fail'}"></div>
+      <span>${f.label}</span>
+    </div>`).join('');
+
+  /* AI Recommendations */
+  const recs=[];
+  if(p.conv===0&&p.cost>0) recs.push({cls:'rec-high',title:'⛔ Pause / Review — Zero Conversions',desc:`£${p.cost.toFixed(2)} spent with 0 conversions. Pause or investigate feed & landing page.`});
+  if(p.roas>0&&p.roas<150) recs.push({cls:'rec-high',title:'📉 Poor ROAS — Below 150%',desc:`ROAS ${p.roas.toFixed(0)}% is critically low. Review product pricing and bid strategy.`});
+  if(p.roas>=500&&p.cost>5) recs.push({cls:'rec-low',title:'🚀 Scale — High ROAS Product',desc:`ROAS ${p.roas.toFixed(0)}% is excellent. Consider increasing daily budget to capture more share.`});
+  if(p.imps>2000&&ctr<0.5) recs.push({cls:'rec-med',title:'👁️ Improve Title / Image — Low CTR',desc:`CTR ${ctr.toFixed(2)}% with ${fmt(p.imps,0)} impressions. Optimise title and lead image.`});
+  if(!p.img) recs.push({cls:'rec-med',title:'📷 Missing Product Image',desc:'No image link detected. Add a high-quality image to improve CTR and feed quality.'});
+  if(p.avail!=='in stock') recs.push({cls:'rec-high',title:'📦 Out of Stock — Pause Ad',desc:'Product is out of stock. Pause to avoid wasted spend.'});
+  if(recs.length===0) recs.push({cls:'rec-low',title:'✅ Product looks healthy',desc:`ROAS ${p.roas.toFixed(0)}%, ${p.conv.toFixed(2)} conversions. Continue monitoring.`});
+  document.getElementById('drRecs').innerHTML=recs.map(r=>`<div class="rec-item ${r.cls}"><div class="rec-title">${r.title}</div><div class="rec-desc">${r.desc}</div></div>`).join('');
+
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('productDrawer').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('productDrawer').classList.remove('open');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded',()=>{
+  renderCampaigns();
+  renderActions();
+  buildChart('roas');
+  renderTopPanels();
+  renderAttn();
+  applyFilters();
+});
+</script>
 </body>
 </html>
