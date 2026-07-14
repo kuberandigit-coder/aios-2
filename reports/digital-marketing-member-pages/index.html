@@ -35,7 +35,7 @@
   .page{max-width:1180px;margin:0 auto;padding:28px 32px 44px;}
   .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--line);}
   .toolbar .hint{font-size:12.5px;color:var(--muted);}
-  #member-search{padding:10px 16px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;width:280px;max-width:100%;background:var(--card);outline:none;transition:box-shadow .15s,border-color .15s;}
+  #member-search{height:42px;padding:0 16px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;width:280px;max-width:100%;background:var(--card);outline:none;transition:box-shadow .15s,border-color .15s;box-sizing:border-box;}
   #member-search:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);}
 
   .section-title{display:flex;align-items:center;gap:12px;font-size:11.5px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:var(--navy-2);margin:20px 0 10px;}
@@ -95,6 +95,10 @@
 
   <div class="toolbar">
     <input id="member-search" type="text" placeholder="Filter members by name…" aria-label="Filter members by name">
+    <a class="row" href="pages/sales.html" title="Sales Dashboard — LEDSone UK" style="height:42px;box-sizing:border-box;flex-direction:row;width:auto;text-align:left;padding:0 16px 0 10px;gap:8px;">
+      <span class="avatar live" style="width:26px;height:26px;font-size:11px;flex:none;">S</span>
+      <span class="nm" style="font-size:13px;">ledsone.co.uk</span>
+    </a>
     <span class="hint">Data pages are PostgreSQL / Shopify / GSC-sourced snapshots · read-only</span>
   </div>
 
