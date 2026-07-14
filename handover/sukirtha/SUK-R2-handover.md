@@ -117,3 +117,47 @@ PASS
 
 # Next Step
 Reviewer sign-offs, then git push on explicit approval.
+
+---
+
+## Update (2026-07-14, later same day) — Sajeepan sync + index.html counts + UI refinement
+
+**Part A — completed and deployed:**
+- Pulled `pages/sajeepan.html` (Requirement 1 — Google Ads PMax Product
+  Intelligence Dashboard) from the Staff-requirements GitHub repo into this
+  project.
+- Moved Sajeepan from "Awaiting Requirements" to "Active Dashboards" in
+  `index.html` (1 Report Live).
+- Updated Sukirtha's own listing in `index.html` to "2 Reports Live"
+  (Req1 + Req2).
+- Recalculated all `index.html` header stats: Active Dashboards 9→10, Live
+  Reports 28→30, Awaiting Requirements 3→2, Updated date bumped to
+  2026-07-14.
+- Deployed to Vercel production and verified live (200 OK, correct counts
+  confirmed via curl).
+- Committed and **pushed to GitHub** on explicit user instruction
+  (`git push origin main`, commits `75e1651` and `667d917`), including the
+  new `api/sukirtha-req2-duplicate-check.js` file.
+
+**Part B — built, not yet deployed:**
+- UI refinement round (Additional Listings filter, professional detail-
+  panel layout, one-line live-updating summary cards) — see
+  `evidence/sukirtha/SUK-R2-shopify-source-map.md` "Update" section for
+  full detail. Built and locally validated only; not deployed to Vercel,
+  not committed to git. Awaiting explicit deploy confirmation.
+
+# Status (updated)
+Requirement 2 core feature: live in production, pushed to GitHub.
+Requirement 2 UI refinement round: built locally, pending deploy approval.
+`index.html` member-directory updates: live in production, pushed to
+GitHub.
+
+# Files Modified (this update)
+`reports/digital-marketing-member-pages/pages/sajeepan.html` (synced from
+Staff-requirements), `reports/digital-marketing-member-pages/index.html`
+(counts + Sajeepan promotion), `reports/digital-marketing-member-pages/pages/sukirtha.html`
+(UI refinement, uncommitted).
+
+# Next Step (updated)
+1. User confirms "deploy" for the pending UI refinement round.
+2. Commit + push that refinement once deployed and confirmed working.

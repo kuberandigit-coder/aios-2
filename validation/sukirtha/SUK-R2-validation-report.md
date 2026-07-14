@@ -104,3 +104,29 @@ on explicit approval.
 
 # PASS / FAIL
 PASS
+
+---
+
+## Update (2026-07-14, later same day) — UI refinement validation
+
+| Item | Result |
+|---|---|
+| Additional Listings filter (None/1–2/3–5/6+) returns correct groups | PASS — verified against `r2additionalCount(g) = listingCount - 2` logic |
+| Detail-panel layout renders as bordered card with header/zebra rows | PASS — visually restructured (`.detailwrap`/`.detailtblbox`/`.detailtbl`), div-balance clean |
+| Toggle chevron rotates on open/close | PASS — `.moreBtn.open` class toggled in `r2toggleDetail` |
+| Summary cards fit one line on desktop | PASS — `grid-template-columns:repeat(9,1fr)` with 1300/820/520px breakpoints |
+| Summary cards recompute from filtered results, not fixed totals | PASS — `r2renderCards(groups)` now called from `r2render()` on every filter change, not just on initial load |
+| Div balance after edit | PASS — 0 |
+| JS syntax (`node --check` on extracted script) | PASS |
+| Deployed to Vercel | NOT DONE — pending explicit "deploy" confirmation |
+| Committed to git | NOT DONE — pending deploy + approval |
+
+# Validation Result (updated)
+Structural/logic validation: PASS. Live/production validation: BLOCKED,
+pending user's explicit deploy confirmation (the auto-mode safety
+classifier requires deployment to be explicitly requested per message, not
+inferred from "update live" phrasing about card behavior).
+
+# Status (updated)
+Built and locally validated only. Not yet reflected on the live production
+URL.

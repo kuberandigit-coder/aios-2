@@ -139,3 +139,33 @@ SEO Lead — pending
 
 # Status
 Live, deployed, pending review.
+
+---
+
+## Update (2026-07-14, later same day)
+
+**Git status (updated):** Committed and **pushed to GitHub**
+(`origin main`, commits `75e1651` and `667d917`) on explicit user
+instruction — includes `api/sukirtha-req2-duplicate-check.js`, the
+Sajeepan sync, and `index.html` count updates.
+
+**Separate, related work completed and deployed:**
+- `pages/sajeepan.html` synced from Staff-requirements repo (Sajeepan
+  Req1 — PMax dashboard), Sajeepan promoted to Active Dashboards.
+- `index.html` header stats recalculated (10 Active Dashboards, 30 Live
+  Reports, 2 Awaiting Requirements).
+
+**UI refinement round (built, not yet deployed):** Additional Listings
+filter, professional expandable detail-panel layout, one-line live-
+updating summary cards. See `evidence/sukirtha/SUK-R2-shopify-source-map.md`
+and `validation/sukirtha/SUK-R2-validation-report.md` "Update" sections.
+Not yet on the production URL; not yet committed.
+
+## Deployment Status (updated)
+Core Requirement 2 feature: deployed and pushed. `index.html`/Sajeepan
+sync: deployed and pushed. UI refinement round: built locally only,
+pending explicit deploy confirmation.
+
+## One Next Step (updated)
+User confirms "deploy" for the UI refinement round; then commit + push
+that change specifically.

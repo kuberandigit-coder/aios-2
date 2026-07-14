@@ -18,6 +18,12 @@ h1{font-size:22px;letter-spacing:.2px;}
 .chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
 .chip.live{background:#eef7ee;color:var(--good);}
 .chip.stale{background:#fdecea;color:var(--bad);}
+.filters button{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;transition:all .15s;}
+.filters button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.filters button.primary:hover{background:#1749cc;}
+.filters button:disabled{opacity:.6;cursor:wait;}
+.filters button.primary:disabled::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;vertical-align:-1px;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
 .card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
@@ -54,11 +60,28 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 .pill.yes{background:#c62828;}
 .pill.no{background:#2e7d32;}
 .pill.dup{background:#b9770e;}
-.detailrow td{background:#f7f9fc;padding:10px 16px 14px 16px;}
-.detailtbl{width:100%;font-size:12px;border-collapse:collapse;}
-.detailtbl th{text-align:left;color:var(--muted);font-weight:700;padding:5px 8px;text-transform:uppercase;font-size:10.5px;}
-.detailtbl td{padding:5px 8px;border-top:1px solid var(--line);}
-.moreBtn{background:none;border:1px solid var(--line);border-radius:7px;padding:3px 9px;font-size:11.5px;cursor:pointer;color:var(--accent);}
+.r2cards{grid-template-columns:repeat(9,1fr);gap:10px;}
+.r2cards .card{padding:14px 12px;border-radius:12px;}
+.r2cards .card .label{font-size:10.5px;letter-spacing:.4px;white-space:nowrap;}
+.r2cards .card .value{font-size:20px;margin-top:5px;}
+@media(max-width:1300px){.r2cards{grid-template-columns:repeat(5,1fr);}}
+@media(max-width:820px){.r2cards{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:520px){.r2cards{grid-template-columns:repeat(2,1fr);}}
+.detailwrap{background:#f7f9fc;padding:14px 18px 16px 18px;border-top:1px dashed var(--line);}
+.detailhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.detailhead .dtitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+.detailtblbox{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(12,26,48,.05);}
+.detailtbl{width:100%;font-size:12.5px;border-collapse:collapse;}
+.detailtbl th{text-align:left;background:#f0f3f8;color:#42506a;font-weight:700;padding:9px 14px;text-transform:uppercase;font-size:10.5px;letter-spacing:.4px;border-bottom:2px solid var(--line);}
+.detailtbl th.num,.detailtbl td.num{text-align:right;}
+.detailtbl td{padding:9px 14px;border-top:1px solid var(--line);vertical-align:middle;}
+.detailtbl tr:nth-child(even) td{background:#fafbfd;}
+.detailtbl tr:hover td{background:var(--accent-soft);}
+.detailtbl a{color:var(--accent);text-decoration:none;font-family:Consolas,"Courier New",monospace;font-size:11.5px;word-break:break-all;}
+.moreBtn{background:var(--accent-soft);border:1px solid #cddcfb;border-radius:7px;padding:4px 11px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--accent);white-space:nowrap;}
+.moreBtn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.moreBtn .car{display:inline-block;transition:transform .15s;margin-left:2px;}
+.moreBtn.open .car{transform:rotate(180deg);}
 </style>
 </head>
 <body>
@@ -71,6 +94,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 <div class="reqtabs">
   <div class="reqtab active" id="tabBtn1" onclick="showReqTab(1)">Requirement 1 · Low CTR Blog Posts &amp; Collections</div>
   <div class="reqtab" id="tabBtn2" onclick="showReqTab(2)">Requirement 2 · Duplicate Listing &amp; Price Check</div>
+  <div class="reqtab" id="tabBtn3" onclick="showReqTab(3)">Requirement 3 · Slow-Moving Stock</div>
 </div>
 
 <div id="reqTab1">
@@ -169,10 +193,11 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
     <span class="chip">Source: Shopify Admin API (read-only)</span>
     <span class="chip" id="r2liveChip">Fetching live from Shopify…</span>
     <span class="chip live" id="r2lastChecked" style="display:none;"></span>
+    <button id="r2refreshBtn" class="primary" type="button">Refresh</button>
   </div>
 </header>
 
-<div class="cards" id="r2cards">
+<div class="cards r2cards" id="r2cards">
   <div class="card"><div class="label">Total Products</div><div class="value" id="r2cProducts">–</div></div>
   <div class="card"><div class="label">Total Variants</div><div class="value" id="r2cVariants">–</div></div>
   <div class="card"><div class="label">Variants with SKU</div><div class="value" id="r2cWithSku">–</div></div>
@@ -181,7 +206,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <div class="card warn"><div class="label">Duplicate SKUs</div><div class="value" id="r2cDupSkus">–</div></div>
   <div class="card"><div class="label">Duplicate Listings</div><div class="value" id="r2cDupListings">–</div></div>
   <div class="card warn"><div class="label">Current Price Mismatches</div><div class="value" id="r2cPriceMismatch">–</div></div>
-  <div class="card warn"><div class="label">Compare-at Price Mismatches</div><div class="value" id="r2cCompareMismatch">–</div></div>
+  <div class="card warn"><div class="label">Compare-at Mismatches</div><div class="value" id="r2cCompareMismatch">–</div></div>
 </div>
 
 <div class="tablebox">
@@ -202,6 +227,12 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
       <option value="">All</option><option value="ACTIVE">Active</option><option value="DRAFT">Draft</option><option value="ARCHIVED">Archived</option></select></label>
     <label>Missing SKU <select id="r2f_missing">
       <option value="">All</option><option value="yes">Missing only</option><option value="no">Has SKU only</option></select></label>
+    <label>Additional Listings <select id="r2f_additional">
+      <option value="">All</option>
+      <option value="none">None (0)</option>
+      <option value="1-2">1–2</option>
+      <option value="3-5">3–5</option>
+      <option value="6+">6+</option></select></label>
     <button id="r2resetFilters">Clear Filters</button>
   </div>
   <div class="scroll">
@@ -242,6 +273,98 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <strong>Last refresh timestamp:</strong> <span id="r2lastRefresh">–</span><br>
   <strong>Evidence:</strong> full discovery, Shopify data-source mapping, and validation for this requirement are recorded under
   <code>evidence/sukirtha/SUK-R2-*.md</code> and <code>validation/sukirtha/SUK-R2-validation-report.md</code>.
+</div>
+</div>
+
+<div id="reqTab3" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sukirtha — Requirement 3 (Live)</div>
+  <h1>Slow-Moving Stock Identification</h1>
+  <div class="sub">Which ledsone.de variants sold fewer than 10 units in the last 90 days while holding more than 100 units of current stock? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Sukirtha</strong></div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin API (read-only)</span>
+    <span class="chip" id="r3liveChip">Fetching live from Shopify…</span>
+    <span class="chip live" id="r3lastChecked" style="display:none;"></span>
+    <span class="chip" id="r3dateRange" style="display:none;"></span>
+    <span class="chip" id="r3locations" style="display:none;"></span>
+    <button id="r3refreshBtn" class="primary" type="button">Refresh</button>
+  </div>
+</header>
+
+<div class="cards r2cards" id="r3cards" style="grid-template-columns:repeat(10,1fr);">
+  <div class="card"><div class="label">Total Products</div><div class="value" id="r3cProducts">–</div></div>
+  <div class="card"><div class="label">Total Variants</div><div class="value" id="r3cVariants">–</div></div>
+  <div class="card"><div class="label">Variants with SKU</div><div class="value" id="r3cWithSku">–</div></div>
+  <div class="card warn"><div class="label">Missing SKU</div><div class="value" id="r3cMissing">–</div></div>
+  <div class="card"><div class="label">Inventory Tracked</div><div class="value" id="r3cTracked">–</div></div>
+  <div class="card"><div class="label">Total Current Stock</div><div class="value" id="r3cTotalStock">–</div></div>
+  <div class="card"><div class="label">Units Sold (90d)</div><div class="value" id="r3cUnitsSold">–</div></div>
+  <div class="card warn"><div class="label">Slow-Moving Variants</div><div class="value" id="r3cSlowMoving">–</div></div>
+  <div class="card warn"><div class="label">Slow-Moving Stock Units</div><div class="value" id="r3cSlowMovingUnits">–</div></div>
+  <div class="card"><div class="label">OK Variants</div><div class="value" id="r3cOk">–</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="r3cnt">–</span>
+    <input type="text" id="r3q_sku" placeholder="Search SKU…">
+    <input type="text" id="r3q_title" placeholder="Search product title…">
+    <input type="text" id="r3q_variant" placeholder="Search variant title…">
+    <button id="r3exportCsv" class="primary">Export CSV</button>
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Status <select id="r3f_status">
+      <option value="">All</option><option value="Slow-Moving">Slow-Moving</option><option value="OK">OK</option><option value="Not Assessable">Not Assessable</option></select></label>
+    <label>Product Status <select id="r3f_pstatus">
+      <option value="">All</option><option value="ACTIVE">Active</option><option value="DRAFT">Draft</option><option value="ARCHIVED">Archived</option></select></label>
+    <label>Inventory Location <select id="r3f_location">
+      <option value="">All</option></select></label>
+    <label>Current Stock <select id="r3f_stock">
+      <option value="">All</option><option value="0">0</option><option value="1-100">1–100</option><option value="101-500">101–500</option><option value="500+">500+</option></select></label>
+    <label>Units Sold (90d) <select id="r3f_sold">
+      <option value="">All</option><option value="0">0</option><option value="1-9">1–9</option><option value="10-49">10–49</option><option value="50+">50+</option></select></label>
+    <label>Missing SKU <select id="r3f_missing">
+      <option value="">All</option><option value="yes">Missing only</option><option value="no">Has SKU only</option></select></label>
+    <button id="r3resetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th onclick="r3sortBy('skuRaw')">SKU</th>
+        <th>Page URL</th>
+        <th onclick="r3sortBy('category')">Category</th>
+        <th class="num" onclick="r3sortBy('unitsSold90d')">Units Sold (90d)</th>
+        <th onclick="r3sortBy('lastOrderDate')">Last Order Date</th>
+        <th onclick="r3sortBy('status')">Status</th>
+      </tr></thead>
+      <tbody id="r3tbody"><tr><td colspan="6" class="loading">Loading live data from Shopify…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r3empty" style="display:none;">No variants match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);border-bottom:0;justify-content:space-between;">
+    <span id="r3pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="r3psize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="r3pgFirst">&laquo;</button>
+      <button id="r3pgPrev">&lsaquo; Prev</button>
+      <button id="r3pgNext">Next &rsaquo;</button>
+      <button id="r3pgLast">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only) &middot; store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sukirtha-req3-slow-moving-stock</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Update frequency:</strong> not a scheduled/cached snapshot &mdash; this page calls Shopify live every time it loads. "Last checked" reflects the actual retrieval timestamp of that call; the 90-day window is calculated from the retrieval date, not a fixed historical date.<br>
+  <strong>Data grain:</strong> one row per Shopify Variant ID. Units Sold is joined to orders via the line item's Variant ID, never SKU alone.<br>
+  <strong>Units Sold (90d) rule:</strong> sum of each eligible line item's <code>refundableQuantity</code> (the quantity net of any already-refunded units for that line item) across all orders in the 90-day window, excluding cancelled orders (<code>cancelledAt</code> set), test orders (<code>test:true</code>), and voided orders (<code>displayFinancialStatus:VOIDED</code>).<br>
+  <strong>Current Stock rule:</strong> Shopify inventory <code>available</code> quantity, summed across the operational location(s) returned for that variant (ledsone.de currently has a single active location, <em>LEDSone DE LTD</em>). If a variant is not inventory-tracked, Current Stock and Days of Stock show "Not Tracked"/"Not Assessable" — never treated as zero.<br>
+  <strong>Status rule (strict):</strong> Slow-Moving = Units Sold (90d) &lt; 10 <strong>AND</strong> Current Stock &gt; 100. Not Assessable = inventory not tracked. Otherwise OK.<br>
+  <strong>Governance:</strong> Shopify remains the sole authoritative source for products, variants, inventory, and orders. This dashboard is a read-only analytical view; no product, variant, price, inventory, or order record was created, changed, or merged by this page or its build process.<br>
+  <strong>Last refresh timestamp:</strong> <span id="r3lastRefresh">–</span><br>
+  <strong>Evidence:</strong> full discovery, Shopify data-source mapping, 90-day sales method, and validation for this requirement are recorded under
+  <code>evidence/sukirtha/SUK-R3-*.md</code> and <code>validation/sukirtha/SUK-R3-validation-report.md</code>.
 </div>
 </div>
 </div>
@@ -495,6 +618,37 @@ document.getElementById('pgLast').addEventListener('click', () => { pg = maxpg(f
 
 load();
 
+// IndexedDB key-value cache — localStorage's ~5MB quota is too small for these
+// datasets (SUK-R2/R3 payloads run several MB), so QuotaExceededError was
+// silently swallowed and the cache never actually saved, forcing a live
+// refetch on every tab visit. IndexedDB has a much larger quota.
+function idbOpen(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('suk_cache_db', 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readonly');
+    const req = tx.objectStore('kv').get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, value){
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 // ===================== Requirement 2 — Duplicate Listing & Price Check =====================
 
 let R2_GROUPS = [];
@@ -503,17 +657,45 @@ let r2pg = 1;
 let r2Loaded = false;
 const r2OpenRows = new Set();
 
+const R2_CACHE_KEY = 'suk_r2_cache_v1';
+const R3_CACHE_KEY = 'suk_r3_cache_v1';
+
 function showReqTab(n){
   document.getElementById('reqTab1').style.display = n === 1 ? '' : 'none';
   document.getElementById('reqTab2').style.display = n === 2 ? '' : 'none';
+  document.getElementById('reqTab3').style.display = n === 3 ? '' : 'none';
   document.getElementById('tabBtn1').classList.toggle('active', n === 1);
   document.getElementById('tabBtn2').classList.toggle('active', n === 2);
-  if (n === 2 && !r2Loaded) { r2Loaded = true; r2load(); }
+  document.getElementById('tabBtn3').classList.toggle('active', n === 3);
+  if (n === 2 && !r2Loaded) { r2Loaded = true; r2loadCachedOrFetch(); }
+  if (n === 3 && !r3Loaded) { r3Loaded = true; r3loadCachedOrFetch(); }
 }
 
 function eur(v){ return v === null || v === undefined ? '—' : '€' + Number(v).toFixed(2); }
 
+async function r2loadCachedOrFetch(){
+  try {
+    const cached = await idbGet(R2_CACHE_KEY);
+    if (cached && cached.summary && cached.groups) {
+      R2_SUMMARY = cached.summary;
+      R2_GROUPS = cached.groups;
+      document.getElementById('r2liveChip').textContent = 'Cached — last updated ' + new Date(R2_SUMMARY.retrievedAt).toLocaleString();
+      document.getElementById('r2liveChip').className = 'chip stale';
+      document.getElementById('r2lastChecked').textContent = 'Last checked: ' + new Date(R2_SUMMARY.retrievedAt).toLocaleString();
+      document.getElementById('r2lastChecked').style.display = '';
+      document.getElementById('r2lastRefresh').textContent = new Date(R2_SUMMARY.retrievedAt).toLocaleString();
+      r2pg = 1;
+      r2render();
+      return;
+    }
+  } catch (e) { /* fall through to live fetch */ }
+  r2load();
+}
+
 async function r2load(){
+  const btn = document.getElementById('r2refreshBtn');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing…';
   document.getElementById('r2liveChip').textContent = 'Fetching live from Shopify…';
   document.getElementById('r2liveChip').className = 'chip';
   document.getElementById('r2tbody').innerHTML = '<tr><td colspan="14" class="loading">Loading live data from Shopify…</td></tr>';
@@ -523,32 +705,48 @@ async function r2load(){
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     R2_SUMMARY = data.summary;
     R2_GROUPS = data.groups;
+    try { await idbSet(R2_CACHE_KEY, { summary: R2_SUMMARY, groups: R2_GROUPS }); } catch (e) { /* storage unavailable — ignore */ }
     document.getElementById('r2liveChip').textContent = 'Live — fetched just now';
     document.getElementById('r2liveChip').className = 'chip live';
     document.getElementById('r2lastChecked').textContent = 'Last checked: ' + new Date(R2_SUMMARY.retrievedAt).toLocaleString();
     document.getElementById('r2lastChecked').style.display = '';
     document.getElementById('r2lastRefresh').textContent = new Date(R2_SUMMARY.retrievedAt).toLocaleString();
-    r2renderCards(R2_SUMMARY);
     r2pg = 1;
     r2render();
   } catch (e) {
     document.getElementById('r2liveChip').textContent = 'Failed to load: ' + e.message;
     document.getElementById('r2liveChip').className = 'chip stale';
     document.getElementById('r2tbody').innerHTML = '<tr><td colspan="14" class="loading">Could not load live Shopify data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Refresh';
   }
 }
+document.getElementById('r2refreshBtn').addEventListener('click', r2load);
 
-function r2renderCards(s){
-  document.getElementById('r2cProducts').textContent = num(s.totalProducts);
-  document.getElementById('r2cVariants').textContent = num(s.totalVariants);
-  document.getElementById('r2cWithSku').textContent = num(s.withSku);
-  document.getElementById('r2cMissing').textContent = num(s.missingSku);
-  document.getElementById('r2cUnique').textContent = num(s.uniqueSkus);
-  document.getElementById('r2cDupSkus').textContent = num(s.duplicateSkus);
-  document.getElementById('r2cDupListings').textContent = num(s.duplicateListings);
-  document.getElementById('r2cPriceMismatch').textContent = num(s.priceMismatches);
-  document.getElementById('r2cCompareMismatch').textContent = num(s.compareMismatches);
+function r2renderCards(groups){
+  const totalProducts = R2_SUMMARY.totalProducts;
+  const totalVariants = groups.reduce((s, g) => s + g.listingCount, 0);
+  const withSku = groups.filter(g => !g.missingSku).reduce((s, g) => s + g.listingCount, 0);
+  const missing = groups.filter(g => g.missingSku).length;
+  const unique = groups.filter(g => !g.missingSku).length;
+  const dupSkus = groups.filter(g => g.duplicate === true).length;
+  const dupListings = groups.filter(g => g.duplicate === true).reduce((s, g) => s + g.listingCount, 0);
+  const priceMismatch = groups.filter(g => g.priceMismatch === true).length;
+  const compareMismatch = groups.filter(g => g.compareMismatch === true).length;
+
+  document.getElementById('r2cProducts').textContent = num(totalProducts);
+  document.getElementById('r2cVariants').textContent = num(totalVariants);
+  document.getElementById('r2cWithSku').textContent = num(withSku);
+  document.getElementById('r2cMissing').textContent = num(missing);
+  document.getElementById('r2cUnique').textContent = num(unique);
+  document.getElementById('r2cDupSkus').textContent = num(dupSkus);
+  document.getElementById('r2cDupListings').textContent = num(dupListings);
+  document.getElementById('r2cPriceMismatch').textContent = num(priceMismatch);
+  document.getElementById('r2cCompareMismatch').textContent = num(compareMismatch);
 }
+
+function r2additionalCount(g){ return Math.max(0, g.listingCount - 2); }
 
 function r2filteredGroups(){
   const qSku = document.getElementById('r2q_sku').value.trim().toLowerCase();
@@ -558,6 +756,7 @@ function r2filteredGroups(){
   const compareF = document.getElementById('r2f_compare').value;
   const statusF = document.getElementById('r2f_status').value;
   const missingF = document.getElementById('r2f_missing').value;
+  const addF = document.getElementById('r2f_additional').value;
 
   return R2_GROUPS.filter(g => {
     const skuHit = !qSku || g.skuRaw.toLowerCase().includes(qSku);
@@ -570,7 +769,13 @@ function r2filteredGroups(){
     const compareHit = !compareF || compareVal === compareF;
     const statusHit = !statusF || g.listings.some(l => l.status === statusF);
     const missingHit = !missingF || (missingF === 'yes' ? !!g.missingSku : !g.missingSku);
-    return skuHit && titleHit && dupHit && priceHit && compareHit && statusHit && missingHit;
+    const addN = r2additionalCount(g);
+    const addHit = !addF
+      || (addF === 'none' && addN === 0)
+      || (addF === '1-2' && addN >= 1 && addN <= 2)
+      || (addF === '3-5' && addN >= 3 && addN <= 5)
+      || (addF === '6+' && addN >= 6);
+    return skuHit && titleHit && dupHit && priceHit && compareHit && statusHit && missingHit && addHit;
   });
 }
 
@@ -590,12 +795,13 @@ function r2rowKey(g, idx){ return g.skuNorm + '__' + idx; }
 
 function r2render(){
   const groups = r2filteredGroups();
+  r2renderCards(groups);
   const size = parseInt(document.getElementById('r2psize').value, 10);
   const mp = r2maxpg(groups);
   if (r2pg > mp) r2pg = mp;
   if (r2pg < 1) r2pg = 1;
 
-  document.getElementById('r2cnt').textContent = 'All ' + R2_GROUPS.length.toLocaleString() + ' SKUs';
+  document.getElementById('r2cnt').textContent = groups.length.toLocaleString() + ' of ' + R2_GROUPS.length.toLocaleString() + ' SKUs';
   const tbody = document.getElementById('r2tbody');
   const emptyEl = document.getElementById('r2empty');
   if (groups.length === 0) {
@@ -629,14 +835,16 @@ function r2render(){
       '<td>' + r2badge(g, 'duplicate') + '</td>' +
       '<td>' + r2badge(g, 'priceMismatch') + '</td>' +
       '<td>' + r2badge(g, 'compareMismatch') + '</td>' +
-      '<td class="num">' + (extra.length ? '<button class="moreBtn" onclick="r2toggleDetail(\'' + key + '\')">' + extra.length + ' more &#9662;</button>' : '0') + '</td>' +
+      '<td class="num">' + (extra.length ? '<button class="moreBtn" id="btn_' + key + '" onclick="r2toggleDetail(\'' + key + '\')">+' + extra.length + ' more <span class="car">&#9662;</span></button>' : '<span style="color:var(--na);">0</span>') + '</td>' +
       '<td>' + esc(l1.status) + '</td>' +
       '<td>' + lastChecked + '</td>' +
       '</tr>';
     if (extra.length) {
-      html += '<tr class="detailrow" id="detail_' + key + '" style="display:none;"><td colspan="14"><table class="detailtbl"><thead><tr><th>Listing URL</th><th>Price (€)</th><th>Compare-at (€)</th><th>Status</th></tr></thead><tbody>' +
-        extra.map(l => '<tr><td><a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.url) + '</a></td><td>' + eur(l.price) + '</td><td>' + eur(l.compareAtPrice) + '</td><td>' + esc(l.status) + '</td></tr>').join('') +
-        '</tbody></table></td></tr>';
+      html += '<tr class="detailrow" id="detail_' + key + '" style="display:none;"><td colspan="14"><div class="detailwrap">' +
+        '<div class="detailhead"><span class="dtitle">Additional Listings for ' + skuLabel + ' (' + extra.length + ')</span></div>' +
+        '<div class="detailtblbox"><table class="detailtbl"><thead><tr><th>Listing URL</th><th class="num">Price (€)</th><th class="num">Compare-at (€)</th><th>Status</th></tr></thead><tbody>' +
+        extra.map(l => '<tr><td><a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.url) + '</a></td><td class="num">' + eur(l.price) + '</td><td class="num">' + eur(l.compareAtPrice) + '</td><td>' + esc(l.status) + '</td></tr>').join('') +
+        '</tbody></table></div></div></td></tr>';
     }
   });
   tbody.innerHTML = html;
@@ -645,8 +853,11 @@ function r2render(){
 
 function r2toggleDetail(key){
   const row = document.getElementById('detail_' + key);
+  const btn = document.getElementById('btn_' + key);
   if (!row) return;
-  row.style.display = row.style.display === 'none' ? '' : 'none';
+  const opening = row.style.display === 'none';
+  row.style.display = opening ? '' : 'none';
+  if (btn) btn.classList.toggle('open', opening);
 }
 
 function r2csvEscape(v){
@@ -693,6 +904,7 @@ document.getElementById('r2f_price').addEventListener('change', () => { r2pg = 1
 document.getElementById('r2f_compare').addEventListener('change', () => { r2pg = 1; r2render(); });
 document.getElementById('r2f_status').addEventListener('change', () => { r2pg = 1; r2render(); });
 document.getElementById('r2f_missing').addEventListener('change', () => { r2pg = 1; r2render(); });
+document.getElementById('r2f_additional').addEventListener('change', () => { r2pg = 1; r2render(); });
 document.getElementById('r2psize').addEventListener('change', () => { r2pg = 1; r2render(); });
 document.getElementById('r2resetFilters').addEventListener('click', () => {
   document.getElementById('r2q_sku').value = '';
@@ -702,6 +914,7 @@ document.getElementById('r2resetFilters').addEventListener('click', () => {
   document.getElementById('r2f_compare').value = '';
   document.getElementById('r2f_status').value = '';
   document.getElementById('r2f_missing').value = '';
+  document.getElementById('r2f_additional').value = '';
   r2pg = 1;
   r2render();
 });
@@ -710,6 +923,260 @@ document.getElementById('r2pgPrev').addEventListener('click', () => { if (r2pg >
 document.getElementById('r2pgNext').addEventListener('click', () => { if (r2pg < r2maxpg(r2filteredGroups())) { r2pg++; r2render(); } });
 document.getElementById('r2pgLast').addEventListener('click', () => { r2pg = r2maxpg(r2filteredGroups()); r2render(); });
 document.getElementById('r2exportCsv').addEventListener('click', r2exportCsv);
+
+// ===================== Requirement 3 — Slow-Moving Stock =====================
+
+let R3_ROWS = [];
+let R3_SUMMARY = null;
+let r3pg = 1;
+let r3Loaded = false;
+let r3SortKey = null;
+let r3SortDir = 1;
+
+function stockBadgeClass(status){
+  if (status === 'Slow-Moving') return 'pill yes';
+  if (status === 'Not Assessable') return 'badge-na';
+  return 'pill no';
+}
+
+function r3applyLoadedData(fromCache){
+  document.getElementById('r3liveChip').textContent = fromCache
+    ? 'Cached — last updated ' + new Date(R3_SUMMARY.retrievedAt).toLocaleString()
+    : 'Live — fetched just now';
+  document.getElementById('r3liveChip').className = fromCache ? 'chip stale' : 'chip live';
+  document.getElementById('r3lastChecked').textContent = 'Last checked: ' + new Date(R3_SUMMARY.retrievedAt).toLocaleString();
+  document.getElementById('r3lastChecked').style.display = '';
+  document.getElementById('r3dateRange').textContent = '90-day window: ' + R3_SUMMARY.dateRangeStart + ' to ' + R3_SUMMARY.dateRangeEnd;
+  document.getElementById('r3dateRange').style.display = '';
+  document.getElementById('r3locations').textContent = 'Locations: ' + (R3_SUMMARY.inventoryLocations.join(', ') || '—');
+  document.getElementById('r3locations').style.display = '';
+  document.getElementById('r3lastRefresh').textContent = new Date(R3_SUMMARY.retrievedAt).toLocaleString();
+
+  const locSel = document.getElementById('r3f_location');
+  locSel.innerHTML = '<option value="">All</option>' + R3_SUMMARY.inventoryLocations.map(l => '<option value="' + esc(l) + '">' + esc(l) + '</option>').join('');
+
+  r3pg = 1;
+  r3render();
+}
+
+async function r3loadCachedOrFetch(){
+  try {
+    const cached = await idbGet(R3_CACHE_KEY);
+    if (cached && cached.summary && cached.rows) {
+      R3_SUMMARY = cached.summary;
+      R3_ROWS = cached.rows;
+      r3applyLoadedData(true);
+      return;
+    }
+  } catch (e) { /* fall through to live fetch */ }
+  r3load();
+}
+
+async function r3load(){
+  const btn = document.getElementById('r3refreshBtn');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing…';
+  document.getElementById('r3liveChip').textContent = 'Fetching live from Shopify…';
+  document.getElementById('r3liveChip').className = 'chip';
+  document.getElementById('r3tbody').innerHTML = '<tr><td colspan="6" class="loading">Loading live data from Shopify…</td></tr>';
+  try {
+    const res = await fetch('/api/sukirtha-req3-slow-moving-stock');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    R3_SUMMARY = data.summary;
+    R3_ROWS = data.rows.map(r => ({
+      ...r,
+      daysOfStockSort: typeof r.daysOfStockRemaining === 'number' ? r.daysOfStockRemaining : -1,
+    }));
+    try { await idbSet(R3_CACHE_KEY, { summary: R3_SUMMARY, rows: R3_ROWS }); } catch (e) { /* storage unavailable — ignore */ }
+    r3applyLoadedData(false);
+  } catch (e) {
+    document.getElementById('r3liveChip').textContent = 'Failed to load: ' + e.message;
+    document.getElementById('r3liveChip').className = 'chip stale';
+    document.getElementById('r3tbody').innerHTML = '<tr><td colspan="6" class="loading">Could not load live Shopify data.' + esc(e.message) + '</td></tr>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Refresh';
+  }
+}
+document.getElementById('r3refreshBtn').addEventListener('click', r3load);
+
+function r3renderCards(rows){
+  const totalProducts = new Set(rows.map(r => r.productId)).size;
+  const totalVariants = rows.length;
+  const withSku = rows.filter(r => !r.missingSku).length;
+  const missing = rows.filter(r => r.missingSku).length;
+  const tracked = rows.filter(r => r.inventoryTracked).length;
+  const notTracked = rows.filter(r => !r.inventoryTracked).length;
+  const totalStock = rows.filter(r => r.currentStock !== null).reduce((s, r) => s + r.currentStock, 0);
+  const unitsSold = rows.reduce((s, r) => s + r.unitsSold90d, 0);
+  const slowMoving = rows.filter(r => r.status === 'Slow-Moving');
+  const slowMovingUnits = slowMoving.reduce((s, r) => s + (r.currentStock || 0), 0);
+  const ok = rows.filter(r => r.status === 'OK').length;
+
+  document.getElementById('r3cProducts').textContent = num(totalProducts);
+  document.getElementById('r3cVariants').textContent = num(totalVariants);
+  document.getElementById('r3cWithSku').textContent = num(withSku);
+  document.getElementById('r3cMissing').textContent = num(missing);
+  document.getElementById('r3cTracked').textContent = num(tracked);
+  document.getElementById('r3cTotalStock').textContent = num(totalStock);
+  document.getElementById('r3cUnitsSold').textContent = num(unitsSold);
+  document.getElementById('r3cSlowMoving').textContent = num(slowMoving.length);
+  document.getElementById('r3cSlowMovingUnits').textContent = num(slowMovingUnits);
+  document.getElementById('r3cOk').textContent = num(ok);
+}
+
+function r3filteredRows(){
+  const qSku = document.getElementById('r3q_sku').value.trim().toLowerCase();
+  const qTitle = document.getElementById('r3q_title').value.trim().toLowerCase();
+  const qVariant = document.getElementById('r3q_variant').value.trim().toLowerCase();
+  const statusF = document.getElementById('r3f_status').value;
+  const pstatusF = document.getElementById('r3f_pstatus').value;
+  const locF = document.getElementById('r3f_location').value;
+  const stockF = document.getElementById('r3f_stock').value;
+  const soldF = document.getElementById('r3f_sold').value;
+  const missingF = document.getElementById('r3f_missing').value;
+
+  let rows = R3_ROWS.filter(r => {
+    const skuHit = !qSku || (r.skuRaw||'').toLowerCase().includes(qSku);
+    const titleHit = !qTitle || (r.productTitle||'').toLowerCase().includes(qTitle);
+    const variantHit = !qVariant || (r.variantTitle||'').toLowerCase().includes(qVariant);
+    const statusHit = !statusF || r.status === statusF;
+    const pstatusHit = !pstatusF || r.productStatus === pstatusF;
+    const locHit = !locF || (r.inventoryLocation||'').includes(locF);
+    const stock = r.currentStock;
+    const stockHit = !stockF
+      || (stockF === '0' && stock === 0)
+      || (stockF === '1-100' && stock > 0 && stock <= 100)
+      || (stockF === '101-500' && stock > 100 && stock <= 500)
+      || (stockF === '500+' && stock > 500);
+    const sold = r.unitsSold90d;
+    const soldHit = !soldF
+      || (soldF === '0' && sold === 0)
+      || (soldF === '1-9' && sold >= 1 && sold <= 9)
+      || (soldF === '10-49' && sold >= 10 && sold <= 49)
+      || (soldF === '50+' && sold >= 50);
+    const missingHit = !missingF || (missingF === 'yes' ? !!r.missingSku : !r.missingSku);
+    return skuHit && titleHit && variantHit && statusHit && pstatusHit && locHit && stockHit && soldHit && missingHit;
+  });
+
+  if (r3SortKey) {
+    rows = rows.slice().sort((a, b) => {
+      const av = a[r3SortKey], bv = b[r3SortKey];
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * r3SortDir;
+      return String(av||'').localeCompare(String(bv||'')) * r3SortDir;
+    });
+  }
+  return rows;
+}
+
+function r3sortBy(key){
+  if (r3SortKey === key) { r3SortDir *= -1; } else { r3SortKey = key; r3SortDir = 1; }
+  r3pg = 1;
+  r3render();
+}
+
+function r3maxpg(rows){
+  const size = parseInt(document.getElementById('r3psize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function r3render(){
+  const rows = r3filteredRows();
+  r3renderCards(rows);
+  const size = parseInt(document.getElementById('r3psize').value, 10);
+  const mp = r3maxpg(rows);
+  if (r3pg > mp) r3pg = mp;
+  if (r3pg < 1) r3pg = 1;
+
+  document.getElementById('r3cnt').textContent = rows.length.toLocaleString() + ' of ' + R3_ROWS.length.toLocaleString() + ' variants';
+  const tbody = document.getElementById('r3tbody');
+  const emptyEl = document.getElementById('r3empty');
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('r3pinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (r3pg - 1) * size;
+  const pageRows = rows.slice(from, from + size);
+  const lastChecked = new Date(R3_SUMMARY.retrievedAt).toLocaleString();
+
+  tbody.innerHTML = pageRows.map(r => {
+    const skuLabel = r.missingSku ? esc(r.skuRaw || '(blank)') + ' <span class="badge-missing">Missing SKU</span>' : esc(r.skuRaw);
+    const statusHtml = '<span class="' + stockBadgeClass(r.status) + '">' + esc(r.status) + '</span>';
+    const lastOrderLabel = r.lastOrderDate ? new Date(r.lastOrderDate).toLocaleDateString() : '—';
+    return (
+      '<tr>' +
+      '<td>' + skuLabel + '</td>' +
+      '<td class="urlcell"><a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.url) + '</a></td>' +
+      '<td>' + esc(r.category || '—') + '</td>' +
+      '<td class="num">' + num(r.unitsSold90d) + '</td>' +
+      '<td>' + lastOrderLabel + '</td>' +
+      '<td>' + statusHtml + '</td>' +
+      '</tr>'
+    );
+  }).join('');
+  document.getElementById('r3pinfo').textContent = 'Showing ' + (from + 1) + '–' + Math.min(from + size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + r3pg + ' of ' + mp + ')';
+}
+
+function r3csvEscape(v){
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function r3exportCsv(){
+  const rows = r3filteredRows();
+  const header = ['SKU','Page URL','Category','Units Sold (90d)','Last Order Date','Status'];
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    const row = [
+      r.skuRaw,
+      r.url,
+      r.category || '',
+      r.unitsSold90d,
+      r.lastOrderDate ? new Date(r.lastOrderDate).toLocaleDateString() : '',
+      r.status,
+    ].map(r3csvEscape);
+    lines.push(row.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SUK-R3_slow_moving_stock_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('r3q_sku').addEventListener('input', () => { r3pg = 1; r3render(); });
+document.getElementById('r3q_title').addEventListener('input', () => { r3pg = 1; r3render(); });
+document.getElementById('r3q_variant').addEventListener('input', () => { r3pg = 1; r3render(); });
+document.getElementById('r3f_status').addEventListener('change', () => { r3pg = 1; r3render(); });
+document.getElementById('r3f_pstatus').addEventListener('change', () => { r3pg = 1; r3render(); });
+document.getElementById('r3f_location').addEventListener('change', () => { r3pg = 1; r3render(); });
+document.getElementById('r3f_stock').addEventListener('change', () => { r3pg = 1; r3render(); });
+document.getElementById('r3f_sold').addEventListener('change', () => { r3pg = 1; r3render(); });
+document.getElementById('r3f_missing').addEventListener('change', () => { r3pg = 1; r3render(); });
+document.getElementById('r3psize').addEventListener('change', () => { r3pg = 1; r3render(); });
+document.getElementById('r3resetFilters').addEventListener('click', () => {
+  document.getElementById('r3q_sku').value = '';
+  document.getElementById('r3q_title').value = '';
+  document.getElementById('r3q_variant').value = '';
+  document.getElementById('r3f_status').value = '';
+  document.getElementById('r3f_pstatus').value = '';
+  document.getElementById('r3f_location').value = '';
+  document.getElementById('r3f_stock').value = '';
+  document.getElementById('r3f_sold').value = '';
+  document.getElementById('r3f_missing').value = '';
+  r3pg = 1;
+  r3render();
+});
+document.getElementById('r3pgFirst').addEventListener('click', () => { r3pg = 1; r3render(); });
+document.getElementById('r3pgPrev').addEventListener('click', () => { if (r3pg > 1) { r3pg--; r3render(); } });
+document.getElementById('r3pgNext').addEventListener('click', () => { if (r3pg < r3maxpg(r3filteredRows())) { r3pg++; r3render(); } });
+document.getElementById('r3pgLast').addEventListener('click', () => { r3pg = r3maxpg(r3filteredRows()); r3render(); });
+document.getElementById('r3exportCsv').addEventListener('click', r3exportCsv);
 </script>
 </body>
 </html>

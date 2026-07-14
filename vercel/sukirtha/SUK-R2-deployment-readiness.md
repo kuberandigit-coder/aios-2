@@ -96,9 +96,36 @@ n/a — deployment record only.
 # Parent AIOS Candidate Status
 Not applicable.
 
-# Next Step
+# Next Step (superseded, see update below)
 None required for deployment; git push to GitHub (separate from this
 Vercel deploy) still needs explicit approval.
+
+---
+
+## Update (2026-07-14, later same day)
+
+**Git push:** completed on explicit user instruction
+(`git push origin main`) — commits `75e1651` (SUK-R2 core build,
+including this endpoint) and `667d917` (Sajeepan sync + index.html
+counts) are on `github.com/kuberandigit-coder/aios-2`.
+
+**Two further production deployments completed since:**
+1. `index.html` (Sajeepan promotion + recalculated counts) — deployed,
+   verified live.
+2. Sajeepan Requirement 1 page synced in and deployed alongside it.
+
+**One deployment still pending:** a UI refinement round on the
+Requirement 2 tab (Additional Listings filter, professional detail-panel
+layout, live-updating one-line summary cards) is built and locally
+validated but **not deployed** — an attempted `vercel --prod` for this
+specific change was blocked by the auto-mode safety classifier because
+the request didn't explicitly say "deploy" this round. Awaiting that
+confirmation before the next `vercel --prod` + commit/push for this
+change specifically.
+
+# Next Step (updated)
+User confirms "deploy" for the pending UI refinement; then deploy +
+commit + push that change.
 
 # PASS / FAIL
 PASS

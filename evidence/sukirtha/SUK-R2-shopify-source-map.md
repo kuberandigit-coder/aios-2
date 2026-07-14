@@ -114,3 +114,38 @@ Kuberan/Sajeesan technical review of the live endpoint and numbers.
 
 # PASS / FAIL
 PASS
+
+---
+
+## Update (2026-07-14, later same day) — UI refinement round
+
+After initial deployment, the user asked for three UI improvements to the
+Requirement 2 tab:
+1. An **Additional Listings** filter (None / 1–2 / 3–5 / 6+), computed from
+   `listingCount - 2` per SKU group.
+2. A **professional layout** for the expandable "+N more" detail panel
+   (was a bare unstyled table; now a bordered/shadowed card with a header
+   row, sticky-style column headers, zebra striping, hover state, and a
+   rotating chevron on the toggle button).
+3. The 9 summary cards fit on **one line** on desktop (`grid-template-columns:
+   repeat(9,1fr)` with responsive breakpoints at 1300/820/520px), and now
+   **recompute live from the filtered result set** on every filter/search
+   change (previously they showed fixed whole-catalog totals regardless of
+   filters).
+
+Implementation is complete and locally validated (div-balance clean, JS
+syntax clean via `node --check`), but **not yet deployed to Vercel and not
+yet committed to git** — the deploy attempt was blocked by the auto-mode
+safety classifier because the request didn't explicitly say "deploy," and
+this was correctly treated as requiring a fresh confirmation rather than
+reusing the standing deploy approval from the SUK-R2 build itself.
+
+# Status (updated)
+Built and locally validated. Live production Vercel deployment still shows
+the **pre-refinement** version (filters/cards/detail-panel as originally
+shipped). Not committed to git yet.
+
+# Next Step (updated)
+Awaiting explicit "deploy" confirmation from the user before pushing this
+UI refinement to Vercel production; git commit/push also still pending
+separate approval per the task's file/git control rules.

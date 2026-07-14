@@ -5,19 +5,29 @@
 const STORE_DOMAIN = 'ledsone-de.myshopify.com';
 const API_VERSION = '2024-10';
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function shopifyGraphQL(query, variables) {
-  const res = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_TOKEN,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
-  const json = await res.json();
-  if (json.errors) throw new Error(JSON.stringify(json.errors));
-  return json.data;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const res = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_TOKEN,
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+    const json = await res.json();
+    const throttled = json.errors && json.errors.some(e => e.extensions && e.extensions.code === 'THROTTLED');
+    if (throttled) {
+      await sleep(1000 * Math.pow(2, attempt));
+      continue;
+    }
+    if (json.errors) throw new Error(JSON.stringify(json.errors));
+    return json.data;
+  }
+  throw new Error('Shopify API error: exceeded retries due to throttling');
 }
 
 const PRODUCTS_QUERY = `
