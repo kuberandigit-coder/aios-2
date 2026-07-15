@@ -245,7 +245,10 @@ footer.site{margin-top:24px;color:var(--muted);font-size:12px;text-align:center;
 <body>
 <div class="wrap">
 
-<a class="back" href="../index.html">← Back to all members</a>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+<a class="back" href="../index.html" style="margin-bottom:0;">← Back to all members</a>
+<span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Piranav</span>
+</div>
 
 <!-- Header -->
 <div class="dash-header">
@@ -542,7 +545,9 @@ footer.site{margin-top:24px;color:var(--muted);font-size:12px;text-align:center;
    Dedup: use DISTINCT ON (product_id) ORDER BY updated_at DESC (latest record)
    ============================================================ */
 
-/* Campaign master data */
+/* AUTO-UPDATED: 2026-07-14 | Data window: 2026-06-14 → 2026-07-13 */
+
+/* CAMPAIGNS_START */
 const CAMPAIGNS = [
   { id:'21069663519', name:'Pmax | Sajeepan | Klarna CSS | SJ_PENDANT_KLARNA | Zero Conv | MCV | UK',
     short:'SJ_PENDANT_KLARNA', status:'ENABLED', primary:'LIMITED', budget:100, target_roas:3.20,
@@ -575,8 +580,9 @@ const CAMPAIGNS = [
     prev:{ cost:249.81, cv:948.73, conv:20.92, roas:379.78 }
   }
 ];
+/* CAMPAIGNS_END */
 
-/* Daily trend data (30 days, all campaigns combined) */
+/* TREND_START */
 const TREND = [
   {d:'06/14',cost:66.12,cv:102.29,conv:5.82,roas:154.71},
   {d:'06/15',cost:94.51,cv:390.44,conv:8.02,roas:413.12},
@@ -609,8 +615,9 @@ const TREND = [
   {d:'07/12',cost:220.00,cv:609.24,conv:13.09,roas:276.93},
   {d:'07/13',cost:201.79,cv:349.21,conv:12.05,roas:173.05}
 ];
+/* TREND_END */
 
-/* Top 50 products by revenue — google_ads.product_performance (30d) */
+/* PRODUCTS_START */
 const PRODUCTS = [
   {item:'shopify_gb_14877951099266_54868256915842',cid:'21069663519',cost:50.10,cv:483.87,conv:9.97,clicks:134,imps:11800,roas:965.81,title:'Vintage LED Edison Bulb 4W E27 Non Dimmable ~5614',brand:'LEDSone',price:6.45,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/files/Diamond_Bulb.png?v=1776054181',type:'Bulb'},
   {item:'shopify_gb_7855951184122_43721073033466',cid:'21069663519',cost:51.20,cv:316.47,conv:8.81,clicks:73,imps:7415,roas:618.11,title:'LED A60 E27 4W Bulb Filament Dimmable Globe ~4095',brand:'LEDSone',price:15.10,avail:'in stock',img:'https://cdn.shopify.com/s/files/1/0250/4094/5248/products/15898.png?v=1669959090',type:'E27 Base Bulb B'},
@@ -668,6 +675,7 @@ const PRODUCTS = [
   {item:'4417255538784',cid:'23516313256',cost:13.34,cv:0,conv:0,clicks:0,imps:1706,roas:0,title:'Zero Conv Product #4417255538784',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'},
   {item:'shopify_gb_8649884762362_46784256934138',cid:'21069663519',cost:10.40,cv:0,conv:0,clicks:0,imps:1304,roas:0,title:'Zero Conv Product #8649884762362',brand:'LEDSone',price:null,avail:'in stock',img:'',type:'Lighting'}
 ];
+/* PRODUCTS_END */
 
 /* ============================================================
    HELPERS
