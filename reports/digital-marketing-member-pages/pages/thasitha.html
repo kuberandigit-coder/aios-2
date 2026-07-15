@@ -36,6 +36,12 @@
 .t1-tablewrap::-webkit-scrollbar-track{background:#f2f4f8;border-radius:0 0 14px 14px;}
 .t1-tablewrap::-webkit-scrollbar-thumb{background:#b7c0cf;border-radius:999px;border:2px solid #f2f4f8;}
 .t1-tablewrap::-webkit-scrollbar-thumb:hover{background:#8f9bad;}
+#stickyScrollbar{display:none;position:fixed;left:0;right:0;bottom:0;height:14px;overflow-x:scroll;overflow-y:hidden;z-index:500;background:#f2f4f8;border-top:1px solid var(--line);scrollbar-width:auto;}
+#stickyScrollbar::-webkit-scrollbar{height:14px;}
+#stickyScrollbar::-webkit-scrollbar-track{background:#f2f4f8;}
+#stickyScrollbar::-webkit-scrollbar-thumb{background:#b7c0cf;border-radius:999px;border:2px solid #f2f4f8;}
+#stickyScrollbar::-webkit-scrollbar-thumb:hover{background:#8f9bad;}
+#stickyScrollbarInner{height:1px;}
 table.t1-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1300px;}
 table.t1-table th{text-align:left;padding:11px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);background:#fafbfd;white-space:nowrap;cursor:pointer;user-select:none;}
 table.t1-table th.sortable:hover{color:var(--accent);}
@@ -355,6 +361,18 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 <tbody id="t2Tbody"></tbody>
 </table>
 <div class="t1-empty" id="t2Empty" style="display:none;">No products found for the selected filters.</div>
+<div class="pager" id="t2Pager">
+  <span class="info" id="t2PageInfo"></span>
+  <span style="display:flex;gap:8px;align-items:center;">
+    <label>Rows <select id="t2PageSize" onchange="t2Pg=1;renderR2();">
+      <option>50</option><option selected>100</option><option>250</option><option>500</option><option value="All">All</option>
+    </select></label>
+    <button class="t1-btn" onclick="t2Pg=1;renderR2();">&laquo;</button>
+    <button class="t1-btn" onclick="if(t2Pg>1){t2Pg--;renderR2();}">&lsaquo; Prev</button>
+    <button class="t1-btn" onclick="if(t2Pg<t2MaxPg()){t2Pg++;renderR2();}">Next &rsaquo;</button>
+    <button class="t1-btn" onclick="t2Pg=t2MaxPg();renderR2();">&raquo;</button>
+  </span>
+</div>
 </div>
 
 <div class="t1-statusnote">
@@ -808,6 +826,14 @@ const R2_FLAG_META = {
   });
 })();
 
+let t2Pg = 1;
+let t2LastLen = 0, t2LastPs = 1;
+function t2MaxPg(len, ps){
+  if(len===undefined) len = t2LastLen;
+  if(ps===undefined) ps = t2LastPs;
+  return Math.max(1, Math.ceil((len||0)/(ps||1)));
+}
+
 function renderR2(){
   const q = document.getElementById('t2Search').value.trim().toLowerCase();
   const cf = document.getElementById('t2CampaignFilter').value;
@@ -850,6 +876,18 @@ function renderR2(){
   const emptyEl = document.getElementById('t2Empty');
   document.getElementById('t2Table').style.display = rows.length? '' : 'none';
   emptyEl.style.display = rows.length? 'none' : 'block';
+  document.getElementById('t2Pager').style.display = rows.length? '' : 'none';
+
+  const t2PageSizeVal = document.getElementById('t2PageSize').value;
+  const t2Ps = t2PageSizeVal==='All' ? rows.length||1 : parseInt(t2PageSizeVal,10);
+  t2LastLen = rows.length; t2LastPs = t2Ps;
+  if(t2Pg>t2MaxPg(rows.length,t2Ps)) t2Pg = t2MaxPg(rows.length,t2Ps);
+  const t2Start = (t2Pg-1)*t2Ps;
+  const allRows = rows;
+  rows = t2PageSizeVal==='All' ? rows : rows.slice(t2Start, t2Start+t2Ps);
+  document.getElementById('t2PageInfo').textContent = allRows.length
+    ? ('Rows '+(t2Start+1).toLocaleString()+'-'+Math.min(t2Start+t2Ps,allRows.length).toLocaleString()+' of '+allRows.length.toLocaleString()+' | page '+t2Pg+' / '+t2MaxPg(allRows.length,t2Ps))
+    : 'No rows match';
 
   tbody.innerHTML = rows.map(function(r){
     const meta = R2_FLAG_META[r.flag];
@@ -899,8 +937,8 @@ function renderR2(){
   }).join('');
 
   const flagCounts = {new:0,zeroimp:0,zeroclick:0,zeroconv:0,healthy:0};
-  rows.forEach(function(r){ flagCounts[r.flag]++; });
-  document.getElementById('t2kpiCount').textContent = rows.length.toLocaleString();
+  allRows.forEach(function(r){ flagCounts[r.flag]++; });
+  document.getElementById('t2kpiCount').textContent = allRows.length.toLocaleString();
   document.getElementById('t2kpiNew').textContent = flagCounts.new.toLocaleString();
   document.getElementById('t2kpiZeroImp').textContent = flagCounts.zeroimp.toLocaleString();
   document.getElementById('t2kpiZeroClick').textContent = flagCounts.zeroclick.toLocaleString();
@@ -908,8 +946,8 @@ function renderR2(){
   document.getElementById('t2kpiHealthy').textContent = flagCounts.healthy.toLocaleString();
 }
 
-['t2Search'].forEach(function(id){ document.getElementById(id).addEventListener('input', renderR2); });
-['t2CampaignFilter','t2FlagFilter','t2StockFilter','t2Sort'].forEach(function(id){ document.getElementById(id).addEventListener('change', renderR2); });
+['t2Search'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ t2Pg=1; renderR2(); }); });
+['t2CampaignFilter','t2FlagFilter','t2StockFilter','t2Sort'].forEach(function(id){ document.getElementById(id).addEventListener('change', function(){ t2Pg=1; renderR2(); }); });
 document.querySelectorAll('#t2Table th.sortable').forEach(function(th){
   th.addEventListener('click', function(){
     const key = th.getAttribute('data-sort');
@@ -1172,5 +1210,46 @@ renderR3();
 
   <footer class="site">Digital Marketing Member Reports &middot; AIOS &middot; generated 2026-07-13</footer>
 </div>
+
+<div id="stickyScrollbar"><div id="stickyScrollbarInner"></div></div>
+<script>
+(function(){
+  var bar = document.getElementById('stickyScrollbar');
+  var inner = document.getElementById('stickyScrollbarInner');
+  var syncing = false;
+  function activeWrap(){
+    var panel = document.querySelector('.tabpanel.on');
+    if(!panel) return null;
+    return panel.querySelector('.t1-tablewrap');
+  }
+  function refresh(){
+    var wrap = activeWrap();
+    if(!wrap || wrap.scrollWidth<=wrap.clientWidth){
+      bar.style.display = 'none';
+      return;
+    }
+    inner.style.width = wrap.scrollWidth+'px';
+    bar.style.display = 'block';
+    if(!syncing){ syncing = true; bar.scrollLeft = wrap.scrollLeft; syncing = false; }
+    if(!wrap.dataset.stickySynced){
+      wrap.dataset.stickySynced = '1';
+      wrap.addEventListener('scroll', function(){
+        if(syncing) return; syncing = true; bar.scrollLeft = wrap.scrollLeft; syncing = false;
+      });
+    }
+  }
+  bar.addEventListener('scroll', function(){
+    var wrap = activeWrap();
+    if(!wrap || syncing) return;
+    syncing = true; wrap.scrollLeft = bar.scrollLeft; syncing = false;
+  });
+  document.querySelectorAll('.tabbtn').forEach(function(btn){
+    btn.addEventListener('click', function(){ setTimeout(refresh, 30); });
+  });
+  window.addEventListener('resize', refresh);
+  setInterval(refresh, 1000);
+  refresh();
+})();
+</script>
 </body>
 </html>
