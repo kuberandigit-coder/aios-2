@@ -36,8 +36,8 @@
 .t1-tablewrap::-webkit-scrollbar-track{background:#f2f4f8;border-radius:0 0 14px 14px;}
 .t1-tablewrap::-webkit-scrollbar-thumb{background:#b7c0cf;border-radius:999px;border:2px solid #f2f4f8;}
 .t1-tablewrap::-webkit-scrollbar-thumb:hover{background:#8f9bad;}
-#stickyScrollbar{display:none;position:fixed;left:0;right:0;bottom:0;height:16px;overflow-x:scroll;overflow-y:hidden;z-index:500;background:#f2f4f8;border-top:1px solid var(--line);scrollbar-width:auto;}
-#stickyScrollbar::-webkit-scrollbar{height:16px;}
+#stickyScrollbar{display:none;position:fixed;left:0;right:0;bottom:0;height:20px;overflow-x:scroll;overflow-y:hidden;z-index:500;background:#f2f4f8;border-top:1px solid var(--line);box-shadow:0 -2px 6px rgba(12,26,48,.08);scrollbar-width:auto;}
+#stickyScrollbar::-webkit-scrollbar{height:20px;}
 #stickyScrollbar::-webkit-scrollbar-track{background:#f2f4f8;}
 #stickyScrollbar::-webkit-scrollbar-thumb{background:#b7c0cf;border-radius:999px;border:3px solid #f2f4f8;}
 #stickyScrollbar::-webkit-scrollbar-thumb:hover{background:#8f9bad;}
@@ -1232,12 +1232,14 @@ renderR3();
   }
   function refresh(){
     var wrap = activeWrap();
-    if(!wrap || wrap.scrollWidth<=wrap.clientWidth){
+    if(!wrap || wrap.scrollWidth<=wrap.clientWidth+2){
       bar.style.display = 'none';
+      document.body.style.paddingBottom = '';
       return;
     }
     inner.style.width = wrap.scrollWidth+'px';
     bar.style.display = 'block';
+    document.body.style.paddingBottom = '20px';
     if(!syncing){ syncing = true; bar.scrollLeft = wrap.scrollLeft; syncing = false; }
     if(!wrap.dataset.stickySynced){
       wrap.dataset.stickySynced = '1';
@@ -1252,10 +1254,11 @@ renderR3();
     syncing = true; wrap.scrollLeft = bar.scrollLeft; syncing = false;
   });
   document.querySelectorAll('.tabbtn').forEach(function(btn){
-    btn.addEventListener('click', function(){ setTimeout(refresh, 30); });
+    btn.addEventListener('click', function(){ setTimeout(refresh, 30); setTimeout(refresh, 200); });
   });
   window.addEventListener('resize', refresh);
-  setInterval(refresh, 800);
+  window.refreshStickyScrollbar = refresh;
+  setInterval(refresh, 500);
   refresh();
 })();
 </script>
