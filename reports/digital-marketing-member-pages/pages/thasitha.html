@@ -86,6 +86,11 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .r3-action{white-space:normal;max-width:230px;font-size:11.5px;line-height:1.6;}
 .r3-action .keep{color:var(--good);font-weight:700;}
 .r3-action .remove{color:#c62828;font-weight:700;}
+.r3-overlap-data{white-space:normal;max-width:260px;font-size:11px;line-height:1.55;}
+.r3-overlap-data .oc{margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #eef1f6;}
+.r3-overlap-data .oc:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.r3-overlap-data .ocname{font-weight:700;color:var(--ink);}
+.r3-overlap-data .ocmetrics{color:var(--muted);}
 .r3-detail-row{display:none;}
 .r3-detail-row.open{display:table-row;}
 .r3-detail-wrap{padding:14px 20px;background:#fafbfd;}
@@ -405,6 +410,7 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <th class="num">Inflated CPC</th>
   <th class="sortable num" data-sort="inflation">Est. CPC Inflation</th>
   <th>Auction Conflict Risk</th>
+  <th>Overlap Campaign-wise Data</th>
   <th>Action</th>
 </tr></thead>
 <tbody id="r3Tbody"></tbody>
@@ -417,7 +423,8 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <strong>Campaign 1</strong> is Thasitha's own campaign for that SKU (highest-cost one, if the SKU is in both her campaigns). <strong>Campaign 2/3/+more</strong> are every other campaign (any owner, any status) that has ever served that same SKU.<br>
   <strong>Baseline CPC</strong> = Campaign 1's aggregate CPC (total cost &divide; total clicks, all-time). <strong>Inflated CPC</strong> = the combined aggregate CPC of all other overlapping campaigns together (total cost &divide; total clicks across Campaign 2+).<br>
   <strong>Est. CPC Inflation</strong> = ((Baseline CPC &divide; Inflated CPC) &minus; 1) &times; 100, per Thasitha's specified formula. A positive value means Campaign 1's CPC is higher relative to the other campaigns' combined CPC; a negative value is shown as CPC Deflation.<br>
-  <strong>Action</strong> recommends keeping the SKU in whichever campaign (among all listed) has the highest lifetime Conversion Value, tie-broken by ROAS. This is <strong>advisory only</strong> &mdash; recommendations are based on available product-level lifetime performance and require PPC review before any campaign changes. Nothing on this page is executed automatically.<br>
+  <strong>Overlap Campaign-wise Data</strong> lists every campaign that has served the SKU (Campaign 1, 2, 3, and beyond) with that campaign's own Conversion Value, ROAS, Cost, and Conversions &mdash; all campaigns are always shown here, never truncated, even when more than three exist (see the expandable +more panel for full metrics).<br>
+  <strong>Action</strong> recommends keeping the SKU in whichever campaign (among all listed, not just the first three shown) has the highest lifetime Conversion Value, tie-broken by ROAS, then conversions, then lower cost. Every one of the 328 overlapping SKUs has an Action &mdash; either a KEEP/REMOVE recommendation or "Business Review Required" when evidence is too thin to declare a winner (zero conversion value and at most one conversion). This is <strong>advisory only</strong> &mdash; recommendations are based on available product-level lifetime performance and require PPC review before any campaign changes. Nothing on this page is executed automatically.<br>
   <strong>Data source:</strong> PostgreSQL (read-only) <code>google_ads.product_performance</code> (all-time, all ledsone.de campaigns) joined to <code>google_ads.campaigns</code> and <code>google_ads.merchant_products</code>. 238 of 328 overlapping SKUs (73%) resolved a product title/image via the feed match used in Requirement 2; the remainder show the raw SKU ID (same known ~pre-existing feed match-rate gap documented on Requirement 2, not introduced here).
 </div>
 
@@ -874,6 +881,11 @@ function renderR3Row(o){
       + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+esc(c.cname);}).join('<br>') : '');
   }
 
+  const overlapDataHtml = '<div class="r3-overlap-data">'+camps.map(function(c){
+    return '<div class="oc"><div class="ocname">'+(c.isThasi?'<span class="thasi-tag">Thasi</span> ':'')+esc(c.cname)+'</div>'
+      + '<div class="ocmetrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div></div>';
+  }).join('')+'</div>';
+
   const detailCards = camps.map(function(c){
     return '<div class="r3-detail-card"><div class="cn">'+(c.isThasi?'<span class="thasi-tag">Thasi</span> ':'')+esc(c.cname)+'</div>'
       + '<div class="row"><span>Type</span><span>'+esc(c.ctype)+'</span></div>'
@@ -902,9 +914,10 @@ function renderR3Row(o){
     + '<td class="num">'+inflatedTxt+'</td>'
     + '<td class="num">'+inflationTxt+'</td>'
     + '<td><span class="r3-risk '+meta.cls+'">'+o.risk+'</span></td>'
+    + '<td>'+overlapDataHtml+'</td>'
     + '<td class="r3-action">'+actionHtml+'</td>'
     + '</tr>';
-  const detailRow = '<tr class="r3-detail-row" id="'+rowId+'"><td colspan="13"><div class="r3-detail-wrap"><div class="r3-detail-grid">'+detailCards+'</div></div></td></tr>';
+  const detailRow = '<tr class="r3-detail-row" id="'+rowId+'"><td colspan="14"><div class="r3-detail-wrap"><div class="r3-detail-grid">'+detailCards+'</div></div></td></tr>';
   return mainRow+detailRow;
 }
 
