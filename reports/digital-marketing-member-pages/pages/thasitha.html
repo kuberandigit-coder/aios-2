@@ -36,6 +36,12 @@
 .t1-tablewrap::-webkit-scrollbar-track{background:#f2f4f8;border-radius:0 0 14px 14px;}
 .t1-tablewrap::-webkit-scrollbar-thumb{background:#b7c0cf;border-radius:999px;border:2px solid #f2f4f8;}
 .t1-tablewrap::-webkit-scrollbar-thumb:hover{background:#8f9bad;}
+#stickyScrollbar{display:none;position:fixed;left:0;right:0;bottom:0;height:16px;overflow-x:scroll;overflow-y:hidden;z-index:500;background:#f2f4f8;border-top:1px solid var(--line);scrollbar-width:auto;}
+#stickyScrollbar::-webkit-scrollbar{height:16px;}
+#stickyScrollbar::-webkit-scrollbar-track{background:#f2f4f8;}
+#stickyScrollbar::-webkit-scrollbar-thumb{background:#b7c0cf;border-radius:999px;border:3px solid #f2f4f8;}
+#stickyScrollbar::-webkit-scrollbar-thumb:hover{background:#8f9bad;}
+#stickyScrollbarInner{height:1px;}
 table.t1-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1300px;}
 table.t1-table th{text-align:left;padding:11px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);background:#fafbfd;white-space:nowrap;cursor:pointer;user-select:none;}
 table.t1-table th.sortable:hover{color:var(--accent);}
@@ -1211,5 +1217,47 @@ renderR3();
 
   <footer class="site">Digital Marketing Member Reports &middot; AIOS &middot; generated 2026-07-13</footer>
 </div>
+
+<div id="stickyScrollbar"><div id="stickyScrollbarInner"></div></div>
+<script>
+(function(){
+  var bar = document.getElementById('stickyScrollbar');
+  var inner = document.getElementById('stickyScrollbarInner');
+  var syncing = false;
+  function activeWrap(){
+    var panel = document.querySelector('.tabpanel.on');
+    if(!panel) return null;
+    if(panel.id!=='tabPanelR2' && panel.id!=='tabPanelR3') return null;
+    return panel.querySelector('.t1-tablewrap');
+  }
+  function refresh(){
+    var wrap = activeWrap();
+    if(!wrap || wrap.scrollWidth<=wrap.clientWidth){
+      bar.style.display = 'none';
+      return;
+    }
+    inner.style.width = wrap.scrollWidth+'px';
+    bar.style.display = 'block';
+    if(!syncing){ syncing = true; bar.scrollLeft = wrap.scrollLeft; syncing = false; }
+    if(!wrap.dataset.stickySynced){
+      wrap.dataset.stickySynced = '1';
+      wrap.addEventListener('scroll', function(){
+        if(syncing) return; syncing = true; bar.scrollLeft = wrap.scrollLeft; syncing = false;
+      });
+    }
+  }
+  bar.addEventListener('scroll', function(){
+    var wrap = activeWrap();
+    if(!wrap || syncing) return;
+    syncing = true; wrap.scrollLeft = bar.scrollLeft; syncing = false;
+  });
+  document.querySelectorAll('.tabbtn').forEach(function(btn){
+    btn.addEventListener('click', function(){ setTimeout(refresh, 30); });
+  });
+  window.addEventListener('resize', refresh);
+  setInterval(refresh, 800);
+  refresh();
+})();
+</script>
 </body>
 </html>
