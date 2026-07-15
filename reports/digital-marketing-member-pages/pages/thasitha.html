@@ -946,16 +946,16 @@ function renderR3Row(o){
       + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+esc(c.cname);}).join('<br>') : '');
   }
 
-  const ocId = 'r3oc_'+o.sku;
+  const rowId = 'r3row_'+o.sku;
   const ocBlock = function(c){
     return '<div class="oc"><div class="ocname">'+(c.isThasi?'<span class="thasi-tag">Thasi</span> ':'')+esc(c.cname)+'</div>'
       + '<div class="ocmetrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div></div>';
   };
-  const ocRest = camps.slice(1);
+  const visibleCamps = camps.slice(0,3);
+  const moreBtnHtml = extra>0 ? '<button class="r3-more-btn" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>' : '';
   const overlapDataHtml = '<div class="r3-overlap-data">'
-    + ocBlock(camps[0])
-    + (ocRest.length ? '<div class="oc-rest" id="'+ocId+'">'+ocRest.map(ocBlock).join('')+'</div>'
-        + '<button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+ocId+'\')">+'+ocRest.length+' more &darr;</button>' : '')
+    + visibleCamps.map(ocBlock).join('')
+    + (extra>0 ? '<div style="margin-top:4px;">'+moreBtnHtml+'</div>' : '')
     + '</div>';
 
   const extraCamps = camps.slice(3);
@@ -963,12 +963,11 @@ function renderR3Row(o){
     return '<div class="r3-more-col">'
       + '<div class="r3-more-label">Campaign '+(i+4)+'</div>'
       + campCell(c)
+      + '<div class="r3-more-metrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+'<br>Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div>'
       + '</div>';
   }).join('');
   const detailTable = '<div class="r3-detail-title">+'+extraCamps.length+' additional overlapping campaign(s) for this SKU</div>'
     + '<div class="r3-more-grid">'+detailCampCells+'</div>';
-
-  const rowId = 'r3row_'+o.sku;
   const mainRow = '<tr>'
     + '<td class="t2-sku">'+esc(o.sku)+'</td>'
     + '<td class="t2-title">'+esc(o.title||('Product '+o.sku))+'</td>'
@@ -977,7 +976,7 @@ function renderR3Row(o){
     + '<td>'+campCell(c1)+'</td>'
     + '<td>'+campCell(c2)+'</td>'
     + '<td>'+campCell(c3)+'</td>'
-    + '<td>'+(extra>0?'<button class="r3-more-btn" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>':'<span class="t1-na">&mdash;</span>')+'</td>'
+    + '<td>'+(extra>0?moreBtnHtml:'<span class="t1-na">&mdash;</span>')+'</td>'
     + '<td class="num">'+baselineTxt+'</td>'
     + '<td class="num">'+inflatedTxt+'</td>'
     + '<td class="num">'+inflationTxt+'</td>'
