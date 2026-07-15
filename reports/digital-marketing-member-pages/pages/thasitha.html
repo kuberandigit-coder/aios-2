@@ -94,17 +94,15 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .r3-overlap-data .oc:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
 .r3-overlap-data .ocname{font-weight:700;color:var(--ink);}
 .r3-overlap-data .ocmetrics{color:var(--muted);}
+.r3-overlap-data .oc-rest{display:none;}
+.r3-overlap-data .oc-rest.open{display:block;}
 .r3-detail-row{display:none;}
 .r3-detail-row.open{display:table-row;}
 .r3-detail-wrap{padding:16px 20px;background:#fafbfd;}
 .r3-detail-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);margin-bottom:10px;}
-table.r3-detail-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px;}
-table.r3-detail-table th{text-align:left;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:#42506a;background:#f2f4f8;border-bottom:1px solid var(--line);white-space:nowrap;}
-table.r3-detail-table td{padding:8px 12px;border-bottom:1px solid #eef1f6;color:var(--muted);white-space:nowrap;}
-table.r3-detail-table td.dn{color:var(--ink);font-weight:600;white-space:normal;max-width:220px;}
-table.r3-detail-table td.num{text-align:right;}
-table.r3-detail-table tr:last-child td{border-bottom:none;}
-table.r3-detail-table tr:hover td{background:#fafbfd;}
+.r3-more-grid{display:flex;flex-wrap:wrap;gap:12px;}
+.r3-more-col{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:190px;max-width:210px;}
+.r3-more-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);margin-bottom:6px;}
 .r3-expand-btn{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:12px;padding:0;}
 .pager{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:0;padding:12px 16px;flex-wrap:wrap;border-top:1px solid var(--line);}
 .pager .info{font-size:12.5px;color:var(--muted);font-weight:600;}
@@ -947,30 +945,27 @@ function renderR3Row(o){
       + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+esc(c.cname);}).join('<br>') : '');
   }
 
-  const overlapDataHtml = '<div class="r3-overlap-data">'+camps.map(function(c){
+  const ocId = 'r3oc_'+o.sku;
+  const ocBlock = function(c){
     return '<div class="oc"><div class="ocname">'+(c.isThasi?'<span class="thasi-tag">Thasi</span> ':'')+esc(c.cname)+'</div>'
       + '<div class="ocmetrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div></div>';
-  }).join('')+'</div>';
+  };
+  const ocRest = camps.slice(1);
+  const overlapDataHtml = '<div class="r3-overlap-data">'
+    + ocBlock(camps[0])
+    + (ocRest.length ? '<div class="oc-rest" id="'+ocId+'">'+ocRest.map(ocBlock).join('')+'</div>'
+        + '<button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+ocId+'\')">+'+ocRest.length+' more &darr;</button>' : '')
+    + '</div>';
 
   const extraCamps = camps.slice(3);
-  const detailRowsHtml = extraCamps.map(function(c){
-    return '<tr>'
-      + '<td class="dn">'+(c.isThasi?'<span class="thasi-tag">Thasi</span> ':'')+esc(c.cname)+'</td>'
-      + '<td>'+esc(c.ctype)+'</td>'
-      + '<td>'+esc(c.cstatus)+'</td>'
-      + '<td class="num">'+eur(c.cv)+'</td>'
-      + '<td class="num">'+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+'</td>'
-      + '<td class="num">'+eur(c.cost)+'</td>'
-      + '<td class="num">'+c.conv+'</td>'
-      + '<td class="num">'+num(c.clk)+' / '+num(c.imp)+'</td>'
-      + '<td class="num">'+(c.cpc!=null?eur(c.cpc):'N/A')+'</td>'
-      + '<td>'+c.fd+' &rarr; '+c.ld+'</td>'
-      + '</tr>';
+  const detailCampCells = extraCamps.map(function(c, i){
+    return '<div class="r3-more-col">'
+      + '<div class="r3-more-label">Campaign '+(i+4)+'</div>'
+      + campCell(c)
+      + '</div>';
   }).join('');
   const detailTable = '<div class="r3-detail-title">+'+extraCamps.length+' additional overlapping campaign(s) for this SKU</div>'
-    + '<table class="r3-detail-table"><thead><tr>'
-    + '<th>Campaign</th><th>Type</th><th>Status</th><th class="num">Conv. Value</th><th class="num">ROAS</th><th class="num">Cost</th><th class="num">Conv.</th><th class="num">Clicks/Impr.</th><th class="num">CPC</th><th>First&rarr;Last</th>'
-    + '</tr></thead><tbody>'+detailRowsHtml+'</tbody></table>';
+    + '<div class="r3-more-grid">'+detailCampCells+'</div>';
 
   const rowId = 'r3row_'+o.sku;
   const mainRow = '<tr>'
