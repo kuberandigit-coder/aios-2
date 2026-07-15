@@ -83,9 +83,15 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .risk-low{background:#1f5eff;}
 .risk-deflation{background:#0a7d4f;}
 .risk-datacheck{background:#6b7280;}
-.r3-action{white-space:normal;max-width:230px;font-size:11.5px;line-height:1.6;}
+.r3-action{white-space:normal;max-width:270px;font-size:11.5px;line-height:1.6;}
 .r3-action .keep{color:var(--good);font-weight:700;}
 .r3-action .remove{color:#c62828;font-weight:700;}
+.r3-review-badge{background:#fff8e6;border:1.5px solid #f0ad2e;border-radius:10px;padding:10px 12px;}
+.r3-review-tag{display:inline-block;background:#f0ad2e;color:#3a2a00;font-weight:800;font-size:11px;border-radius:999px;padding:4px 12px;margin-bottom:7px;letter-spacing:.2px;}
+.r3-review-reason{color:#7a5200;font-size:11px;line-height:1.5;margin-bottom:8px;}
+.r3-review-mini{background:#fff;border-radius:7px;padding:6px 9px;font-size:10.5px;}
+.r3-review-mini .row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;color:var(--muted);}
+.r3-review-mini .row.hdr{font-weight:700;color:var(--ink);border-bottom:1px solid #eef1f6;margin-bottom:2px;}
 .r3-overlap-data{white-space:normal;max-width:260px;font-size:11px;line-height:1.55;}
 .r3-overlap-data .oc{margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #eef1f6;}
 .r3-overlap-data .oc:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
@@ -840,7 +846,9 @@ const RISK_ORDER = {'CRITICAL':0,'HIGH':1,'MODERATE':2,'LOW':3,'CPC DEFLATION':4
 
 function r3BestCampaign(camps){
   const withData = camps.filter(function(c){ return c.cv>0 || c.cost>0; });
-  if(withData.length===0) return null;
+  if(withData.length===0){
+    return {winner:null, reason:'None of the '+camps.length+' overlapping campaigns have any spend or conversion value recorded for this SKU — there is no performance signal to compare.'};
+  }
   const sorted = withData.slice().sort(function(a,b){
     if(b.cv!==a.cv) return b.cv-a.cv;
     const aRoas = a.cost>0 ? a.cv/a.cost : -1, bRoas = b.cost>0 ? b.cv/b.cost : -1;
@@ -849,8 +857,10 @@ function r3BestCampaign(camps){
     return a.cost-b.cost;
   });
   const top = sorted[0];
-  if(top.cv===0 && top.conv<=1) return null;
-  return top;
+  if(top.cv===0 && top.conv<=1){
+    return {winner:null, reason:'The strongest candidate ("'+top.cname+'") still has &euro;0 conversion value and only '+top.conv+' conversion—not enough evidence to safely declare a winner.', top:top};
+  }
+  return {winner:top};
 }
 
 function r3RoasPct(c){ return c.cost>0 ? Math.round((c.cv/c.cost*100)*100)/100 : null; }
@@ -870,11 +880,20 @@ function renderR3Row(o){
   const inflatedTxt = o.inflatedCpc!=null ? eur(o.inflatedCpc) : '<span class="t1-na">N/A</span>';
   const inflationTxt = o.inflationPct!=null ? (o.inflationPct>=0?'+':'')+o.inflationPct.toFixed(2)+'%' : 'N/A';
 
-  const best = r3BestCampaign(camps);
+  const decision = r3BestCampaign(camps);
   let actionHtml;
-  if(!best){
-    actionHtml = '<span class="t2-blank">BUSINESS REVIEW REQUIRED</span>';
+  if(!decision.winner){
+    const zeroCount = camps.filter(function(c){ return c.cv===0 && c.cost===0; }).length;
+    const summaryRows = camps.slice().sort(function(a,b){return b.cost-a.cost;}).slice(0,4).map(function(c){
+      return '<div class="row"><span>'+(c.isThasi?'&#9733; ':'')+esc(c.cname.length>34?c.cname.slice(0,34)+'&hellip;':c.cname)+'</span><span>'+eur(c.cv)+' / '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+'</span></div>';
+    }).join('');
+    actionHtml = '<div class="r3-review-badge">'
+      + '<span class="r3-review-tag">&#9888; BUSINESS REVIEW REQUIRED</span>'
+      + '<div class="r3-review-reason">'+decision.reason+'</div>'
+      + '<div class="r3-review-mini"><div class="row hdr"><span>Campaign</span><span>ConvVal / ROAS</span></div>'+summaryRows+(camps.length>4?'<div class="row" style="color:var(--muted);font-style:italic;">+'+(camps.length-4)+' more campaign(s), all &euro;0/N/A</div>':'')+'</div>'
+      + '</div>';
   } else {
+    const best = decision.winner;
     const losers = camps.filter(function(c){ return c!==best; });
     actionHtml = '<span class="keep">KEEP: '+esc(best.cname)+'</span><br>'
       + 'Lifetime Conv. Value: '+eur(best.cv)+' &middot; ROAS: '+(r3RoasPct(best)!=null?r3RoasPct(best)+'%':'N/A')+'<br>'
