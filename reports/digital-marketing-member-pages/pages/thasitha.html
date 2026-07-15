@@ -96,9 +96,10 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .r3-overlap-data .ocmetrics{color:var(--muted);}
 .r3-overlap-data .oc-rest{display:none;}
 .r3-overlap-data .oc-rest.open{display:block;}
-.r3-detail-row{display:none;}
-.r3-detail-row.open{display:table-row;}
-.r3-detail-wrap{padding:16px 20px;background:#fafbfd;display:flex;flex-direction:column;align-items:center;}
+.r3-detail-row{display:table-row;}
+.r3-detail-wrap{padding:16px 20px;background:#fafbfd;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.r3-sub-panel{display:none;width:100%;flex-direction:column;align-items:center;}
+.r3-sub-panel.open{display:flex;}
 .r3-detail-title{text-align:center;width:100%;}
 .r3-detail-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);margin-bottom:10px;}
 .r3-more-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:900px;}
@@ -947,15 +948,15 @@ function renderR3Row(o){
   }
 
   const rowId = 'r3row_'+o.sku;
+  const ocId = 'r3oc_'+o.sku;
   const ocBlock = function(c){
     return '<div class="oc"><div class="ocname">'+(c.isThasi?'<span class="thasi-tag">Thasi</span> ':'')+esc(c.cname)+'</div>'
       + '<div class="ocmetrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div></div>';
   };
-  const visibleCamps = camps.slice(0,3);
-  const moreBtnHtml = extra>0 ? '<button class="r3-more-btn" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>' : '';
+  const ocRest = camps.slice(1);
   const overlapDataHtml = '<div class="r3-overlap-data">'
-    + visibleCamps.map(ocBlock).join('')
-    + (extra>0 ? '<div style="margin-top:4px;">'+moreBtnHtml+'</div>' : '')
+    + ocBlock(camps[0])
+    + (ocRest.length ? '<button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+ocId+'\')">+'+ocRest.length+' more &darr;</button>' : '')
     + '</div>';
 
   const extraCamps = camps.slice(3);
@@ -963,11 +964,24 @@ function renderR3Row(o){
     return '<div class="r3-more-col">'
       + '<div class="r3-more-label">Campaign '+(i+4)+'</div>'
       + campCell(c)
-      + '<div class="r3-more-metrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+'<br>Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div>'
       + '</div>';
   }).join('');
-  const detailTable = '<div class="r3-detail-title">+'+extraCamps.length+' additional overlapping campaign(s) for this SKU</div>'
-    + '<div class="r3-more-grid">'+detailCampCells+'</div>';
+  const ocExtraCells = ocRest.map(function(c, i){
+    return '<div class="r3-more-col">'
+      + '<div class="r3-more-label">Campaign '+(i+2)+'</div>'
+      + ocBlock(c)
+      + '</div>';
+  }).join('');
+
+  const hasCampPanel = extra>0;
+  const hasOcPanel = ocRest.length>0;
+  const campPanelHtml = hasCampPanel
+    ? '<div class="r3-sub-panel" id="'+rowId+'"><div class="r3-detail-title">+'+extraCamps.length+' additional overlapping campaign(s) for this SKU</div><div class="r3-more-grid">'+detailCampCells+'</div></div>'
+    : '';
+  const ocPanelHtml = hasOcPanel
+    ? '<div class="r3-sub-panel" id="'+ocId+'"><div class="r3-detail-title">Overlap Campaign-wise Data &mdash; all '+camps.length+' campaigns for this SKU</div><div class="r3-more-grid">'+ocExtraCells+'</div></div>'
+    : '';
+
   const mainRow = '<tr>'
     + '<td class="t2-sku">'+esc(o.sku)+'</td>'
     + '<td class="t2-title">'+esc(o.title||('Product '+o.sku))+'</td>'
@@ -976,7 +990,7 @@ function renderR3Row(o){
     + '<td>'+campCell(c1)+'</td>'
     + '<td>'+campCell(c2)+'</td>'
     + '<td>'+campCell(c3)+'</td>'
-    + '<td>'+(extra>0?moreBtnHtml:'<span class="t1-na">&mdash;</span>')+'</td>'
+    + '<td>'+(extra>0?'<button class="r3-more-btn" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>':'<span class="t1-na">&mdash;</span>')+'</td>'
     + '<td class="num">'+baselineTxt+'</td>'
     + '<td class="num">'+inflatedTxt+'</td>'
     + '<td class="num">'+inflationTxt+'</td>'
@@ -984,7 +998,9 @@ function renderR3Row(o){
     + '<td>'+overlapDataHtml+'</td>'
     + '<td class="r3-action">'+actionHtml+'</td>'
     + '</tr>';
-  const detailRow = extra>0 ? '<tr class="r3-detail-row" id="'+rowId+'"><td colspan="14"><div class="r3-detail-wrap">'+detailTable+'</div></td></tr>' : '';
+  const detailRow = (hasCampPanel||hasOcPanel)
+    ? '<tr class="r3-detail-row"><td colspan="14"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
+    : '';
   return mainRow+detailRow;
 }
 
