@@ -81,7 +81,7 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .flag-healthy{background:#0a7d4f;}
 .t2-blank{color:var(--na);font-style:italic;font-size:11.5px;}
 
-.r3-camp-cell{white-space:normal;max-width:190px;font-size:11.5px;}
+.r3-camp-cell{white-space:normal;max-width:150px;font-size:11px;}
 .r3-camp-cell .thasi-tag{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:9.5px;font-weight:700;border-radius:4px;padding:1px 5px;margin-right:5px;}
 .r3-more-btn{background:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;}
 .r3-risk{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:999px;padding:5px 13px;white-space:nowrap;color:#fff;}
@@ -91,13 +91,13 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .risk-low{background:#1f5eff;}
 .risk-deflation{background:#0a7d4f;}
 .risk-datacheck{background:#6b7280;}
-.r3-action{white-space:normal;width:280px;max-width:280px;font-size:11.5px;line-height:1.6;overflow-wrap:break-word;word-break:break-word;}
+.r3-action{white-space:normal;width:210px;max-width:210px;font-size:11px;line-height:1.5;overflow-wrap:break-word;word-break:break-word;}
 .r3-action .keep{color:var(--good);font-weight:700;}
 .r3-action .remove{color:#c62828;font-weight:700;}
 .r3-review-badge{box-sizing:border-box;width:100%;max-width:100%;}
 .r3-review-tag{display:inline-flex;align-items:center;gap:6px;background:#f0ad2e;color:#3a2a00;font-weight:800;font-size:11px;border-radius:999px;padding:5px 13px;letter-spacing:.2px;white-space:nowrap;}
 .r3-review-sub{display:block;width:100%;max-width:220px;color:#7a5200;font-size:11px;line-height:1.5;margin-top:6px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
-.r3-overlap-data{white-space:normal;max-width:260px;font-size:11px;line-height:1.55;}
+.r3-overlap-data{white-space:normal;max-width:200px;font-size:10.5px;line-height:1.5;}
 .r3-overlap-data .oc{margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #eef1f6;}
 .r3-overlap-data .oc:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
 .r3-overlap-data .ocname{font-weight:700;color:var(--ink);}
@@ -117,7 +117,10 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .r3-more-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:900px;}
 .r3-more-stack{display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px;}
 .r3-more-stack .r3-more-col{max-width:none;width:100%;}
-.r3-more-col{border-bottom:1px solid #eef1f6;padding-bottom:8px;margin-bottom:8px;min-width:190px;max-width:220px;}
+.r3-more-col{border-bottom:1px solid #eef1f6;padding-bottom:8px;margin-bottom:8px;min-width:150px;max-width:180px;}
+#r3Table td.t2-title{max-width:150px;font-size:11px;}
+#r3Table .t2-thumb{width:32px;height:32px;}
+#r3Table td, #r3Table th{padding:7px 8px;}
 .r3-more-col:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
 .r3-more-label{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px;}
 .r3-expand-btn{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:12px;padding:0;}
@@ -482,19 +485,19 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 <div class="t1-tablewrap">
 <table class="t1-table" id="r3Table">
 <thead><tr>
-  <th>Product ID</th>
-  <th>Product Name</th>
+  <th>ID</th>
+  <th>Name</th>
   <th>Image</th>
-  <th>Listing Link</th>
-  <th>Campaign 1</th>
-  <th>Campaign 2</th>
-  <th>Campaign 3</th>
+  <th>Link</th>
+  <th>Camp. 1</th>
+  <th>Camp. 2</th>
+  <th>Camp. 3</th>
   <th>+ More</th>
-  <th class="num">Baseline CPC</th>
-  <th class="num">Inflated CPC</th>
-  <th class="sortable num" data-sort="inflation">Est. CPC Inflation</th>
-  <th>Auction Conflict Risk</th>
-  <th>Overlap Campaign-wise Data</th>
+  <th class="num">Base CPC</th>
+  <th class="num">Infl. CPC</th>
+  <th class="sortable num" data-sort="inflation">CPC Infl.</th>
+  <th>Risk</th>
+  <th>Overlap Data</th>
   <th>Action</th>
 </tr></thead>
 <tbody id="r3Tbody"></tbody>
