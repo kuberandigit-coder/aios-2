@@ -364,9 +364,29 @@ table.r3-detail-table tr:hover td{background:#fafbfd;}
 
 <div class="t1-filterbox">
   <div class="t1-row">
-    <label class="t1-field" style="flex:2;min-width:220px;">Search
-      <input id="r3Search" type="text" placeholder="SKU, product title, or campaign name&hellip;">
+    <label class="t1-field" style="flex:2.5;min-width:260px;">Global Search
+      <input id="r3Search" type="text" placeholder="Product ID, product name, or campaign name&hellip;">
     </label>
+    <label class="t1-field">Campaign
+      <select id="r3CampaignFilter">
+        <option value="all">All Campaigns</option>
+      </select>
+    </label>
+    <label class="t1-field">Campaign Type
+      <select id="r3TypeFilter">
+        <option value="all">All Types</option>
+      </select>
+    </label>
+    <label class="t1-field">Overlap Count
+      <select id="r3CountFilter">
+        <option value="all">Any Overlap Count</option>
+        <option value="2">Exactly 2 Campaigns</option>
+        <option value="3">Exactly 3 Campaigns</option>
+        <option value="4+">4+ Campaigns</option>
+      </select>
+    </label>
+  </div>
+  <div class="t1-row">
     <label class="t1-field">Auction Conflict Risk
       <select id="r3RiskFilter">
         <option value="all">All Risk Levels</option>
@@ -378,15 +398,33 @@ table.r3-detail-table tr:hover td{background:#fafbfd;}
         <option value="DATA CHECK REQUIRED">Data Check Required</option>
       </select>
     </label>
+    <label class="t1-field">Est. CPC Inflation Min %
+      <input id="r3InflationMin" type="number" placeholder="e.g. 0" step="1">
+    </label>
+    <label class="t1-field">Est. CPC Inflation Max %
+      <input id="r3InflationMax" type="number" placeholder="e.g. 100" step="1">
+    </label>
+    <label class="t1-field">Action Status
+      <select id="r3ActionFilter">
+        <option value="all">All Actions</option>
+        <option value="keep">Has KEEP/REMOVE Recommendation</option>
+        <option value="review">Business Review Required</option>
+      </select>
+    </label>
     <label class="t1-field">Sort By
       <select id="r3Sort">
         <option value="inflation_desc">CPC Inflation (High &rarr; Low)</option>
         <option value="inflation_asc">CPC Inflation (Low &rarr; High)</option>
         <option value="risk">Risk (Critical first)</option>
         <option value="campaigns_desc">Overlap Count (High &rarr; Low)</option>
+        <option value="cv_desc">Lifetime Conv. Value (High &rarr; Low)</option>
+        <option value="roas_desc">Lifetime ROAS (High &rarr; Low)</option>
       </select>
     </label>
     <button class="t1-btn" id="r3ClearFilters">Clear Filters</button>
+  </div>
+  <div class="t1-row" style="margin-top:-2px;">
+    <span id="r3RowCount" style="font-size:12px;color:var(--muted);font-weight:600;">&ndash;</span>
   </div>
 </div>
 
@@ -946,22 +984,52 @@ window.r3Toggle = function(id){
   document.getElementById(id).classList.toggle('open');
 };
 
+(function initR3Filters(){
+  const campNames = new Set(), campTypes = new Set();
+  R3_DATA.forEach(function(o){ o.camps.forEach(function(c){ campNames.add(c.cname); campTypes.add(c.ctype); }); });
+  const campSel = document.getElementById('r3CampaignFilter');
+  Array.from(campNames).sort().forEach(function(n){
+    const opt = document.createElement('option'); opt.value = n; opt.textContent = n; campSel.appendChild(opt);
+  });
+  const typeSel = document.getElementById('r3TypeFilter');
+  Array.from(campTypes).sort().forEach(function(t){
+    const opt = document.createElement('option'); opt.value = t; opt.textContent = t; typeSel.appendChild(opt);
+  });
+})();
+
 function renderR3(){
   const q = document.getElementById('r3Search').value.trim().toLowerCase();
   const rf = document.getElementById('r3RiskFilter').value;
+  const campFilter = document.getElementById('r3CampaignFilter').value;
+  const typeFilter = document.getElementById('r3TypeFilter').value;
+  const countFilter = document.getElementById('r3CountFilter').value;
+  const actionFilter = document.getElementById('r3ActionFilter').value;
+  const infMin = parseFloat(document.getElementById('r3InflationMin').value);
+  const infMax = parseFloat(document.getElementById('r3InflationMax').value);
   const sort = document.getElementById('r3Sort').value;
 
   let rows = R3_DATA.filter(function(o){
     const textHit = !q || o.sku.includes(q) || (o.title||'').toLowerCase().includes(q) || o.camps.some(function(c){return c.cname.toLowerCase().includes(q);});
     const riskHit = rf==='all' || o.risk===rf;
-    return textHit && riskHit;
+    const campHit = campFilter==='all' || o.camps.some(function(c){return c.cname===campFilter;});
+    const typeHit = typeFilter==='all' || o.camps.some(function(c){return c.ctype===typeFilter;});
+    const n = o.camps.length;
+    const countHit = countFilter==='all' || (countFilter==='4+' ? n>=4 : n===parseInt(countFilter,10));
+    const hasWinner = !!r3BestCampaign(o.camps).winner;
+    const actionHit = actionFilter==='all' || (actionFilter==='keep' ? hasWinner : !hasWinner);
+    const infHit = (isNaN(infMin) || (o.inflationPct!=null && o.inflationPct>=infMin)) && (isNaN(infMax) || (o.inflationPct!=null && o.inflationPct<=infMax));
+    return textHit && riskHit && campHit && typeHit && countHit && actionHit && infHit;
   });
 
+  function bestCv(o){ const b=r3BestCampaign(o.camps).winner; return b?b.cv:-1; }
+  function bestRoas(o){ const b=r3BestCampaign(o.camps).winner; return b?(r3RoasPct(b)??-1):-1; }
   const sortMap = {
     inflation_desc:function(a,b){ return (b.inflationPct??-999)-(a.inflationPct??-999); },
     inflation_asc:function(a,b){ return (a.inflationPct??999)-(b.inflationPct??999); },
     risk:function(a,b){ return RISK_ORDER[a.risk]-RISK_ORDER[b.risk]; },
-    campaigns_desc:function(a,b){ return b.camps.length-a.camps.length; }
+    campaigns_desc:function(a,b){ return b.camps.length-a.camps.length; },
+    cv_desc:function(a,b){ return bestCv(b)-bestCv(a); },
+    roas_desc:function(a,b){ return bestRoas(b)-bestRoas(a); }
   };
   rows.sort(sortMap[sort]||sortMap.inflation_desc);
 
@@ -970,6 +1038,7 @@ function renderR3(){
   document.getElementById('r3Table').style.display = rows.length? '' : 'none';
   emptyEl.style.display = rows.length? 'none' : 'block';
   tbody.innerHTML = rows.map(renderR3Row).join('');
+  document.getElementById('r3RowCount').textContent = 'Showing '+rows.length.toLocaleString()+' of '+R3_DATA.length.toLocaleString()+' overlapping SKUs';
 
   const counts = {CRITICAL:0,HIGH:0,MODERATE:0,LOW:0,'CPC DEFLATION':0,'DATA CHECK REQUIRED':0};
   rows.forEach(function(o){ counts[o.risk]++; });
@@ -982,12 +1051,21 @@ function renderR3(){
   document.getElementById('r3kpiDatacheck').textContent = counts['DATA CHECK REQUIRED'].toLocaleString();
 }
 
-document.getElementById('r3Search').addEventListener('input', renderR3);
-document.getElementById('r3RiskFilter').addEventListener('change', renderR3);
-document.getElementById('r3Sort').addEventListener('change', renderR3);
+['r3Search','r3InflationMin','r3InflationMax'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', renderR3);
+});
+['r3RiskFilter','r3CampaignFilter','r3TypeFilter','r3CountFilter','r3ActionFilter','r3Sort'].forEach(function(id){
+  document.getElementById(id).addEventListener('change', renderR3);
+});
 document.getElementById('r3ClearFilters').addEventListener('click', function(){
   document.getElementById('r3Search').value='';
   document.getElementById('r3RiskFilter').value='all';
+  document.getElementById('r3CampaignFilter').value='all';
+  document.getElementById('r3TypeFilter').value='all';
+  document.getElementById('r3CountFilter').value='all';
+  document.getElementById('r3ActionFilter').value='all';
+  document.getElementById('r3InflationMin').value='';
+  document.getElementById('r3InflationMax').value='';
   document.getElementById('r3Sort').value='inflation_desc';
   renderR3();
 });
