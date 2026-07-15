@@ -104,6 +104,10 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .r3-detail-wrap{padding:16px 20px;background:#fafbfd;display:flex;flex-direction:column;align-items:center;gap:16px;}
 .r3-sub-panel{display:none;width:100%;flex-direction:column;align-items:center;}
 .r3-sub-panel.open{display:flex;}
+.r3-sub-panel.r3-align-oc{align-items:flex-end;}
+.r3-sub-panel.r3-align-oc .r3-detail-title{width:auto;text-align:left;margin-right:8.5%;}
+.r3-sub-panel.r3-align-oc .r3-more-stack{margin-right:8.5%;}
+@media(max-width:1000px){.r3-sub-panel.r3-align-oc{align-items:center;}.r3-sub-panel.r3-align-oc .r3-detail-title{width:100%;text-align:center;margin-right:0;}.r3-sub-panel.r3-align-oc .r3-more-stack{margin-right:0;}}
 .r3-detail-title{text-align:center;width:100%;}
 .r3-detail-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);margin-bottom:10px;}
 .r3-more-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:900px;}
@@ -985,7 +989,7 @@ function renderR3Row(o){
     ? '<div class="r3-sub-panel" id="'+rowId+'"><div class="r3-detail-title">+'+extraCamps.length+' additional overlapping campaign(s) for this SKU</div><div class="r3-more-grid">'+detailCampCells+'</div></div>'
     : '';
   const ocPanelHtml = hasOcPanel
-    ? '<div class="r3-sub-panel" id="'+ocId+'"><div class="r3-detail-title">Overlap Campaign-wise Data &mdash; all '+camps.length+' campaigns for this SKU</div><div class="r3-more-stack">'+ocExtraCells+'</div></div>'
+    ? '<div class="r3-sub-panel r3-align-oc" id="'+ocId+'"><div class="r3-detail-title">Overlap Campaign-wise Data &mdash; all '+camps.length+' campaigns for this SKU</div><div class="r3-more-stack">'+ocExtraCells+'</div></div>'
     : '';
 
   const mainRow = '<tr>'
