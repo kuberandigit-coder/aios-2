@@ -31,7 +31,11 @@
 .t1-legend strong{display:block;color:var(--ink);font-size:13.5px;margin-bottom:12px;}
 .t1-legend .lg-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;}
 .t1-legend .lg-item{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;}
-.t1-tablewrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;margin-bottom:16px;}
+.t1-tablewrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:scroll;margin-bottom:16px;scrollbar-width:auto;}
+.t1-tablewrap::-webkit-scrollbar{height:12px;}
+.t1-tablewrap::-webkit-scrollbar-track{background:#f2f4f8;border-radius:0 0 14px 14px;}
+.t1-tablewrap::-webkit-scrollbar-thumb{background:#b7c0cf;border-radius:999px;border:2px solid #f2f4f8;}
+.t1-tablewrap::-webkit-scrollbar-thumb:hover{background:#8f9bad;}
 table.t1-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1300px;}
 table.t1-table th{text-align:left;padding:11px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);background:#fafbfd;white-space:nowrap;cursor:pointer;user-select:none;}
 table.t1-table th.sortable:hover{color:var(--accent);}
@@ -103,6 +107,8 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .r3-detail-title{text-align:center;width:100%;}
 .r3-detail-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);margin-bottom:10px;}
 .r3-more-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:900px;}
+.r3-more-stack{display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px;}
+.r3-more-stack .r3-more-col{max-width:none;width:100%;}
 .r3-more-col{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:190px;max-width:210px;}
 .r3-more-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);margin-bottom:6px;}
 .r3-expand-btn{background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:12px;padding:0;}
@@ -979,7 +985,7 @@ function renderR3Row(o){
     ? '<div class="r3-sub-panel" id="'+rowId+'"><div class="r3-detail-title">+'+extraCamps.length+' additional overlapping campaign(s) for this SKU</div><div class="r3-more-grid">'+detailCampCells+'</div></div>'
     : '';
   const ocPanelHtml = hasOcPanel
-    ? '<div class="r3-sub-panel" id="'+ocId+'"><div class="r3-detail-title">Overlap Campaign-wise Data &mdash; all '+camps.length+' campaigns for this SKU</div><div class="r3-more-grid">'+ocExtraCells+'</div></div>'
+    ? '<div class="r3-sub-panel" id="'+ocId+'"><div class="r3-detail-title">Overlap Campaign-wise Data &mdash; all '+camps.length+' campaigns for this SKU</div><div class="r3-more-stack">'+ocExtraCells+'</div></div>'
     : '';
 
   const mainRow = '<tr>'
