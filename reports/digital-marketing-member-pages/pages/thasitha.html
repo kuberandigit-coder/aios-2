@@ -95,6 +95,7 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .r3-action .keep{color:var(--good);font-weight:700;}
 .r3-action .remove{color:#c62828;font-weight:700;}
 .r3-review-badge{box-sizing:border-box;width:100%;max-width:100%;}
+.r3-keep-box{box-sizing:border-box;width:100%;max-width:100%;overflow-wrap:break-word;word-break:break-word;}
 .r3-review-tag{display:inline-flex;align-items:center;gap:6px;background:#f0ad2e;color:#3a2a00;font-weight:800;font-size:11px;border-radius:999px;padding:5px 13px;letter-spacing:.2px;white-space:nowrap;}
 .r3-review-sub{display:block;width:100%;max-width:220px;color:#7a5200;font-size:11px;line-height:1.5;margin-top:6px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
 .r3-overlap-data{white-space:normal;max-width:200px;font-size:10.5px;line-height:1.5;}
@@ -1025,9 +1026,11 @@ function renderR3Row(o){
   } else {
     const best = decision.winner;
     const losers = camps.filter(function(c){ return c!==best; });
-    actionHtml = '<span class="keep">KEEP: '+esc(best.cname)+'</span><br>'
+    actionHtml = '<div class="r3-keep-box">'
+      + '<span class="keep">KEEP: '+esc(best.cname)+'</span><br>'
       + 'Lifetime Conv. Value: '+eur(best.cv)+' &middot; ROAS: '+(r3RoasPct(best)!=null?r3RoasPct(best)+'%':'N/A')+'<br>'
-      + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+esc(c.cname);}).join('<br>') : '');
+      + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+esc(c.cname);}).join('<br>') : '')
+      + '</div>';
   }
 
   const rowId = 'r3row_'+o.sku;
