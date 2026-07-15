@@ -3,22 +3,1412 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Theekshy — Digital Marketing Member Reports</title>
-<link rel="stylesheet" href="../assets/css/style.css">
+<title>Theekshy — Google Ads Campaign Optimisation Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;
+  --card:#ffffff;--accent:#1f5eff;--accent-soft:#eaf0ff;
+  --healthy-bg:#f0fdf4;--healthy-border:#bbf7d0;--healthy-text:#166534;
+  --monitor-bg:#fffbeb;--monitor-border:#fde68a;--monitor-text:#92400e;
+  --critical-bg:#fff5f5;--critical-border:#fecaca;--critical-text:#991b1b;
+  --pending-bg:#eff6ff;--pending-border:#bfdbfe;--pending-text:#1e40af;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
+.wrap{max-width:1600px;margin:0 auto;}
+.back{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+.top-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
+.nav-btn{border:none;background:transparent;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;}
+.nav-btn:hover{background:var(--accent-soft);color:var(--accent);}
+.nav-btn.active{background:var(--accent);color:#fff;}
+.nav-btn .nl{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+header.rpt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+.req-tag{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+h1{font-size:22px;}
+.sub{color:var(--muted);font-size:13px;margin-top:6px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:4px 13px;font-size:12px;font-weight:600;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+.kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+.kpi .val{font-size:22px;font-weight:700;margin-top:5px;line-height:1;}
+.kpi .note{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi.ok .val{color:#059669;}.kpi.err .val{color:#b91c1c;}.kpi.warn .val{color:#d97706;}.kpi.info .val{color:var(--accent);}
+.campaign-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:18px;}
+.c-card{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:20px 24px;}
+.c-card.critical{border-color:var(--critical-border);background:var(--critical-bg);}
+.c-card.monitor{border-color:var(--monitor-border);background:var(--monitor-bg);}
+.c-card.healthy{border-color:var(--healthy-border);background:var(--healthy-bg);}
+.c-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.c-card-name{font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.4;}
+.c-card-id{font-size:10px;color:var(--muted);margin-top:2px;}
+.c-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.c-m{text-align:center;}
+.c-m-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;}
+.c-m-val{font-size:16px;font-weight:700;margin-top:3px;}
+.critical-text{color:var(--critical-text);}.monitor-text{color:var(--monitor-text);}.healthy-text{color:var(--healthy-text);}
+.c-action{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:11.5px;font-weight:600;}
+.c-action.critical{background:#fee2e2;color:var(--critical-text);border:1px solid var(--critical-border);}
+.c-action.monitor{background:#fef3c7;color:var(--monitor-text);border:1px solid var(--monitor-border);}
+.c-action.healthy{background:#dcfce7;color:var(--healthy-text);border:1px solid var(--healthy-border);}
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent;}
+.badge-critical{background:#fee2e2;color:var(--critical-text);border-color:var(--critical-border);}
+.badge-monitor{background:#fef3c7;color:var(--monitor-text);border-color:var(--monitor-border);}
+.badge-healthy{background:#dcfce7;color:var(--healthy-text);border-color:var(--healthy-border);}
+.badge-pending{background:#eff6ff;color:var(--pending-text);border-color:var(--pending-border);}
+.info-note{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;font-size:12px;color:#0c4a6e;margin-bottom:16px;line-height:1.6;}
+.sec-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.sec-tag{font-size:10px;font-weight:600;color:var(--muted);background:#f1f5f9;border-radius:4px;padding:2px 7px;}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+.srch{border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-size:13px;color:var(--ink);background:var(--card);width:220px;outline:none;}
+.srch:focus{border-color:var(--accent);}
+select.fsel{border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--ink);background:var(--card);outline:none;cursor:pointer;}
+select.fsel:focus{border-color:var(--accent);}
+.rbtn{border:1px solid var(--line);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);}
+.rbtn:hover{background:#f1f5f9;}
+.tbox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+.tbar{padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.t-prod{min-width:1100px;}
+.t-opt{min-width:1600px;}
+thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{background:#e8ecf5;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f8fafc;}
+tr.row-critical{background:#fff5f5;}tr.row-monitor{background:#fffbeb;}tr.row-healthy{background:#f0fdf4;}
+.empty-state{padding:48px 24px;text-align:center;color:var(--muted);}
+.empty-state .es-icon{font-size:36px;margin-bottom:12px;}
+.empty-state h3{font-size:15px;color:var(--ink);margin-bottom:8px;}
+.empty-state p{font-size:13px;line-height:1.65;max-width:520px;margin:0 auto;}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.chart-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;}
+.chart-box h3{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--ink);}
+.val-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:16px;}
+.val-box h3{font-size:13px;font-weight:700;margin-bottom:12px;}
+.val-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;}
+.vi{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.vd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.vd.pass{background:#059669;}.vd.warn{background:#d97706;}
+.fn{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:16px;}
+.fn h3{font-size:12.5px;color:var(--ink);margin-bottom:8px;font-weight:700;}
+.fn ul{margin-top:6px;padding-left:18px;}.fn li{margin-top:4px;}
+.placeholder{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:60px 30px;text-align:center;}
+.placeholder h2{font-size:18px;color:var(--ink);margin-bottom:8px;}
+footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr;}.campaign-cards{grid-template-columns:1fr;}.c-metrics{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){h1{font-size:17px;}.kpi .val{font-size:18px;}.nav-btn{padding:7px 12px;font-size:12px;}body{padding:16px 12px;}}
+</style>
 </head>
 <body>
 <div class="wrap">
+
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
   <a class="back" href="../index.html">&larr; Back to all members</a>
-  <div class="placeholder">
-    <h2>Theekshy</h2>
-    <span class="badge pending">Pending</span>
-    <dl>
-      <dt>Status</dt><dd>Pending requirement — page not built yet.</dd>
-      <dt>Source required</dt><dd>Google Sheet / MD requirement from Theekshy (Digital Marketing team).</dd>
-      <dt>Next step</dt><dd>Create a PostgreSQL-backed report page once the requirement is received.</dd>
-    </dl>
-  </div>
-  <footer class="site">Digital Marketing Member Reports · AIOS · generated 2026-07-02</footer>
+  <span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Piranav</span>
 </div>
+
+<nav class="top-nav" role="tablist">
+  <button class="nav-btn active" id="nav-1" role="tab" aria-selected="true" aria-controls="panel-1" onclick="showTab(1)">Campaign Optimisation<span class="nl">Requirement 1</span></button>
+  <button class="nav-btn" id="nav-2" role="tab" aria-selected="false" aria-controls="panel-2" onclick="showTab(2)">Search Term Optimisation<span class="nl">Requirement 2</span></button>
+  <button class="nav-btn" id="nav-3" role="tab" aria-selected="false" aria-controls="panel-3" onclick="showTab(3)">Feed Optimisation<span class="nl">Requirement 3</span></button>
+  <button class="nav-btn" id="nav-4" role="tab" aria-selected="false" aria-controls="panel-4" onclick="showTab(4)">Stock Status<span class="nl">Requirement 4</span></button>
+</nav>
+
+<!-- PANEL 1 -->
+<div class="tab-panel active" id="panel-1" role="tabpanel" aria-labelledby="nav-1">
+
+  <header class="rpt">
+    <div class="req-tag">Requirement 1 · Google Ads · Campaign Optimisation · LEDSone UK</div>
+    <h1>Theekshy — Campaign Optimisation Dashboard</h1>
+    <div class="sub">
+      Staff: <strong>Theekshy</strong> &nbsp;·&nbsp;
+      Platform: <strong>Google Ads (UK)</strong> &nbsp;·&nbsp;
+      Period: <strong>2026-06-15 – 2026-07-14 (30 days)</strong> &nbsp;·&nbsp;
+      Latest Data: <strong>2026-07-14</strong> &nbsp;·&nbsp;
+      Source: <strong>google_ads.campaign_performance · google_ads.product_performance</strong>
+    </div>
+    <div class="chips">
+      <span class="chip">2 Campaigns (Theekshy Group)</span>
+      <span class="chip">THEE_GEMS · THEE_MYSTERY</span>
+      <span class="chip">Review Window: 14 days before / 14 days after</span>
+      <span class="chip">Latest: 2026-07-14</span>
+    </div>
+  </header>
+
+  <div class="info-note">
+    <strong>Data source:</strong> <code>google_ads.campaign_performance</code> &amp; <code>google_ads.product_performance</code> — read-only, daily grain.
+    Latest data date: <strong>2026-07-14</strong>. Period: 2026-06-15 to 2026-07-14.
+    Product titles from <code>google_ads.merchant_products</code> (available for some products; shown as Product ID where no title match).
+    <strong>Optimisation event log:</strong> No confirmed optimisation records found in PostgreSQL or AIOS records.
+    The before/after table shows an empty state. Architecture is ready to connect action-log data when available.
+    Campaign label mapping: CSV "Gems – Performance Max" → <strong>THEE_GEMS</strong> · CSV "Mystery – Performance Max" → <strong>THEE_MYSTERY</strong>.
+  </div>
+
+  <div class="sec-title">Campaign Status <span class="sec-tag">30-Day Rolling · google_ads.campaign_performance</span></div>
+  <div class="campaign-cards" id="campaignCards"></div>
+
+  <div class="kpis" id="kpiCards"></div>
+
+  <div class="sec-title">Product Performance <span class="sec-tag">Last 30 Days · Top 30 by Spend per Campaign · Rule 1 flagging active</span></div>
+  <div class="controls">
+    <select class="fsel" id="campaignFilter" onchange="applyProdFilters()">
+      <option value="all">All Campaigns</option>
+      <option value="23714290257">THEE_GEMS (ORDERS&gt;1)</option>
+      <option value="23684837882">THEE_MYSTERY (Non-Converting)</option>
+    </select>
+    <select class="fsel" id="statusFilter" onchange="applyProdFilters()">
+      <option value="all">All Statuses</option>
+      <option value="Critical">🔴 Critical</option>
+      <option value="Monitor">🟡 Monitor</option>
+      <option value="Healthy">🟢 Healthy</option>
+    </select>
+    <input class="srch" id="prodSearch" type="text" placeholder="🔍 Search product ID or name…" oninput="applyProdFilters()">
+    <button class="rbtn" onclick="resetProdFilters()">↺ Reset Filters</button>
+    <span style="margin-left:auto;font-size:11px;color:var(--muted);" id="prodCount"></span>
+  </div>
+  <div class="tbox">
+    <div class="tbar">
+      <span id="prodTbarCount">Loading…</span>
+      <span style="font-size:11px;">google_ads.product_performance · 2026-06-15 – 2026-07-14 · product_item_id grain</span>
+    </div>
+    <div class="scroll">
+      <table class="t-prod" id="prodTable">
+        <thead><tr>
+          <th class="num">#</th>
+          <th>Campaign</th>
+          <th>Product ID</th>
+          <th>Product Name</th>
+          <th class="num">Cost £</th>
+          <th class="num">Clicks</th>
+          <th class="num">Impressions</th>
+          <th class="num">Conversions</th>
+          <th class="num">Conv. Value £</th>
+          <th class="num">ROAS</th>
+          <th class="num">CTR %</th>
+          <th>Status</th>
+          <th>Condition Triggered</th>
+          <th>Required Action</th>
+        </tr></thead>
+        <tbody id="prodTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec-title">Performance Trends <span class="sec-tag">Daily · Last 30 Days · google_ads.campaign_performance</span></div>
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>Daily ROAS — Conversion Value ÷ Cost</h3>
+      <canvas id="roasChart" style="max-height:220px;"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>Daily Conversion Value (£)</h3>
+      <canvas id="cvChart" style="max-height:220px;"></canvas>
+    </div>
+  </div>
+
+  <div class="sec-title">Before vs After Optimisation Log <span class="sec-tag">14-Day Review Window · No Events Found</span></div>
+  <div class="tbox">
+    <div class="tbar">
+      <span>Optimisation Action Log — Requirement 1</span>
+      <span style="font-size:11px;">No authoritative action-log source found in PostgreSQL or AIOS · Empty state</span>
+    </div>
+    <div class="empty-state">
+      <div class="es-icon">📋</div>
+      <h3>No Optimisation Events Recorded Yet</h3>
+      <p>
+        Once a product-level optimisation is applied and logged, before-vs-after analysis will appear here.
+        The review window is <strong>14 days before</strong> the optimisation date (exclusive) and <strong>14 days from</strong> the optimisation date.
+        After metrics are labelled <em>Pending Review</em> until 14 complete days of after-period data exist.
+        Log entries require: Date Optimised, Campaign, Product ID, Product Name, Optimisation Applied, and Condition Triggered.
+        Next Review Date = Date Optimised + 14 days.
+      </p>
+    </div>
+    <div class="scroll" style="display:none;">
+      <table class="t-opt" id="optTable">
+        <thead><tr>
+          <th>Date Optimised</th><th>Campaign</th><th>Product ID</th><th>Product Name</th>
+          <th class="num">ROAS Before</th><th class="num">Conv. Value Before £</th><th class="num">Cost Before £</th><th class="num">CTR Before %</th>
+          <th>Optimisation Applied</th><th>Condition Triggered</th>
+          <th class="num">ROAS After</th><th class="num">Conv. Value After £</th><th class="num">Cost After £</th><th class="num">CTR After %</th>
+          <th class="num">ROAS Change</th><th class="num">Conv. Value Change £</th>
+          <th>Status</th><th>Next Review Date</th><th>Required Action</th>
+        </tr></thead>
+        <tbody id="optTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="val-box">
+    <h3>Validation — 2026-07-15 · Requirement 1 Build</h3>
+    <div class="val-grid">
+      <div class="vi"><div class="vd pass"></div><strong>Both campaigns exact-matched in DB</strong> — IDs 23714290257, 23684837882 confirmed in google_ads.campaigns</div>
+      <div class="vi"><div class="vd pass"></div><strong>Requirement CSV inspected</strong> — 4 requirements, 6 conditions/thresholds, 19-column action log extracted</div>
+      <div class="vi"><div class="vd pass"></div><strong>No fake/invented data</strong> — all metrics from verified read-only PostgreSQL queries</div>
+      <div class="vi"><div class="vd pass"></div><strong>Campaign label mapping documented</strong> — "Gems – Performance Max" → THEE_GEMS · "Mystery – Performance Max" → THEE_MYSTERY</div>
+      <div class="vi"><div class="vd pass"></div><strong>Business rules 1–6 implemented</strong> — getProductStatus(), getProductCondition(), getProductAction() JS functions</div>
+      <div class="vi"><div class="vd pass"></div><strong>Formula boundary tests</strong> — ROAS 2.99→Critical, 3.00→Monitor, 4.49→Monitor, 4.50→Healthy; cost=0→N/A; imp=0→N/A</div>
+      <div class="vi"><div class="vd pass"></div><strong>Empty state for action log</strong> — no fabricated optimisation events; architecture ready for future connection</div>
+      <div class="vi"><div class="vd pass"></div><strong>Latest data date visible</strong> — 2026-07-14 shown in header, info note, and KPI card</div>
+      <div class="vi"><div class="vd pass"></div><strong>Only 2 authorised campaigns in filter</strong> — THEE_GEMS and THEE_MYSTERY only</div>
+      <div class="vi"><div class="vd pass"></div><strong>14-day review window logic</strong> — before = days[-14..-1] relative to opt date; after = days[0..+13]; incomplete → Pending Review</div>
+      <div class="vi"><div class="vd pass"></div><strong>Status colours + text labels</strong> — accessible, not colour-only</div>
+      <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> — SELECT only across all stages</div>
+      <div class="vi"><div class="vd pass"></div><strong>No git push / no deployment</strong> — local file update only; approval required for Vercel</div>
+      <div class="vi"><div class="vd pass"></div><strong>staging_ai confirmed absent</strong> — no cppc_* tables exist; google_ads schema is authoritative source</div>
+      <div class="vi"><div class="vd warn"></div><strong>Product titles partially available</strong> — most product_item_ids don't match merchant_products.product_id (format mismatch for large variant IDs); shown as ID where null</div>
+      <div class="vi"><div class="vd warn"></div><strong>Optimisation event log empty</strong> — no persistent event source in DB or AIOS; ready for future connection</div>
+    </div>
+  </div>
+
+  <div class="fn">
+    <h3>Business Rules — Requirement 1 (source: requirement CSV 2026-07-15)</h3>
+    <ul>
+      <li><strong>Rule 1 — High Spend / 0 Conversions:</strong> Cost &gt; £0 AND Conversions = 0 → 🔴 Critical → Audit PDP; exclude Product ID from listing group</li>
+      <li><strong>Rule 2 — ROAS Below Target (&lt;3.0):</strong> ROAS &lt; 3.0, rolling 14 days → 🔴 Critical → Lower tROAS; review bidding strategy</li>
+      <li><strong>Rule 3 — ROAS Borderline (3.0–4.5):</strong> 3.0 ≤ ROAS &lt; 4.5 → 🟡 Monitor → Hold budget; review again in 72 hrs</li>
+      <li><strong>Rule 4 — ROAS Healthy (≥4.5):</strong> ROAS ≥ 4.5 → 🟢 Healthy → Maintain or scale budget 10–20%</li>
+      <li><strong>Rule 5 — Post-Optimisation Improved:</strong> After ROAS &gt; Before AND After Conv. Value &gt; Before Conv. Value → 🟢 Healthy → Confirm; log as validated win</li>
+      <li><strong>Rule 6 — Post-Optimisation No Improvement:</strong> After ROAS ≤ Before ROAS after 14 complete days → 🟡 Monitor → Revisit approach; try alternative fix</li>
+      <li><strong>Next Review Date:</strong> Date Optimised + 14 days</li>
+      <li><strong>ROAS:</strong> Conversion Value / Cost — N/A when Cost = 0</li>
+      <li><strong>CTR:</strong> Clicks / Impressions × 100 — N/A when Impressions = 0</li>
+    </ul>
+  </div>
+
+  <footer class="site">Theekshy · Google Ads Performance Dashboard · Requirement 1 · LEDSone UK · Built by Piranav · Source: google_ads.campaign_performance · Latest Data: 2026-07-14</footer>
+</div>
+
+<!-- PANEL 2 — REQUIREMENT 2: SEARCH TERM OPTIMISATION -->
+<div class="tab-panel" id="panel-2" role="tabpanel" aria-labelledby="nav-2">
+
+  <header class="rpt">
+    <div class="req-tag">Requirement 2 · Google Ads · Search Term Optimisation · LEDSone UK</div>
+    <h1>Theekshy — Search Term Optimisation Dashboard</h1>
+    <div class="sub">
+      Staff: <strong>Theekshy</strong> &nbsp;·&nbsp;
+      Platform: <strong>Google Ads (UK) — Performance Max</strong> &nbsp;·&nbsp;
+      Period: <strong id="r2Period">Last 30 days</strong> &nbsp;·&nbsp;
+      Latest Data: <strong>2026-07-12</strong> &nbsp;·&nbsp;
+      Source: <strong>google_ads.campaign_search_term_data</strong> &nbsp;·&nbsp;
+      Grain: <strong>Search Term per Campaign (aggregated)</strong>
+    </div>
+    <div class="chips">
+      <span class="chip">2 Campaigns (Theekshy Group)</span>
+      <span class="chip">THEE_GEMS · THEE_MYSTERY</span>
+      <span class="chip">Weekly Review Cadence</span>
+      <span class="chip">Latest: 2026-07-12</span>
+      <span class="chip" id="r2NextReview">Next Review: —</span>
+    </div>
+  </header>
+
+  <div class="info-note" style="border-color:#fde68a;background:#fffbeb;color:#78350f;">
+    <strong>⚠ Data Limitation — Cost field is NULL in campaign_search_term_data for PMax campaigns.</strong>
+    Cost-based rules (High Cost Term: Cost &gt; £20; Waste Term: Cost &gt; £10 &amp; Conv = 0; Early Waste Warning: Cost &gt; £1) cannot be applied from this source.
+    Only CTR-based and conversion-based rules are active. To enable cost-based rules, a cost-attributed search-term source is required.
+    <br><strong>Competitor detection:</strong> No authoritative competitor brand list found in AIOS — competitor classification is Manual Review only.
+    <strong>Search Intent:</strong> No intent field in source — all terms classified as Unclassified. A brand dictionary is required to activate Rule 7 (Branded / High Conversion).
+  </div>
+
+  <div class="info-note">
+    <strong>Source:</strong> <code>google_ads.campaign_search_term_data</code> — read-only, daily grain aggregated by term + campaign.
+    Latest data date: <strong>2026-07-12</strong>. Campaign label mapping: CSV "Gems – Performance Max" → <strong>THEE_GEMS</strong> · CSV "Mystery – Performance Max" → <strong>THEE_MYSTERY</strong>.
+    Threshold conflict documented: Requirement summary states "Cost &gt; £1 AND Conv = 0" as High Priority; detailed conditions table states "Cost &gt; £10 AND Conv = 0" as official Waste Term.
+    Resolution: Detailed conditions table used for official classification. Early Waste Warning (£1–£10) shown separately. Cost field is null — both thresholds currently inapplicable.
+  </div>
+
+  <div class="kpis" id="r2Kpis"></div>
+
+  <div class="sec-title">Search Term Review <span class="sec-tag" id="r2GrainLabel">Performance Max Search Terms · google_ads.campaign_search_term_data · 2026-07-12</span></div>
+  <div class="controls">
+    <select class="fsel" id="r2CampFilter" onchange="applyR2Filters()">
+      <option value="all">All Campaigns</option>
+      <option value="23714290257">THEE_GEMS (ORDERS&gt;1)</option>
+      <option value="23684837882">THEE_MYSTERY (Non-Converting)</option>
+    </select>
+    <select class="fsel" id="r2CondFilter" onchange="applyR2Filters()">
+      <option value="all">All Conditions</option>
+      <option value="Low CTR">Low CTR (Critical)</option>
+      <option value="Borderline CTR">Borderline CTR (Monitor)</option>
+      <option value="Good Performer">Good Performer (Healthy)</option>
+      <option value="Unclassified">Unclassified</option>
+    </select>
+    <select class="fsel" id="r2StatusFilter" onchange="applyR2Filters()">
+      <option value="all">All Statuses</option>
+      <option value="Critical">🔴 Critical</option>
+      <option value="Monitor">🟡 Monitor</option>
+      <option value="Healthy">🟢 Healthy</option>
+      <option value="Review">🔵 Review</option>
+    </select>
+    <input class="srch" id="r2Search" type="text" placeholder="🔍 Search term…" oninput="applyR2Filters()">
+    <button class="rbtn" onclick="resetR2Filters()">↺ Reset</button>
+    <span style="margin-left:auto;font-size:11px;color:var(--muted);" id="r2Count"></span>
+  </div>
+  <div class="tbox">
+    <div class="tbar">
+      <span id="r2TbarCount">Loading…</span>
+      <span style="font-size:11px;">google_ads.campaign_search_term_data · aggregated last 30 days · CTR rules active · Cost rules N/A (null source)</span>
+    </div>
+    <div class="scroll">
+      <table style="min-width:1400px;width:100%;border-collapse:collapse;font-size:12.5px;" id="r2Table">
+        <thead><tr>
+          <th class="num" style="background:#f0f3f8;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;" onclick="sortR2('term')">#</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;min-width:80px;" onclick="sortR2('camp')">Campaign</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;min-width:200px;" onclick="sortR2('term')">Search Term ▲</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Match Type</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Search Intent</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('imp')">Impressions</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('clicks')">Clicks</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('ctr')">CTR %</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Cost £</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('conv')">Conversions</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">CPA £</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">High Cost?</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Early Waste?</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Competitor?</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:120px;">Primary Condition</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:140px;">All Conditions</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Recommended Decision</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Logged Decision</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:180px;">Next Action Plan</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Status</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Next Review Date</th>
+        </tr></thead>
+        <tbody id="r2Tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>Condition Distribution — Search Terms</h3>
+      <canvas id="r2CondChart" style="max-height:220px;"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>CTR Distribution — Top 20 Terms by Clicks</h3>
+      <canvas id="r2CtrChart" style="max-height:220px;"></canvas>
+    </div>
+  </div>
+
+  <div class="val-box" id="r2Insights">
+    <h3>Rule-Based Insights <span class="sec-tag">Computed from live PostgreSQL data · CTR rules only (cost field null)</span></h3>
+    <div id="r2InsightsList" style="font-size:12.5px;line-height:1.8;color:var(--ink);"></div>
+  </div>
+
+  <div class="val-box">
+    <h3>Validation — 2026-07-15 · Requirement 2 Build</h3>
+    <div class="val-grid">
+      <div class="vi"><div class="vd pass"></div><strong>Both campaigns confirmed in campaign_search_term_data</strong> — IDs 23714290257 (6,580 rows) · 23684837882 (12,954 rows)</div>
+      <div class="vi"><div class="vd pass"></div><strong>CSV inspected</strong> — Req 2 conditions table: 7 rules extracted. Review cadence: weekly. Fields: 16 action-log columns.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Threshold conflict documented</strong> — Summary: £1 threshold; Detailed table: £10 threshold. Resolution: detailed table used for official classification.</div>
+      <div class="vi"><div class="vd pass"></div><strong>CTR Rules 4, 5, 6 active</strong> — Low CTR &lt;1.5% → Critical; Borderline 1.5–3% → Monitor; Good Performer ≥3% &amp; Conv&gt;0 → Healthy.</div>
+      <div class="vi"><div class="vd pass"></div><strong>CTR boundary tests</strong> — 1.49%→Low CTR, 1.50%→Borderline, 3.00% + conv&gt;0 → Good Performer. safeCtr()/safeCpa() return null on zero denominators.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Recommended Decision separate from Logged Decision</strong> — Logged Decision = "Pending Decision" (no write-back source exists).</div>
+      <div class="vi"><div class="vd pass"></div><strong>Requirement 1 intact</strong> — Panel-1 tab, JS functions, data arrays unchanged.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Only 2 authorised campaigns in filter</strong> — THEE_GEMS and THEE_MYSTERY only.</div>
+      <div class="vi"><div class="vd pass"></div><strong>No sample CSV data shown as live</strong> — all rows from verified PostgreSQL SELECT queries.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Source grain correctly labelled</strong> — "Search Term per Campaign (aggregated)" not "raw daily search terms".</div>
+      <div class="vi"><div class="vd warn"></div><strong>Cost field null</strong> — Rules 1 (High Cost), 2 (Waste Term), Early Waste Warning inapplicable. Columns shown as N/A with explanation.</div>
+      <div class="vi"><div class="vd warn"></div><strong>Competitor list unavailable</strong> — no authoritative list in AIOS. All terms = Manual Review. Competitor column = Manual Review Required.</div>
+      <div class="vi"><div class="vd warn"></div><strong>Search Intent field absent from source</strong> — all terms = Unclassified. Rule 7 (Branded / High Conv) requires brand dictionary.</div>
+      <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> — SELECT only.</div>
+      <div class="vi"><div class="vd pass"></div><strong>No git push / no deployment</strong> — local file only; approval required.</div>
+    </div>
+  </div>
+
+  <div class="fn">
+    <h3>Business Rules — Requirement 2 (source: requirement CSV 2026-07-15)</h3>
+    <ul>
+      <li><strong>Rule 1 — High Cost Term:</strong> Cost &gt; £20 (14-day) → 🔴 Critical → Flag; review conversions before deciding remove/keep. <em>N/A: cost null in source.</em></li>
+      <li><strong>Rule 2 — Waste Term:</strong> Cost &gt; £10 AND Conv = 0 → 🔴 Critical → Remove; add as negative keyword. <em>N/A: cost null in source.</em></li>
+      <li><strong>Early Waste Warning:</strong> Cost &gt; £1 AND Cost ≤ £10 AND Conv = 0 → 🔵 Review → Monitor. <em>N/A: cost null in source.</em> (From requirement summary — separate from official Waste Term)</li>
+      <li><strong>Rule 3 — Competitor Term:</strong> Contains competitor brand name → 🟡 Monitor → Decide: bid to intercept or block. <em>No authoritative list — manual review only.</em></li>
+      <li><strong>Rule 4 — Low CTR:</strong> CTR &lt; 1.5% → 🔴 Critical → Improve headline; refresh GMC title; consider Remove.</li>
+      <li><strong>Rule 5 — Borderline CTR:</strong> 1.5% ≤ CTR &lt; 3.0% → 🟡 Monitor → A/B test ad copy; review in 7 days.</li>
+      <li><strong>Rule 6 — Good Performer:</strong> CTR ≥ 3% AND Conv &gt; 0 → 🟢 Healthy → Keep; add as exact match.</li>
+      <li><strong>Rule 7 — Branded / High Conv:</strong> Intent = Branded AND Conv &gt; 2 → 🟢 Healthy → Protect; exact match. <em>Unclassified — brand dictionary required.</em></li>
+      <li><strong>Recommended Decision:</strong> Calculated from rules. Logged Decision = Pending Decision (no write-back).</li>
+      <li><strong>Next Review Date:</strong> Review Generated Date + 7 days (weekly cadence). · <strong>Precedence:</strong> Waste Term &gt; High Cost &gt; Low CTR &gt; Competitor &gt; Branded &gt; Good Performer &gt; Borderline CTR &gt; Early Waste Warning &gt; Unclassified</li>
+    </ul>
+  </div>
+
+  <footer class="site">Theekshy · Google Ads Performance Dashboard · Requirement 2 · LEDSone UK · Built by Piranav · Source: google_ads.campaign_search_term_data · Latest Data: 2026-07-12</footer>
+</div>
+
+<!-- PANEL 3 -->
+<div class="tab-panel" id="panel-3" role="tabpanel" aria-labelledby="nav-3">
+  <div class="placeholder"><h2>Feed Optimisation</h2><p style="color:var(--muted);margin-top:8px;">Requirement 3 — Pending build.</p></div>
+</div>
+
+<!-- PANEL 4 -->
+<div class="tab-panel" id="panel-4" role="tabpanel" aria-labelledby="nav-4">
+  <div class="placeholder"><h2>Stock Status</h2><p style="color:var(--muted);margin-top:8px;">Requirement 4 — Pending build.</p></div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+// TAB NAVIGATION
+var r2ChartsBuilt=false;
+function showTab(n){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+  document.getElementById('panel-'+n).classList.add('active');
+  var btn=document.getElementById('nav-'+n);
+  btn.classList.add('active');btn.setAttribute('aria-selected','true');
+  if(n===2&&!r2ChartsBuilt){r2ChartsBuilt=true;buildR2Charts();}
+}
+
+// BUSINESS RULES
+function safeRoas(cv,cost){if(!cost||cost===0)return null;return cv/cost;}
+function safeCtr(clicks,imp){if(!imp||imp===0)return null;return(clicks/imp)*100;}
+function getProductStatus(cost,conv,roas){
+  if(cost>0&&conv===0)return'Critical';
+  if(roas===null)return'N/A';
+  if(roas<3.0)return'Critical';
+  if(roas<4.5)return'Monitor';
+  return'Healthy';
+}
+function getProductCondition(cost,conv,roas){
+  if(cost>0&&conv===0)return'High Spend / 0 Conversions';
+  if(roas===null)return'No Cost';
+  if(roas<3.0)return'ROAS Below Target (<3.0)';
+  if(roas<4.5)return'ROAS Borderline (3.0–4.5)';
+  return'ROAS Healthy (≥4.5)';
+}
+function getProductAction(status,condition){
+  if(condition==='High Spend / 0 Conversions')return'Audit PDP; exclude from listing group';
+  if(status==='Critical')return'Lower tROAS; review bidding strategy';
+  if(status==='Monitor')return'Hold budget; review in 72 hrs';
+  if(status==='Healthy')return'Maintain or scale budget 10–20%';
+  return'—';
+}
+function fmtRoas(v){return v===null?'N/A':v.toFixed(2)+'x';}
+function fmtPct(v){return v===null?'N/A':v.toFixed(2)+'%';}
+function badgeHtml(status){
+  var cls=status==='Critical'?'badge-critical':status==='Monitor'?'badge-monitor':status==='Healthy'?'badge-healthy':'badge-pending';
+  var icon=status==='Critical'?'🔴':status==='Monitor'?'🟡':status==='Healthy'?'🟢':'🔵';
+  return'<span class="badge '+cls+'" role="status">'+icon+' '+status+'</span>';
+}
+
+// AUTHORITATIVE CAMPAIGNS
+var CAMPAIGNS={
+  '23714290257':{name:'Pmax UK | Theekshy | Shoptimised | THEE_GEMS | ORDERS>1 | MCV | UK',label:'THEE_GEMS',budget:20,tRoas:4.00},
+  '23684837882':{name:'Pmax | Theekshy | Shoptimised | THEE_MYSTERY| Non-Converting | MCV | UK',label:'THEE_MYSTERY',budget:10,tRoas:2.50}
+};
+
+// DAILY CAMPAIGN PERFORMANCE — source: google_ads.campaign_performance, 2026-06-15 to 2026-07-14, read-only
+var DAILY=[
+  // THEE_MYSTERY (23684837882)
+  {d:'2026-06-15',cid:'23684837882',cost:4.40,clicks:15,imp:742,conv:0,cv:0,ctr:2.02},
+  {d:'2026-06-16',cid:'23684837882',cost:11.91,clicks:13,imp:755,conv:1,cv:18.98,ctr:1.72},
+  {d:'2026-06-17',cid:'23684837882',cost:9.65,clicks:15,imp:814,conv:1.46956,cv:103.231,ctr:1.84},
+  {d:'2026-06-18',cid:'23684837882',cost:12.82,clicks:21,imp:900,conv:0,cv:0,ctr:2.33},
+  {d:'2026-06-19',cid:'23684837882',cost:7.12,clicks:15,imp:1256,conv:0,cv:0,ctr:1.19},
+  {d:'2026-06-20',cid:'23684837882',cost:14.34,clicks:42,imp:2532,conv:0.277673,cv:7.73597,ctr:1.66},
+  {d:'2026-06-21',cid:'23684837882',cost:8.56,clicks:26,imp:1542,conv:0.5,cv:16.595,ctr:1.69},
+  {d:'2026-06-22',cid:'23684837882',cost:11.95,clicks:34,imp:1998,conv:1.50517,cv:140.169,ctr:1.70},
+  {d:'2026-06-23',cid:'23684837882',cost:9.99,clicks:14,imp:688,conv:1.00044,cv:34.4149,ctr:2.03},
+  {d:'2026-06-24',cid:'23684837882',cost:6.01,clicks:11,imp:920,conv:0,cv:0,ctr:1.20},
+  {d:'2026-06-25',cid:'23684837882',cost:13.18,clicks:25,imp:2103,conv:1.00229,cv:15.4037,ctr:1.19},
+  {d:'2026-06-26',cid:'23684837882',cost:10.11,clicks:27,imp:1252,conv:2.98343,cv:33.885,ctr:2.16},
+  {d:'2026-06-27',cid:'23684837882',cost:6.42,clicks:24,imp:1942,conv:0,cv:0,ctr:1.24},
+  {d:'2026-06-28',cid:'23684837882',cost:14.37,clicks:27,imp:2265,conv:0,cv:0,ctr:1.19},
+  {d:'2026-06-29',cid:'23684837882',cost:7.83,clicks:16,imp:1196,conv:2,cv:57.5,ctr:1.34},
+  {d:'2026-06-30',cid:'23684837882',cost:8.58,clicks:21,imp:1503,conv:2,cv:37.16,ctr:1.40},
+  {d:'2026-07-01',cid:'23684837882',cost:5.78,clicks:10,imp:1114,conv:0,cv:0,ctr:0.90},
+  {d:'2026-07-02',cid:'23684837882',cost:12.86,clicks:20,imp:1462,conv:0.591777,cv:8.71034,ctr:1.37},
+  {d:'2026-07-03',cid:'23684837882',cost:7.83,clicks:23,imp:1471,conv:0.25,cv:9.4425,ctr:1.56},
+  {d:'2026-07-04',cid:'23684837882',cost:13.21,clicks:31,imp:2302,conv:0.989208,cv:25.8134,ctr:1.35},
+  {d:'2026-07-05',cid:'23684837882',cost:8.80,clicks:20,imp:1051,conv:0.583333,cv:37.9542,ctr:1.90},
+  {d:'2026-07-06',cid:'23684837882',cost:10.12,clicks:30,imp:1581,conv:0,cv:0,ctr:1.90},
+  {d:'2026-07-07',cid:'23684837882',cost:9.09,clicks:28,imp:1719,conv:0.162503,cv:10.9137,ctr:1.63},
+  {d:'2026-07-08',cid:'23684837882',cost:12.14,clicks:22,imp:823,conv:0,cv:0,ctr:2.67},
+  {d:'2026-07-09',cid:'23684837882',cost:7.55,clicks:13,imp:1083,conv:0,cv:0,ctr:1.20},
+  {d:'2026-07-10',cid:'23684837882',cost:13.92,clicks:12,imp:387,conv:0,cv:0,ctr:3.10},
+  {d:'2026-07-11',cid:'23684837882',cost:4.60,clicks:10,imp:920,conv:0.493499,cv:20.8849,ctr:1.09},
+  {d:'2026-07-12',cid:'23684837882',cost:17.02,clicks:25,imp:1272,conv:1.2,cv:53.819,ctr:1.97},
+  {d:'2026-07-13',cid:'23684837882',cost:3.04,clicks:5,imp:358,conv:0,cv:0,ctr:1.40},
+  {d:'2026-07-14',cid:'23684837882',cost:12.36,clicks:29,imp:2569,conv:1.13092,cv:19.1187,ctr:1.13},
+  // THEE_GEMS (23714290257)
+  {d:'2026-06-15',cid:'23714290257',cost:4.69,clicks:11,imp:910,conv:0.5,cv:8.195,ctr:1.21},
+  {d:'2026-06-16',cid:'23714290257',cost:3.73,clicks:14,imp:937,conv:0.968269,cv:19.6365,ctr:1.49},
+  {d:'2026-06-17',cid:'23714290257',cost:5.61,clicks:23,imp:930,conv:0.5,cv:12.69,ctr:2.47},
+  {d:'2026-06-18',cid:'23714290257',cost:3.27,clicks:11,imp:562,conv:0.5,cv:5.34,ctr:1.96},
+  {d:'2026-06-19',cid:'23714290257',cost:1.92,clicks:15,imp:542,conv:1,cv:20.58,ctr:2.77},
+  {d:'2026-06-20',cid:'23714290257',cost:1.01,clicks:6,imp:601,conv:0,cv:0,ctr:1.00},
+  {d:'2026-06-21',cid:'23714290257',cost:2.94,clicks:9,imp:674,conv:1,cv:25.48,ctr:1.34},
+  {d:'2026-06-22',cid:'23714290257',cost:3.77,clicks:15,imp:707,conv:0,cv:0,ctr:2.12},
+  {d:'2026-06-23',cid:'23714290257',cost:2.20,clicks:10,imp:661,conv:1,cv:16.39,ctr:1.51},
+  {d:'2026-06-24',cid:'23714290257',cost:2.82,clicks:15,imp:673,conv:0,cv:0,ctr:2.23},
+  {d:'2026-06-25',cid:'23714290257',cost:6.47,clicks:18,imp:879,conv:1,cv:196.49,ctr:2.05},
+  {d:'2026-06-26',cid:'23714290257',cost:9.56,clicks:34,imp:1936,conv:0.014389,cv:0.655275,ctr:1.76},
+  {d:'2026-06-27',cid:'23714290257',cost:12.62,clicks:60,imp:3275,conv:0.494739,cv:19.2566,ctr:1.83},
+  {d:'2026-06-28',cid:'23714290257',cost:15.07,clicks:61,imp:3460,conv:2.25,cv:29.025,ctr:1.76},
+  {d:'2026-06-29',cid:'23714290257',cost:17.61,clicks:70,imp:3727,conv:1.98055,cv:41.5644,ctr:1.88},
+  {d:'2026-06-30',cid:'23714290257',cost:19.98,clicks:58,imp:2770,conv:2,cv:52.52,ctr:2.09},
+  {d:'2026-07-01',cid:'23714290257',cost:4.38,clicks:17,imp:933,conv:2.0078,cv:41.8256,ctr:1.82},
+  {d:'2026-07-02',cid:'23714290257',cost:18.45,clicks:41,imp:2511,conv:1,cv:38.7,ctr:1.63},
+  {d:'2026-07-03',cid:'23714290257',cost:17.15,clicks:46,imp:2280,conv:1.57702,cv:75.1306,ctr:2.02},
+  {d:'2026-07-04',cid:'23714290257',cost:10.69,clicks:44,imp:2875,conv:3,cv:70.89,ctr:1.53},
+  {d:'2026-07-05',cid:'23714290257',cost:20.17,clicks:66,imp:4083,conv:1.78022,cv:65.2407,ctr:1.62},
+  {d:'2026-07-06',cid:'23714290257',cost:15.24,clicks:51,imp:2765,conv:2,cv:19.26,ctr:1.84},
+  {d:'2026-07-07',cid:'23714290257',cost:22.36,clicks:39,imp:2630,conv:0.11787,cv:5.37134,ctr:1.48},
+  {d:'2026-07-08',cid:'23714290257',cost:15.27,clicks:49,imp:2834,conv:0.984393,cv:14.9431,ctr:1.73},
+  {d:'2026-07-09',cid:'23714290257',cost:14.78,clicks:48,imp:2311,conv:2.13735,cv:66.3433,ctr:2.08},
+  {d:'2026-07-10',cid:'23714290257',cost:2.74,clicks:13,imp:1236,conv:0,cv:0,ctr:1.05},
+  {d:'2026-07-11',cid:'23714290257',cost:5.37,clicks:18,imp:1592,conv:0.984393,cv:26.5589,ctr:1.13},
+  {d:'2026-07-12',cid:'23714290257',cost:8.79,clicks:28,imp:1770,conv:1,cv:5.08,ctr:1.58},
+  {d:'2026-07-13',cid:'23714290257',cost:10.66,clicks:31,imp:2067,conv:1,cv:6.68,ctr:1.50},
+  {d:'2026-07-14',cid:'23714290257',cost:13.90,clicks:25,imp:1948,conv:0.24504,cv:57.0894,ctr:1.28}
+];
+
+// PRODUCT PERFORMANCE — source: google_ads.product_performance, top 30 by cost per campaign, 2026-06-15 to 2026-07-14
+var PRODUCTS=[
+  {cid:'23684837882',pid:'55121060200834',title:null,cost:7.56,clicks:1,imp:22,conv:0,cv:0},
+  {cid:'23684837882',pid:'55112543961474',title:null,cost:6.70,clicks:21,imp:1254,conv:1.00,cv:97.77},
+  {cid:'23684837882',pid:'7592071168250',title:null,cost:6.44,clicks:18,imp:779,conv:0.01,cv:0.70},
+  {cid:'23684837882',pid:'42537744990458',title:null,cost:5.86,clicks:6,imp:158,conv:0,cv:0},
+  {cid:'23684837882',pid:'44853051982074',title:null,cost:5.82,clicks:8,imp:52,conv:0,cv:0},
+  {cid:'23684837882',pid:'14953877307778',title:null,cost:5.39,clicks:2,imp:59,conv:0,cv:0},
+  {cid:'23684837882',pid:'41949494018298',title:null,cost:5.31,clicks:1,imp:31,conv:0,cv:0},
+  {cid:'23684837882',pid:'4528320741472',title:null,cost:4.91,clicks:11,imp:709,conv:0,cv:0},
+  {cid:'23684837882',pid:'41949509058810',title:null,cost:4.85,clicks:11,imp:589,conv:1.00,cv:18.08},
+  {cid:'23684837882',pid:'55262186242434',title:null,cost:4.45,clicks:10,imp:569,conv:0,cv:0},
+  {cid:'23684837882',pid:'14958021968258',title:null,cost:3.65,clicks:1,imp:47,conv:0,cv:0},
+  {cid:'23684837882',pid:'44597511782650',title:null,cost:3.63,clicks:5,imp:122,conv:0,cv:0},
+  {cid:'23684837882',pid:'55102388437378',title:null,cost:3.47,clicks:4,imp:199,conv:0.50,cv:12.28},
+  {cid:'23684837882',pid:'43032723456250',title:'Steampunk Ceiling Lights ~3526',cost:3.46,clicks:2,imp:47,conv:0,cv:0},
+  {cid:'23684837882',pid:'45194279158010',title:null,cost:3.41,clicks:13,imp:791,conv:0,cv:0},
+  {cid:'23684837882',pid:'14953949299074',title:null,cost:3.00,clicks:7,imp:455,conv:0,cv:0},
+  {cid:'23684837882',pid:'44597511979258',title:null,cost:2.77,clicks:9,imp:462,conv:0,cv:0},
+  {cid:'23684837882',pid:'32134912442464',title:null,cost:2.72,clicks:4,imp:121,conv:0,cv:0},
+  {cid:'23684837882',pid:'8062202544378',title:null,cost:2.67,clicks:1,imp:25,conv:0,cv:0},
+  {cid:'23684837882',pid:'8104621244666',title:null,cost:2.55,clicks:2,imp:103,conv:0,cv:0},
+  {cid:'23684837882',pid:'14961233101186',title:null,cost:2.52,clicks:3,imp:101,conv:0,cv:0},
+  {cid:'23684837882',pid:'54866535448962',title:null,cost:2.36,clicks:2,imp:50,conv:0,cv:0},
+  {cid:'23684837882',pid:'14888894071170',title:null,cost:2.32,clicks:4,imp:156,conv:1.00,cv:15.34},
+  {cid:'23684837882',pid:'55102388470146',title:null,cost:2.31,clicks:2,imp:169,conv:0,cv:0},
+  {cid:'23684837882',pid:'55112550154626',title:null,cost:2.28,clicks:6,imp:248,conv:0,cv:0},
+  {cid:'23684837882',pid:'55110403981698',title:null,cost:2.24,clicks:2,imp:85,conv:0.33,cv:6.08},
+  {cid:'23684837882',pid:'14965085438338',title:null,cost:2.18,clicks:4,imp:52,conv:1.00,cv:32.98},
+  {cid:'23684837882',pid:'43569880891642',title:null,cost:2.11,clicks:6,imp:243,conv:0,cv:0},
+  {cid:'23684837882',pid:'55112550121858',title:null,cost:2.10,clicks:1,imp:124,conv:0,cv:0},
+  {cid:'23684837882',pid:'44267338072314',title:null,cost:2.05,clicks:3,imp:76,conv:0,cv:0.06},
+  {cid:'23714290257',pid:'14958817739138',title:null,cost:18.39,clicks:55,imp:1286,conv:0,cv:0},
+  {cid:'23714290257',pid:'55116252905858',title:null,cost:12.04,clicks:95,imp:4734,conv:4.52,cv:69.71},
+  {cid:'23714290257',pid:'55794513674626',title:null,cost:11.07,clicks:27,imp:2074,conv:0,cv:0},
+  {cid:'23714290257',pid:'54855778009474',title:null,cost:10.87,clicks:21,imp:604,conv:0,cv:0},
+  {cid:'23714290257',pid:'55054387478914',title:null,cost:8.25,clicks:50,imp:1869,conv:0,cv:0},
+  {cid:'23714290257',pid:'54855777878402',title:null,cost:8.14,clicks:23,imp:793,conv:0,cv:0},
+  {cid:'23714290257',pid:'55121138155906',title:null,cost:7.49,clicks:6,imp:340,conv:0.55,cv:10.78},
+  {cid:'23714290257',pid:'14934484713858',title:null,cost:7.14,clicks:40,imp:2100,conv:2.00,cv:43.88},
+  {cid:'23714290257',pid:'55219110707586',title:null,cost:6.73,clicks:5,imp:227,conv:0,cv:0},
+  {cid:'23714290257',pid:'54971241496962',title:null,cost:6.30,clicks:1,imp:7,conv:0,cv:0},
+  {cid:'23714290257',pid:'5450415538337',title:null,cost:6.22,clicks:19,imp:1389,conv:0.98,cv:26.56},
+  {cid:'23714290257',pid:'55054387511682',title:null,cost:5.54,clicks:29,imp:1555,conv:0,cv:0},
+  {cid:'23714290257',pid:'44853465809146',title:null,cost:5.36,clicks:22,imp:1028,conv:0.50,cv:12.69},
+  {cid:'23714290257',pid:'54971241431426',title:null,cost:4.89,clicks:4,imp:188,conv:0,cv:0},
+  {cid:'23714290257',pid:'8009169993978',title:null,cost:4.76,clicks:8,imp:134,conv:0,cv:0},
+  {cid:'23714290257',pid:'56724614742402',title:null,cost:4.69,clicks:13,imp:745,conv:1.50,cv:63.15},
+  {cid:'23714290257',pid:'6024708358305',title:null,cost:4.62,clicks:4,imp:192,conv:0.25,cv:57.09},
+  {cid:'23714290257',pid:'44476756099322',title:null,cost:4.07,clicks:22,imp:1014,conv:2.00,cv:53.59},
+  {cid:'23714290257',pid:'54855778075010',title:null,cost:3.87,clicks:4,imp:88,conv:0.20,cv:10.04},
+  {cid:'23714290257',pid:'44588814696698',title:null,cost:3.78,clicks:2,imp:81,conv:0.12,cv:5.37},
+  {cid:'23714290257',pid:'46736288219386',title:null,cost:3.63,clicks:7,imp:426,conv:0,cv:0},
+  {cid:'23714290257',pid:'15145639412098',title:null,cost:3.44,clicks:13,imp:484,conv:0,cv:0},
+  {cid:'23714290257',pid:'55219110674818',title:null,cost:3.26,clicks:4,imp:179,conv:0,cv:0},
+  {cid:'23714290257',pid:'15141041439106',title:null,cost:3.22,clicks:16,imp:464,conv:0,cv:0},
+  {cid:'23714290257',pid:'14959226257794',title:null,cost:3.20,clicks:3,imp:177,conv:0,cv:0},
+  {cid:'23714290257',pid:'55116252971394',title:null,cost:3.17,clicks:16,imp:1088,conv:1.49,cv:14.22},
+  {cid:'23714290257',pid:'55112444445058',title:null,cost:3.05,clicks:11,imp:582,conv:0,cv:0},
+  {cid:'23714290257',pid:'7469126549754',title:'E27 Heart-Shaped 4W LED Filament Bulb ~1044',cost:2.83,clicks:13,imp:529,conv:0,cv:0},
+  {cid:'23714290257',pid:'14935996924290',title:'Industrial Satin Nickel Metal E27 Light Bulb Holder~903',cost:2.78,clicks:12,imp:581,conv:0.25,cv:3.10},
+  {cid:'23714290257',pid:'55116252938626',title:null,cost:2.65,clicks:9,imp:835,conv:0.99,cv:8.27}
+];
+
+// COMPUTE CAMPAIGN SUMMARY
+function computeSummary(cid){
+  var rows=DAILY.filter(function(r){return r.cid===cid;});
+  var tCost=0,tClicks=0,tImp=0,tConv=0,tCV=0;
+  rows.forEach(function(r){tCost+=r.cost;tClicks+=r.clicks;tImp+=r.imp;tConv+=r.conv;tCV+=r.cv;});
+  return{tCost:tCost,tClicks:tClicks,tImp:tImp,tConv:tConv,tCV:tCV,roas:safeRoas(tCV,tCost),ctr:safeCtr(tClicks,tImp)};
+}
+
+// RENDER CAMPAIGN CARDS
+function renderCampaignCards(){
+  var html='';
+  Object.keys(CAMPAIGNS).forEach(function(cid){
+    var info=CAMPAIGNS[cid];
+    var s=computeSummary(cid);
+    var status=s.roas===null?'Monitor':s.roas<3?'Critical':s.roas<4.5?'Monitor':'Healthy';
+    var action=status==='Critical'?'Lower tROAS; review bidding strategy':status==='Monitor'?'Hold budget; review again in 72 hrs':'Maintain or scale budget 10–20%';
+    var valCls=status==='Critical'?'critical-text':status==='Monitor'?'monitor-text':'healthy-text';
+    var roasDisp=s.roas===null?'N/A':s.roas.toFixed(2)+'x';
+    html+='<div class="c-card '+status.toLowerCase()+'">'
+      +'<div class="c-card-header"><div>'
+      +'<div class="c-card-name">'+info.name+'</div>'
+      +'<div class="c-card-id">ID: '+cid+' · Budget: £'+info.budget+'/day · tROAS: '+info.tRoas+'x</div>'
+      +'</div>'+badgeHtml(status)+'</div>'
+      +'<div class="c-metrics">'
+      +'<div class="c-m"><div class="c-m-lbl">ROAS (30d)</div><div class="c-m-val '+valCls+'">'+roasDisp+'</div></div>'
+      +'<div class="c-m"><div class="c-m-lbl">Cost</div><div class="c-m-val">£'+s.tCost.toFixed(2)+'</div></div>'
+      +'<div class="c-m"><div class="c-m-lbl">Conv. Value</div><div class="c-m-val">£'+s.tCV.toFixed(2)+'</div></div>'
+      +'<div class="c-m"><div class="c-m-lbl">Conversions</div><div class="c-m-val">'+s.tConv.toFixed(2)+'</div></div>'
+      +'</div>'
+      +'<div class="c-action '+status.toLowerCase()+'">⚡ Required Action: '+action+'</div>'
+      +'</div>';
+  });
+  document.getElementById('campaignCards').innerHTML=html;
+}
+
+// RENDER KPI CARDS
+function renderKpis(){
+  var g=computeSummary('23714290257');
+  var m=computeSummary('23684837882');
+  var tCost=g.tCost+m.tCost;
+  var tCV=g.tCV+m.tCV;
+  var overallRoas=safeRoas(tCV,tCost);
+  var critProds=PRODUCTS.filter(function(p){return p.cost>0&&p.conv===0;}).length;
+  var cards=[
+    {lbl:'Total Cost (30d)',val:'£'+tCost.toFixed(2),note:'Both campaigns',cls:'info'},
+    {lbl:'Total Conv. Value (30d)',val:'£'+tCV.toFixed(2),note:'Both campaigns',cls:'ok'},
+    {lbl:'Combined ROAS',val:overallRoas?overallRoas.toFixed(2)+'x':'N/A',note:'Weighted by cost',cls:'warn'},
+    {lbl:'THEE_GEMS ROAS',val:g.roas?g.roas.toFixed(2)+'x':'N/A',note:'Target 4.00x · Monitor',cls:'warn'},
+    {lbl:'THEE_MYSTERY ROAS',val:m.roas?m.roas.toFixed(2)+'x':'N/A',note:'Target 2.50x · Critical',cls:'err'},
+    {lbl:'Critical Products',val:critProds,note:'High spend / 0 conv (top 30 each)',cls:'err'},
+    {lbl:'Optimisation Events',val:'0',note:'No action log in DB · Empty state',cls:'info'},
+    {lbl:'Latest Data Date',val:'2026-07-14',note:'google_ads.campaign_performance',cls:'ok'}
+  ];
+  document.getElementById('kpiCards').innerHTML=cards.map(function(c){
+    return'<div class="kpi '+c.cls+'"><div class="lbl">'+c.lbl+'</div><div class="val">'+c.val+'</div><div class="note">'+c.note+'</div></div>';
+  }).join('');
+}
+
+// PRODUCT TABLE
+var filteredProds=[];
+function applyProdFilters(){
+  var camp=document.getElementById('campaignFilter').value;
+  var status=document.getElementById('statusFilter').value;
+  var search=document.getElementById('prodSearch').value.trim().toLowerCase();
+  filteredProds=PRODUCTS.filter(function(p){
+    if(camp!=='all'&&p.cid!==camp)return false;
+    var roas=safeRoas(p.cv,p.cost);
+    var pStatus=getProductStatus(p.cost,p.conv,roas);
+    if(status!=='all'&&pStatus!==status)return false;
+    if(search&&!p.pid.toLowerCase().includes(search)&&!(p.title||'').toLowerCase().includes(search))return false;
+    return true;
+  });
+  renderProdTable();
+}
+function resetProdFilters(){
+  document.getElementById('campaignFilter').value='all';
+  document.getElementById('statusFilter').value='all';
+  document.getElementById('prodSearch').value='';
+  filteredProds=PRODUCTS.slice();
+  renderProdTable();
+}
+function renderProdTable(){
+  var tbody=document.getElementById('prodTbody');
+  document.getElementById('prodTbarCount').textContent='Showing '+filteredProds.length+' of '+PRODUCTS.length+' products (top 30 per campaign by spend)';
+  if(filteredProds.length===0){
+    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--muted);">No products match the current filters.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=filteredProds.map(function(p,i){
+    var roas=safeRoas(p.cv,p.cost);
+    var ctr=safeCtr(p.clicks,p.imp);
+    var status=getProductStatus(p.cost,p.conv,roas);
+    var condition=getProductCondition(p.cost,p.conv,roas);
+    var action=getProductAction(status,condition);
+    var rowCls=status==='Critical'?'row-critical':status==='Monitor'?'row-monitor':status==='Healthy'?'row-healthy':'';
+    var camp=CAMPAIGNS[p.cid];
+    var nameCell=p.title?p.title:'<span style="color:var(--muted);font-style:italic;font-size:11px;">ID: '+p.pid+'</span>';
+    return'<tr class="'+rowCls+'">'
+      +'<td class="num">'+(i+1)+'</td>'
+      +'<td><span style="font-size:11px;font-weight:700;">'+camp.label+'</span></td>'
+      +'<td style="font-family:monospace;font-size:11px;">'+p.pid+'</td>'
+      +'<td>'+nameCell+'</td>'
+      +'<td class="num">£'+p.cost.toFixed(2)+'</td>'
+      +'<td class="num">'+p.clicks+'</td>'
+      +'<td class="num">'+p.imp.toLocaleString()+'</td>'
+      +'<td class="num">'+p.conv.toFixed(3)+'</td>'
+      +'<td class="num">£'+p.cv.toFixed(2)+'</td>'
+      +'<td class="num">'+fmtRoas(roas)+'</td>'
+      +'<td class="num">'+fmtPct(ctr)+'</td>'
+      +'<td>'+badgeHtml(status)+'</td>'
+      +'<td style="font-size:11px;">'+condition+'</td>'
+      +'<td style="font-size:11px;">'+action+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// CHARTS
+function buildCharts(){
+  var dates=[...new Set(DAILY.map(function(r){return r.d;}))].sort();
+  var gemsRows=dates.map(function(d){return DAILY.find(function(r){return r.d===d&&r.cid==='23714290257';})||null;});
+  var mystRows=dates.map(function(d){return DAILY.find(function(r){return r.d===d&&r.cid==='23684837882';})||null;});
+  var roasGems=gemsRows.map(function(r){return r?safeRoas(r.cv,r.cost):null;});
+  var roasMyst=mystRows.map(function(r){return r?safeRoas(r.cv,r.cost):null;});
+  var lbls=dates.map(function(d){return d.slice(5);});
+  new Chart(document.getElementById('roasChart'),{
+    type:'line',
+    data:{labels:lbls,datasets:[
+      {label:'THEE_GEMS',data:roasGems,borderColor:'#1f5eff',backgroundColor:'rgba(31,94,255,0.07)',tension:0.3,pointRadius:3,spanGaps:true},
+      {label:'THEE_MYSTERY',data:roasMyst,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.05)',tension:0.3,pointRadius:3,spanGaps:true}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{title:{display:true,text:'ROAS (x)',font:{size:11}},beginAtZero:true},x:{ticks:{font:{size:9},maxRotation:45}}}}
+  });
+  var cvGems=gemsRows.map(function(r){return r?r.cv:null;});
+  var cvMyst=mystRows.map(function(r){return r?r.cv:null;});
+  new Chart(document.getElementById('cvChart'),{
+    type:'bar',
+    data:{labels:lbls,datasets:[
+      {label:'THEE_GEMS',data:cvGems,backgroundColor:'rgba(31,94,255,0.72)',borderRadius:3},
+      {label:'THEE_MYSTERY',data:cvMyst,backgroundColor:'rgba(220,38,38,0.62)',borderRadius:3}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{title:{display:true,text:'Conv. Value (£)',font:{size:11}},beginAtZero:true},x:{ticks:{font:{size:9},maxRotation:45}}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// REQUIREMENT 2 — SEARCH TERM OPTIMISATION
+// Source: google_ads.campaign_search_term_data, read-only SELECT
+// Both campaigns confirmed: 23714290257 (6580 rows) · 23684837882 (12954 rows)
+// Latest date: 2026-07-12. Cost field NULL — CTR rules only.
+// ═══════════════════════════════════════════════════════════
+
+// R2 BUSINESS RULE THRESHOLDS
+var R2_HIGH_COST=20,R2_WASTE_COST=10,R2_EARLY_WASTE=1,R2_LOW_CTR=1.5,R2_BORDER_CTR=3.0,R2_BRANDED_CONV=2;
+
+// SEARCH TERM DATA — aggregated last 30 days per term per campaign
+// source: google_ads.campaign_search_term_data WHERE date >= CURRENT_DATE-30 GROUP BY campaign_id,search_term,match_type
+// cost column is NULL in this source for PMax campaigns — all cost fields stored as null
+var TERMS=[
+  {cid:'23684837882',term:'ledsone uk',imp:161,clicks:8,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 ceiling rose',imp:340,clicks:7,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 ceiling light fitting',imp:172,clicks:7,conv:3,cv:46.57},
+  {cid:'23684837882',term:'kitchen lights ideas',imp:25,clicks:4,conv:1,cv:97.77},
+  {cid:'23714290257',term:'rope pendant light',imp:24,clicks:4,conv:0,cv:0},
+  {cid:'23714290257',term:'rattan lamp shade',imp:140,clicks:3,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 lamp holder',imp:130,clicks:3,conv:1.5,cv:17.74},
+  {cid:'23714290257',term:'plug in pendant light',imp:88,clicks:3,conv:0,cv:0},
+  {cid:'23714290257',term:'brass wall lights',imp:48,clicks:3,conv:0,cv:0},
+  {cid:'23684837882',term:'spider pendant light',imp:45,clicks:3,conv:0,cv:0},
+  {cid:'23714290257',term:'composite decking tiles uk',imp:43,clicks:3,conv:0,cv:0},
+  {cid:'23714290257',term:'large rattan lamp shade',imp:31,clicks:3,conv:0,cv:0},
+  {cid:'23714290257',term:'pendant light',imp:23,clicks:3,conv:0.5,cv:21.49},
+  {cid:'23714290257',term:'plug in ceiling light',imp:110,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'decking tiles',imp:85,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'copper wall lights',imp:73,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'kitchen wall lights',imp:70,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 ceiling rose screwfix',imp:59,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 lamp base',imp:47,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'ledsone reviews',imp:43,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'metal conduit light fittings',imp:34,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'ceiling rope lights',imp:28,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'conduit light fitting',imp:27,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'industrial lamp shade',imp:24,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'retro industrial ceiling lights',imp:21,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'industrial kitchen lights',imp:17,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'conduit wall lights',imp:15,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'best scales for accurate weight',imp:13,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'antique brass wall light',imp:13,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 ceiling bulb holder',imp:11,clicks:2,conv:0.5,cv:8.20},
+  {cid:'23714290257',term:'modern copper wall lights',imp:10,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'metal conduit lighting',imp:9,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'pendant light shades',imp:6,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'vintage ceiling light',imp:6,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'rope hanging lights',imp:4,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'plug in copper wall light',imp:3,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'cage lights',imp:3,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'kitchen copper ceiling lights',imp:2,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'boho ceiling lamp shade',imp:1,clicks:2,conv:1,cv:23.30},
+  {cid:'23714290257',term:'tile levels',imp:1,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'ledson lights',imp:1,clicks:2,conv:0,cv:0},
+  {cid:'23684837882',term:'led dimmable bulbs',imp:1,clicks:2,conv:0,cv:0},
+  {cid:'23714290257',term:'composite decking tiles',imp:156,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'bathroom scales',imp:125,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'ceiling lights',imp:82,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'ledsone lighting',imp:66,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'conduit lighting',imp:59,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'rustic ceiling lights',imp:54,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 batten holder screwfix',imp:52,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'rope pendant light',imp:50,clicks:1,conv:0.2,cv:4.85},
+  {cid:'23714290257',term:'e27 bulb holder',imp:48,clicks:1,conv:1,cv:21.38},
+  {cid:'23684837882',term:'industrial wall lights',imp:47,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'copper light fitting',imp:41,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'rattan ceiling light shade',imp:41,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'spider ceiling light',imp:40,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'rope lights',imp:40,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 ceiling lamp holder',imp:39,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 ceiling socket',imp:31,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'spider light pendant',imp:28,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'e27 ceramic lamp holder',imp:26,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'ceiling light',imp:24,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'copper ceiling lights',imp:21,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'rope light fitting',imp:19,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'pendant light with plug',imp:15,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'conduit lights',imp:15,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'industrial table lamp',imp:15,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'conduit box light fitting',imp:14,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'steampunk table lamp',imp:13,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'industrial copper wall lights',imp:13,clicks:1,conv:0,cv:0.10},
+  {cid:'23714290257',term:'large wicker lamp shade',imp:13,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'metal lampshade',imp:13,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'industrial lamp',imp:13,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'hanging ceiling lights',imp:12,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'black batten holder',imp:12,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'vintage lighting',imp:12,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'rope light fitting',imp:11,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'copper kitchen lights',imp:11,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'rattan lightshade',imp:11,clicks:1,conv:1,cv:20.58},
+  {cid:'23684837882',term:'mantlepiece clock',imp:10,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'kitchen ceiling lights',imp:10,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'bar lighting',imp:10,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'brass light pendant',imp:10,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'wall lights for kitchen',imp:9,clicks:1,conv:0.33,cv:20.40},
+  {cid:'23684837882',term:'kitchen pendant lighting',imp:8,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'industrial wall lamps',imp:8,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'ceiling rope light',imp:8,clicks:1,conv:0.49,cv:14.58},
+  {cid:'23684837882',term:'copper bulb holder',imp:7,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'boho lamp shade',imp:7,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 bulb lamp base',imp:7,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'small copper lamp shades',imp:7,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'e27 ceiling',imp:7,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'large wicker lampshade',imp:7,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'black and gold cylinder pendant light',imp:6,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'bedside lamp',imp:6,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'best bathroom scales',imp:6,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'pendant light plug in',imp:5,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'directional wall lights',imp:5,clicks:1,conv:0,cv:0},
+  {cid:'23684837882',term:'copper lampshade',imp:5,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'brown lampshade',imp:5,clicks:1,conv:0,cv:0},
+  {cid:'23714290257',term:'ceiling light fixtures',imp:5,clicks:1,conv:0,cv:0}
+];
+
+// R2 BUSINESS RULE FUNCTIONS
+function r2SafeCtr(clicks,imp){if(!imp||imp===0)return null;return(clicks/imp)*100;}
+function r2SafeCpa(cost,conv){if(!conv||conv===0)return null;if(!cost)return null;return cost/conv;}
+function r2GetConditions(t){
+  var conds=[];
+  var ctr=r2SafeCtr(t.clicks,t.imp);
+  var cost=null; // cost is null in source for PMax
+  // Rule 1 — High Cost Term (cost null — cannot apply)
+  // Rule 2 — Waste Term (cost null — cannot apply)
+  // Early Waste Warning (cost null — cannot apply)
+  // Rule 4 — Low CTR
+  if(ctr!==null&&ctr<R2_LOW_CTR)conds.push('Low CTR');
+  // Rule 5 — Borderline CTR
+  if(ctr!==null&&ctr>=R2_LOW_CTR&&ctr<R2_BORDER_CTR)conds.push('Borderline CTR');
+  // Rule 6 — Good Performer
+  if(ctr!==null&&ctr>=R2_BORDER_CTR&&t.conv>0)conds.push('Good Performer');
+  // Rule 3 — Competitor (manual only — no authoritative list)
+  // Rule 7 — Branded/High Conv (source has no intent field)
+  return conds;
+}
+var R2_PREC=['Waste Term','High Cost Term','Low CTR','Competitor Term','Branded / High Conversion','Good Performer','Borderline CTR','Early Waste Warning','Unclassified'];
+function r2PrimaryCondition(conds){
+  if(!conds.length)return'Unclassified';
+  for(var i=0;i<R2_PREC.length;i++){if(conds.indexOf(R2_PREC[i])>-1)return R2_PREC[i];}
+  return'Unclassified';
+}
+function r2GetStatus(prim){
+  var m={'Waste Term':'Critical','High Cost Term':'Critical','Low CTR':'Critical','Competitor Term':'Monitor','Borderline CTR':'Monitor','Early Waste Warning':'Review','Good Performer':'Healthy','Branded / High Conversion':'Healthy','Unclassified':'Review'};
+  return m[prim]||'Review';
+}
+function r2GetDecision(prim){
+  var m={'Waste Term':'Remove','High Cost Term':'Review','Low CTR':'Review / Consider Remove','Competitor Term':'Manual Decision','Borderline CTR':'Keep','Good Performer':'Keep','Branded / High Conversion':'Keep','Early Waste Warning':'Monitor','Unclassified':'Pending Decision'};
+  return m[prim]||'Pending Decision';
+}
+function r2GetAction(prim){
+  var m={
+    'Waste Term':'Add as negative keyword; exclude from PMax listing group',
+    'High Cost Term':'Flag; review conversions before deciding remove/keep',
+    'Low CTR':'Improve headline relevance; refresh GMC title; consider Remove',
+    'Competitor Term':'Decide: bid to intercept (Keep, exact match) or block (Remove)',
+    'Borderline CTR':'A/B test ad copy; Keep, review again in 7 days',
+    'Good Performer':'Keep — add as exact match; consider bid increase',
+    'Branded / High Conversion':'Protect brand term; exact match; consider dedicated budget',
+    'Early Waste Warning':'Monitor before official Waste Term threshold is reached',
+    'Unclassified':'Manual review required'
+  };
+  return m[prim]||'Manual review required';
+}
+
+// R2 FILTER + RENDER
+var r2Filtered=[],r2SortKey='clicks',r2SortDir=-1;
+function applyR2Filters(){
+  var camp=document.getElementById('r2CampFilter').value;
+  var cond=document.getElementById('r2CondFilter').value;
+  var status=document.getElementById('r2StatusFilter').value;
+  var search=document.getElementById('r2Search').value.trim().toLowerCase();
+  r2Filtered=TERMS.filter(function(t){
+    if(camp!=='all'&&t.cid!==camp)return false;
+    var conds=r2GetConditions(t);
+    var prim=r2PrimaryCondition(conds);
+    var st=r2GetStatus(prim);
+    if(cond!=='all'&&prim!==cond)return false;
+    if(status!=='all'&&st!==status)return false;
+    if(search&&t.term.indexOf(search)<0)return false;
+    return true;
+  });
+  r2Filtered.sort(function(a,b){
+    var av=a[r2SortKey]||0,bv=b[r2SortKey]||0;
+    if(r2SortKey==='term'){av=a.term;bv=b.term;return av<bv?-r2SortDir:r2SortDir;}
+    return(av-bv)*r2SortDir;
+  });
+  renderR2Table();
+  renderR2Insights();
+}
+function sortR2(key){
+  if(r2SortKey===key)r2SortDir*=-1;else{r2SortKey=key;r2SortDir=-1;}
+  applyR2Filters();
+}
+function resetR2Filters(){
+  document.getElementById('r2CampFilter').value='all';
+  document.getElementById('r2CondFilter').value='all';
+  document.getElementById('r2StatusFilter').value='all';
+  document.getElementById('r2Search').value='';
+  r2Filtered=TERMS.slice();
+  r2Filtered.sort(function(a,b){return b.clicks-a.clicks;});
+  renderR2Table();
+  renderR2Insights();
+}
+function renderR2Table(){
+  var tbody=document.getElementById('r2Tbody');
+  var nextReview=new Date();nextReview.setDate(nextReview.getDate()+7);
+  var nrd=nextReview.toISOString().slice(0,10);
+  document.getElementById('r2NextReview').textContent='Next Review: '+nrd;
+  document.getElementById('r2TbarCount').textContent='Showing '+r2Filtered.length+' of '+TERMS.length+' search terms · Latest data: 2026-07-12';
+  document.getElementById('r2Count').textContent=r2Filtered.length+' terms';
+  if(!r2Filtered.length){
+    tbody.innerHTML='<tr><td colspan="21" style="text-align:center;padding:32px;color:var(--muted);">No search terms match the current filters.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=r2Filtered.map(function(t,i){
+    var ctr=r2SafeCtr(t.clicks,t.imp);
+    var conds=r2GetConditions(t);
+    var prim=r2PrimaryCondition(conds);
+    var st=r2GetStatus(prim);
+    var dec=r2GetDecision(prim);
+    var action=r2GetAction(prim);
+    var rowCls=st==='Critical'?'row-critical':st==='Monitor'?'row-monitor':st==='Healthy'?'row-healthy':'';
+    var camp=CAMPAIGNS[t.cid];
+    var ctrDisp=ctr===null?'<span style="color:var(--muted);">N/A</span>':(ctr.toFixed(2)+'%');
+    var allConds=conds.length?conds.join(', '):'Unclassified';
+    var badgeCls=st==='Critical'?'badge-critical':st==='Monitor'?'badge-monitor':st==='Healthy'?'badge-healthy':'badge-pending';
+    var icon=st==='Critical'?'🔴':st==='Monitor'?'🟡':st==='Healthy'?'🟢':'🔵';
+    var decCls=dec==='Remove'?'badge-critical':dec==='Keep'?'badge-healthy':'badge-pending';
+    return '<tr class="'+rowCls+'">'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;">'+(i+1)+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);"><span style="font-size:11px;font-weight:700;">'+camp.label+'</span></td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-weight:600;">'+t.term+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;">Performance Max</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">Unclassified</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;">'+t.imp.toLocaleString()+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;">'+t.clicks+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;">'+ctrDisp+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">N/A</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;">'+parseFloat(t.conv).toFixed(2)+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">N/A</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">N/A</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">N/A</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">Manual Review Required</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);"><span class="badge '+badgeCls+'" role="status">'+icon+' '+prim+'</span></td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;">'+allConds+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);"><span class="badge '+decCls+'">'+dec+'</span></td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);"><span class="badge badge-pending">Pending Decision</span></td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;">'+action+'</td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);"><span class="badge '+badgeCls+'">'+icon+' '+st+'</span></td>'
+      +'<td style="padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;">'+nrd+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function renderR2Insights(){
+  var lowCtr=0,border=0,good=0,unclass=0,zeroConv=0,totalTerms=r2Filtered.length;
+  r2Filtered.forEach(function(t){
+    var ctr=r2SafeCtr(t.clicks,t.imp);
+    var conds=r2GetConditions(t);
+    var prim=r2PrimaryCondition(conds);
+    if(prim==='Low CTR')lowCtr++;
+    else if(prim==='Borderline CTR')border++;
+    else if(prim==='Good Performer')good++;
+    else unclass++;
+    if(t.conv===0)zeroConv++;
+  });
+  var insights=[];
+  if(lowCtr>0)insights.push('<li>🔴 <strong>'+lowCtr+' terms have Low CTR (&lt;1.5%)</strong> — recommend headline improvements or removal.</li>');
+  if(border>0)insights.push('<li>🟡 <strong>'+border+' terms have Borderline CTR (1.5–3%)</strong> — A/B test ad copy; review again in 7 days.</li>');
+  if(good>0)insights.push('<li>🟢 <strong>'+good+' Good Performer terms (CTR ≥3% &amp; conversions &gt;0)</strong> — consider adding as exact match.</li>');
+  if(zeroConv>0)insights.push('<li>⚠ <strong>'+zeroConv+' of '+totalTerms+' terms have 0 conversions</strong> — cost data unavailable; cost-based waste rules cannot be applied.</li>');
+  insights.push('<li>ℹ <strong>Cost field is NULL</strong> in campaign_search_term_data for PMax campaigns — High Cost Term and Waste Term rules require a cost-attributed source.</li>');
+  insights.push('<li>ℹ <strong>Competitor dictionary not found</strong> in AIOS — all Competitor Term fields are Manual Review Required.</li>');
+  insights.push('<li>ℹ <strong>Brand dictionary not found</strong> — Search Intent = Unclassified for all terms. Rule 7 (Branded / High Conv) is inactive.</li>');
+  document.getElementById('r2InsightsList').innerHTML='<ul>'+insights.join('')+'</ul>';
+}
+
+function buildR2Kpis(){
+  var lowCtr=0,border=0,good=0,unclass=0,totalClicks=0,totalImp=0,totalConv=0;
+  TERMS.forEach(function(t){
+    var ctr=r2SafeCtr(t.clicks,t.imp);
+    var conds=r2GetConditions(t);
+    var prim=r2PrimaryCondition(conds);
+    if(prim==='Low CTR')lowCtr++;
+    else if(prim==='Borderline CTR')border++;
+    else if(prim==='Good Performer')good++;
+    else unclass++;
+    totalClicks+=t.clicks;totalImp+=t.imp;totalConv+=t.conv;
+  });
+  var cards=[
+    {lbl:'Total Terms Reviewed',val:TERMS.length,note:'Last 30 days · 2 campaigns',cls:'info'},
+    {lbl:'🔴 Low CTR (Critical)',val:lowCtr,note:'CTR < 1.5% — consider remove',cls:'err'},
+    {lbl:'🟡 Borderline CTR',val:border,note:'CTR 1.5–3% — monitor',cls:'warn'},
+    {lbl:'🟢 Good Performers',val:good,note:'CTR ≥3% & conv > 0',cls:'ok'},
+    {lbl:'🔵 Unclassified',val:unclass,note:'CTR ≥3% but no conv, or rules N/A',cls:'info'},
+    {lbl:'Cost-Based Rules',val:'N/A',note:'Cost null in source — High Cost & Waste Term inactive',cls:'warn'},
+    {lbl:'Competitor Terms',val:'Manual Review',note:'No authoritative list in AIOS',cls:'warn'},
+    {lbl:'Pending Decisions',val:TERMS.length,note:'No write-back source — all Logged as Pending',cls:'info'}
+  ];
+  document.getElementById('r2Kpis').innerHTML=cards.map(function(c){
+    return'<div class="kpi '+c.cls+'"><div class="lbl">'+c.lbl+'</div><div class="val">'+c.val+'</div><div class="note">'+c.note+'</div></div>';
+  }).join('');
+}
+
+function buildR2Charts(){
+  // Condition distribution
+  var condCounts={};
+  TERMS.forEach(function(t){var p=r2PrimaryCondition(r2GetConditions(t));condCounts[p]=(condCounts[p]||0)+1;});
+  var condLabels=Object.keys(condCounts);
+  var condData=condLabels.map(function(k){return condCounts[k];});
+  var condColors=condLabels.map(function(k){
+    if(k==='Low CTR')return'#dc2626';
+    if(k==='Borderline CTR')return'#d97706';
+    if(k==='Good Performer')return'#059669';
+    return'#6b7280';
+  });
+  new Chart(document.getElementById('r2CondChart'),{
+    type:'doughnut',
+    data:{labels:condLabels,datasets:[{data:condData,backgroundColor:condColors,borderWidth:2}]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+  });
+  // CTR bar — top 20 by clicks
+  var top20=TERMS.slice().sort(function(a,b){return b.clicks-a.clicks;}).slice(0,20);
+  var ctrLabels=top20.map(function(t){return t.term.length>20?t.term.slice(0,20)+'…':t.term;});
+  var ctrData=top20.map(function(t){var c=r2SafeCtr(t.clicks,t.imp);return c===null?0:parseFloat(c.toFixed(2));});
+  var ctrBg=ctrData.map(function(v){return v<1.5?'rgba(220,38,38,0.7)':v<3?'rgba(217,119,6,0.7)':'rgba(5,150,105,0.7)';});
+  new Chart(document.getElementById('r2CtrChart'),{
+    type:'bar',
+    data:{labels:ctrLabels,datasets:[{label:'CTR %',data:ctrData,backgroundColor:ctrBg,borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'CTR %',font:{size:11}},beginAtZero:true},y:{ticks:{font:{size:9}}}}}
+  });
+}
+
+// ─── REQ 2: SEARCH TERM OPTIMISATION ──────────────────────────────────────
+// Source: google_ads.campaign_search_term_data, last 30 days to 2026-07-12
+// [term, campId, impressions, clicks, conversions, conv_value, ctr_pct]
+var R2D=[
+  ["ledsone uk","23684837882",161,8,0,0,4.97],
+  ["e27 ceiling rose","23714290257",340,7,0,0,2.06],
+  ["e27 ceiling light fitting","23714290257",172,7,3,46.57,4.07],
+  ["rope pendant light","23714290257",24,4,0,0,16.67],
+  ["kitchen lights ideas","23684837882",25,4,1,97.77,16.00],
+  ["pendant light","23714290257",23,3,0.5,21.49,13.04],
+  ["spider pendant light","23684837882",45,3,0,0,6.67],
+  ["rattan lamp shade","23714290257",140,3,0,0,2.14],
+  ["plug in pendant light","23714290257",88,3,0,0,3.41],
+  ["large rattan lamp shade","23714290257",31,3,0,0,9.68],
+  ["composite decking tiles uk","23714290257",43,3,0,0,6.98],
+  ["brass wall lights","23714290257",48,3,0,0,6.25],
+  ["e27 lamp holder","23714290257",130,3,1.5,17.74,2.31],
+  ["led dimmable bulbs","23684837882",1,2,0,0,200.00],
+  ["industrial kitchen lights","23684837882",17,2,0,0,11.76],
+  ["ledsone reviews","23684837882",43,2,0,0,4.65],
+  ["pendant light shades","23684837882",6,2,0,0,33.33],
+  ["e27 ceiling bulb holder","23714290257",11,2,0.5,8.20,18.18],
+  ["decking tiles","23714290257",85,2,0,0,2.35],
+  ["copper wall lights","23714290257",73,2,0,0,2.74],
+  ["vintage ceiling light","23684837882",6,2,0,0,33.33],
+  ["e27 ceiling rose screwfix","23714290257",59,2,0,0,3.39],
+  ["ceiling rope lights","23714290257",28,2,0,0,7.14],
+  ["e27 lamp base","23714290257",47,2,0,0,4.26],
+  ["industrial lamp shade","23714290257",24,2,0,0,8.33],
+  ["kitchen wall lights","23714290257",70,2,0,0,2.86],
+  ["retro industrial ceiling lights","23684837882",21,2,0,0,9.52],
+  ["tile levels","23714290257",1,2,0,0,200.00],
+  ["plug in copper wall light","23684837882",3,2,0,0,66.67],
+  ["boho ceiling lamp shade","23714290257",1,2,1,23.30,200.00],
+  ["best scales for accurate weight","23684837882",13,2,0,0,15.38],
+  ["conduit light fitting","23714290257",27,2,0,0,7.41],
+  ["metal conduit lighting","23714290257",9,2,0,0,22.22],
+  ["plug in ceiling light","23714290257",110,2,0,0,1.82],
+  ["cage lights","23684837882",3,2,0,0,66.67],
+  ["rope hanging lights","23714290257",4,2,0,0,50.00],
+  ["antique brass wall light","23714290257",13,2,0,0,15.38],
+  ["kitchen copper ceiling lights","23684837882",2,2,0,0,100.00],
+  ["ledson lights","23684837882",1,2,0,0,200.00],
+  ["conduit wall lights","23714290257",15,2,0,0,13.33],
+  ["metal conduit light fittings","23714290257",34,2,0,0,5.88],
+  ["modern copper wall lights","23714290257",10,2,0,0,20.00],
+  ["large wicker lampshade","23714290257",7,1,0,0,14.29],
+  ["lamp holders types","23684837882",1,1,0,0,100.00],
+  ["large industrial lamp shade","23714290257",1,1,0,0,100.00],
+  ["kitchen pendant lights","23684837882",3,1,0,0,33.33],
+  ["kitchen industrial lights","23684837882",4,1,0,0,25.00],
+  ["kitchen lighting ceiling","23684837882",4,1,0,0,25.00],
+  ["led stone","23684837882",3,1,0,0,33.33],
+  ["industrial wall lamps","23684837882",8,1,0,0,12.50],
+  ["ip66 outdoor wall lights","23684837882",1,1,0,0,100.00],
+  ["industrial lights ceiling","23684837882",1,1,0,0,100.00],
+  ["industrial table lamp","23684837882",15,1,0,0,6.67],
+  ["industrial wall lights","23684837882",47,1,0,0,2.13],
+  ["kitchen ceiling lights","23684837882",10,1,0,0,10.00],
+  ["kitchen lampshades","23714290257",4,1,0,0,25.00],
+  ["industrial kitchen lighting","23684837882",4,1,0,0,25.00],
+  ["kitchen pendant lighting","23684837882",8,1,0,0,12.50],
+  ["industrial copper wall lights","23714290257",13,1,0,0.10,7.69],
+  ["lampholder e27","23714290257",3,1,0,0,33.33],
+  ["human weighing scales","23684837882",1,1,0,0,100.00],
+  ["large wicker lamp shade","23714290257",13,1,0,0,7.69],
+  ["glass lightshade","23684837882",1,1,0,0,100.00],
+  ["hanging ceiling lights","23684837882",12,1,0,0,8.33],
+  ["industrial ceiling light","23714290257",4,1,0,0,25.00],
+  ["industrial lamp","23684837882",13,1,0,0,7.69],
+  ["ledone lights","23684837882",1,1,0,0,100.00],
+  ["e27 ceramic lamp holder","23684837882",26,1,0,0,3.85],
+  ["e27 ceiling socket","23714290257",31,1,0,0,3.23],
+  ["e27 bulb lamp base","23714290257",7,1,0,0,14.29],
+  ["e27 bulb holder","23714290257",48,1,1,21.38,2.08],
+  ["e27 ceiling lamp holder","23714290257",39,1,0,0,2.56],
+  ["e27 socket uk","23714290257",2,1,0,0,50.00],
+  ["cord covers","23684837882",1,1,0,0,100.00],
+  ["copper lampshade","23684837882",5,1,0,0,20.00],
+  ["copper wall light indoor","23714290257",3,1,0,0,33.33],
+  ["copper ceiling lights","23684837882",21,1,0,0,4.76],
+  ["conduit lights","23714290257",15,1,0,0,6.67],
+  ["conduit lighting","23714290257",59,1,0,0,1.69],
+  ["conduit wall light","23714290257",3,1,0,0,33.33],
+  ["copper kitchen lights","23684837882",11,1,0,0,9.09],
+  ["copper bulb holder","23684837882",7,1,0,0,14.29],
+  ["directional wall lights","23684837882",5,1,0,0,20.00],
+  ["copper light fitting","23684837882",41,1,0,0,2.44],
+  ["ebay industrial lights","23684837882",1,1,0,0,100.00],
+  ["copper wall sconce indoor","23684837882",1,1,0,0,100.00],
+  ["e27 a60 led bulb","23684837882",1,1,0,0,100.00],
+  ["e27 batten holder screwfix","23714290257",52,1,0,0,1.92],
+  ["composite decking tiles","23714290257",156,1,0,0,0.64],
+  ["e27 ceiling","23714290257",7,1,0,0,14.29],
+  ["bathroom scales","23684837882",125,1,0,0,0.80],
+  ["ceiling rope light","23684837882",8,1,0.49,14.58,12.50],
+  ["cluster lights","23684837882",2,1,0,0,50.00],
+  ["composite interlocking deck tiles","23714290257",2,1,0,0,50.00],
+  ["ceiling light fixtures","23714290257",5,1,0,0,20.00],
+  ["hanging cane lights","23684837882",3,1,0,0,33.33],
+  ["bedside lamp","23714290257",6,1,0,0,16.67],
+  ["hardwood decking tiles uk","23714290257",1,1,0,0,100.00],
+  ["ceiling light","23684837882",24,1,0,0,4.17],
+  ["ceiling lights","23684837882",82,1,0,0,1.22]
+];
+
+var R2_CAMP={'23714290257':'THEE_GEMS','23684837882':'THEE_MYSTERY'};
+var R2_BRAND=['ledsone','ledson','ledone','led stone'];
+var R2_COMP=['ebay','screwfix','amazon','argos'];
+var R2_OFF=['decking','scales','weighing'];
+
+function r2Class(term,ctr,conv){
+  var t=term.toLowerCase();
+  if(R2_BRAND.some(function(b){return t.indexOf(b)>=0;})){
+    return conv>2
+      ?{intent:'Branded',status:'Healthy',cF:'Good Performer',pC:'Branded — High Conv',aC:'Rule 7',dec:'Keep',act:'Protect brand term; exact match; bid up',comp:'No'}
+      :{intent:'Branded',status:'Monitor',cF:'Unclassified',pC:'Branded — Monitor Conv',aC:'Rule 7 (low conv)',dec:'Keep — Monitor',act:'Monitor conversion trend; protect brand term',comp:'No'};
+  }
+  if(R2_COMP.some(function(c){return t.indexOf(c)>=0;})){
+    return{intent:'Competitor',status:'Monitor',cF:'Unclassified',pC:'Competitor Term',aC:'Rule 3',dec:'Pending Decision',act:'Decide: intercept or block as negative keyword',comp:'Manual Review'};
+  }
+  if(t==='tile levels'||R2_OFF.some(function(o){return t.indexOf(o)>=0;})){
+    return{intent:'Off-Category',status:'Critical',cF:'Unclassified',pC:'Off-Category / Irrelevant',aC:'Negative KW (urgent)',dec:'Remove',act:'Add as negative keyword immediately',comp:'No'};
+  }
+  if(ctr>=3&&conv>0) return{intent:'Commercial',status:'Healthy',cF:'Good Performer',pC:'Good Performer',aC:'Rule 6',dec:'Keep',act:'Keep; add exact match; consider bid increase',comp:'No'};
+  if(ctr<1.5) return{intent:'Commercial',status:'Critical',cF:'Low CTR',pC:'Low CTR',aC:'Rule 4',dec:'Remove / Improve',act:'Improve headline relevance; consider Remove',comp:'No'};
+  if(ctr<3.0) return{intent:'Commercial',status:'Monitor',cF:'Borderline CTR',pC:'Borderline CTR',aC:'Rule 5',dec:'Keep — A/B Test',act:'A/B test headlines; review in 7 days',comp:'No'};
+  return{intent:'Commercial',status:'Monitor',cF:'Unclassified',pC:'High CTR / No Conv',aC:'CTR≥3%, 0 Conv',dec:'Review',act:'Check landing page; verify product-term match',comp:'No'};
+}
+
+var r2SortCol='clicks',r2SortDir=-1;
+function sortR2(col){
+  if(r2SortCol===col)r2SortDir*=-1;else{r2SortCol=col;r2SortDir=-1;}
+  applyR2Filters();
+}
+
+function applyR2Filters(){
+  var cf=document.getElementById('r2CampFilter').value;
+  var cdf=document.getElementById('r2CondFilter').value;
+  var sf=document.getElementById('r2StatusFilter').value;
+  var sv=(document.getElementById('r2Search').value||'').toLowerCase().trim();
+  var rows=R2D.filter(function(r){
+    if(cf!=='all'&&r[1]!==cf)return false;
+    var c=r2Class(r[0],r[6],r[4]);
+    if(cdf!=='all'&&c.cF!==cdf)return false;
+    if(sf!=='all'&&c.status!==sf)return false;
+    if(sv&&r[0].toLowerCase().indexOf(sv)<0)return false;
+    return true;
+  });
+  rows.sort(function(a,b){
+    var av,bv;
+    if(r2SortCol==='term'){av=a[0];bv=b[0];return r2SortDir*(av<bv?-1:av>bv?1:0);}
+    if(r2SortCol==='camp'){av=R2_CAMP[a[1]];bv=R2_CAMP[b[1]];return r2SortDir*(av<bv?-1:av>bv?1:0);}
+    var colMap={imp:2,clicks:3,conv:4,ctr:6};
+    av=a[colMap[r2SortCol]||3];bv=b[colMap[r2SortCol]||3];
+    return r2SortDir*(av-bv);
+  });
+  var cnt=document.getElementById('r2Count');
+  if(cnt)cnt.textContent=rows.length+' of '+R2D.length+' terms';
+  var tbar=document.getElementById('r2TbarCount');
+  if(tbar)tbar.textContent='Showing '+rows.length+' of '+R2D.length+' terms — sorted by '+r2SortCol;
+  var tbody=document.getElementById('r2Tbody');
+  if(!tbody)return;
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="21"><div class="empty-state"><div class="es-icon">🔍</div><h3>No terms match filters</h3><p>Try adjusting your filter criteria.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=rows.map(function(r,i){
+    var term=r[0],cid=r[1],imp=r[2],clk=r[3],conv=r[4],cv=r[5],ctr=r[6];
+    var c=r2Class(term,ctr,conv);
+    var low=imp<5;
+    var rc=c.status==='Critical'?'row-critical':c.status==='Healthy'?'row-healthy':'row-monitor';
+    var bc=c.status==='Critical'?'badge-critical':c.status==='Healthy'?'badge-healthy':'badge-monitor';
+    var dot=c.status==='Critical'?'🔴':c.status==='Healthy'?'🟢':'🟡';
+    var campCol=cid==='23714290257'?'#1f5eff':'#7c3aed';
+    var ctrDisp=low?ctr.toFixed(1)+'%*':ctr.toFixed(1)+'%';
+    return '<tr class="'+rc+'" style="font-size:12px;">'
+      +'<td style="text-align:right;color:var(--muted);">'+(i+1)+'</td>'
+      +'<td><span style="background:'+campCol+'18;color:'+campCol+';border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">'+R2_CAMP[cid]+'</span></td>'
+      +'<td style="font-weight:600;min-width:160px;">'+term+'</td>'
+      +'<td style="font-size:11px;color:var(--muted);">PMax</td>'
+      +'<td style="font-size:11px;color:var(--muted);">'+c.intent+'</td>'
+      +'<td style="text-align:right;">'+imp.toLocaleString()+'</td>'
+      +'<td style="text-align:right;">'+clk+'</td>'
+      +'<td style="text-align:right;">'+ctrDisp+'</td>'
+      +'<td style="text-align:right;color:var(--muted);font-style:italic;">N/A</td>'
+      +'<td style="text-align:right;">'+(conv>0?conv.toFixed(2):'—')+'</td>'
+      +'<td style="text-align:right;color:var(--muted);font-style:italic;">N/A</td>'
+      +'<td style="text-align:center;font-size:11px;color:var(--muted);">N/A</td>'
+      +'<td style="text-align:center;font-size:11px;color:var(--muted);">N/A</td>'
+      +'<td style="text-align:center;font-size:11px;">'+(c.comp==='Manual Review'?'<span style="color:#d97706;">⚠ Manual Review</span>':c.comp)+'</td>'
+      +'<td><span class="badge '+bc+'">'+c.pC+'</span></td>'
+      +'<td style="font-size:11px;color:var(--muted);">'+c.aC+'</td>'
+      +'<td style="font-size:11px;font-weight:600;">'+c.dec+'</td>'
+      +'<td style="font-size:11px;color:var(--muted);">Pending Decision</td>'
+      +'<td style="font-size:11.5px;min-width:180px;">'+c.act+'</td>'
+      +'<td>'+dot+' '+c.status+'</td>'
+      +'<td style="font-size:11px;color:var(--muted);">2026-07-22</td>'
+      +'</tr>';
+  }).join('');
+  renderR2Insights(rows);
+}
+
+function resetR2Filters(){
+  document.getElementById('r2CampFilter').value='all';
+  document.getElementById('r2CondFilter').value='all';
+  document.getElementById('r2StatusFilter').value='all';
+  document.getElementById('r2Search').value='';
+  applyR2Filters();
+}
+
+function renderR2Kpis(){
+  var imp=0,clk=0,conv=0,cv=0,crit=0,hlth=0,mon=0;
+  R2D.forEach(function(r){
+    imp+=r[2];clk+=r[3];conv+=r[4];cv+=r[5];
+    var c=r2Class(r[0],r[6],r[4]);
+    if(c.status==='Critical')crit++;else if(c.status==='Healthy')hlth++;else mon++;
+  });
+  var avgCtr=imp>0?((clk/imp)*100).toFixed(2):'0.00';
+  var el=document.getElementById('r2Kpis');
+  if(!el)return;
+  el.innerHTML=
+    '<div class="kpi err"><div class="lbl">Critical Terms</div><div class="val">'+crit+'</div><div class="note">Immediate action</div></div>'+
+    '<div class="kpi warn"><div class="lbl">Monitor Terms</div><div class="val">'+mon+'</div><div class="note">Review needed</div></div>'+
+    '<div class="kpi ok"><div class="lbl">Healthy Terms</div><div class="val">'+hlth+'</div><div class="note">Performing well</div></div>'+
+    '<div class="kpi info"><div class="lbl">Total Terms</div><div class="val">'+R2D.length+'</div><div class="note">With clicks · 30d</div></div>'+
+    '<div class="kpi"><div class="lbl">Total Impressions</div><div class="val">'+imp.toLocaleString()+'</div><div class="note">Last 30 days</div></div>'+
+    '<div class="kpi"><div class="lbl">Total Clicks</div><div class="val">'+clk+'</div><div class="note">Last 30 days</div></div>'+
+    '<div class="kpi info"><div class="lbl">Avg CTR</div><div class="val">'+avgCtr+'%</div><div class="note">All terms combined</div></div>'+
+    '<div class="kpi ok"><div class="lbl">Total Conv. Value</div><div class="val">£'+cv.toFixed(2)+'</div><div class="note">'+conv.toFixed(1)+' conversions</div></div>';
+}
+
+function renderR2Insights(rows){
+  var el=document.getElementById('r2InsightsList');
+  if(!el)return;
+  var critRows=rows.filter(function(r){return r2Class(r[0],r[6],r[4]).status==='Critical';});
+  var offCat=rows.filter(function(r){return r2Class(r[0],r[6],r[4]).intent==='Off-Category';});
+  var branded=rows.filter(function(r){return r2Class(r[0],r[6],r[4]).intent==='Branded';});
+  var comp=rows.filter(function(r){return r2Class(r[0],r[6],r[4]).intent==='Competitor';});
+  var goodPerf=rows.filter(function(r){return r2Class(r[0],r[6],r[4]).status==='Healthy'&&r2Class(r[0],r[6],r[4]).intent==='Commercial';});
+  var insights=[];
+  if(offCat.length)insights.push('⚠️ <strong>'+offCat.length+' off-category term(s)</strong> detected (decking, scales). These waste budget — add as negative keywords immediately. (Cost data unavailable due to PMax limitation.)');
+  if(comp.length)insights.push('🔍 <strong>'+comp.length+' competitor term(s)</strong> detected (e.g. "ebay industrial lights", "e27 ceiling rose screwfix"). Manually decide: intercept with matching product or block as negative.');
+  if(branded.length)insights.push('🏷 <strong>'+branded.length+' branded term(s)</strong> detected ("ledsone uk", "ledsone reviews", "ledson lights", etc.). Monitor conversion rate on branded traffic to protect brand term share.');
+  if(goodPerf.length)insights.push('🟢 <strong>'+goodPerf.length+' commercial good performer(s)</strong> with CTR ≥3% and conversions. Consider adding as exact match keywords to protect placement.');
+  if(critRows.length-offCat.length>0)insights.push('🔴 <strong>'+(critRows.length-offCat.length)+' low CTR critical term(s)</strong> (CTR <1.5%). Review ad headline relevance for these terms. Prioritise "composite decking tiles" (0.64% CTR, 156 impr.), "bathroom scales" (0.80% CTR, 125 impr.), "ceiling lights" (1.22% CTR, 82 impr.).');
+  insights.push('ℹ️ <strong>Cost attribution not available</strong> for PMax search terms. Rules 1 (High Cost) and 2 (Waste Term) require a cost-attributed source. CTR and conversion rules fully active.');
+  el.innerHTML=insights.map(function(ins){return'<p style="margin-bottom:8px;">'+ins+'</p>';}).join('');
+}
+
+function buildR2Charts(){
+  var condCounts={Critical:0,Monitor:0,Healthy:0};
+  R2D.forEach(function(r){condCounts[r2Class(r[0],r[6],r[4]).status]++;});
+  var condEl=document.getElementById('r2CondChart');
+  if(condEl){
+    new Chart(condEl,{
+      type:'doughnut',
+      data:{
+        labels:['🔴 Critical','🟡 Monitor','🟢 Healthy'],
+        datasets:[{data:[condCounts.Critical,condCounts.Monitor,condCounts.Healthy],backgroundColor:['#fca5a5','#fcd34d','#6ee7b7'],borderColor:['#b91c1c','#d97706','#059669'],borderWidth:1}]
+      },
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+    });
+  }
+  var top20=R2D.slice(0,20);
+  var ctrEl=document.getElementById('r2CtrChart');
+  if(ctrEl){
+    new Chart(ctrEl,{
+      type:'bar',
+      data:{
+        labels:top20.map(function(r){return r[0].length>20?r[0].slice(0,18)+'…':r[0];}),
+        datasets:[{
+          label:'CTR%',
+          data:top20.map(function(r){return Math.min(r[6],50);}),
+          backgroundColor:top20.map(function(r){
+            var s=r2Class(r[0],r[6],r[4]).status;
+            return s==='Critical'?'rgba(185,28,28,0.65)':s==='Healthy'?'rgba(5,150,105,0.65)':'rgba(217,119,6,0.65)';
+          }),
+          borderRadius:3
+        }]
+      },
+      options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'CTR% (capped at 50% for readability)',font:{size:10}},beginAtZero:true},y:{ticks:{font:{size:9}}}}}
+    });
+  }
+}
+
+// INIT
+renderCampaignCards();
+renderKpis();
+filteredProds=PRODUCTS.slice();
+renderProdTable();
+buildCharts();
+renderR2Kpis();
+applyR2Filters();
+(function(){var el=document.getElementById('r2NextReview');if(el)el.textContent='Next Review: 2026-07-22';})();
+// Req 2 init
+buildR2Kpis();
+resetR2Filters();
+buildR2Charts();
+</script>
 </body>
 </html>
