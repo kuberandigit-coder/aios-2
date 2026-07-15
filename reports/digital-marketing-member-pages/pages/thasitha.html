@@ -466,7 +466,7 @@ table.r3-detail-table tr:hover td{background:#fafbfd;}
   <span class="info" id="r3PageInfo"></span>
   <span style="display:flex;gap:8px;align-items:center;">
     <label>Rows <select id="r3PageSize" onchange="r3Pg=1;renderR3();">
-      <option>50</option><option selected>100</option><option>250</option><option>500</option><option value="All">All</option>
+      <option selected>50</option><option>100</option><option>250</option><option>500</option><option value="All">All</option>
     </select></label>
     <button class="t1-btn" onclick="r3Pg=1;renderR3();">&laquo;</button>
     <button class="t1-btn" onclick="if(r3Pg>1){r3Pg--;renderR3();}">&lsaquo; Prev</button>
@@ -1011,7 +1011,12 @@ window.r3Toggle = function(id){
 })();
 
 let r3Pg = 1;
-function r3MaxPg(len, ps){ return Math.max(1, Math.ceil((len||0)/(ps||1))); }
+let r3LastLen = 0, r3LastPs = 1;
+function r3MaxPg(len, ps){
+  if(len===undefined) len = r3LastLen;
+  if(ps===undefined) ps = r3LastPs;
+  return Math.max(1, Math.ceil((len||0)/(ps||1)));
+}
 
 function renderR3(){
   const q = document.getElementById('r3Search').value.trim().toLowerCase();
@@ -1057,6 +1062,7 @@ function renderR3(){
 
   const pageSizeVal = document.getElementById('r3PageSize').value;
   const ps = pageSizeVal==='All' ? rows.length||1 : parseInt(pageSizeVal,10);
+  r3LastLen = rows.length; r3LastPs = ps;
   if(r3Pg>r3MaxPg(rows.length,ps)) r3Pg = r3MaxPg(rows.length,ps);
   const start = (r3Pg-1)*ps;
   const pageRows = pageSizeVal==='All' ? rows : rows.slice(start, start+ps);
