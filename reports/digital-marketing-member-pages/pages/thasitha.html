@@ -156,9 +156,7 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .t4-diff-pos{color:#c62828;font-weight:700;}
 .t4-diff-neg{color:#1f5eff;font-weight:700;}
 .t4-diff-zero{color:var(--muted);}
-.t4-camp-cell{white-space:normal;max-width:150px;font-size:10.5px;line-height:1.5;}
-.t4-camp-line{padding:2px 0;border-bottom:1px solid #eef1f6;}
-.t4-camp-line:last-child{border-bottom:none;}
+.t4-camp-cell{white-space:nowrap;font-size:11.5px;font-weight:600;}
 @media(max-width:640px){table.t4-table{min-width:1050px;}}
 </style>
 </head>
@@ -1372,6 +1370,13 @@ R4_PRODUCTS.forEach(function(p){
   });
 })();
 
+function r4CampShort(camp){
+  if(!camp) return '&mdash;';
+  const codes = [];
+  if(camp.indexOf('THT | NewProduct')!==-1) codes.push('THT');
+  if(camp.indexOf('MT | Metal Product')!==-1) codes.push('MT');
+  return codes.length ? codes.join(', ') : esc(camp);
+}
 function r4Diff(s,a){ return Math.round((s-a)*100)/100; }
 function r4Status(s,a,dup){
   if (dup) return 'datacheck';
@@ -1483,7 +1488,7 @@ function renderR4(){
       + '<td class="num">'+r.c90.toFixed(2)+'</td>'
       + '<td class="num">'+r4DiffCell(r.s90,r.c90)+'</td>'
       + '<td>'+r4StatusBadge(r.s90,r.c90,r.dup)+'</td>'
-      + '<td class="t4-camp-cell">'+(r.camp ? r.camp.split(' | ').map(function(c){return '<div class="t4-camp-line">'+esc(c)+'</div>';}).join('') : '&mdash;')+'</td>'
+      + '<td class="t4-camp-cell">'+r4CampShort(r.camp)+'</td>'
       + '</tr>';
   }).join('');
 
