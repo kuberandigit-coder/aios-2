@@ -138,7 +138,7 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .pager select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff;}
 .pager label{font-size:12.5px;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:6px;}
 
-table.t4-table{min-width:1600px;}
+table.t4-table{min-width:1420px;}
 table.t4-table thead tr:first-child th{background:#f0f4fb;border-bottom:1px solid var(--line);text-align:center;}
 table.t4-table thead tr:last-child th{background:#fafbfd;}
 .t4-sticky{position:sticky;left:0;background:#fff;z-index:2;}
@@ -156,8 +156,10 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .t4-diff-pos{color:#c62828;font-weight:700;}
 .t4-diff-neg{color:#1f5eff;font-weight:700;}
 .t4-diff-zero{color:var(--muted);}
-.t4-camp-cell{white-space:normal;max-width:230px;font-size:11px;}
-@media(max-width:640px){table.t4-table{min-width:1200px;}}
+.t4-camp-cell{white-space:normal;max-width:150px;font-size:10.5px;line-height:1.5;}
+.t4-camp-line{padding:2px 0;border-bottom:1px solid #eef1f6;}
+.t4-camp-line:last-child{border-bottom:none;}
+@media(max-width:640px){table.t4-table{min-width:1050px;}}
 </style>
 </head>
 <body>
@@ -634,16 +636,16 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 <tr>
   <th rowspan="2" class="t4-sticky">SKU</th>
   <th rowspan="2" class="t4-sticky">Product</th>
-  <th rowspan="2" class="t4-sticky num">Selling Price</th>
-  <th colspan="4">Past 30 Days</th>
-  <th colspan="4">Past 60 Days</th>
-  <th colspan="4">Past 90 Days</th>
-  <th rowspan="2">Campaign Name(s)</th>
+  <th rowspan="2" class="t4-sticky num">Price</th>
+  <th colspan="4">30 Days</th>
+  <th colspan="4">60 Days</th>
+  <th colspan="4">90 Days</th>
+  <th rowspan="2">Campaign(s)</th>
 </tr>
 <tr>
-  <th class="num">Shopify</th><th class="num">Ads</th><th class="num">Diff</th><th>Status</th>
-  <th class="num">Shopify</th><th class="num">Ads</th><th class="num">Diff</th><th>Status</th>
-  <th class="num">Shopify</th><th class="num">Ads</th><th class="num">Diff</th><th>Status</th>
+  <th class="num">Shop.</th><th class="num">Ads</th><th class="num">Diff</th><th>Status</th>
+  <th class="num">Shop.</th><th class="num">Ads</th><th class="num">Diff</th><th>Status</th>
+  <th class="num">Shop.</th><th class="num">Ads</th><th class="num">Diff</th><th>Status</th>
 </tr>
 </thead>
 <tbody id="t4Tbody"></tbody>
@@ -1481,7 +1483,7 @@ function renderR4(){
       + '<td class="num">'+r.c90.toFixed(2)+'</td>'
       + '<td class="num">'+r4DiffCell(r.s90,r.c90)+'</td>'
       + '<td>'+r4StatusBadge(r.s90,r.c90,r.dup)+'</td>'
-      + '<td class="t4-camp-cell">'+esc(r.camp||'&mdash;')+'</td>'
+      + '<td class="t4-camp-cell">'+(r.camp ? r.camp.split(' | ').map(function(c){return '<div class="t4-camp-line">'+esc(c)+'</div>';}).join('') : '&mdash;')+'</td>'
       + '</tr>';
   }).join('');
 
@@ -1525,7 +1527,7 @@ renderR4();
   function activeWrap(){
     var panel = document.querySelector('.tabpanel.on');
     if(!panel) return null;
-    if(panel.id!=='tabPanelR2' && panel.id!=='tabPanelR3') return null;
+    if(panel.id!=='tabPanelR2' && panel.id!=='tabPanelR3' && panel.id!=='tabPanelR4') return null;
     return panel.querySelector('.t1-tablewrap');
   }
   function refresh(){
