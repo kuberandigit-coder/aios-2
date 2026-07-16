@@ -1116,9 +1116,10 @@ const R3_DATA = [{"sku":"15243860377865","title":"LEDSone Industrielle Wandlampe
 
 const R3_RISK_META = {
   'CRITICAL':{cls:'risk-critical'}, 'HIGH':{cls:'risk-high'}, 'MODERATE':{cls:'risk-moderate'},
-  'LOW':{cls:'risk-low'}, 'CPC DEFLATION':{cls:'risk-deflation'}, 'DATA CHECK REQUIRED':{cls:'risk-datacheck'}
+  'LOW':{cls:'risk-low'}, 'CPC DEFLATION':{cls:'risk-deflation'}, 'DATA CHECK REQUIRED':{cls:'risk-datacheck'},
+  'NO OVERLAP':{cls:'risk-datacheck'}
 };
-const RISK_ORDER = {'CRITICAL':0,'HIGH':1,'MODERATE':2,'LOW':3,'CPC DEFLATION':4,'DATA CHECK REQUIRED':5};
+const RISK_ORDER = {'CRITICAL':0,'HIGH':1,'MODERATE':2,'LOW':3,'CPC DEFLATION':4,'DATA CHECK REQUIRED':5,'NO OVERLAP':6};
 
 function r3BestCampaign(camps){
   const withData = camps.filter(function(c){ return c.cv>0 || c.cost>0; });
@@ -1169,9 +1170,19 @@ function r3ComputeRow(o, start, end){
 
   const thasiCamps = camps.filter(function(c){ return c.isThasi; }).sort(function(a,b){ return b.cost-a.cost; });
   const otherCamps = camps.filter(function(c){ return !c.isThasi && c.isCurrentlyActive; }).sort(function(a,b){ return b.cost-a.cost; });
-  if(!thasiCamps.length || !otherCamps.length) return null;
+  if(!thasiCamps.length) return null; // SKU has no activity in Thasitha's own campaign at all - nothing to show
 
   const campaign1 = thasiCamps[0];
+
+  if(!otherCamps.length){
+    // No currently-active external overlap. Still return the row (so a direct
+    // SKU search always finds it) but leave every overlap-dependent field blank.
+    return {
+      sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:false,
+      camps:[campaign1], baselineCpc:null, inflatedCpc:null, inflationPct:null, risk:'NO OVERLAP'
+    };
+  }
+
   const orderedCamps = [campaign1].concat(otherCamps);
 
   const baselineCpc = campaign1.clk>0 ? Math.round((campaign1.cost/campaign1.clk)*1000)/1000 : null;
@@ -1190,7 +1201,7 @@ function r3ComputeRow(o, start, end){
   }
 
   return {
-    sku:o.sku, title:o.title, img:o.img, lnk:o.lnk,
+    sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:true,
     camps:orderedCamps, baselineCpc:baselineCpc, inflatedCpc:inflatedCpc, inflationPct:inflationPct, risk:risk
   };
 }
@@ -1211,9 +1222,11 @@ function renderR3Row(o){
   const inflatedTxt = o.inflatedCpc!=null ? eur(o.inflatedCpc) : '<span class="t1-na">N/A</span>';
   const inflationTxt = o.inflationPct!=null ? (o.inflationPct>=0?'+':'')+o.inflationPct.toFixed(2)+'%' : 'N/A';
 
-  const decision = r3BestCampaign(camps);
+  const decision = o.hasOverlap ? r3BestCampaign(camps) : {winner:null};
   let actionHtml;
-  if(!decision.winner){
+  if(!o.hasOverlap){
+    actionHtml = '<span class="t1-na">No current overlap &mdash; nothing to compare</span>';
+  } else if(!decision.winner){
     actionHtml = '<div class="r3-review-badge">'
       + '<span class="r3-review-tag">&#9888; BUSINESS REVIEW REQUIRED</span>'
       + '<div class="r3-review-sub">Insufficient conversion evidence across '+camps.length+' campaign(s) to recommend KEEP/REMOVE.</div>'
@@ -1235,10 +1248,12 @@ function renderR3Row(o){
       + '<div class="ocmetrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div></div>';
   };
   const ocRest = camps.slice(1);
-  const overlapDataHtml = '<div class="r3-overlap-data">'
-    + ocBlock(camps[0])
-    + (ocRest.length ? '<button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+ocId+'\')">+'+ocRest.length+' more &darr;</button>' : '')
-    + '</div>';
+  const overlapDataHtml = !o.hasOverlap
+    ? '<span class="t1-na">&mdash;</span>'
+    : '<div class="r3-overlap-data">'
+      + ocBlock(camps[0])
+      + (ocRest.length ? '<button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+ocId+'\')">+'+ocRest.length+' more &darr;</button>' : '')
+      + '</div>';
 
   const extraCamps = camps.slice(4);
   const detailCampCells = extraCamps.map(function(c, i){
@@ -1334,7 +1349,10 @@ function renderR3(){
     const hasWinner = !!r3BestCampaign(o.camps).winner;
     const actionHit = actionFilter==='all' || (actionFilter==='keep' ? hasWinner : !hasWinner);
     const infHit = (isNaN(infMin) || (o.inflationPct!=null && o.inflationPct>=infMin)) && (isNaN(infMax) || (o.inflationPct!=null && o.inflationPct<=infMax));
-    return textHit && riskHit && campHit && typeHit && countHit && actionHit && infHit;
+    // SKUs with no currently-active external overlap are hidden from the default
+    // browse view, but still surface when a search directly matches them.
+    const overlapHit = o.hasOverlap || !!q;
+    return overlapHit && textHit && riskHit && campHit && typeHit && countHit && actionHit && infHit;
   });
 
   function bestCv(o){ const b=r3BestCampaign(o.camps).winner; return b?b.cv:-1; }
