@@ -519,7 +519,6 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <th>Camp. 2</th>
   <th>Camp. 3</th>
   <th>Camp. 4</th>
-  <th>+ More</th>
   <th class="num">Base CPC</th>
   <th class="num">Infl. CPC</th>
   <th class="sortable num" data-sort="inflation">CPC Infl.</th>
@@ -1148,11 +1147,11 @@ function renderR3Row(o){
   const camps = o.camps;
   const c1 = camps[0], c2 = camps[1], c3 = camps[2], c4 = camps[3];
   const extra = camps.length>4 ? camps.length-4 : 0;
-  const campNameHtml = function(c){ return c.isThasi ? r4CampShort(c.cname) : esc(c.cname); };
+  const campNameHtml = function(c){ return c.isThasi ? r4CampShort(c.cname) : r3TwoLineSplit(esc(c.cname)); };
   const campCell = function(c){
     if(!c) return '<span class="t1-na">&mdash;</span>';
     if(c.isThasi) return '<div class="r3-camp-cell">'+r4CampShort(c.cname)+'</div>';
-    return '<div class="r3-camp-cell">'+esc(c.cname)+'<br><span style="color:var(--muted);">'+esc(c.ctype)+' &middot; '+esc(c.cstatus)+'</span></div>';
+    return '<div class="r3-camp-cell">'+r3TwoLineSplit(esc(c.cname))+'<br><span style="color:var(--muted);">'+esc(c.ctype)+' &middot; '+esc(c.cstatus)+'</span></div>';
   };
   const imgCell = o.img ? '<img class="t2-thumb" src="'+esc(o.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">' : '<div class="t2-thumb na">N/A</div>';
   const meta = R3_RISK_META[o.risk];
@@ -1221,8 +1220,7 @@ function renderR3Row(o){
     + '<td>'+campCell(c1)+'</td>'
     + '<td>'+campCell(c2)+'</td>'
     + '<td>'+campCell(c3)+'</td>'
-    + '<td>'+campCell(c4)+'</td>'
-    + '<td>'+(extra>0?'<button class="r3-more-btn" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>':'<span class="t1-na">&mdash;</span>')+'</td>'
+    + '<td>'+campCell(c4)+(extra>0?'<br><button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>':'')+'</td>'
     + '<td class="num">'+baselineTxt+'</td>'
     + '<td class="num">'+inflatedTxt+'</td>'
     + '<td class="num">'+inflationTxt+'</td>'
@@ -1231,7 +1229,7 @@ function renderR3Row(o){
     + '<td class="r3-action">'+actionHtml+'</td>'
     + '</tr>';
   const detailRow = (hasCampPanel||hasOcPanel)
-    ? '<tr class="r3-detail-row"><td colspan="13"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
+    ? '<tr class="r3-detail-row"><td colspan="12"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
     : '';
   return mainRow+detailRow;
 }
@@ -1370,6 +1368,14 @@ R4_PRODUCTS.forEach(function(p){
   });
 })();
 
+function r3TwoLineSplit(escapedText){
+  if(escapedText.length < 20) return escapedText;
+  const mid = Math.floor(escapedText.length/2);
+  let breakAt = escapedText.lastIndexOf(' ', mid);
+  if(breakAt <= 0) breakAt = escapedText.indexOf(' ', mid);
+  if(breakAt <= 0) return escapedText;
+  return escapedText.slice(0,breakAt) + '<br>' + escapedText.slice(breakAt+1);
+}
 function r4CampShort(camp){
   if(!camp) return '&mdash;';
   const codes = [];
