@@ -567,7 +567,7 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;">Requirement 4</div>
   <h1>Shopify Sales vs Google Ads Conversion Value</h1>
   <div class="sub">SKU-Level Sold Count &amp; Value Comparison &middot; LEDSone DE</div>
-  <div class="t1-period" id="t4Period">Fixed period: since campaign start (2026-04-20) through today &middot; plus a Custom Range you choose below</div>
+  <div class="t1-period" id="t4Period">Fixed periods: past 30 / 60 / 90 days (common end date 2026-07-16) &middot; plus a Custom Range you choose below</div>
 </div>
 
 <div class="t1-statusnote" style="margin-bottom:14px;">
@@ -576,10 +576,10 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 
 <div class="t1-cards">
   <div class="t1-card"><div class="l">Total SKUs</div><div class="v" id="t4kpiTotal">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Sold Count (Since Start)</div><div class="v" id="t4kpiSold30">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Sales Value (Since Start)</div><div class="v" id="t4kpiSales30">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Conv. Value (Since Start)</div><div class="v" id="t4kpiConv30">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Difference (Since Start)</div><div class="v" id="t4kpiDiff30">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Sold Count (30d)</div><div class="v" id="t4kpiSold30">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Sales Value (30d)</div><div class="v" id="t4kpiSales30">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Conv. Value (30d)</div><div class="v" id="t4kpiConv30">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Difference (30d)</div><div class="v" id="t4kpiDiff30">&ndash;</div></div>
 </div>
 
 <div class="t1-filterbox">
@@ -594,10 +594,10 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
     </label>
     <label class="t1-field">Sort By
       <select id="t4Sort">
-        <option value="sold_desc">Sold Count (High &rarr; Low)</option>
-        <option value="sold_asc">Sold Count (Low &rarr; High)</option>
-        <option value="sales_desc">Sales Value (High &rarr; Low)</option>
-        <option value="diff_desc">Difference (High &rarr; Low)</option>
+        <option value="sold_desc">Sold Count 30d (High &rarr; Low)</option>
+        <option value="sold_asc">Sold Count 30d (Low &rarr; High)</option>
+        <option value="sales_desc">Sales Value 30d (High &rarr; Low)</option>
+        <option value="diff_desc">Difference 30d (High &rarr; Low)</option>
         <option value="price_desc">Selling Price (High &rarr; Low)</option>
         <option value="sku_asc">SKU (A &rarr; Z)</option>
       </select>
@@ -631,11 +631,15 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <th rowspan="2" class="t4-sticky">SKU</th>
   <th rowspan="2" class="t4-sticky">Product</th>
   <th rowspan="2" class="t4-sticky num">Price</th>
-  <th colspan="4">Since Campaign Start (2026-04-20 &rarr; Today)</th>
+  <th colspan="4">30 Days</th>
+  <th colspan="4">60 Days</th>
+  <th colspan="4">90 Days</th>
   <th colspan="4" id="t4CustomHeaderLabel">Custom Range</th>
   <th rowspan="2">Campaign(s)</th>
 </tr>
 <tr>
+  <th class="num">Sold</th><th class="num">Sales &euro;</th><th class="num">Conv. &euro;</th><th class="num">Diff</th>
+  <th class="num">Sold</th><th class="num">Sales &euro;</th><th class="num">Conv. &euro;</th><th class="num">Diff</th>
   <th class="num">Sold</th><th class="num">Sales &euro;</th><th class="num">Conv. &euro;</th><th class="num">Diff</th>
   <th class="num">Sold</th><th class="num">Sales &euro;</th><th class="num">Conv. &euro;</th><th class="num">Diff</th>
 </tr>
@@ -1482,7 +1486,9 @@ function r4SumRange(arr, start, end){
 }
 
 const T4_END = '2026-07-16';
-const T4_CAMPAIGN_START = '2026-04-20';
+const T4_START_30 = '2026-06-17';
+const T4_START_60 = '2026-05-18';
+const T4_START_90 = '2026-04-18';
 
 function r4PeriodMetrics(p, start, end){
   const shop = r4SumRange(p.shop, start, end);
@@ -1514,12 +1520,14 @@ function renderR4(){
   document.getElementById('t4CustomHeaderLabel').textContent = 'Custom (' + rangeStart + ' to ' + rangeEnd + ')';
 
   let rows = R4_PRODUCTS.map(function(p){
-    const mAll = r4PeriodMetrics(p, T4_CAMPAIGN_START, T4_END);
+    const m30 = r4PeriodMetrics(p, T4_START_30, T4_END);
+    const m60 = r4PeriodMetrics(p, T4_START_60, T4_END);
+    const m90 = r4PeriodMetrics(p, T4_START_90, T4_END);
     const mCustom = r4PeriodMetrics(p, rangeStart, rangeEnd);
     return {
       pid:p.pid, sku:p.sku||p.pid, camp:p.camp||'', dup:!!p.dup,
       title:p.t||('Product '+(p.sku||p.pid)), img:p.img, lnk:p.lnk, price:p.price,
-      mAll:mAll, mCustom:mCustom
+      m30:m30, m60:m60, m90:m90, mCustom:mCustom
     };
   });
 
@@ -1530,9 +1538,9 @@ function renderR4(){
   });
 
   const sortMap = {
-    sold_desc:(a,b)=>b.mAll.sold-a.mAll.sold, sold_asc:(a,b)=>a.mAll.sold-b.mAll.sold,
-    sales_desc:(a,b)=>b.mAll.sales-a.mAll.sales,
-    diff_desc:(a,b)=>Math.abs(b.mAll.diff)-Math.abs(a.mAll.diff),
+    sold_desc:(a,b)=>b.m30.sold-a.m30.sold, sold_asc:(a,b)=>a.m30.sold-b.m30.sold,
+    sales_desc:(a,b)=>b.m30.sales-a.m30.sales,
+    diff_desc:(a,b)=>Math.abs(b.m30.diff)-Math.abs(a.m30.diff),
     price_desc:(a,b)=>(b.price||0)-(a.price||0),
     sku_asc:(a,b)=>a.sku.localeCompare(b.sku)
   };
@@ -1574,14 +1582,16 @@ function renderR4(){
       + '<td class="t4-sticky t4-sku" title="'+esc(r.sku)+'">'+esc(r.sku)+'</td>'
       + '<td class="t4-sticky t4-title">'+imgCell+' '+titleCell+dupNote+'</td>'
       + '<td class="t4-sticky num">'+(r.price!=null?eur(r.price):'<span class="t1-na">N/A</span>')+'</td>'
-      + periodCells(r.mAll)
+      + periodCells(r.m30)
+      + periodCells(r.m60)
+      + periodCells(r.m90)
       + periodCells(r.mCustom)
       + '<td class="t4-camp-cell">'+r4CampListDisplay(r.camp)+'</td>'
       + '</tr>';
   }).join('');
 
   let sumSold=0, sumSales=0, sumConv=0;
-  allRows.forEach(function(r){ sumSold+=r.mAll.sold; sumSales+=r.mAll.sales; sumConv+=r.mAll.conv; });
+  allRows.forEach(function(r){ sumSold+=r.m30.sold; sumSales+=r.m30.sales; sumConv+=r.m30.conv; });
   document.getElementById('t4kpiTotal').textContent = allRows.length.toLocaleString();
   document.getElementById('t4kpiSold30').textContent = sumSold.toLocaleString();
   document.getElementById('t4kpiSales30').textContent = eur(Math.round(sumSales*100)/100);
