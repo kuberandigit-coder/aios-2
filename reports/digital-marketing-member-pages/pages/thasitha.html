@@ -623,10 +623,10 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <strong>Match Status Legend (applies per period)</strong>
   <div class="lg-row">
   <span class="lg-item"><span class="t1-badge t4-matched">Matched</span> Shopify Orders = Ads Orders</span>
-  <span class="lg-item"><span class="t1-badge t4-lower">Ads Lower by N</span> Shopify Orders &gt; Ads Orders</span>
-  <span class="lg-item"><span class="t1-badge t4-higher">Ads Higher by N</span> Ads Orders &gt; Shopify Orders</span>
+  <span class="lg-item"><span class="t1-badge t4-lower">&minus;N</span> Ads Lower &mdash; Shopify Orders &gt; Ads Orders</span>
+  <span class="lg-item"><span class="t1-badge t4-higher">+N</span> Ads Higher &mdash; Ads Orders &gt; Shopify Orders</span>
   <span class="lg-item"><span class="t1-badge t4-none">No Orders</span> both are 0</span>
-  <span class="lg-item"><span class="t1-badge t4-datacheck">Data Check Required</span> Shopify = 0 but Ads &gt; 0, or a duplicate-SKU mapping issue</span>
+  <span class="lg-item"><span class="t1-badge t4-datacheck">Data Check</span> Shopify = 0 but Ads &gt; 0, or a duplicate-SKU mapping issue</span>
   </div>
 </div>
 
@@ -1386,14 +1386,14 @@ const R4_STATUS_META = {
   adslower:{label:'', cls:'t4-lower'},
   adshigher:{label:'', cls:'t4-higher'},
   noorders:{label:'No Orders', cls:'t4-none'},
-  datacheck:{label:'Data Check Required', cls:'t4-datacheck'}
+  datacheck:{label:'Data Check', cls:'t4-datacheck'}
 };
 function r4StatusBadge(s,a,dup){
   const st = r4Status(s,a,dup);
   const meta = R4_STATUS_META[st];
   let label = meta.label;
-  if (st==='adslower') label = 'Ads Lower by '+num(Math.abs(r4Diff(s,a)));
-  if (st==='adshigher') label = 'Ads Higher by '+num(Math.abs(r4Diff(s,a)));
+  if (st==='adslower') label = '&minus;'+num(Math.abs(r4Diff(s,a)));
+  if (st==='adshigher') label = '+'+num(Math.abs(r4Diff(s,a)));
   return '<span class="t1-badge '+meta.cls+'">'+label+'</span>';
 }
 function r4DiffCell(s,a){
