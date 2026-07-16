@@ -361,7 +361,6 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <th>GMC Status</th>
   <th>Stock Status</th>
   <th>&#128680; Zero Flag</th>
-  <th>Root Cause</th>
   <th>Action</th>
 </tr></thead>
 <tbody id="t2Tbody"></tbody>
@@ -390,7 +389,7 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <strong>Stock Inventory</strong> = live numeric quantity from <code>listings.shopify_listings.quantity</code> (site = Germany), joined on the same product/variant ID used throughout this table. Shown as N/A for the ~2% of rows with no Shopify listing match.<br>
   <strong>Budget (&euro;/day)</strong> = the campaign's daily budget from <code>google_ads.campaigns.budget</code> (THT NewProduct = &euro;5.00/day, MT Metal Product = &euro;12.00/day, at time of report generation).<br>
   <strong>CTR %, Avg CPC, Conversion Rate, ROAS (%)</strong> are calculated directly from the same 30-day aggregate metrics already shown (Impressions, Clicks, Cost, Conversion Value) &mdash; not pre-averaged daily figures. CTR = Clicks &divide; Impressions; Avg CPC = Cost &divide; Clicks; Conversion Rate = Conversions &divide; Clicks; ROAS = Conversion Value &divide; Cost. Shown as N/A where the denominator is zero (e.g. no clicks yet).<br>
-  <strong>Root Cause Check / Action:</strong> left blank per instruction &mdash; for manual entry.
+  <strong>Action:</strong> left blank per instruction &mdash; for manual entry.
 </div>
 
 </div>
@@ -936,7 +935,6 @@ function renderR2(){
       + '<td>'+gmcCell+'</td>'
       + '<td>'+stockCell+'</td>'
       + '<td><span class="t1-badge '+meta.cls+'">'+meta.label+'</span></td>'
-      + '<td class="t2-blank">&mdash;</td>'
       + '<td class="t2-blank">&mdash;</td>'
       + '</tr>';
   }).join('');
