@@ -1361,6 +1361,14 @@ R4_PRODUCTS.forEach(function(p){
   });
 })();
 
+function r3TwoLineSplit(escapedText){
+  if(escapedText.length < 20) return escapedText;
+  const mid = Math.floor(escapedText.length/2);
+  let breakAt = escapedText.lastIndexOf(' ', mid);
+  if(breakAt <= 0) breakAt = escapedText.indexOf(' ', mid);
+  if(breakAt <= 0) return escapedText;
+  return escapedText.slice(0,breakAt) + '<br>' + escapedText.slice(breakAt+1);
+}
 function r4CampShort(camp){
   if(!camp) return '&mdash;';
   const codes = [];
