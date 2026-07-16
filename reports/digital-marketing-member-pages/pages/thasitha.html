@@ -1213,7 +1213,7 @@ function renderR3Row(o){
   const campNameHtml = function(c){ return c.isThasi ? r4CampShort(c.cname) : r3TwoLineSplit(esc(c.cname)); };
   const campCell = function(c){
     if(!c) return '<span class="t1-na">&mdash;</span>';
-    if(c.isThasi) return '<div class="r3-camp-cell">'+r4CampShort(c.cname)+'</div>';
+    if(c.isThasi) return '<div class="r3-camp-cell">'+r4CampShort(c.cname)+'<br><span style="color:var(--good);font-size:9.5px;">&#9679; Active '+esc(c.lastActive)+'</span></div>';
     return '<div class="r3-camp-cell">'+r3TwoLineSplit(esc(c.cname))+'<br><span style="color:var(--muted);">'+esc(c.ctype)+' &middot; '+esc(c.cstatus)+'</span><br><span style="color:var(--good);font-size:9.5px;">&#9679; Active '+esc(c.lastActive)+'</span></div>';
   };
   const imgCell = o.img ? '<img class="t2-thumb" src="'+esc(o.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">' : '<div class="t2-thumb na">N/A</div>';
