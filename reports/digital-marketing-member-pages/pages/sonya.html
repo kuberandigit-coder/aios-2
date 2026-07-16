@@ -307,7 +307,7 @@
     </select>
     <button onclick="pExportCSV()" style="padding:6px 12px;cursor:pointer">&#11015; Export CSV</button>
   </div>
-  <div style="overflow-x:auto">
+  <div style="overflow-x:auto" id="s2Scroll">
     <table class="data-table" style="width:100%;border-collapse:collapse;font-size:0.85em">
       <thead><tr>
         <th>Listing ID</th><th>Product ID</th><th>Image</th><th>Product URL</th>
@@ -452,7 +452,7 @@
         <span id="oTbarCount">Loading…</span>
         <span style="font-size:11px;">Sources: order_transaction + ppc_etl_performance_data + listing_data + inv_final_stock &nbsp;·&nbsp; L30: 2026-06-09–2026-07-08 &nbsp;·&nbsp; Showing top 300 of 2,265</span>
       </div>
-      <div class="scroll">
+      <div class="scroll" id="s4Scroll">
         <table id="oTable" style="min-width:1800px;">
           <thead>
             <tr>
@@ -561,7 +561,7 @@
       </select>
       <button class="exp-btn" onclick="swsExportCSV()">Export CSV</button>
     </div>
-    <div style="overflow-x:auto;margin-top:12px">
+    <div style="overflow-x:auto;margin-top:12px" id="s5Scroll">
       <table class="data-table">
         <thead>
           <tr>
@@ -18543,6 +18543,37 @@ showTab=function(n){
     swsRender();
   }
 };
+
+// DRAG-TO-SCROLL — click and drag horizontal scroll for Req 2, 4, 5 tables
+(function(){
+  function enableDragScroll(el){
+    if(!el)return;
+    el.style.cursor='grab';
+    var down=false,startX=0,scrollLeft=0;
+    el.addEventListener('mousedown',function(e){
+      if(e.button!==0)return;
+      down=true;startX=e.pageX-el.offsetLeft;scrollLeft=el.scrollLeft;
+      el.style.cursor='grabbing';el.style.userSelect='none';
+    });
+    document.addEventListener('mouseup',function(){
+      if(!down)return;
+      down=false;el.style.cursor='grab';el.style.userSelect='';
+    });
+    el.addEventListener('mouseleave',function(){
+      if(!down)return;
+      down=false;el.style.cursor='grab';el.style.userSelect='';
+    });
+    el.addEventListener('mousemove',function(e){
+      if(!down)return;
+      e.preventDefault();
+      var x=e.pageX-el.offsetLeft;
+      el.scrollLeft=scrollLeft-(x-startX);
+    });
+  }
+  enableDragScroll(document.getElementById('s2Scroll'));
+  enableDragScroll(document.getElementById('s4Scroll'));
+  enableDragScroll(document.getElementById('s5Scroll'));
+})();
 
 </script>
 </body>
