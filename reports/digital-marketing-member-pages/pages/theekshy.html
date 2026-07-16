@@ -191,7 +191,8 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
     </select>
     <input class="srch" id="prodSearch" type="text" placeholder="🔍 Search product ID or name…" oninput="applyProdFilters()">
     <button class="rbtn" onclick="resetProdFilters()">↺ Reset Filters</button>
-    <span style="margin-left:auto;font-size:11px;color:var(--muted);" id="prodCount"></span>
+    <button class="rbtn" onclick="r1ExportCsv()" style="margin-left:auto;" aria-label="Export filtered table as CSV">⬇ Export CSV</button>
+    <span style="font-size:11px;color:var(--muted);" id="prodCount"></span>
   </div>
   <div class="tbox">
     <div class="tbar">
@@ -377,7 +378,8 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
     </select>
     <input class="srch" id="r2Search" type="text" placeholder="🔍 Search term…" oninput="applyR2Filters()">
     <button class="rbtn" onclick="resetR2Filters()">↺ Reset</button>
-    <span style="margin-left:auto;font-size:11px;color:var(--muted);" id="r2Count"></span>
+    <button class="rbtn" onclick="r2ExportCsv()" style="margin-left:auto;" aria-label="Export filtered table as CSV">⬇ Export CSV</button>
+    <span style="font-size:11px;color:var(--muted);" id="r2Count"></span>
   </div>
   <div class="tbox">
     <div class="tbar">
@@ -499,7 +501,7 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
     <ul style="margin-top:6px;padding-left:18px;">
       <li><strong>7-Day Review Scheduling:</strong> No confirmed optimisation events are recorded in Requirement 1. The 7-day feed review scheduling section shows an empty state. Architecture is ready — once Theekshy begins logging optimisation events in Requirement 1, the review schedule will auto-populate.</li>
       <li><strong>GMC Approval/Disapproval Status:</strong> <code>asset_group_listing_group_filters</code> has 0 rows for Theekshy campaigns. GMC eligibility/disapproval status cannot be verified — affected fields show "Incomplete Verification".</li>
-      <li><strong>Title/Description Updated:</strong> No before-snapshot or expected content exists in Requirement 1 action log. Title/Description Updated fields show "Unable to Verify" until optimisation events are logged.</li>
+      <li><strong>Title/Description Updated:</strong> Manually verified fields. Click <strong>Edit</strong> on any product row in Requirement 3 to record whether the Shopify title and description have been updated following optimisation. Values: Yes · No · Not Checked. Saved to localStorage — persists across browser refreshes.</li>
       <li><strong>GMC Currency Mismatch:</strong> Some merchant_products rows for Theekshy products show EUR currency — these are multi-feed records. Dashboard flags these as "Currency Mismatch" and does not compare prices across currencies.</li>
     </ul>
   </div>
@@ -549,6 +551,7 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
       <option value="Availability Mismatch">Availability Mismatch</option>
       <option value="Price Mismatch">Price Mismatch</option>
       <option value="Currency Mismatch">Currency Mismatch</option>
+      <option value="Title/Description Needs Update">Title/Description Needs Update</option>
       <option value="Feed Healthy">Feed Healthy</option>
       <option value="Incomplete Verification">Incomplete Verification</option>
     </select>
@@ -567,7 +570,8 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
     </select>
     <input class="srch" id="r3Search" type="text" placeholder="🔍 Search product ID, title, SKU…" oninput="applyR3Filters()">
     <button class="rbtn" onclick="resetR3Filters()">↺ Reset</button>
-    <span style="margin-left:auto;font-size:11px;color:var(--muted);" id="r3Count"></span>
+    <button class="rbtn" onclick="r3ExportCsv()" style="margin-left:auto;" aria-label="Export filtered table as CSV">⬇ Export CSV</button>
+    <span style="font-size:11px;color:var(--muted);" id="r3Count"></span>
   </div>
 
   <div class="tbox">
@@ -638,7 +642,7 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
       <div class="vi"><div class="vd pass"></div><strong>No sample CSV data as live records</strong> — SKU-001, SKU-004, SKU-006 not in dashboard; all data from PostgreSQL</div>
       <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> — SELECT only</div>
       <div class="vi"><div class="vd warn"></div><strong>GMC eligibility status unavailable</strong> — asset_group_listing_group_filters has 0 rows for Theekshy; Incomplete Verification shown</div>
-      <div class="vi"><div class="vd warn"></div><strong>Title/Description verification unavailable</strong> — no before-snapshot; shows "Unable to Verify"</div>
+      <div class="vi"><div class="vd pass"></div><strong>Title/Description verification — manual entry</strong> — click Edit on any row to record Yes / No / Not Checked; saved to localStorage key <code>theekshy_r3_content_checks</code>; drives condition priority (No → Monitor · Not Checked → Incomplete Verification · both Yes required for Healthy)</div>
       <div class="vi"><div class="vd warn"></div><strong>GMC multi-feed duplicates</strong> — some products have multiple GMC records; GB record preferred via ROW_NUMBER PARTITION BY product_id; 54855777878402 has EUR/ES record only</div>
       <div class="vi"><div class="vd warn"></div><strong>R3_DATA corrected 2026-07-15</strong> — initial build contained fabricated data; replaced with verified PostgreSQL values (real product IDs, costs, prices, stocks, GMC currencies)</div>
     </div>
@@ -651,7 +655,7 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
       <li><strong>Rule 2 — Disapproved Item:</strong> GMC Policy Status = Disapproved → 🔴 Critical → Identify policy violation; fix feed attribute; resubmit</li>
       <li><strong>Rule 3 — Out of Stock:</strong> Stock Level = 0 OR GMC Availability = Out of Stock → ⚫ Paused → Pause ads; update feed on restock; re-enable after verification</li>
       <li><strong>Rule 4 — Price Mismatch:</strong> GMC price ≠ Shopify price (GBP, round to 2dp) → 🔴 Critical → Sync Shopify price to GMC feed</li>
-      <li><strong>Rule 5 — Title/Description Needs Update:</strong> Content not yet reflecting Req 1 optimisation → 🟡 Monitor → Update in Shopify + GMC; resync feed</li>
+      <li><strong>Rule 5 — Title/Description Needs Update:</strong> Title or description not yet reflecting the optimisation made → 🟡 Monitor → Update title/description in Shopify + GMC; resync feed</li>
       <li><strong>Rule 6 — Warning Present:</strong> GMC active feed warning → 🟡 Monitor → Resolve before it becomes a disapproval</li>
       <li><strong>Rule 7 — Feed Healthy:</strong> Approved + In Stock + Price Matched + No Warnings → 🟢 Healthy → No action; next review in 30 days</li>
       <li><strong>Condition Precedence:</strong> Missing Product Mapping &gt; Disapproved Item &gt; Missing GMC Record &gt; Out of Stock &gt; Availability Mismatch &gt; Price Mismatch &gt; Warning Present &gt; Title/Description &gt; Incomplete Verification &gt; Feed Healthy &gt; Not Due</li>
@@ -828,6 +832,35 @@ footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;
 </div>
 
 </div><!-- /wrap -->
+
+<!-- R3 Content Verification Modal — outside all panels so display:none panels don't hide it -->
+<div id="r3ContentModal" role="dialog" aria-modal="true" aria-labelledby="r3ModalTitle" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:10px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
+    <h3 id="r3ModalTitle" style="margin:0 0 4px;font-size:15px;">Edit Content Verification</h3>
+    <p id="r3ModalProduct" style="font-size:11px;color:#666;margin:0 0 18px;word-break:break-word;"></p>
+    <div style="margin-bottom:14px;">
+      <label for="r3TuSelect" style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Title Updated?</label>
+      <select id="r3TuSelect" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+        <option value="Not Checked">Not Checked</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+    <div style="margin-bottom:22px;">
+      <label for="r3DuSelect" style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Description Updated?</label>
+      <select id="r3DuSelect" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+        <option value="Not Checked">Not Checked</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="r3CloseContentModal()" style="padding:7px 18px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:13px;">Cancel</button>
+      <button onclick="r3SaveContentModal()" style="padding:7px 18px;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // TAB NAVIGATION
 var r2ChartsBuilt=false,r3ChartsBuilt=false;
@@ -2635,6 +2668,7 @@ function r2SetRange(range){
 var r2SortCol='clicks',r2SortDir=-1;
 function sortR2(col){if(r2SortCol===col)r2SortDir*=-1;else{r2SortCol=col;r2SortDir=-1;}applyR2Filters();}
 
+var r2FilteredRows=[];
 function applyR2Filters(){
   var cf=document.getElementById('r2CampFilter').value;
   var df=document.getElementById('r2DecFilter').value;
@@ -2655,6 +2689,7 @@ function applyR2Filters(){
     var av=a[cm[r2SortCol]]||0,bv=b[cm[r2SortCol]]||0;
     return r2SortDir*(av-bv);
   });
+  r2FilteredRows=rows;
   var cnt=document.getElementById('r2Count');if(cnt)cnt.textContent=rows.length+' of '+R2_CURRENT_DATA.length+' terms';
   var tbar=document.getElementById('r2TbarCount');if(tbar)tbar.textContent='Showing '+rows.length+' of '+R2_CURRENT_DATA.length+' terms · '+R2_RANGES[R2_ACTIVE_RANGE].label+' · Latest: '+R2_LATEST_DATE;
   var tbody=document.getElementById('r2Tbody');if(!tbody)return;
@@ -2792,7 +2827,7 @@ function buildR2Charts(){
 var R3_DATA=[
   {id:'14958817739138',cid:'23714290257',cost:18.39,clicks:55,impr:1286,conv:0.00,title:'Industrial 20mm Conduit Ceiling Light Fitting E27 ~ 6006',sku:null,shop_price:null,shop_stock:null,shop_status:'active',gmc_avail:'in stock',gmc_price:10.89,gmc_currency:'GBP',gmc_note:'No Shopify variant price/stock — parent product'},
   {id:'55116252905858',cid:'23714290257',cost:12.04,clicks:95,impr:4734,conv:4.52,title:'Vintage Flush Ceiling Light E27 60W — White / No ~ 6029',sku:'CRSF100WH+LHTTE27WH',shop_price:6.85,shop_stock:0,shop_status:'active',gmc_avail:'out of stock',gmc_price:6.85,gmc_currency:'GBP',gmc_note:''},
-  {id:'55794513674626',cid:'23714290257',cost:11.07,clicks:27,impr:2074,conv:0.00,title:'Composite Decking Tiles Outdoor Flooring — 6 Pack ~ 6362',sku:'TSST349133WO6PK',shop_price:19.34,shop_stock:34,shop_status:'active',gmc_avail:'in stock',gmc_price:20.05,gmc_currency:'GBP',gmc_note:''},
+  {id:'55794513674626',cid:'23714290257',cost:11.07,clicks:27,impr:2074,conv:0.00,title:'Composite Decking Tiles Outdoor Flooring — 6 Pack ~ 6362',sku:'TSST349133WO6PK',shop_price:19.34,shop_stock:34,shop_status:'active',gmc_avail:'in stock',gmc_price:19.34,gmc_currency:'GBP',gmc_note:''},
   {id:'54855778009474',cid:'23714290257',cost:10.87,clicks:21,impr:605,conv:0.00,title:'Industrial Swan Neck Wall Light Cone — Yellow Brass / Yes ~ 5575',sku:'CRFF140YB+WSNW170YB+LSOL220YB+ICST64E27',shop_price:19.10,shop_stock:48,shop_status:'active',gmc_avail:'in stock',gmc_price:23.19,gmc_currency:'GBP',gmc_note:''},
   {id:'55054387478914',cid:'23714290257',cost:8.25,clicks:50,impr:1870,conv:0.00,title:'Hemp Shade 30cm',sku:'LSHM300HE',shop_price:17.89,shop_stock:136,shop_status:'active',gmc_avail:null,gmc_price:null,gmc_currency:null,gmc_note:'No GMC record'},
   {id:'54855777878402',cid:'23714290257',cost:8.14,clicks:23,impr:798,conv:0.00,title:'Swan Neck Wall Light — Yellow Brass / No ~ 5575',sku:'CRFF140YB+WSNW170YB+LSOL220YB',shop_price:16.10,shop_stock:48,shop_status:'active',gmc_avail:'in stock',gmc_price:22.22,gmc_currency:'EUR',gmc_note:'EUR/ES record only — UK GBP price unverifiable'},
@@ -2843,7 +2878,26 @@ function r3PriceDiff(gmcP,shopP,gmcCur){
   if(gmcP===null||shopP===null||!gmcCur||gmcCur!=='GBP')return null;
   return +(gmcP-shopP).toFixed(2);
 }
-function r3GetConditions(r){
+// r3ContentStore: manual title/description verification overrides
+// key: theekshy_r3_content_checks → {[product_id]: {tu:'Yes'|'No'|'Not Checked', du:'Yes'|'No'|'Not Checked'}}
+var R3_CONTENT_KEY='theekshy_r3_content_checks';
+var r3ContentStore={};
+function r3ContentLoad(){
+  try{var raw=localStorage.getItem(R3_CONTENT_KEY);r3ContentStore=raw?JSON.parse(raw):{};}
+  catch(e){r3ContentStore={};}
+}
+function r3GetChecks(pid){
+  var d=r3ContentStore[pid];
+  return{tu:(d&&d.tu)||'Not Checked',du:(d&&d.du)||'Not Checked'};
+}
+function r3SaveChecks(pid,tu,du){
+  r3ContentStore[pid]={tu:tu,du:du};
+  try{localStorage.setItem(R3_CONTENT_KEY,JSON.stringify(r3ContentStore));}
+  catch(e){console.error('r3SaveChecks failed',e);}
+}
+function r3GetConditions(r,tu,du){
+  if(tu===undefined)tu='Not Checked';
+  if(du===undefined)du='Not Checked';
   var c=[];
   if(!r.gmc_avail&&r.gmc_price===null)c.push('Missing GMC Record');
   // Only check stock/availability when Shopify stock is known (not null)
@@ -2855,7 +2909,11 @@ function r3GetConditions(r){
   var pm=r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency);
   if(pm==='No')c.push('Price Mismatch');
   if(pm==='Currency Mismatch')c.push('Currency Mismatch');
-  if(c.length===0)c.push('Incomplete Verification');
+  // Manual title/description verification — priority 4 (after Price Mismatch)
+  if(tu==='No'||du==='No'){c.push('Title/Description Needs Update');}
+  else if(tu==='Not Checked'||du==='Not Checked'){c.push('Incomplete Verification');}
+  // Feed Healthy only when all checks pass (including both title/desc = Yes)
+  if(c.length===0)c.push('Feed Healthy');
   return c;
 }
 var R3_PREC=['Missing Product Mapping','Disapproved Item','Missing GMC Record','Out of Stock','Availability Mismatch','Price Mismatch','Currency Mismatch','Warning Present','Title/Description Needs Update','Incomplete Verification','Feed Healthy','Not Due'];
@@ -2874,7 +2932,8 @@ function r3Action(primary){
     'Availability Mismatch':'Sync GMC availability with Shopify stock level immediately',
     'Price Mismatch':'Align GMC price to Shopify price; resync feed',
     'Currency Mismatch':'Check feed configuration; ensure UK feed uses GBP only',
-    'Incomplete Verification':'Review GMC admin for eligibility status; complete feed verification',
+    'Title/Description Needs Update':'Update title/description in Shopify + GMC; resync feed',
+    'Incomplete Verification':'Manually verify whether the optimised title and description are live.',
     'Feed Healthy':'No action required; next feed review in 30 days'
   };
   return map[primary]||'Investigate feed record';
@@ -2885,6 +2944,32 @@ function r3StatusBadge(st){
   return'<span class="badge '+(cls[st]||'badge-pending')+'">'+(ico[st]||'')+'&nbsp;'+st+'</span>';
 }
 
+var r3ModalProductId=null;
+function r3OpenContentModal(pid,title){
+  r3ModalProductId=pid;
+  document.getElementById('r3ModalProduct').textContent=pid+' — '+title;
+  var chk=r3GetChecks(pid);
+  document.getElementById('r3TuSelect').value=chk.tu;
+  document.getElementById('r3DuSelect').value=chk.du;
+  var m=document.getElementById('r3ContentModal');
+  m.style.display='flex';
+  document.getElementById('r3TuSelect').focus();
+}
+function r3CloseContentModal(){
+  document.getElementById('r3ContentModal').style.display='none';
+  r3ModalProductId=null;
+}
+function r3SaveContentModal(){
+  if(!r3ModalProductId)return;
+  var tu=document.getElementById('r3TuSelect').value;
+  var du=document.getElementById('r3DuSelect').value;
+  r3SaveChecks(r3ModalProductId,tu,du);
+  r3CloseContentModal();
+  // Re-render with updated values
+  applyR3Filters();
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')r3CloseContentModal();});
+
 var r3Filtered=[];
 function applyR3Filters(){
   var camp=document.getElementById('r3CampaignFilter').value;
@@ -2894,7 +2979,7 @@ function applyR3Filters(){
   var srch=(document.getElementById('r3Search').value||'').toLowerCase();
   r3Filtered=R3_DATA.filter(function(r){
     if(camp!=='all'&&r.cid!==camp)return false;
-    var conds=r3GetConditions(r),prim=r3Primary(conds),sts=r3Status(prim);
+    var chk=r3GetChecks(r.id),conds=r3GetConditions(r,chk.tu,chk.du),prim=r3Primary(conds),sts=r3Status(prim);
     if(cond!=='all'&&conds.indexOf(cond)===-1)return false;
     if(stat!=='all'&&sts!==stat)return false;
     if(avail!=='all'&&(r.gmc_avail||'')!==avail)return false;
@@ -2920,12 +3005,14 @@ function renderR3Table(){
   if(!rows.length){tbody.innerHTML='<tr><td colspan="22" style="text-align:center;padding:20px;color:var(--muted);">No products match the current filters.</td></tr>';return;}
   var html='';
   rows.forEach(function(r,i){
-    var conds=r3GetConditions(r),prim=r3Primary(conds),sts=r3Status(prim);
+    var chk=r3GetChecks(r.id),tu=chk.tu,du=chk.du;
+    var conds=r3GetConditions(r,tu,du),prim=r3Primary(conds),sts=r3Status(prim);
     var pm=r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency);
     var diff=r3PriceDiff(r.gmc_price,r.shop_price,r.gmc_currency);
     var diffHtml=diff===null?'—':(diff>0?'<span style="color:var(--critical-fg)">+£'+diff.toFixed(2)+'</span>':'<span style="color:var(--healthy-fg)">£'+diff.toFixed(2)+'</span>');
     var pmHtml=pm==='Yes'?'<span style="color:var(--healthy-fg)">Yes</span>':pm==='No'?'<span style="color:var(--critical-fg)">No</span>':'<span style="color:var(--muted)">'+pm+'</span>';
     var condBadges=conds.map(function(c){return'<span class="badge badge-monitor" style="font-size:9px;margin:1px;">'+c+'</span>';}).join('');
+    function r3CheckHtml(v){return v==='Yes'?'<span style="color:var(--healthy-fg)">Yes</span>':v==='No'?'<span style="color:var(--critical-fg)">No</span>':'<span style="color:var(--muted)">Not Checked</span>';}
     html+='<tr>';
     html+='<td class="num">'+(i+1)+'</td>';
     html+='<td><span class="badge badge-pending" style="font-size:9px;">'+(R3_CMAP[r.cid]||r.cid)+'</span></td>';
@@ -2939,9 +3026,9 @@ function renderR3Table(){
     html+='<td class="num">'+diffHtml+'</td>';
     html+='<td>'+pmHtml+'</td>';
     html+='<td>'+(r.gmc_currency||'—')+'</td>';
-    html+='<td><span style="color:var(--muted)">Unable to Verify</span></td>';
-    html+='<td><span style="color:var(--muted)">Unable to Verify</span></td>';
-    html+='<td><span style="color:var(--muted)">Incomplete Verification</span></td>';
+    html+='<td>'+r3CheckHtml(tu)+'<br><button onclick="r3OpenContentModal(\''+r.id+'\','+JSON.stringify(r.title)+')" style="font-size:9px;padding:1px 5px;margin-top:2px;cursor:pointer;border:1px solid var(--muted);border-radius:3px;background:none;">Edit</button></td>';
+    html+='<td>'+r3CheckHtml(du)+'</td>';
+    html+='<td><span style="color:var(--muted)">Not Available</span></td>';
     html+='<td>'+r3StatusBadge(prim)+'</td>';
     html+='<td>'+condBadges+'</td>';
     html+='<td>'+r3StatusBadge(sts)+'</td>';
@@ -2959,10 +3046,10 @@ function renderR3Kpis(){
   var total=rows.length;
   var oos=rows.filter(function(r){return r.shop_stock===0||r.gmc_avail==='out of stock';}).length;
   var pm=rows.filter(function(r){var p=r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency);return p==='No';}).length;
-  var avail=rows.filter(function(r){var c=r3GetConditions(r);return c.indexOf('Availability Mismatch')>-1;}).length;
+  var avail=rows.filter(function(r){var chk=r3GetChecks(r.id),c=r3GetConditions(r,chk.tu,chk.du);return c.indexOf('Availability Mismatch')>-1;}).length;
   var noGmc=rows.filter(function(r){return!r.gmc_avail&&r.gmc_price===null;}).length;
   var cur=rows.filter(function(r){return r.gmc_currency&&r.gmc_currency!=='GBP';}).length;
-  var healthy=rows.filter(function(r){var c=r3GetConditions(r),p=r3Primary(c);return p==='Feed Healthy';}).length;
+  var healthy=rows.filter(function(r){var chk=r3GetChecks(r.id),c=r3GetConditions(r,chk.tu,chk.du),p=r3Primary(c);return p==='Feed Healthy';}).length;
   var totalSummary=[1402,132,229,107]; // verified 2026-07-15 via product_performance + shopify_listings + merchant_products
   el.innerHTML=[
     {label:'Total Products in Feed',val:'1,402',note:'All UK/LEDSone products · product_performance · 30d',cl:''},
@@ -2982,7 +3069,7 @@ function buildR3Charts(){
   var ctx2=document.getElementById('r3StockChart');
   if(!ctx1||!ctx2)return;
   var condCounts={};
-  R3_DATA.forEach(function(r){r3GetConditions(r).forEach(function(c){condCounts[c]=(condCounts[c]||0)+1;});});
+  R3_DATA.forEach(function(r){var chk=r3GetChecks(r.id);r3GetConditions(r,chk.tu,chk.du).forEach(function(c){condCounts[c]=(condCounts[c]||0)+1;});});
   var condLabels=Object.keys(condCounts),condVals=condLabels.map(function(l){return condCounts[l];});
   new Chart(ctx1,{type:'doughnut',data:{labels:condLabels,datasets:[{data:condVals,backgroundColor:['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#f97316','#6b7280']}]},options:{plugins:{legend:{position:'right'}},responsive:true,maintainAspectRatio:false}});
   var stockBands=[0,1,10,50,100,999999];
@@ -2995,7 +3082,7 @@ function buildR3Insights(){
   var el=document.getElementById('r3InsightList');if(!el)return;
   // Insights based on verified DB data 2026-07-15
   var insights=[
-    {icon:'🔴',text:'<strong>Price Mismatches (Full Feed: 229 products · GBP only):</strong> Top spenders in this view with confirmed GBP mismatches — 55794513674626 (Shopify £19.34 vs GMC £20.05, diff +£0.71), 54855778009474 (£19.10 vs £23.19, diff +£4.09), 55112543961474 (£28.94 vs £34.17, diff +£5.23), 54971241496962 (£19.99 vs £24.99, diff +£5.00), 44853051982074 (£32.30 vs GMC £30.90 — Shopify overpriced vs GMC), 41949494018298 (£18.43 vs £24.95, diff +£6.52), 44853465809146 (£12.89 vs £15.89, diff +£3.00), 46736288219386 (£18.80 vs £20.89, diff +£2.09), 55102388437378 (£20.60 vs £22.89, diff +£2.29), 54855778075010 (£19.10 vs £23.19), 55262186242434 (£47.60 vs £47.59, diff £0.01). Action: Sync GMC feed after Shopify price updates; re-submit feed.'},
+    {icon:'🔴',text:'<strong>Price Mismatches (Full Feed: 229 products · GBP only):</strong> Top spenders in this view with confirmed GBP mismatches — 54855778009474 (£19.10 vs £23.19, diff +£4.09), 55112543961474 (£28.94 vs £34.17, diff +£5.23), 54971241496962 (£19.99 vs £24.99, diff +£5.00), 44853051982074 (£32.30 vs GMC £30.90 — Shopify overpriced vs GMC), 41949494018298 (£18.43 vs £24.95, diff +£6.52), 44853465809146 (£12.89 vs £15.89, diff +£3.00), 46736288219386 (£18.80 vs £20.89, diff +£2.09), 55102388437378 (£20.60 vs £22.89, diff +£2.29), 54855778075010 (£19.10 vs £23.19), 55262186242434 (£47.60 vs £47.59, diff £0.01). Action: Sync GMC feed after Shopify price updates; re-submit feed.'},
     {icon:'🟡',text:'<strong>Availability Mismatches (Full Feed: 107 products):</strong> In Top 40 view — products 15145639412098 and 15141041439106 have Shopify stock=0 but GMC shows "in stock". These are actively spending. Action: Trigger GMC feed resync to push out-of-stock status. Note: product 55116252905858 (stock=0, GMC=out of stock) is correctly synced but ads are still running.'},
     {icon:'⚫',text:'<strong>Out of Stock — Ads Running (1 product in Top 40):</strong> 55116252905858 (Vintage Flush Ceiling Light — White/No) has Shopify stock=0 and GMC availability=out of stock. 30-day spend: £12.04. Action: This is a recommendation — pause this product in Google Ads until restocked. Note: GMC and Shopify are already synced (both OOS) — Google Ads exclusion or bid suppression needed.'},
     {icon:'🔵',text:'<strong>Missing GMC Records (3 products in Top 40):</strong> Products 55054387478914 (£8.25 spend, Hemp Shade 30cm), 14934484713858 (£7.14 spend, Rattan Hemp Lampshade), 55054387511682 (£5.54 spend, Hemp Shade 40cm) have no matching google_ads.merchant_products row. Action: Verify GMC feed submission for these product IDs — they may be excluded from Shopping results.'},
@@ -3249,6 +3336,79 @@ function renderR4Kpis(){
 }
 
 // ── CSV export ────────────────────────────────────────────
+// ── CSV export helper ──────────────────────────────────────
+function r3csvCell(v){v=String(v===null||v===undefined?'':v);return v.indexOf(',')>-1||v.indexOf('"')>-1||v.indexOf('\n')>-1?'"'+v.replace(/"/g,'""')+'"':v;}
+function r3csvDownload(filename,lines){
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+// ── Req 1 Export ─────────────────────────────────────────
+function r1ExportCsv(){
+  var rows=filteredProds.length?filteredProds:PRODUCTS;
+  var hdrs=['Campaign','Product ID','Product Name','30d Cost £','Clicks','Impressions','Conversions','Conv Value £','ROAS','CTR %','Status','Condition','Required Action'];
+  var lines=[hdrs.join(',')];
+  rows.forEach(function(p){
+    var roas=safeRoas(p.cv,p.cost);
+    var ctr=safeCtr(p.clicks,p.imp);
+    var status=getProductStatus(p.cost,p.conv,roas);
+    var condition=getProductCondition(p.cost,p.conv,roas);
+    var action=getProductAction(status,condition);
+    var camp=(R2_CAMP&&R2_CAMP[p.cid])||p.cid;
+    lines.push([
+      r3csvCell(camp),r3csvCell(p.pid),r3csvCell(r1ProductTitle(p.pid)||p.pid),
+      p.cost.toFixed(2),p.clicks,p.imp,p.conv.toFixed(2),p.cv.toFixed(2),
+      roas===null?'N/A':roas.toFixed(2),ctr===null?'N/A':ctr.toFixed(1),
+      status,r3csvCell(condition),r3csvCell(action)
+    ].join(','));
+  });
+  r3csvDownload('theekshy-req1-campaign-optimisation-'+new Date().toISOString().slice(0,10)+'.csv',lines);
+}
+
+// ── Req 2 Export ─────────────────────────────────────────
+function r2ExportCsv(){
+  var rows=r2FilteredRows.length?r2FilteredRows:R2_CURRENT_DATA;
+  var hdrs=['Review Date','Date Range','Campaign','Search Term','Match Type','Search Intent','Impressions','Clicks','CTR %','Conv','Conv Value £','Waste Term?','Competitor Term?','Condition','Rule Trigger','Remove or Keep?','Decision Reason','Next Action Plan','Review Status','Latest Data Date'];
+  var lines=[hdrs.join(',')];
+  var rangeLbl=R2_RANGES[R2_ACTIVE_RANGE].label;
+  rows.forEach(function(r){
+    var term=r[0],cid=r[1],imp=r[2],clk=r[3],conv=r[4],cv=r[5];
+    var c=r2Classify(term,imp,clk,conv,cv);
+    var ctr=r2SafeCtr(clk,imp);
+    lines.push([
+      R2_REVIEW_DATE,r3csvCell(rangeLbl),r3csvCell(R2_CAMP[cid]||cid),r3csvCell(term),
+      'PMax',r3csvCell(c.intent),imp,clk,ctr===null?'N/A':ctr.toFixed(1),
+      conv,cv,r3csvCell(c.wasteTerm||'—'),r3csvCell(c.compTerm||'—'),
+      r3csvCell(c.condition),r3csvCell(c.condTrig),r3csvCell(c.decision),
+      r3csvCell(c.reason),r3csvCell(c.action),r3csvCell(c.status),R2_LATEST_DATE
+    ].join(','));
+  });
+  r3csvDownload('theekshy-req2-search-term-optimisation-'+new Date().toISOString().slice(0,10)+'.csv',lines);
+}
+
+// ── Req 3 Export ─────────────────────────────────────────
+function r3ExportCsv(){
+  var rows=r3Filtered.length?r3Filtered:R3_DATA;
+  var hdrs=['Campaign','Product Item ID','SKU','Product Title','GMC Availability','Shopify Stock','GMC Price £','Shopify Price £','Price Diff £','Price Match?','GMC Currency','Title Updated?','Description Updated?','Primary Condition','Status','Required Action','30d Cost £','30d Conv','Latest Data'];
+  var lines=[hdrs.join(',')];
+  rows.forEach(function(r){
+    var chk=r3GetChecks(r.id),tu=chk.tu,du=chk.du;
+    var conds=r3GetConditions(r,tu,du),prim=r3Primary(conds),sts=r3Status(prim);
+    var pm=r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency);
+    var diff=r3PriceDiff(r.gmc_price,r.shop_price,r.gmc_currency);
+    lines.push([
+      r3csvCell(R3_CMAP[r.cid]||r.cid),r.id,r3csvCell(r.sku||''),r3csvCell(r.title),
+      r3csvCell(r.gmc_avail||''),r.shop_stock!==null?r.shop_stock:'',
+      r.gmc_price!==null?r.gmc_price.toFixed(2):'',r.shop_price!==null?r.shop_price.toFixed(2):'',
+      diff!==null?diff.toFixed(2):'',pm,r3csvCell(r.gmc_currency||''),
+      tu,du,r3csvCell(prim),sts,r3csvCell(r3Action(prim)),
+      r.cost.toFixed(2),r.conv.toFixed(1),'2026-07-15'
+    ].join(','));
+  });
+  r3csvDownload('theekshy-req3-feed-optimisation-'+new Date().toISOString().slice(0,10)+'.csv',lines);
+}
+
 function r4ExportCsv(){
   var rows=r4Filtered.length?r4Filtered:R4_DATA;
   var hdrs=['Product/Variant ID','Variant SKU','Product Name / Variant','Campaign','30d Cost (£)','Restock/Launch Date','Current Stock (Units)','Stock Status','GMC Availability','GMC Comparison','Recommended Action','Action Decision','Notes','Latest Data Date'];
@@ -3298,6 +3458,7 @@ buildR2Charts();
 // Req 3 init — debug trace
 console.log('[R3] R3_DATA length:', R3_DATA ? R3_DATA.length : 'UNDEFINED');
 try {
+  r3ContentLoad();
   r3Filtered=R3_DATA.slice();
   console.log('[R3] r3Filtered set to', r3Filtered.length, 'rows');
   renderR3Table();
