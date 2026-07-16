@@ -726,10 +726,10 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 
 <div class="t1-cards">
   <div class="t1-card"><div class="l">Total SKUs</div><div class="v" id="t5kpiTotal">&ndash;</div></div>
-  <div class="t1-card"><div class="l">CY Shopify</div><div class="v" id="t5kpiShop">&ndash;</div></div>
-  <div class="t1-card"><div class="l">CY eBay</div><div class="v" id="t5kpiEbay">&ndash;</div></div>
-  <div class="t1-card"><div class="l">CY All Channels</div><div class="v" id="t5kpiCyTotal">&ndash;</div></div>
-  <div class="t1-card"><div class="l">PY All Channels</div><div class="v" id="t5kpiPyTotal">&ndash;</div></div>
+  <div class="t1-card"><div class="l" id="t5lblShop">CY Shopify</div><div class="v" id="t5kpiShop">&ndash;</div></div>
+  <div class="t1-card"><div class="l" id="t5lblEbay">CY eBay</div><div class="v" id="t5kpiEbay">&ndash;</div></div>
+  <div class="t1-card"><div class="l" id="t5lblCyTotal">CY All Channels</div><div class="v" id="t5kpiCyTotal">&ndash;</div></div>
+  <div class="t1-card"><div class="l" id="t5lblPyTotal">PY All Channels</div><div class="v" id="t5kpiPyTotal">&ndash;</div></div>
   <div class="t1-card"><div class="l">&#128994; Growing</div><div class="v" id="t5kpiGrowing">&ndash;</div></div>
   <div class="t1-card"><div class="l">&#128308; Declining</div><div class="v" id="t5kpiDeclining">&ndash;</div></div>
   <div class="t1-card"><div class="l">&#9888; Data Check</div><div class="v" id="t5kpiDataCheck">&ndash;</div></div>
@@ -1819,6 +1819,16 @@ function renderR5(){
   const q = document.getElementById('t5Search').value.trim().toLowerCase();
   const trendFilter = document.getElementById('t5TrendFilter').value;
   const summaryPeriod = document.getElementById('t5SummaryPeriod').value;
+  const T5_DATE_RANGES = {
+    '30': {cy:'Jun 16 – Jul 15, 2026', py:'Jun 16 – Jul 15, 2025'},
+    '60': {cy:'May 17 – Jul 15, 2026', py:'May 17 – Jul 15, 2025'},
+    '90': {cy:'Apr 17 – Jul 15, 2026', py:'Apr 17 – Jul 15, 2025'}
+  };
+  const t5Dates = T5_DATE_RANGES[summaryPeriod] || T5_DATE_RANGES['30'];
+  document.getElementById('t5lblShop').textContent = 'CY Shopify (' + t5Dates.cy + ')';
+  document.getElementById('t5lblEbay').textContent = 'CY eBay (' + t5Dates.cy + ')';
+  document.getElementById('t5lblCyTotal').textContent = 'CY All Channels (' + t5Dates.cy + ')';
+  document.getElementById('t5lblPyTotal').textContent = 'PY All Channels (' + t5Dates.py + ')';
   const sort = document.getElementById('t5Sort').value;
 
   let rows = R5_PRODUCTS.map(function(p){
