@@ -5,11 +5,12 @@
 // (generated from reports/Kamsi/data/2026-07-14_kamsi-product-allocation.csv — NOT
 // rebuilt from collections here, per task instruction).
 
-import fs from 'node:fs';
-import path from 'node:path';
+const fs = require('node:fs');
+const path = require('node:path');
 
-// Vercel compiles this file from ESM to CommonJS at build time, where
-// __dirname exists natively — import.meta.url is not valid there.
+// CommonJS (matches the other api/*.js files in this project — there is
+// no package.json declaring "type":"module", so a plain ESM `import`
+// here fails to build on Vercel and the endpoint 404s).
 
 const STORE_DOMAIN = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
@@ -518,7 +519,7 @@ function buildKamsiOrderRow(order, journey, allocation) {
 const CACHE = new Map(); // keyed by month, e.g. "2026-06" — each warm Lambda instance only
 const CACHE_TTL_MS = 55 * 1000; // slightly under the 60s client poll interval
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   const startTime = Date.now();
   const forceRefresh = req.query && req.query.refresh === '1';
