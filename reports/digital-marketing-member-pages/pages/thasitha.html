@@ -518,6 +518,7 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <th>Camp. 1</th>
   <th>Camp. 2</th>
   <th>Camp. 3</th>
+  <th>Camp. 4</th>
   <th>+ More</th>
   <th class="num">Base CPC</th>
   <th class="num">Infl. CPC</th>
@@ -1145,11 +1146,13 @@ function r3RoasPct(c){ return c.cost>0 ? Math.round((c.cv/c.cost*100)*100)/100 :
 
 function renderR3Row(o){
   const camps = o.camps;
-  const c1 = camps[0], c2 = camps[1], c3 = camps[2];
-  const extra = camps.length>3 ? camps.length-3 : 0;
+  const c1 = camps[0], c2 = camps[1], c3 = camps[2], c4 = camps[3];
+  const extra = camps.length>4 ? camps.length-4 : 0;
+  const campNameHtml = function(c){ return c.isThasi ? r4CampShort(c.cname) : esc(c.cname); };
   const campCell = function(c){
     if(!c) return '<span class="t1-na">&mdash;</span>';
-    return '<div class="r3-camp-cell">'+(c.isThasi?'<span class="thasi-tag">Thasi</span>':'')+esc(c.cname)+'<br><span style="color:var(--muted);">'+esc(c.ctype)+' &middot; '+esc(c.cstatus)+'</span></div>';
+    if(c.isThasi) return '<div class="r3-camp-cell">'+r4CampShort(c.cname)+'</div>';
+    return '<div class="r3-camp-cell">'+esc(c.cname)+'<br><span style="color:var(--muted);">'+esc(c.ctype)+' &middot; '+esc(c.cstatus)+'</span></div>';
   };
   const imgCell = o.img ? '<img class="t2-thumb" src="'+esc(o.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">' : '<div class="t2-thumb na">N/A</div>';
   const meta = R3_RISK_META[o.risk];
@@ -1168,16 +1171,16 @@ function renderR3Row(o){
     const best = decision.winner;
     const losers = camps.filter(function(c){ return c!==best; });
     actionHtml = '<div class="r3-keep-box">'
-      + '<span class="r3-keep-tag">KEEP: '+esc(best.cname)+'</span><br>'
+      + '<span class="r3-keep-tag">KEEP: '+campNameHtml(best)+'</span><br>'
       + 'Lifetime Conv. Value: '+eur(best.cv)+' &middot; ROAS: '+(r3RoasPct(best)!=null?r3RoasPct(best)+'%':'N/A')+'<br>'
-      + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+r3ShortCode(c.cname);}).join('<br>') : '')
+      + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+campNameHtml(c);}).join('<br>') : '')
       + '</div>';
   }
 
   const rowId = 'r3row_'+o.sku;
   const ocId = 'r3oc_'+o.sku;
   const ocBlock = function(c){
-    return '<div class="oc"><div class="ocname">'+(c.isThasi?'<span class="thasi-tag">Thasi</span> ':'')+esc(c.cname)+'</div>'
+    return '<div class="oc"><div class="ocname">'+campNameHtml(c)+'</div>'
       + '<div class="ocmetrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div></div>';
   };
   const ocRest = camps.slice(1);
@@ -1186,10 +1189,10 @@ function renderR3Row(o){
     + (ocRest.length ? '<button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+ocId+'\')">+'+ocRest.length+' more &darr;</button>' : '')
     + '</div>';
 
-  const extraCamps = camps.slice(3);
+  const extraCamps = camps.slice(4);
   const detailCampCells = extraCamps.map(function(c, i){
     return '<div class="r3-more-col">'
-      + '<div class="r3-more-label">Campaign '+(i+4)+'</div>'
+      + '<div class="r3-more-label">Campaign '+(i+5)+'</div>'
       + campCell(c)
       + '</div>';
   }).join('');
@@ -1218,6 +1221,7 @@ function renderR3Row(o){
     + '<td>'+campCell(c1)+'</td>'
     + '<td>'+campCell(c2)+'</td>'
     + '<td>'+campCell(c3)+'</td>'
+    + '<td>'+campCell(c4)+'</td>'
     + '<td>'+(extra>0?'<button class="r3-more-btn" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>':'<span class="t1-na">&mdash;</span>')+'</td>'
     + '<td class="num">'+baselineTxt+'</td>'
     + '<td class="num">'+inflatedTxt+'</td>'
@@ -1227,7 +1231,7 @@ function renderR3Row(o){
     + '<td class="r3-action">'+actionHtml+'</td>'
     + '</tr>';
   const detailRow = (hasCampPanel||hasOcPanel)
-    ? '<tr class="r3-detail-row"><td colspan="12"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
+    ? '<tr class="r3-detail-row"><td colspan="13"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
     : '';
   return mainRow+detailRow;
 }
@@ -1366,11 +1370,6 @@ R4_PRODUCTS.forEach(function(p){
   });
 })();
 
-function r3ShortCode(name){
-  if(!name) return '&mdash;';
-  const parts = name.split('|').map(function(s){return s.trim();}).filter(Boolean);
-  return parts.length >= 4 ? esc(parts[3]) : esc(name);
-}
 function r4CampShort(camp){
   if(!camp) return '&mdash;';
   const codes = [];
