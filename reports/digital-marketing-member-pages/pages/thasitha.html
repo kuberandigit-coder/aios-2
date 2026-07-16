@@ -100,11 +100,11 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .risk-deflation{background:#0a7d4f;}
 .risk-datacheck{background:#6b7280;}
 .r3-action{white-space:normal;width:210px;max-width:210px;font-size:11px;line-height:1.5;overflow-wrap:break-word;word-break:break-word;}
-.r3-action .keep{color:var(--good);font-weight:700;}
 .r3-action .remove{color:#c62828;font-weight:700;}
 .r3-review-badge{box-sizing:border-box;width:100%;max-width:100%;}
 .r3-keep-box{box-sizing:border-box;width:100%;max-width:100%;overflow-wrap:break-word;word-break:break-word;}
 .r3-review-tag{display:inline-flex;align-items:center;gap:6px;background:#f0ad2e;color:#3a2a00;font-weight:800;font-size:11px;border-radius:999px;padding:5px 13px;letter-spacing:.2px;white-space:nowrap;}
+.r3-keep-tag{display:inline-block;width:100%;color:var(--good);font-weight:700;white-space:normal;word-break:break-word;overflow-wrap:break-word;}
 .r3-review-sub{display:block;width:100%;max-width:220px;color:#7a5200;font-size:11px;line-height:1.5;margin-top:6px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
 .r3-overlap-data{white-space:normal;max-width:200px;font-size:10.5px;line-height:1.5;}
 .r3-overlap-data .oc{margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #eef1f6;}
@@ -138,15 +138,15 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .pager select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff;}
 .pager label{font-size:12.5px;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:6px;}
 
-table.t4-table{min-width:1360px;}
+table.t4-table{min-width:1340px;}
 table.t4-table thead tr:first-child th{background:#f0f4fb;border-bottom:1px solid var(--line);text-align:center;}
 table.t4-table thead tr:last-child th{background:#fafbfd;}
 .t4-sticky{position:sticky;left:0;background:#fff;z-index:2;}
 table.t4-table td.t4-sticky{background:#fff;}
-table.t4-table th.t4-sticky:nth-child(1),table.t4-table td.t4-sticky:nth-child(1){left:0;width:90px;min-width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;}
-table.t4-table th.t4-sticky:nth-child(2),table.t4-table td.t4-sticky:nth-child(2){left:90px;min-width:220px;}
-table.t4-table th.t4-sticky:nth-child(3),table.t4-table td.t4-sticky:nth-child(3){left:310px;min-width:100px;box-shadow:2px 0 4px rgba(12,26,48,.06);}
-table.t4-table td.t4-title{white-space:normal;max-width:220px;font-weight:600;font-size:12px;}
+table.t4-table th.t4-sticky:nth-child(1),table.t4-table td.t4-sticky:nth-child(1){left:0;width:120px;min-width:120px;max-width:120px;white-space:normal;word-break:break-word;overflow-wrap:break-word;}
+table.t4-table th.t4-sticky:nth-child(2),table.t4-table td.t4-sticky:nth-child(2){left:120px;width:170px;min-width:170px;max-width:170px;}
+table.t4-table th.t4-sticky:nth-child(3),table.t4-table td.t4-sticky:nth-child(3){left:290px;min-width:100px;box-shadow:2px 0 4px rgba(12,26,48,.06);}
+table.t4-table td.t4-title{white-space:normal;max-width:170px;font-weight:600;font-size:12px;}
 table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted);}
 .t4-matched{background:#0a7d4f;}
 .t4-lower{background:#c62828;}
@@ -365,7 +365,6 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 <thead><tr>
   <th>Title</th>
   <th>Item ID</th>
-  <th>Image</th>
   <th class="num">Stock</th>
   <th>Campaign</th>
   <th class="num">Budget</th>
@@ -516,8 +515,6 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 <thead><tr>
   <th>ID</th>
   <th>Name</th>
-  <th>Image</th>
-  <th>Link</th>
   <th>Camp. 1</th>
   <th>Camp. 2</th>
   <th>Camp. 3</th>
@@ -1056,11 +1053,10 @@ function renderR2(){
       gmcCell = '<span class="gmc-nofeed">Not in Merchant Center Feed</span>';
     }
     return '<tr>'
-      + '<td class="t2-title">'+titleCell+'</td>'
+      + '<td class="t2-title">'+imgCell+' '+titleCell+'</td>'
       + '<td class="t2-sku">'+esc(r.pid)+'</td>'
-      + '<td>'+imgCell+'</td>'
       + '<td class="num">'+(r.qty!=null?num(r.qty):'<span class="t1-na">N/A</span>')+'</td>'
-      + '<td class="wrap">'+esc(r.cname)+'</td>'
+      + '<td class="wrap">'+r4CampShort(r.cname)+'</td>'
       + '<td class="num">'+(r.bud!=null?eur(r.bud):'<span class="t1-na">N/A</span>')+'</td>'
       + '<td>'+esc(r.fd)+'</td>'
       + '<td class="num">'+r.dl+'</td>'
@@ -1156,7 +1152,6 @@ function renderR3Row(o){
     return '<div class="r3-camp-cell">'+(c.isThasi?'<span class="thasi-tag">Thasi</span>':'')+esc(c.cname)+'<br><span style="color:var(--muted);">'+esc(c.ctype)+' &middot; '+esc(c.cstatus)+'</span></div>';
   };
   const imgCell = o.img ? '<img class="t2-thumb" src="'+esc(o.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">' : '<div class="t2-thumb na">N/A</div>';
-  const linkCell = o.lnk ? '<a class="t2-link" href="'+esc(o.lnk)+'" target="_blank" rel="noopener">View &rarr;</a>' : '<span class="t1-na">N/A</span>';
   const meta = R3_RISK_META[o.risk];
   const baselineTxt = o.baselineCpc!=null ? eur(o.baselineCpc) : '<span class="t1-na">N/A</span>';
   const inflatedTxt = o.inflatedCpc!=null ? eur(o.inflatedCpc) : '<span class="t1-na">N/A</span>';
@@ -1173,9 +1168,9 @@ function renderR3Row(o){
     const best = decision.winner;
     const losers = camps.filter(function(c){ return c!==best; });
     actionHtml = '<div class="r3-keep-box">'
-      + '<span class="keep">KEEP: '+esc(best.cname)+'</span><br>'
+      + '<span class="r3-keep-tag">KEEP: '+esc(best.cname)+'</span><br>'
       + 'Lifetime Conv. Value: '+eur(best.cv)+' &middot; ROAS: '+(r3RoasPct(best)!=null?r3RoasPct(best)+'%':'N/A')+'<br>'
-      + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+esc(c.cname);}).join('<br>') : '')
+      + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+r3ShortCode(c.cname);}).join('<br>') : '')
       + '</div>';
   }
 
@@ -1214,11 +1209,12 @@ function renderR3Row(o){
     ? '<div class="r3-sub-panel r3-align-oc" id="'+ocId+'"><div class="r3-detail-title">Overlap Campaign-wise Data &mdash; all '+camps.length+' campaigns for this SKU</div><div class="r3-more-stack">'+ocExtraCells+'</div></div>'
     : '';
 
+  const titleCell = o.lnk
+    ? '<a class="t2-title-link" href="'+esc(o.lnk)+'" target="_blank" rel="noopener" title="Open product page">'+esc(o.title||('Product '+o.sku))+'</a>'
+    : esc(o.title||('Product '+o.sku));
   const mainRow = '<tr>'
     + '<td class="t2-sku">'+esc(o.sku)+'</td>'
-    + '<td class="t2-title">'+esc(o.title||('Product '+o.sku))+'</td>'
-    + '<td>'+imgCell+'</td>'
-    + '<td>'+linkCell+'</td>'
+    + '<td class="t2-title">'+imgCell+' '+titleCell+'</td>'
     + '<td>'+campCell(c1)+'</td>'
     + '<td>'+campCell(c2)+'</td>'
     + '<td>'+campCell(c3)+'</td>'
@@ -1231,7 +1227,7 @@ function renderR3Row(o){
     + '<td class="r3-action">'+actionHtml+'</td>'
     + '</tr>';
   const detailRow = (hasCampPanel||hasOcPanel)
-    ? '<tr class="r3-detail-row"><td colspan="14"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
+    ? '<tr class="r3-detail-row"><td colspan="12"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
     : '';
   return mainRow+detailRow;
 }
@@ -1370,6 +1366,11 @@ R4_PRODUCTS.forEach(function(p){
   });
 })();
 
+function r3ShortCode(name){
+  if(!name) return '&mdash;';
+  const parts = name.split('|').map(function(s){return s.trim();}).filter(Boolean);
+  return parts.length >= 4 ? esc(parts[3]) : esc(name);
+}
 function r4CampShort(camp){
   if(!camp) return '&mdash;';
   const codes = [];
