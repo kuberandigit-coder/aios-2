@@ -73,6 +73,8 @@ table.t1-table td.t2-title{white-space:normal;max-width:220px;font-weight:600;fo
 table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted);}
 .t2-link{color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;}
 .t2-link:hover{text-decoration:underline;}
+.t2-title-link{color:inherit;text-decoration:none;}
+.t2-title-link:hover{color:var(--accent);text-decoration:underline;}
 .stock-in{color:var(--good);font-weight:700;}
 .stock-out{color:#c62828;font-weight:700;}
 .stock-unk{color:var(--na);font-style:italic;}
@@ -342,7 +344,6 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <th>Title</th>
   <th>Item ID</th>
   <th>Image</th>
-  <th>Link</th>
   <th class="num">Stock</th>
   <th>Campaign</th>
   <th class="num">Budget</th>
@@ -899,9 +900,9 @@ function renderR2(){
     const imgCell = r.img
       ? '<img class="t2-thumb" src="'+esc(r.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">'
       : '<div class="t2-thumb na">N/A</div>';
-    const linkCell = r.lnk
-      ? '<a class="t2-link" href="'+esc(r.lnk)+'" target="_blank" rel="noopener">View &rarr;</a>'
-      : '<span class="t1-na">N/A</span>';
+    const titleCell = r.lnk
+      ? '<a class="t2-title-link" href="'+esc(r.lnk)+'" target="_blank" rel="noopener" title="Open product page">'+esc(r.title)+'</a>'
+      : esc(r.title);
     let stockCell;
     if(r.av==='in stock') stockCell = '<span class="stock-in">In Stock</span>';
     else if(r.av==='out of stock') stockCell = '<span class="stock-out">Out of Stock</span>';
@@ -915,10 +916,9 @@ function renderR2(){
       gmcCell = '<span class="gmc-nofeed">Not in Merchant Center Feed</span>';
     }
     return '<tr>'
-      + '<td class="t2-title">'+esc(r.title)+'</td>'
+      + '<td class="t2-title">'+titleCell+'</td>'
       + '<td class="t2-sku">'+esc(r.pid)+'</td>'
       + '<td>'+imgCell+'</td>'
-      + '<td>'+linkCell+'</td>'
       + '<td class="num">'+(r.qty!=null?num(r.qty):'<span class="t1-na">N/A</span>')+'</td>'
       + '<td class="wrap">'+esc(r.cname)+'</td>'
       + '<td class="num">'+(r.bud!=null?eur(r.bud):'<span class="t1-na">N/A</span>')+'</td>'
