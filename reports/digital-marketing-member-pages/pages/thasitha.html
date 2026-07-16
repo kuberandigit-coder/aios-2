@@ -644,7 +644,6 @@ table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
   <th colspan="4">60 Days</th>
   <th colspan="4">90 Days</th>
   <th colspan="4" id="t4CustomHeaderLabel">Custom Range</th>
-  <th rowspan="2">Campaign(s)</th>
 </tr>
 <tr>
   <th class="num">Sold</th><th class="num">Sales &euro;</th><th class="num">Conv. &euro;</th><th class="num">Diff</th>
@@ -1596,7 +1595,6 @@ function renderR4(){
       + periodCells(r.m60)
       + periodCells(r.m90)
       + periodCells(r.mCustom)
-      + '<td class="t4-camp-cell">'+r4CampListDisplay(r.camp)+'</td>'
       + '</tr>';
   }).join('');
 
