@@ -138,14 +138,14 @@ table.t1-table td.t2-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .pager select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff;}
 .pager label{font-size:12.5px;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:6px;}
 
-table.t4-table{min-width:1420px;}
+table.t4-table{min-width:1360px;}
 table.t4-table thead tr:first-child th{background:#f0f4fb;border-bottom:1px solid var(--line);text-align:center;}
 table.t4-table thead tr:last-child th{background:#fafbfd;}
 .t4-sticky{position:sticky;left:0;background:#fff;z-index:2;}
 table.t4-table td.t4-sticky{background:#fff;}
-table.t4-table th.t4-sticky:nth-child(1),table.t4-table td.t4-sticky:nth-child(1){left:0;min-width:150px;}
-table.t4-table th.t4-sticky:nth-child(2),table.t4-table td.t4-sticky:nth-child(2){left:150px;min-width:220px;}
-table.t4-table th.t4-sticky:nth-child(3),table.t4-table td.t4-sticky:nth-child(3){left:370px;min-width:100px;box-shadow:2px 0 4px rgba(12,26,48,.06);}
+table.t4-table th.t4-sticky:nth-child(1),table.t4-table td.t4-sticky:nth-child(1){left:0;width:90px;min-width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;}
+table.t4-table th.t4-sticky:nth-child(2),table.t4-table td.t4-sticky:nth-child(2){left:90px;min-width:220px;}
+table.t4-table th.t4-sticky:nth-child(3),table.t4-table td.t4-sticky:nth-child(3){left:310px;min-width:100px;box-shadow:2px 0 4px rgba(12,26,48,.06);}
 table.t4-table td.t4-title{white-space:normal;max-width:220px;font-weight:600;font-size:12px;}
 table.t4-table td.t4-sku{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted);}
 .t4-matched{background:#0a7d4f;}
@@ -1473,7 +1473,7 @@ function renderR4(){
       : esc(r.title);
     const dupNote = r.dup ? '<div class="gmc-missing">&#9888; Duplicate SKU mapping &mdash; Data Check Required</div>' : '';
     return '<tr>'
-      + '<td class="t4-sticky t4-sku">'+esc(r.sku)+'</td>'
+      + '<td class="t4-sticky t4-sku" title="'+esc(r.sku)+'">'+esc(r.sku)+'</td>'
       + '<td class="t4-sticky t4-title">'+imgCell+' '+titleCell+dupNote+'</td>'
       + '<td class="t4-sticky num">'+(r.price!=null?eur(r.price):'<span class="t1-na">N/A</span>')+'</td>'
       + '<td class="num">'+num(r.s30)+'</td>'
