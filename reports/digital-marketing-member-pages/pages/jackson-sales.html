@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEDSone UK — Jackson Product Sales</title>
+<style>
+:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;}
+.wrap{max-width:1500px;margin:0 auto;}
+header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+h1{font-size:22px;letter-spacing:.2px;}
+.sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
+.chip.stale{background:#fdecea;color:var(--bad);}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;}
+button.primary:hover{background:#1749cc;}
+button.primary:disabled{opacity:.6;cursor:wait;}
+.exportbar{display:flex;justify-content:flex-end;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.card .value{font-size:22px;font-weight:700;margin-top:6px;}
+.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.scroll{overflow-x:auto;max-height:70vh;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1600px;}
+thead th{background:#f0f3f8;text-align:left;padding:11px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:2;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4;white-space:nowrap;}
+tbody tr:nth-child(even){background:#fafbfd;}
+tbody tr:hover{background:var(--accent-soft);}
+tbody tr.totalrow{background:#eef2fb;font-weight:700;}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+.footnotes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:12.5px;color:var(--muted);line-height:1.65;}
+.footnotes strong{color:var(--ink);}
+.loading{padding:60px 20px;text-align:center;color:var(--muted);}
+.reqtabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.reqtab{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
+.reqtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+@media(max-width:700px){h1{font-size:18px;}.card .value{font-size:18px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jackson</div>
+  <h1>Product Sales — By Month</h1>
+  <div class="sub" id="jPeriodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; Jackson-owned products only (50 tracked product IDs) &nbsp;&middot;&nbsp; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="jLiveChip">Loading data from Shopify&hellip;</span>
+    <span class="chip" id="jLastRefresh" style="display:none;"></span>
+    <button id="jRefreshBtn" class="primary" style="display:none;" onclick="jLoad(true)">Refresh</button>
+  </div>
+</header>
+
+<div class="reqtabs" id="jMonthTabs">
+  <div class="reqtab" data-month="2026-01" onclick="jSelectMonth('2026-01')">January</div>
+  <div class="reqtab" data-month="2026-02" onclick="jSelectMonth('2026-02')">February</div>
+  <div class="reqtab" data-month="2026-03" onclick="jSelectMonth('2026-03')">March</div>
+  <div class="reqtab" data-month="2026-04" onclick="jSelectMonth('2026-04')">April</div>
+  <div class="reqtab" data-month="2026-05" onclick="jSelectMonth('2026-05')">May</div>
+  <div class="reqtab" data-month="2026-06" onclick="jSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="jSelectMonth('2026-07')">July (live)</div>
+</div>
+
+<div class="exportbar" style="margin-bottom:14px;">
+  <button id="jExportCsv" class="primary">Export CSV</button>
+</div>
+
+<div class="cards" id="jCards">
+  <div class="card"><div class="label">Products With Sales</div><div class="value" id="jcProducts">&ndash;</div></div>
+  <div class="card"><div class="label">Orders</div><div class="value" id="jcOrders">&ndash;</div></div>
+  <div class="card"><div class="label">Units Sold</div><div class="value" id="jcUnits">&ndash;</div></div>
+  <div class="card"><div class="label">Gross Sales</div><div class="value" id="jcGross">&ndash;</div></div>
+  <div class="card"><div class="label">Refunds</div><div class="value" id="jcRefunds">&ndash;</div></div>
+  <div class="card"><div class="label">Net Sales</div><div class="value" id="jcNet">&ndash;</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="scroll">
+    <table id="jTable">
+      <thead><tr id="jTableHead">
+        <th>Product ID</th><th>Product Title</th><th class="num">Orders</th><th class="num">Units</th>
+        <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th>
+      </tr></thead>
+      <tbody id="jTbody"><tr><td colspan="8" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="jEmpty" style="display:none;">No Jackson product sales this month.</div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> &middot; fetched via a server-side serverless function (<code>/api/sales-jackson</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Product scope:</strong> 50 explicit Shopify Product IDs supplied directly (not a collection or CSV allocation) &mdash; only line items matching one of these IDs count toward these figures.<br>
+  <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
+  <strong>Channel columns:</strong> each product's Net Sales is broken down by the channel of the order's first customer session (Organic Search, Google Ads/Paid Search, Direct, Social, Email, Referral, AI Tools, or No Journey Data/Unknown) &mdash; expand a row for details, or see the CSV export for the full per-channel breakdown.<br>
+  <strong>Live month (July onward):</strong> current month is month-to-date; click <strong>Refresh</strong> to re-fetch the latest data. No automatic/background polling.<br>
+  <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+  <strong>Last refresh timestamp:</strong> <span id="jFootRefresh">&ndash;</span>
+</div>
+</div>
+
+<script>
+function esc(s){ return (s === null || s === undefined) ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function money(n){ return (n === null || n === undefined) ? '–' : '£' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+const J_LIVE_MONTHS = ['2026-07'];
+let J_CURRENT_MONTH = '2026-07';
+let J_DATA = null;
+let jLoading = false;
+let jAbortController = null;
+let jLastSuccessfulAt = null;
+
+function jSelectMonth(month){
+  J_CURRENT_MONTH = month;
+  document.querySelectorAll('#jMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  jLoad(false);
+}
+
+async function jLoad(force){
+  if (jLoading) return;
+  jLoading = true;
+  const isLive = J_LIVE_MONTHS.includes(J_CURRENT_MONTH);
+  const refreshBtn = document.getElementById('jRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('jLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  document.getElementById('jLiveChip').className = 'chip';
+  if (jAbortController) jAbortController.abort();
+  jAbortController = new AbortController();
+  try {
+    const url = '/api/sales-jackson?month=' + encodeURIComponent(J_CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const res = await fetch(url, { signal: jAbortController.signal });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    J_DATA = data;
+    jLastSuccessfulAt = new Date();
+    document.getElementById('jLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('jLiveChip').className = 'chip';
+    document.getElementById('jLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('jLastRefresh').style.display = '';
+    document.getElementById('jFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('jPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Jackson-owned products only (' + data.productIdsTracked + ' tracked product IDs) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh — not auto-updating.' : 'a completed, closed reporting period — not a live/updating view.');
+    jRenderAll();
+  } catch (e) {
+    if (e.name === 'AbortError') { jLoading = false; refreshBtn.disabled = false; return; }
+    document.getElementById('jLiveChip').textContent = 'Failed to load: ' + e.message + (J_DATA ? ' — showing last successful data' : '');
+    document.getElementById('jLiveChip').className = 'chip stale';
+    if (!J_DATA) document.getElementById('jTbody').innerHTML = '<tr><td colspan="8" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    jLoading = false;
+    refreshBtn.disabled = false;
+  }
+}
+
+function jRenderAll(){
+  if (!J_DATA) return;
+  const rows = J_DATA.rows || [];
+  const totals = J_DATA.totals || {};
+
+  document.getElementById('jcProducts').textContent = rows.length;
+  document.getElementById('jcOrders').textContent = totals.orders || 0;
+  document.getElementById('jcUnits').textContent = totals.units || 0;
+  document.getElementById('jcGross').textContent = money(totals.gross);
+  document.getElementById('jcRefunds').textContent = money(totals.refunds);
+  document.getElementById('jcNet').textContent = money(totals.net);
+
+  const tbody = document.getElementById('jTbody');
+  const emptyEl = document.getElementById('jEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  let html = '';
+  for (const p of rows) {
+    const channelStr = Object.entries(p.channels || {}).map(([ch, v]) => ch + ': ' + money(v)).join(' · ');
+    html += '<tr>' +
+      '<td>' + esc(p.productId) + '</td>' +
+      '<td title="' + esc(channelStr) + '">' + esc(p.title) + '</td>' +
+      '<td class="num">' + p.orders + '</td>' +
+      '<td class="num">' + p.units + '</td>' +
+      '<td class="num">' + money(p.gross) + '</td>' +
+      '<td class="num">' + money(p.discounts) + '</td>' +
+      '<td class="num">' + money(p.refunds) + '</td>' +
+      '<td class="num">' + money(p.net) + '</td>' +
+      '</tr>';
+  }
+  html += '<tr class="totalrow"><td colspan="2">TOTAL (' + rows.length + ' products)</td>' +
+    '<td class="num">' + totals.orders + '</td>' +
+    '<td class="num">' + totals.units + '</td>' +
+    '<td class="num">' + money(totals.gross) + '</td>' +
+    '<td class="num">' + money(totals.discounts) + '</td>' +
+    '<td class="num">' + money(totals.refunds) + '</td>' +
+    '<td class="num">' + money(totals.net) + '</td></tr>';
+  tbody.innerHTML = html;
+}
+
+function jExportCsv(){
+  if (!J_DATA) return;
+  const rows = J_DATA.rows || [];
+  const channelSet = new Set();
+  rows.forEach(p => Object.keys(p.channels || {}).forEach(c => channelSet.add(c)));
+  const channels = [...channelSet];
+  const header = ['Product ID','Product Title','Orders','Units','Gross','Discounts','Refunds','Net', ...channels.map(c => c + ' - Net')];
+  const lines = [header];
+  for (const p of rows) {
+    lines.push([p.productId, p.title, p.orders, p.units, p.gross, p.discounts, p.refunds, p.net, ...channels.map(c => (p.channels||{})[c] || 0)]);
+  }
+  const totals = J_DATA.totals || {};
+  lines.push(['TOTAL','', totals.orders, totals.units, totals.gross, totals.discounts, totals.refunds, totals.net, ...channels.map(c => (totals.channels||{})[c] || 0)]);
+  const csv = lines.map(r => r.map(v => { const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jackson-sales-' + J_CURRENT_MONTH + '.csv';
+  a.click();
+}
+document.getElementById('jExportCsv').addEventListener('click', jExportCsv);
+
+jLoad(false);
+</script>
+</body>
+</html>
