@@ -278,6 +278,8 @@ function csvSafe(v){
 function showStaffTab(n){
   document.getElementById('tabBtnKamsi').classList.toggle('active', n === 'kamsi');
   document.getElementById('tabKamsi').style.display = n === 'kamsi' ? '' : 'none';
+  document.getElementById('tabBtnDilaksi').classList.toggle('active', n === 'dilaksi');
+  document.getElementById('tabDilaksi').style.display = n === 'dilaksi' ? '' : 'none';
 }
 
 let K_CURRENT_MONTH = '2026-06';
