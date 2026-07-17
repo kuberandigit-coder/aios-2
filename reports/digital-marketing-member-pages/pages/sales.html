@@ -83,6 +83,7 @@ tbody tr:hover{background:var(--accent-soft);}
 <div class="reqtabs">
   <div class="reqtab active" id="tabBtnKamsi" onclick="showStaffTab('kamsi')">Kamsi &middot; SEO</div>
   <div class="reqtab" id="tabBtnDilaksi" onclick="showStaffTab('dilaksi')">Dilaksi &middot; SEO</div>
+  <div class="reqtab" id="tabBtnSukirtha" onclick="showStaffTab('sukirtha')">Sukirtha &middot; Email</div>
 </div>
 
 <div id="tabKamsi">
@@ -263,6 +264,110 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 </div>
 
+<div id="tabSukirtha" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sukirtha &middot; Email Marketing</div>
+  <h1>Store-Wide Sales — Email Channel</h1>
+  <div class="sub">Store-wide (every order counts, regardless of products) &nbsp;&middot;&nbsp; Email marketing across ledsone.co.uk (UK) and ledsone.de (DE).</div>
+</header>
+
+<div class="reqtabs" style="margin-bottom:14px;">
+  <div class="reqtab active" id="tabBtnSukirthaUK" onclick="showSukirthaRegion('uk')">UK</div>
+  <div class="reqtab" id="tabBtnSukirthaDE" onclick="showSukirthaRegion('de')">DE</div>
+</div>
+
+<div id="sukirthaUK">
+<div class="sub" id="sPeriodSub" style="margin-bottom:14px;">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; Store-wide (all orders, no product filter) &nbsp;&middot;&nbsp; Historical, closed reporting month &mdash; not a live/updating view.</div>
+<div class="filters" style="margin-bottom:14px;">
+  <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+  <span class="chip" id="sLiveChip">Loading historical data from Shopify&hellip;</span>
+  <span class="chip" id="sLastRefresh" style="display:none;"></span>
+</div>
+
+<div class="reqtabs" style="margin-bottom:14px;" id="sMonthTabs">
+  <div class="reqtab" data-month="2026-01" onclick="sSelectMonth('2026-01')">January</div>
+  <div class="reqtab" data-month="2026-02" onclick="sSelectMonth('2026-02')">February</div>
+  <div class="reqtab" data-month="2026-03" onclick="sSelectMonth('2026-03')">March</div>
+  <div class="reqtab" data-month="2026-04" onclick="sSelectMonth('2026-04')">April</div>
+  <div class="reqtab" data-month="2026-05" onclick="sSelectMonth('2026-05')">May</div>
+  <div class="reqtab active" data-month="2026-06" onclick="sSelectMonth('2026-06')">June</div>
+</div>
+
+<div class="exportbar" style="margin-bottom:14px;">
+  <button id="sGroupExportCsv" class="primary">Export CSV</button>
+</div>
+
+<div class="cards" id="sCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+  <div class="card"><div class="label">Total Sukirtha UK Orders</div><div class="value" id="skOrders">&ndash;</div></div>
+  <div class="card"><div class="label">Total Units Sold</div><div class="value" id="skUnits">&ndash;</div></div>
+  <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="skGross">&ndash;</div></div>
+  <div class="card"><div class="label">Total Refunds</div><div class="value" id="skRefunds">&ndash;</div></div>
+  <div class="card"><div class="label">Total Net Sales</div><div class="value" id="skNet">&ndash;</div></div>
+  <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="skProducts">&ndash;</div></div>
+  <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="scLastOk" style="font-size:13px;">&ndash;</div></div>
+</div>
+
+<div class="sub" style="margin-bottom:14px;">Store-wide email-channel sales only, two groups: <strong>Fully Email</strong> (every touchpoint in the order's journey — first visit, last visit, and everything in between — classifies as Email) and <strong>First-Session Email</strong> (the order's first visit classifies as Email, but the rest of the journey does not, so it is not Fully Email). Unlike Kamsi/Dilaksi, this is NOT product-scoped &mdash; every line item in every qualifying order counts, regardless of which products are in it. Click a group row below to filter the table to just that group.</div>
+
+<div class="tablebox" style="margin-bottom:14px;">
+  <div class="scroll" style="max-height:none;overflow-y:visible;">
+    <table style="min-width:900px;">
+      <thead><tr>
+        <th>Group</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+      </tr></thead>
+      <tbody id="sChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="scCnt">&ndash;</span>
+    <input type="text" id="scq_order" placeholder="Search order name&hellip;">
+    <input type="text" id="scq_product" placeholder="Search Product ID&hellip;">
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Group <select id="scf_channel">
+      <option value="">All Groups</option>
+    </select></label>
+    <button id="scResetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th></th>
+        <th>Group</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Product</th><th>Product ID</th><th>SKU</th>
+        <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+        <th>Financial Status</th><th>Fulfilment Status</th>
+        <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Journey Status</th>
+      </tr></thead>
+      <tbody id="scTbody"><tr><td colspan="20" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="scEmpty" style="display:none;">No orders match the current filters.</div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-sukirtha-uk</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Store-wide scope:</strong> unlike Kamsi and Dilaksi's dashboards (product-scoped to a specific allocation CSV), Sukirtha is responsible for email marketing across the whole store &mdash; there is no product allocation file and no line-item matching step here. Every line item on every order that qualifies for one of the two groups below counts, regardless of which products are in it.<br>
+  <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware — Jan/Feb/most of Mar is GMT, late-Mar through Jun is BST; never hardcoded). Select a month tab above; each is a fixed historical period and will never pick up orders from another month.<br>
+  <strong>Group definitions:</strong> <em>Fully Email</em> = every touchpoint in the order's <code>customerJourneySummary</code> (first visit, last visit, and every visit in between) classifies as Email (Shopify <code>sourceType=NEWSLETTER</code>, or <code>medium=email</code>, or source/description containing "email"). <em>First-Session Email</em> = the order's first visit classifies as Email, but the journey is not fully email (at least one other touchpoint is a different channel). Orders that qualify for neither group are excluded from Sukirtha's totals entirely (no Direct, Referral, No Journey Data, AI Tools, Organic, Paid, or Social sections here &mdash; those belong to other staff members' dashboards).<br>
+  <strong>Historical data:</strong> these are completed, closed calendar months (Jan&ndash;Jun 2026) &mdash; the numbers do not change on their own, so there is no auto-refresh or Refresh button. Data is fetched from Shopify once when a month tab is selected and cached server-side (~55 seconds) to avoid re-scanning on repeated page views.<br>
+  <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+  <strong>Last refresh timestamp:</strong> <span id="sFootRefresh">&ndash;</span>
+</div>
+</div>
+
+<div id="sukirthaDE" style="display:none;">
+  <div class="tablebox">
+    <div class="empty" style="padding:60px 20px;">
+      <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">DE &middot; Coming soon</div>
+      <div>Sukirtha's email-marketing sales for <strong>ledsone.de</strong> will be added here in a future update. This UK tab is fully live; DE is scaffolded but intentionally not wired up yet.</div>
+    </div>
+  </div>
+</div>
+</div>
+
 <script>
 function esc(s){ if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function num(v){ return v === null || v === undefined ? '—' : Number(v).toLocaleString(); }
@@ -279,6 +384,15 @@ function showStaffTab(n){
   document.getElementById('tabKamsi').style.display = n === 'kamsi' ? '' : 'none';
   document.getElementById('tabBtnDilaksi').classList.toggle('active', n === 'dilaksi');
   document.getElementById('tabDilaksi').style.display = n === 'dilaksi' ? '' : 'none';
+  document.getElementById('tabBtnSukirtha').classList.toggle('active', n === 'sukirtha');
+  document.getElementById('tabSukirtha').style.display = n === 'sukirtha' ? '' : 'none';
+}
+
+function showSukirthaRegion(r){
+  document.getElementById('tabBtnSukirthaUK').classList.toggle('active', r === 'uk');
+  document.getElementById('sukirthaUK').style.display = r === 'uk' ? '' : 'none';
+  document.getElementById('tabBtnSukirthaDE').classList.toggle('active', r === 'de');
+  document.getElementById('sukirthaDE').style.display = r === 'de' ? '' : 'none';
 }
 
 let K_CURRENT_MONTH = '2026-06';
@@ -804,12 +918,257 @@ function dGroupExportCsv(){
 }
 document.getElementById('dGroupExportCsv').addEventListener('click', dGroupExportCsv);
 
+// ===== Sukirtha tab (UK, email marketing, store-wide — NOT product-scoped).
+// Only two groups: Fully Email, First-Session Email. S-prefixed globals/
+// functions throughout, verified against K_/k- and D_/d- prefixed
+// identifiers above for zero collisions. =====
+let S_CURRENT_MONTH = '2026-06';
+function sSelectMonth(month){
+  S_CURRENT_MONTH = month;
+  document.querySelectorAll('#sMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  sLoad(false);
+}
+
+let S_DATA = null;
+let sOpenRows = new Set();
+let sLoading = false;
+let sAbortController = null;
+let sLastSuccessfulAt = null;
+
+async function sLoad(force){
+  if (sLoading) return;
+  sLoading = true;
+  document.getElementById('sLiveChip').textContent = 'Loading historical data from Shopify…';
+  document.getElementById('sLiveChip').className = 'chip';
+  if (sAbortController) sAbortController.abort();
+  sAbortController = new AbortController();
+  try {
+    const url = '/api/sales-sukirtha-uk?month=' + encodeURIComponent(S_CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const res = await fetch(url, { signal: sAbortController.signal });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    S_DATA = data;
+    sLastSuccessfulAt = new Date();
+    document.getElementById('sLiveChip').textContent = 'Historical data retrieved from Shopify';
+    document.getElementById('sLiveChip').className = 'chip';
+    document.getElementById('sLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('sLastRefresh').style.display = '';
+    document.getElementById('sFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('scLastOk').textContent = sLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('sPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Store-wide (all orders, no product filter) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period &mdash; not a live/updating view.';
+    sOpenRows = new Set();
+    sRenderAll();
+  } catch (e) {
+    if (e.name === 'AbortError') { sLoading = false; return; }
+    document.getElementById('sLiveChip').textContent = 'Failed to load: ' + e.message + (S_DATA ? ' — showing last successful data' : '');
+    document.getElementById('sLiveChip').className = 'chip stale';
+    if (!S_DATA) document.getElementById('scTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    sLoading = false;
+  }
+}
+
+function sRenderAll(){
+  if (!S_DATA) return;
+  const c = S_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'GBP' };
+  document.getElementById('skOrders').textContent = num(c.ordersCount);
+  document.getElementById('skUnits').textContent = num(c.unitsSold);
+  document.getElementById('skGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('skRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('skNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('skProducts').textContent = num(c.uniqueProductsSold);
+  scRenderAll();
+}
+
+const S_GROUP_ORDER = ['Fully Email', 'First-Session Email'];
+
+function sGroupOf(o){
+  return o.group || null; // already tagged server-side as 'Fully Email' / 'First-Session Email'
+}
+
+function scFlatRows(){
+  const rows = [];
+  for (const o of (S_DATA ? S_DATA.allSukirthaOrders : []) || []) {
+    const group = sGroupOf(o);
+    if (!group) continue;
+    for (const item of o.matchedItems) rows.push({ order: o, item, group });
+  }
+  return rows;
+}
+
+function scFilteredRows(){
+  const qOrder = document.getElementById('scq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('scq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('scf_channel').value;
+  return scFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function scGroupBreakdown(){
+  const byGroup = new Map();
+  for (const r of scFlatRows()) {
+    if (!byGroup.has(r.group)) byGroup.set(r.group, new Set());
+    byGroup.get(r.group).add(r.order); // dedupe by order (breakdown is order-level, not line-item-level)
+  }
+  const currency = (S_DATA && S_DATA.combinedSummary && S_DATA.combinedSummary.currency) || 'GBP';
+  return S_GROUP_ORDER.map(group => {
+    const orders = byGroup.has(group) ? [...byGroup.get(group)] : [];
+    let unitsSold = 0, grossSales = 0, discounts = 0, refunds = 0;
+    const products = new Set();
+    for (const o of orders) {
+      for (const item of o.matchedItems) {
+        unitsSold += item.quantity;
+        grossSales += item.grossSales;
+        discounts += item.discounts;
+        refunds += item.refunds;
+        products.add(item.productId);
+      }
+    }
+    const netSales = grossSales - discounts - refunds;
+    return {
+      group, ordersCount: orders.length, unitsSold,
+      grossSales: Math.round(grossSales * 100) / 100, discounts: Math.round(discounts * 100) / 100,
+      refunds: Math.round(refunds * 100) / 100, netSales: Math.round(netSales * 100) / 100,
+      uniqueProductsSold: products.size,
+      averageRevenuePerOrder: orders.length ? Math.round((grossSales / orders.length) * 100) / 100 : 0,
+      currency,
+    };
+  }).filter(g => g.ordersCount > 0);
+}
+
+function scRenderAll(){
+  if (!S_DATA) return;
+  const cb = scGroupBreakdown();
+  document.getElementById('sChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="sChannelRow" data-channel="' + esc(c.group) + '" style="cursor:pointer;" title="Click to filter table below to this group">' +
+    '<td><strong>' + esc(c.group) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.sChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('scf_channel').value = tr.getAttribute('data-channel');
+      scRenderTable();
+      document.getElementById('scTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('scf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Groups</option>' + cb.map(c => '<option value="' + esc(c.group) + '">' + esc(c.group) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  scRenderTable();
+}
+
+function scRenderTable(){
+  const rows = scFilteredRows();
+  document.getElementById('scCnt').textContent = rows.length.toLocaleString() + ' of ' + scFlatRows().length.toLocaleString() + ' Sukirtha line items';
+  const tbody = document.getElementById('scTbody');
+  const emptyEl = document.getElementById('scEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (sOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.journeyStatus) + '</td>' +
+      '</tr>'
+    );
+    if (sOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="20"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (sOpenRows.has(id)) sOpenRows.delete(id); else sOpenRows.add(id);
+      scRenderTable();
+    });
+  });
+}
+
+['scq_order','scq_product'].forEach(id => document.getElementById(id).addEventListener('input', scRenderTable));
+document.getElementById('scf_channel').addEventListener('change', scRenderTable);
+document.getElementById('scResetFilters').addEventListener('click', () => {
+  document.getElementById('scq_order').value = '';
+  document.getElementById('scq_product').value = '';
+  document.getElementById('scf_channel').value = '';
+  scRenderTable();
+});
+
+function scExportCsv(){
+  const rows = scFilteredRows();
+  const header = ['Group','Order Name','Order ID','Order Created At','Product','Product ID','SKU','Quantity','Gross Sales','Discounts','Refunds','Net Sales','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Type','All Sessions Classification','All Sessions JSON','Journey Status','Extraction Timestamp','Report Period'];
+  const lines = [header.join(',')];
+  const genAt = S_DATA ? S_DATA.meta.generatedAt : '';
+  const period = S_DATA ? S_DATA.reportPeriod.label : '';
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    lines.push([r.group, o.orderName, o.orderLegacyId, o.createdAt, item.productTitle, item.productId, item.sku, item.quantity, item.grossSales, item.discounts, item.refunds, item.netSales, o.currency, o.financialStatus, o.fulfillmentStatus, fv.source, fv.sourceType, (o.sessions||[]).map(s => s.classification).join(' -> '), JSON.stringify(o.sessions || []), o.journeyStatus, genAt, period].map(csvSafe).join(','));
+  });
+  const monthTag = S_DATA ? S_DATA.reportPeriod.month : S_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_sukirtha-email-sales-ledsone-co-uk.csv');
+}
+
+function sGroupExportCsv(){
+  const cb = scGroupBreakdown();
+  const header = ['Group','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = S_DATA ? S_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.group, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = S_DATA ? S_DATA.reportPeriod.month : S_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_sukirtha-email-sales-group-summary-ledsone-co-uk.csv');
+}
+document.getElementById('sGroupExportCsv').addEventListener('click', sGroupExportCsv);
 
 // Historical/closed-period data — loaded once per month selection, no
 // auto-refresh polling and no manual Refresh button (these months are
 // already over; the numbers won't change on their own).
 kLoad(false);
 dLoad(false);
+sLoad(false);
 
 </script>
 </body>
