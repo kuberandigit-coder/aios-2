@@ -81,6 +81,7 @@ tbody tr:hover{background:var(--accent-soft);}
 
 <div class="reqtabs">
   <div class="reqtab active" id="tabBtnKamsi" onclick="showStaffTab('kamsi')">Kamsi &middot; SEO</div>
+  <div class="reqtab" id="tabBtnDilaksi" onclick="showStaffTab('dilaksi')">Dilaksi &middot; SEO</div>
 </div>
 
 <div id="tabKamsi">
@@ -169,6 +170,96 @@ tbody tr:hover{background:var(--accent-soft);}
   <strong>Historical data:</strong> these are completed, closed calendar months (Jan&ndash;Jun 2026) &mdash; the numbers do not change on their own, so there is no auto-refresh or Refresh button. Data is fetched from Shopify once when a month tab is selected and cached server-side (~55 seconds) to avoid re-scanning on repeated page views.<br>
   <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
   <strong>Last refresh timestamp:</strong> <span id="kFootRefresh">&ndash;</span>
+</div>
+</div>
+</div>
+
+<div id="tabDilaksi" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Dilaksi &middot; SEO Department</div>
+  <h1>Product Sales — All Channels</h1>
+  <div class="sub" id="dPeriodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; Dilaksi-owned products only &nbsp;&middot;&nbsp; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="dLiveChip">Loading historical data from Shopify&hellip;</span>
+    <span class="chip" id="dLastRefresh" style="display:none;"></span>
+  </div>
+</header>
+
+<div class="reqtabs" style="margin-bottom:14px;" id="dMonthTabs">
+  <div class="reqtab" data-month="2026-01" onclick="dSelectMonth('2026-01')">January</div>
+  <div class="reqtab" data-month="2026-02" onclick="dSelectMonth('2026-02')">February</div>
+  <div class="reqtab" data-month="2026-03" onclick="dSelectMonth('2026-03')">March</div>
+  <div class="reqtab" data-month="2026-04" onclick="dSelectMonth('2026-04')">April</div>
+  <div class="reqtab" data-month="2026-05" onclick="dSelectMonth('2026-05')">May</div>
+  <div class="reqtab active" data-month="2026-06" onclick="dSelectMonth('2026-06')">June</div>
+</div>
+
+<div style="margin-bottom:14px;">
+  <button id="dGroupExportCsv" class="primary">Export CSV</button>
+</div>
+
+<div class="cards" id="dCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+  <div class="card"><div class="label">Total Dilaksi Orders</div><div class="value" id="dkOrders">&ndash;</div></div>
+  <div class="card"><div class="label">Total Units Sold</div><div class="value" id="dkUnits">&ndash;</div></div>
+  <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="dkGross">&ndash;</div></div>
+  <div class="card"><div class="label">Total Refunds</div><div class="value" id="dkRefunds">&ndash;</div></div>
+  <div class="card"><div class="label">Total Net Sales</div><div class="value" id="dkNet">&ndash;</div></div>
+  <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="dkProducts">&ndash;</div></div>
+  <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="dcLastOk" style="font-size:13px;">&ndash;</div></div>
+</div>
+
+<div class="sub" style="margin-bottom:14px;">Dilaksi's organic sales definition only &mdash; Fully Organic, First-Session Organic, Direct, Referral, No Journey Data, and AI Tools. Google Ads / Paid Search, Social, Email, and non-AI Other are excluded from these two tables. Click a group row below to filter the table to just that group.</div>
+
+<div class="tablebox" style="margin-bottom:14px;">
+  <div class="scroll" style="max-height:none;overflow-y:visible;">
+    <table style="min-width:900px;">
+      <thead><tr>
+        <th>Group</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+      </tr></thead>
+      <tbody id="dChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="dcCnt">&ndash;</span>
+    <input type="text" id="dcq_order" placeholder="Search order name&hellip;">
+    <input type="text" id="dcq_product" placeholder="Search Product ID&hellip;">
+    <button id="dChannelExportCsv" class="primary">Export CSV</button>
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Group <select id="dcf_channel">
+      <option value="">All Groups</option>
+    </select></label>
+    <button id="dcResetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th></th>
+        <th>Group</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Dilaksi Product</th><th>Product ID</th><th>SKU</th>
+        <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+        <th>Financial Status</th><th>Fulfilment Status</th>
+        <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Journey Status</th>
+      </tr></thead>
+      <tbody id="dcTbody"><tr><td colspan="20" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="dcEmpty" style="display:none;">No orders match the current filters.</div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-dilaksi</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Product ownership source:</strong> <code>reports/dilaksi/data/2026-07-17_dilaksi-product-allocation.csv</code> &mdash; 1,615 unique products, built live from Shopify Admin GraphQL against Dilaksi's 24 designated SEO collections (pendant-lights, wall-light, plugin-lighting, table-lamps, spider-light, pipe-lighting, ceiling-lights-for-flash-lights, easy-fit-shades, led-panels, led-modules, pendant-holder, chandelier, hemp-collection, clocks, kitchen-items, fitting-items, handles, artificial-flower-pots, door-mat, foot-wear, storage-bags, belt, sports-accessories, office-items), unioned and de-duplicated by Product ID (165 products belong to more than one of these collections).<br>
+  <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware — Jan/Feb/most of Mar is GMT, late-Mar through Jun is BST; never hardcoded). Select a month tab above; each is a fixed historical period and will never pick up orders from another month.<br>
+  <strong>Channel classification:</strong> derived from the customer's first session (<code>customerJourneySummary.firstVisit</code>) — Organic Search, Google Ads/Paid Search, Direct, Social, Email, Referral, or No Journey Data/Unknown when Shopify recorded no session at all.<br>
+  <strong>Dilaksi attribution:</strong> only line items matching a Dilaksi-owned Shopify Product ID/GID (Variant ID/GID preferred when available) contribute to Dilaksi's sales figures &mdash; mixed-product orders are never fully credited to Dilaksi.<br>
+  <strong>Variant-level matching:</strong> unlike Kamsi's allocation (Product ID/GID level only), Dilaksi's allocation was built with a live Shopify GraphQL query that returns real Variant IDs/GIDs, so order line-item matching here uses Variant ID/GID first, falling back to Product ID/GID only if a variant match is not found.<br>
+  <strong>Historical data:</strong> these are completed, closed calendar months (Jan&ndash;Jun 2026) &mdash; the numbers do not change on their own, so there is no auto-refresh or Refresh button. Data is fetched from Shopify once when a month tab is selected and cached server-side (~55 seconds) to avoid re-scanning on repeated page views.<br>
+  <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+  <strong>Last refresh timestamp:</strong> <span id="dFootRefresh">&ndash;</span>
 </div>
 </div>
 </div>
@@ -451,10 +542,275 @@ function kGroupExportCsv(){
 }
 document.getElementById('kGroupExportCsv').addEventListener('click', kGroupExportCsv);
 
+// ===== Dilaksi tab (mirrors Kamsi tab above, distinct D-prefixed globals/functions) =====
+let D_CURRENT_MONTH = '2026-06';
+function dSelectMonth(month){
+  D_CURRENT_MONTH = month;
+  document.querySelectorAll('#dMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  dLoad(false);
+}
+
+let D_DATA = null;
+let dOpenRows = new Set();
+let dLoading = false;
+let dAbortController = null;
+let dLastSuccessfulAt = null;
+
+async function dLoad(force){
+  if (dLoading) return;
+  dLoading = true;
+  document.getElementById('dLiveChip').textContent = 'Loading historical data from Shopify…';
+  document.getElementById('dLiveChip').className = 'chip';
+  if (dAbortController) dAbortController.abort();
+  dAbortController = new AbortController();
+  try {
+    const url = '/api/sales-dilaksi?month=' + encodeURIComponent(D_CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const res = await fetch(url, { signal: dAbortController.signal });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    D_DATA = data;
+    dLastSuccessfulAt = new Date();
+    document.getElementById('dLiveChip').textContent = 'Historical data retrieved from Shopify';
+    document.getElementById('dLiveChip').className = 'chip';
+    document.getElementById('dLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('dLastRefresh').style.display = '';
+    document.getElementById('dFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('dcLastOk').textContent = dLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('dPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Dilaksi-owned products only &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period &mdash; not a live/updating view.';
+    dOpenRows = new Set();
+    dRenderAll();
+  } catch (e) {
+    if (e.name === 'AbortError') { dLoading = false; return; }
+    document.getElementById('dLiveChip').textContent = 'Failed to load: ' + e.message + (D_DATA ? ' — showing last successful data' : '');
+    document.getElementById('dLiveChip').className = 'chip stale';
+    if (!D_DATA) document.getElementById('dcTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    dLoading = false;
+  }
+}
+
+function dRenderAll(){
+  if (!D_DATA) return;
+  const c = D_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'GBP' };
+  document.getElementById('dkOrders').textContent = num(c.ordersCount);
+  document.getElementById('dkUnits').textContent = num(c.unitsSold);
+  document.getElementById('dkGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('dkRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('dkNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('dkProducts').textContent = num(c.uniqueProductsSold);
+  dcRenderAll();
+}
+
+// ===== Dilaksi's organic-sales definition only: Fully Organic, First-Session
+// Organic, Direct, Referral, No Journey Data, AI Tools. Google Ads / Paid
+// Search, Social, Email, Affiliate, and non-AI Other are excluded from
+// both tables below, per the confirmed original spec. =====
+const D_AI_SOURCES = ['chatgpt', 'perplexity', 'gemini', 'copilot', 'claude', 'bing chat', 'bingchat', 'character.ai', 'meta ai', 'grok'];
+const D_GROUP_ORDER = ['Fully Organic', 'First-Session Organic', 'Direct', 'Referral', 'No Journey Data', 'AI Tools'];
+
+function dGroupOf(o){
+  if (o.journeyStatus === 'FULLY_ORGANIC') return 'Fully Organic';
+  if (o.journeyStatus === 'FIRST_SESSION_ORGANIC') return 'First-Session Organic';
+  if (o.channel === 'Direct') return 'Direct';
+  if (o.channel === 'Referral') return 'Referral';
+  if (o.channel === 'No Journey Data' || o.channel === 'Unknown' || o.channel === 'Attribution Pending') return 'No Journey Data';
+  if (o.channel === 'Other' && o.firstVisit && D_AI_SOURCES.some(ai => String(o.firstVisit.source || '').toLowerCase().includes(ai))) return 'AI Tools';
+  return null; // Google Ads/Paid Search, Social, Email, Affiliate, non-AI Other — excluded
+}
+
+function dcFlatRows(){
+  const rows = [];
+  for (const o of (D_DATA ? D_DATA.allDilaksiOrders : []) || []) {
+    const group = dGroupOf(o);
+    if (!group) continue;
+    for (const item of o.matchedItems) rows.push({ order: o, item, group });
+  }
+  return rows;
+}
+
+function dcFilteredRows(){
+  const qOrder = document.getElementById('dcq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('dcq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('dcf_channel').value;
+  return dcFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function dcGroupBreakdown(){
+  const byGroup = new Map();
+  for (const r of dcFlatRows()) {
+    if (!byGroup.has(r.group)) byGroup.set(r.group, new Set());
+    byGroup.get(r.group).add(r.order); // dedupe by order (breakdown is order-level, not line-item-level)
+  }
+  const currency = (D_DATA && D_DATA.combinedSummary && D_DATA.combinedSummary.currency) || 'GBP';
+  return D_GROUP_ORDER.map(group => {
+    const orders = byGroup.has(group) ? [...byGroup.get(group)] : [];
+    let unitsSold = 0, grossSales = 0, discounts = 0, refunds = 0;
+    const products = new Set();
+    for (const o of orders) {
+      for (const item of o.matchedItems) {
+        unitsSold += item.quantity;
+        grossSales += item.grossSales;
+        discounts += item.discounts;
+        refunds += item.refunds;
+        products.add(item.productId);
+      }
+    }
+    const netSales = grossSales - discounts - refunds;
+    return {
+      group, ordersCount: orders.length, unitsSold,
+      grossSales: Math.round(grossSales * 100) / 100, discounts: Math.round(discounts * 100) / 100,
+      refunds: Math.round(refunds * 100) / 100, netSales: Math.round(netSales * 100) / 100,
+      uniqueProductsSold: products.size,
+      averageRevenuePerOrder: orders.length ? Math.round((grossSales / orders.length) * 100) / 100 : 0,
+      currency,
+    };
+  }).filter(g => g.ordersCount > 0);
+}
+
+function dcRenderAll(){
+  if (!D_DATA) return;
+  const cb = dcGroupBreakdown();
+  document.getElementById('dChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="dChannelRow" data-channel="' + esc(c.group) + '" style="cursor:pointer;" title="Click to filter table below to this group">' +
+    '<td><strong>' + esc(c.group) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.dChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('dcf_channel').value = tr.getAttribute('data-channel');
+      dcRenderTable();
+      document.getElementById('dcTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('dcf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Groups</option>' + cb.map(c => '<option value="' + esc(c.group) + '">' + esc(c.group) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  dcRenderTable();
+}
+
+function dcRenderTable(){
+  const rows = dcFilteredRows();
+  document.getElementById('dcCnt').textContent = rows.length.toLocaleString() + ' of ' + dcFlatRows().length.toLocaleString() + ' Dilaksi line items';
+  const tbody = document.getElementById('dcTbody');
+  const emptyEl = document.getElementById('dcEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (dOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.journeyStatus) + '</td>' +
+      '</tr>'
+    );
+    if (dOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="20"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (dOpenRows.has(id)) dOpenRows.delete(id); else dOpenRows.add(id);
+      dcRenderTable();
+    });
+  });
+}
+
+['dcq_order','dcq_product'].forEach(id => document.getElementById(id).addEventListener('input', dcRenderTable));
+document.getElementById('dcf_channel').addEventListener('change', dcRenderTable);
+document.getElementById('dcResetFilters').addEventListener('click', () => {
+  document.getElementById('dcq_order').value = '';
+  document.getElementById('dcq_product').value = '';
+  document.getElementById('dcf_channel').value = '';
+  dcRenderTable();
+});
+
+function downloadCsv(content, filename){
+  const BOM = '﻿';
+  const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+function dcExportCsv(){
+  const rows = dcFilteredRows();
+  const header = ['Group','Order Name','Order ID','Order Created At','Dilaksi Product','Product ID','SKU','Dilaksi Quantity','Dilaksi Gross Sales','Dilaksi Discounts','Dilaksi Refunds','Dilaksi Net Sales','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Type','All Sessions Classification','All Sessions JSON','Journey Status','Extraction Timestamp','Report Period'];
+  const lines = [header.join(',')];
+  const genAt = D_DATA ? D_DATA.meta.generatedAt : '';
+  const period = D_DATA ? D_DATA.reportPeriod.label : '';
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    lines.push([r.group, o.orderName, o.orderLegacyId, o.createdAt, item.productTitle, item.productId, item.sku, item.quantity, item.grossSales, item.discounts, item.refunds, item.netSales, o.currency, o.financialStatus, o.fulfillmentStatus, fv.source, fv.sourceType, (o.sessions||[]).map(s => s.classification).join(' -> '), JSON.stringify(o.sessions || []), o.journeyStatus, genAt, period].map(csvSafe).join(','));
+  });
+  const monthTag = D_DATA ? D_DATA.reportPeriod.month : D_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_dilaksi-organic-sales-ledsone-co-uk.csv');
+}
+document.getElementById('dChannelExportCsv').addEventListener('click', dcExportCsv);
+
+function dGroupExportCsv(){
+  const cb = dcGroupBreakdown();
+  const header = ['Group','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = D_DATA ? D_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.group, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = D_DATA ? D_DATA.reportPeriod.month : D_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_dilaksi-organic-sales-group-summary-ledsone-co-uk.csv');
+}
+document.getElementById('dGroupExportCsv').addEventListener('click', dGroupExportCsv);
+
+
 // Historical/closed-period data — loaded once per month selection, no
 // auto-refresh polling and no manual Refresh button (these months are
 // already over; the numbers won't change on their own).
 kLoad(false);
+dLoad(false);
 
 </script>
 </body>
