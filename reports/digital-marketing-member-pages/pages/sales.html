@@ -104,6 +104,10 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab active" data-month="2026-06" onclick="kSelectMonth('2026-06')">June</div>
 </div>
 
+<div style="margin-bottom:14px;">
+  <button id="kGroupExportCsv" class="primary">Export CSV</button>
+</div>
+
 <div class="cards" id="kCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
   <div class="card"><div class="label">Total Kamsi Orders</div><div class="value" id="kkOrders">&ndash;</div></div>
   <div class="card"><div class="label">Total Units Sold</div><div class="value" id="kkUnits">&ndash;</div></div>
@@ -433,6 +437,19 @@ function kcExportCsv(){
   downloadCsv(lines.join('\r\n'), monthTag + '_kamsi-organic-sales-ledsone-co-uk.csv');
 }
 document.getElementById('kChannelExportCsv').addEventListener('click', kcExportCsv);
+
+function kGroupExportCsv(){
+  const cb = kcGroupBreakdown();
+  const header = ['Group','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = K_DATA ? K_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.group, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = K_DATA ? K_DATA.reportPeriod.month : K_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_kamsi-organic-sales-group-summary-ledsone-co-uk.csv');
+}
+document.getElementById('kGroupExportCsv').addEventListener('click', kGroupExportCsv);
 
 // Historical/closed-period data — loaded once per month selection, no
 // auto-refresh polling and no manual Refresh button (these months are
