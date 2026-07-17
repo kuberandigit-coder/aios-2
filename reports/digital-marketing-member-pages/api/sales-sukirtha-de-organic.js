@@ -463,12 +463,14 @@ module.exports = async function handler(req, res) {
 
     const fullyOrganicRows = [];
     const firstSessionOrganicRows = [];
+    const allOrderRows = []; // every order that produced a row, any channel — for the 4 extra groups below
 
     for (const order of orders) {
       const journey = classifyOrderJourney(order);
       const row = buildSukirthaOrderRow(order, journey);
       if (!row) continue;
       row.channel = deriveChannel(journey);
+      allOrderRows.push(row);
 
       const isFirstSessionOrganicBucket = journey.firstSessionOrganic && (journey.status === 'MIXED_JOURNEY' || journey.status === 'NON_ORGANIC');
 
@@ -494,11 +496,35 @@ module.exports = async function handler(req, res) {
 
     const fullyOrganicSummary = summarizeRows(fullyOrganicRows);
     const firstSessionOrganicSummary = summarizeRows(firstSessionOrganicRows);
-    const combinedSummary = summarizeRows([...fullyOrganicRows, ...firstSessionOrganicRows]);
+
+    // Sukirtha's DE Organic definition mirrors Kamsi's SEO "organic sales"
+    // definition exactly (2026-07-17 correction): all sales EXCEPT paid
+    // advertising — Fully Organic, First-Session Organic, Direct, Referral,
+    // No Journey Data (incl. Unknown / Attribution Pending), and AI Tools
+    // (extracted out of the "Other" channel bucket by source match).
+    // Excludes Google Ads/Paid Search, Social, Email. Store-wide (no
+    // product allocation filter), ledsone.de.
+    const AI_SOURCES = ['chatgpt', 'perplexity', 'gemini', 'copilot', 'claude', 'bing chat', 'bingchat', 'character.ai', 'meta ai', 'grok'];
+    const directRows = allOrderRows.filter(r => r.channel === 'Direct');
+    const referralRows = allOrderRows.filter(r => r.channel === 'Referral');
+    const noJourneyRows = allOrderRows.filter(r => r.channel === 'No Journey Data' || r.channel === 'Unknown' || r.channel === 'Attribution Pending');
+    const aiRows = allOrderRows.filter(r => r.channel === 'Other' && r.firstVisit && AI_SOURCES.some(ai => lower(r.firstVisit.source).includes(ai)));
+    const directSummary = summarizeRows(directRows);
+    const referralSummary = summarizeRows(referralRows);
+    const noJourneySummary = summarizeRows(noJourneyRows);
+    const aiSummary = summarizeRows(aiRows);
+
+    const combinedSummary = summarizeRows([
+      ...fullyOrganicRows, ...firstSessionOrganicRows, ...directRows, ...referralRows, ...noJourneyRows, ...aiRows,
+    ]);
 
     fullyOrganicRows.forEach(r => { r.group = 'Fully Organic'; });
     firstSessionOrganicRows.forEach(r => { r.group = 'First-Session Organic'; });
-    const allSukirthaOrders = [...fullyOrganicRows, ...firstSessionOrganicRows];
+    directRows.forEach(r => { r.group = 'Direct'; });
+    referralRows.forEach(r => { r.group = 'Referral'; });
+    noJourneyRows.forEach(r => { r.group = 'No Journey Data'; });
+    aiRows.forEach(r => { r.group = 'AI Tools'; });
+    const allSukirthaOrders = [...fullyOrganicRows, ...firstSessionOrganicRows, ...directRows, ...referralRows, ...noJourneyRows, ...aiRows];
 
     const { grossSales, discounts, refunds, netSales, currency, multiCurrencyWarning } = fullyOrganicSummary;
 
@@ -522,6 +548,9 @@ module.exports = async function handler(req, res) {
       },
       firstSessionOrganicSummary,
       combinedSummary,
+      // Breakdown of the 4 extra groups folded into combinedSummary above
+      // (mirrors sales-kamsi.js's directSummary/referralSummary/noJourneySummary/chatgptSummary).
+      directSummary, referralSummary, noJourneySummary, aiSummary,
       allSukirthaOrders,
       classificationCounts,
       meta: {

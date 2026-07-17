@@ -399,7 +399,7 @@ tbody tr:hover{background:var(--accent-soft);}
     <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="sdocLastOk" style="font-size:13px;">&ndash;</div></div>
   </div>
 
-  <div class="sub" style="margin-bottom:14px;">Store-wide organic-search sales only, two groups: <strong>Fully Organic</strong> (every touchpoint in the order's journey classifies as Organic Search) and <strong>First-Session Organic</strong> (the order's first visit classifies as Organic Search, but the rest of the journey does not). Mirrors Kamsi's definition exactly, but store-wide (no product filter). Click a group row below to filter the table to just that group.</div>
+  <div class="sub" style="margin-bottom:14px;">Sukirtha's DE Organic definition mirrors Kamsi's SEO "organic sales" definition exactly (all sales except paid advertising), store-wide (no product filter): <strong>Fully Organic</strong>, <strong>First-Session Organic</strong>, <strong>Direct</strong>, <strong>Referral</strong>, <strong>No Journey Data</strong> (incl. Unknown / Attribution Pending), and <strong>AI Tools</strong> (ChatGPT, Perplexity, Gemini, Copilot, Claude, Bing Chat, Meta AI, Grok). Excludes Google Ads/Paid Search, Social, and Email (Email is the separate DE Email section below). Click a group row below to filter the table to just that group.</div>
 
   <div class="tablebox" style="margin-bottom:14px;">
     <div class="scroll" style="max-height:none;overflow-y:visible;">
@@ -441,9 +441,9 @@ tbody tr:hover{background:var(--accent-soft);}
 
   <div class="footnotes">
     <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-sukirtha-de-organic</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
-    <strong>Store-wide scope:</strong> like the Email section below and the UK Email tab, this is NOT product-scoped &mdash; there is no product allocation file and no line-item matching step. Every line item on every order that qualifies for one of the two groups below counts.<br>
+    <strong>Store-wide scope:</strong> like the Email section below and the UK Email tab, this is NOT product-scoped &mdash; there is no product allocation file and no line-item matching step. Every line item on every order that qualifies for one of the six groups below counts.<br>
     <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above.<br>
-    <strong>Group definitions:</strong> <em>Fully Organic</em> = every touchpoint in the order's <code>customerJourneySummary</code> classifies as Organic Search. <em>First-Session Organic</em> = the order's first visit classifies as Organic Search, but the journey is not fully organic. Mirrors Kamsi's definition (<code>sales-kamsi.js</code>) exactly, minus product matching.<br>
+    <strong>Group definitions:</strong> <em>Fully Organic</em> = every touchpoint in the order's <code>customerJourneySummary</code> classifies as Organic Search. <em>First-Session Organic</em> = the order's first visit classifies as Organic Search, but the journey is not fully organic. <em>Direct</em>, <em>Referral</em>, and <em>No Journey Data</em> (incl. Unknown / Attribution Pending) are their own channel groups. <em>AI Tools</em> = orders whose first visit's source matches an AI tool (ChatGPT, Perplexity, Gemini, Copilot, Claude, Bing Chat, Meta AI, Grok), extracted from the "Other" channel bucket. Excludes Google Ads/Paid Search, Social, Email, Affiliate, and non-AI Other. Mirrors Kamsi's definition (<code>sales-kamsi.js</code>) exactly, minus product matching.<br>
     <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button. Data is fetched from Shopify once per month tab and cached server-side (~55 seconds).<br>
     <strong>Live month (July onward):</strong> the current month is month-to-date &mdash; a <strong>Refresh</strong> button appears to re-fetch the latest data. No automatic/background polling.<br>
     <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
@@ -1410,7 +1410,7 @@ function sdoRenderAll(){
   sdocRenderAll();
 }
 
-const SDO_GROUP_ORDER = ['Fully Organic', 'First-Session Organic'];
+const SDO_GROUP_ORDER = ['Fully Organic', 'First-Session Organic', 'Direct', 'Referral', 'No Journey Data', 'AI Tools'];
 function sdoGroupOf(o){ return o.group || null; }
 
 function sdocFlatRows(){
