@@ -399,6 +399,12 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
     <span id="r4cnt">–</span>
     <input type="text" id="r4q_page" placeholder="Search landing page…">
     <input type="text" id="r4q_query" placeholder="Search query…">
+    <span style="font-weight:600;color:#42506a;margin:0 4px 0 8px;">Date Range:</span>
+    <input type="date" id="r4rangeStart">
+    <span style="color:#5b6577;">&ndash;</span>
+    <input type="date" id="r4rangeEnd">
+    <button id="r4clearRange">Clear (Full Range)</button>
+    <span id="r4rangeLabel" style="color:#5b6577;font-size:12.5px;">Full Range</span>
     <button id="r4exportCsv" class="primary">Export CSV</button>
   </div>
   <div class="tbar" style="border-top:0;">
@@ -1292,7 +1298,7 @@ function r4applyLoadedData(fromCache){
   document.getElementById('r4liveChip').className = fromCache ? 'chip stale' : 'chip live';
   document.getElementById('r4lastChecked').textContent = 'Last checked: ' + new Date(R4_SUMMARY.retrievedAt).toLocaleString();
   document.getElementById('r4lastChecked').style.display = '';
-  document.getElementById('r4dateRange').textContent = '30-day window: ' + R4_SUMMARY.dateRangeStart + ' to ' + R4_SUMMARY.dateRangeEnd;
+  document.getElementById('r4dateRange').textContent = 'Window: ' + R4_SUMMARY.dateRangeStart + ' to ' + R4_SUMMARY.dateRangeEnd;
   document.getElementById('r4dateRange').style.display = '';
   document.getElementById('r4lastRefresh').textContent = new Date(R4_SUMMARY.retrievedAt).toLocaleString();
   document.getElementById('r4ga4Property').textContent = R4_SUMMARY.ga4Property;
@@ -1321,13 +1327,28 @@ async function r4load(){
   document.getElementById('r4liveChip').textContent = 'Fetching live from GA4/GSC…';
   document.getElementById('r4liveChip').className = 'chip';
   document.getElementById('r4tbody').innerHTML = '<tr><td colspan="14" class="loading">Loading live data from GA4/GSC…</td></tr>';
+
+  const r4start = document.getElementById('r4rangeStart').value;
+  const r4end = document.getElementById('r4rangeEnd').value;
+  let r4url = '/api/sukirtha-req4-ga4-seo';
+  if (r4start && r4end) r4url += '?start=' + r4start + '&end=' + r4end;
+
   try {
-    const res = await fetch('/api/sukirtha-req4-ga4-seo');
+    const res = await fetch(r4url);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     R4_SUMMARY = data.summary;
     R4_ROWS = data.rows;
-    try { await idbSet(R4_CACHE_KEY, { summary: R4_SUMMARY, rows: R4_ROWS }); } catch (e) { /* storage unavailable — ignore */ }
+    document.getElementById('r4rangeStart').min = '2024-01-01';
+    document.getElementById('r4rangeStart').max = data.dateRange.requested;
+    document.getElementById('r4rangeEnd').min = '2024-01-01';
+    document.getElementById('r4rangeEnd').max = data.dateRange.requested;
+    document.getElementById('r4rangeLabel').textContent = (r4start && r4end)
+      ? 'Custom range'
+      : 'Full Range (' + data.dateRange.start + ' to ' + data.dateRange.end + ')';
+    if (!r4start && !r4end) {
+      try { await idbSet(R4_CACHE_KEY, { summary: R4_SUMMARY, rows: R4_ROWS }); } catch (e) { /* storage unavailable — ignore */ }
+    }
     r4applyLoadedData(false);
   } catch (e) {
     document.getElementById('r4liveChip').textContent = 'Failed to load: ' + e.message;
@@ -1339,6 +1360,13 @@ async function r4load(){
   }
 }
 document.getElementById('r4refreshBtn').addEventListener('click', r4load);
+document.getElementById('r4rangeStart').addEventListener('change', r4load);
+document.getElementById('r4rangeEnd').addEventListener('change', r4load);
+document.getElementById('r4clearRange').addEventListener('click', () => {
+  document.getElementById('r4rangeStart').value = '';
+  document.getElementById('r4rangeEnd').value = '';
+  r4load();
+});
 
 function r4renderCards(rows){
   const sessions = rows.reduce((s, r) => s + r.sessions, 0);
