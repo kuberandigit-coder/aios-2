@@ -18,12 +18,16 @@ h1{font-size:22px;letter-spacing:.2px;}
 button.primary{background:var(--accent);color:#fff;border-color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;}
 button.primary:hover{background:#1749cc;}
 button.primary:disabled{opacity:.6;cursor:wait;}
-.exportbar{display:flex;justify-content:flex-end;}
+.exportbar{display:flex;justify-content:flex-end;gap:8px;}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
 .card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
 .card .value{font-size:22px;font-weight:700;margin-top:6px;}
 .tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.tbar{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.tbar input{flex:1;min-width:160px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;}
+.tbar select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;}
+.tbar button{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;}
 .scroll{overflow-x:auto;max-height:70vh;overflow-y:auto;}
 table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1600px;}
 thead th{background:#f0f3f8;text-align:left;padding:11px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:2;}
@@ -39,6 +43,24 @@ tbody tr.totalrow{background:#eef2fb;font-weight:700;}
 .reqtabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
 .reqtab{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
 .reqtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.sectiontitle{font-size:15px;font-weight:700;margin:22px 0 10px;}
+.sessBtn{background:var(--accent-soft);border:1px solid #cddcfb;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--accent);white-space:nowrap;}
+.sessBtn:hover{background:var(--accent);color:#fff;}
+.sessBtn .car{display:inline-block;transition:transform .15s;margin-left:2px;}
+.sessBtn.open .car{transform:rotate(180deg);}
+.detailwrap{background:#f7f9fc;padding:14px 18px 16px 18px;}
+.detailtbl{width:100%;font-size:11.5px;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.detailtbl th{text-align:left;background:#f0f3f8;color:#42506a;font-weight:700;padding:8px 10px;text-transform:uppercase;font-size:10px;letter-spacing:.3px;border-bottom:2px solid var(--line);white-space:nowrap;}
+.detailtbl td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top;white-space:nowrap;}
+.classpill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:700;color:#fff;}
+.classpill.ORGANIC_SEARCH{background:#2e7d32;}
+.classpill.PAID_SEARCH{background:#c62828;}
+.classpill.DIRECT{background:#616e85;}
+.classpill.SOCIAL{background:#8a3ffc;}
+.classpill.EMAIL{background:#0e7490;}
+.classpill.AFFILIATE{background:#b9770e;}
+.classpill.REFERRAL{background:#0f766e;}
+.classpill.OTHER,.classpill.UNKNOWN{background:#9aa3b2;}
 @media(max-width:700px){h1{font-size:18px;}.card .value{font-size:18px;}body{padding:16px 8px;}header{padding:18px 16px;}}
 </style>
 </head>
@@ -68,11 +90,10 @@ tbody tr.totalrow{background:#eef2fb;font-weight:700;}
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
-  <button id="jExportCsv" class="primary">Export CSV</button>
+  <button id="jExportOrdersCsv" class="primary">Export Order Detail CSV</button>
 </div>
 
 <div class="cards" id="jCards">
-  <div class="card"><div class="label">Products With Sales</div><div class="value" id="jcProducts">&ndash;</div></div>
   <div class="card"><div class="label">Orders</div><div class="value" id="jcOrders">&ndash;</div></div>
   <div class="card"><div class="label">Units Sold</div><div class="value" id="jcUnits">&ndash;</div></div>
   <div class="card"><div class="label">Gross Sales</div><div class="value" id="jcGross">&ndash;</div></div>
@@ -80,24 +101,53 @@ tbody tr.totalrow{background:#eef2fb;font-weight:700;}
   <div class="card"><div class="label">Net Sales</div><div class="value" id="jcNet">&ndash;</div></div>
 </div>
 
+<div class="sub" style="margin-bottom:14px;">Google Ads / Paid Search, Email, and Social orders are excluded entirely from every figure on this page. Every other channel (Organic Search, Direct, Referral, Affiliate, Other, No Journey Data) counts. Click a group row below to filter the Order Detail table to just that group.</div>
+
 <div class="tablebox">
-  <div class="scroll">
-    <table id="jTable">
-      <thead><tr id="jTableHead">
-        <th>Product ID</th><th>Product Title</th><th class="num">Orders</th><th class="num">Units</th>
-        <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th>
+  <div class="scroll" style="max-height:none;overflow-y:visible;">
+    <table style="min-width:900px;">
+      <thead><tr>
+        <th>Group</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
       </tr></thead>
-      <tbody id="jTbody"><tr><td colspan="8" class="loading">Loading&hellip;</td></tr></tbody>
+      <tbody id="jGroupBreakdownBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
     </table>
   </div>
-  <div class="empty" id="jEmpty" style="display:none;">No Jackson product sales this month.</div>
+</div>
+
+<div class="sectiontitle">Order Detail — every order containing a Jackson product this month</div>
+<div class="tablebox">
+  <div class="tbar">
+    <span id="jcCnt">&ndash;</span>
+    <input type="text" id="jq_order" placeholder="Search order name&hellip;">
+    <input type="text" id="jq_product" placeholder="Search Product ID&hellip;">
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Group <select id="jf_channel">
+      <option value="">All Groups</option>
+    </select></label>
+    <button id="jResetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th></th>
+        <th>Group</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Jackson Product</th><th>Product ID</th><th>SKU</th>
+        <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+        <th>Financial Status</th><th>Fulfilment Status</th>
+        <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Journey Status</th>
+      </tr></thead>
+      <tbody id="jOrdersTbody"><tr><td colspan="19" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="jOrdersEmpty" style="display:none;">No orders match the current filters.</div>
 </div>
 
 <div class="footnotes">
   <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> &middot; fetched via a server-side serverless function (<code>/api/sales-jackson</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Product scope:</strong> 50 explicit Shopify Product IDs supplied directly (not a collection or CSV allocation) &mdash; only line items matching one of these IDs count toward these figures.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
-  <strong>Channel columns:</strong> each product's Net Sales is broken down by the channel of the order's first customer session (Organic Search, Google Ads/Paid Search, Direct, Social, Email, Referral, AI Tools, or No Journey Data/Unknown) &mdash; expand a row for details, or see the CSV export for the full per-channel breakdown.<br>
+  <strong>Jackson attribution:</strong> Jackson is SEO, same as Kamsi &mdash; Google Ads / Paid Search, Email, and Social orders are excluded entirely from every figure on this page; every other channel counts. Click a row's <strong>Sessions</strong> button in the Order Detail table to see every recorded session for that order.<br>
+  <strong>Historical months (Jan&ndash;Jun):</strong> pre-generated static snapshots, served instantly &mdash; closed calendar months, numbers do not change, so there is no Refresh button for those tabs.<br>
   <strong>Live month (July onward):</strong> current month is month-to-date; click <strong>Refresh</strong> to re-fetch the latest data. No automatic/background polling.<br>
   <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
   <strong>Last refresh timestamp:</strong> <span id="jFootRefresh">&ndash;</span>
@@ -107,6 +157,7 @@ tbody tr.totalrow{background:#eef2fb;font-weight:700;}
 <script>
 function esc(s){ return (s === null || s === undefined) ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function money(n){ return (n === null || n === undefined) ? '–' : '£' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function num(n){ return (n === null || n === undefined) ? '–' : Number(n).toLocaleString(); }
 
 const J_LIVE_MONTHS = ['2026-07'];
 let J_CURRENT_MONTH = '2026-07';
@@ -114,43 +165,72 @@ let J_DATA = null;
 let jLoading = false;
 let jAbortController = null;
 let jLastSuccessfulAt = null;
+let jOpenRows = new Set();
+
+// Client-side per-month cache — historical months never change once fetched,
+// so switching back to an already-loaded tab renders instantly instead of
+// re-hitting the network. The live month always bypasses this cache.
+const J_MONTH_CACHE = new Map();
 
 function jSelectMonth(month){
   J_CURRENT_MONTH = month;
   document.querySelectorAll('#jMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  jOpenRows = new Set();
+
+  const isLive = J_LIVE_MONTHS.includes(month);
+  if (!isLive && J_MONTH_CACHE.has(month)) {
+    // Instant render from cache, then silently re-validate in the
+    // background so a first-ever site-wide refresh still self-heals.
+    J_DATA = J_MONTH_CACHE.get(month);
+    jApplyLoadedUI(false);
+    jRenderAll();
+    jLoad(false, true);
+    return;
+  }
   jLoad(false);
 }
 
-async function jLoad(force){
+function jApplyLoadedUI(isLive){
+  document.getElementById('jLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+  document.getElementById('jLiveChip').className = 'chip';
+  document.getElementById('jLastRefresh').textContent = 'Retrieved at: ' + new Date(J_DATA.meta.generatedAt).toLocaleString();
+  document.getElementById('jLastRefresh').style.display = '';
+  document.getElementById('jFootRefresh').textContent = new Date(J_DATA.meta.generatedAt).toLocaleString();
+  document.getElementById('jPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Jackson-owned products only (' + J_DATA.productIdsTracked + ' tracked product IDs) &middot; <strong>' + esc(J_DATA.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh — not auto-updating.' : 'a completed, closed reporting period — not a live/updating view.');
+}
+
+async function jLoad(force, silent){
   if (jLoading) return;
   jLoading = true;
   const isLive = J_LIVE_MONTHS.includes(J_CURRENT_MONTH);
   const refreshBtn = document.getElementById('jRefreshBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
-  document.getElementById('jLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
-  document.getElementById('jLiveChip').className = 'chip';
+  if (!silent) {
+    document.getElementById('jLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+    document.getElementById('jLiveChip').className = 'chip';
+  }
   if (jAbortController) jAbortController.abort();
   jAbortController = new AbortController();
+  const requestedMonth = J_CURRENT_MONTH;
   try {
-    const url = '/api/sales-jackson?month=' + encodeURIComponent(J_CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const url = '/api/sales-jackson?month=' + encodeURIComponent(requestedMonth) + (force ? '&refresh=1' : '');
     const res = await fetch(url, { signal: jAbortController.signal });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    if (requestedMonth !== J_CURRENT_MONTH) { jLoading = false; refreshBtn.disabled = false; return; } // user switched tabs again mid-flight
     J_DATA = data;
+    if (!isLive) J_MONTH_CACHE.set(requestedMonth, data);
     jLastSuccessfulAt = new Date();
-    document.getElementById('jLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
-    document.getElementById('jLiveChip').className = 'chip';
-    document.getElementById('jLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
-    document.getElementById('jLastRefresh').style.display = '';
-    document.getElementById('jFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
-    document.getElementById('jPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Jackson-owned products only (' + data.productIdsTracked + ' tracked product IDs) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh — not auto-updating.' : 'a completed, closed reporting period — not a live/updating view.');
+    jApplyLoadedUI(isLive);
     jRenderAll();
   } catch (e) {
     if (e.name === 'AbortError') { jLoading = false; refreshBtn.disabled = false; return; }
-    document.getElementById('jLiveChip').textContent = 'Failed to load: ' + e.message + (J_DATA ? ' — showing last successful data' : '');
-    document.getElementById('jLiveChip').className = 'chip stale';
-    if (!J_DATA) document.getElementById('jTbody').innerHTML = '<tr><td colspan="8" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    if (!silent) {
+      document.getElementById('jLiveChip').textContent = 'Failed to load: ' + e.message + (J_DATA ? ' — showing last successful data' : '');
+      document.getElementById('jLiveChip').className = 'chip stale';
+      if (!J_DATA) document.getElementById('jGroupBreakdownBody').innerHTML = '<tr><td colspan="9" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    }
   } finally {
     jLoading = false;
     refreshBtn.disabled = false;
@@ -159,70 +239,159 @@ async function jLoad(force){
 
 function jRenderAll(){
   if (!J_DATA) return;
-  const rows = J_DATA.rows || [];
   const totals = J_DATA.totals || {};
 
-  document.getElementById('jcProducts').textContent = rows.length;
   document.getElementById('jcOrders').textContent = totals.orders || 0;
   document.getElementById('jcUnits').textContent = totals.units || 0;
   document.getElementById('jcGross').textContent = money(totals.gross);
   document.getElementById('jcRefunds').textContent = money(totals.refunds);
   document.getElementById('jcNet').textContent = money(totals.net);
 
-  const tbody = document.getElementById('jTbody');
-  const emptyEl = document.getElementById('jEmpty');
+  jRenderGroupBreakdown();
+  jRenderChannelOptions();
+  jRenderOrdersTable();
+}
+
+function jRenderGroupBreakdown(){
+  const groups = J_DATA.groupBreakdown || [];
+  const tbody = document.getElementById('jGroupBreakdownBody');
+  tbody.innerHTML = groups.map(g =>
+    '<tr class="jGroupRow" data-group="' + esc(g.group) + '" style="cursor:pointer;" title="Click to filter Order Detail to this group">' +
+    '<td><strong>' + esc(g.group) + '</strong></td><td class="num">' + num(g.ordersCount) + '</td><td class="num">' + num(g.unitsSold) + '</td>' +
+    '<td class="num">' + money(g.grossSales) + '</td><td class="num">' + money(g.discounts) + '</td><td class="num">' + money(g.refunds) + '</td>' +
+    '<td class="num">' + money(g.netSales) + '</td><td class="num">' + num(g.uniqueProductsSold) + '</td><td class="num">' + money(g.averageRevenuePerOrder) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.jGroupRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('jf_channel').value = tr.getAttribute('data-group');
+      jRenderOrdersTable();
+      document.getElementById('jOrdersTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+function jFlatOrderRows(){
+  const rows = [];
+  for (const o of (J_DATA ? J_DATA.allJacksonOrders : []) || []) {
+    for (const item of o.matchedItems) rows.push({ order: o, item, group: o.group });
+  }
+  return rows;
+}
+
+function jFilteredOrderRows(){
+  const qOrder = document.getElementById('jq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('jq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('jf_channel').value;
+  return jFlatOrderRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function jRenderChannelOptions(){
+  const groups = (J_DATA.groupBreakdown || []).map(g => g.group);
+  const sel = document.getElementById('jf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Groups</option>' + groups.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('');
+  sel.value = prevVal;
+}
+
+function jRenderOrdersTable(){
+  const rows = jFilteredOrderRows();
+  document.getElementById('jcCnt').textContent = rows.length.toLocaleString() + ' of ' + jFlatOrderRows().length.toLocaleString() + ' Jackson line items';
+  const tbody = document.getElementById('jOrdersTbody');
+  const emptyEl = document.getElementById('jOrdersEmpty');
   if (!rows.length) {
     tbody.innerHTML = '';
-    emptyEl.style.display = '';
+    emptyEl.style.display = 'block';
     return;
   }
   emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (jOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales) + '</td>' +
+      '<td class="num">' + money(item.discounts) + '</td>' + '<td class="num">' + money(item.refunds) + '</td>' + '<td class="num">' + money(item.netSales) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.journeyStatus) + '</td>' +
+      '</tr>'
+    );
+    if (jOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="19"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
 
-  let html = '';
-  for (const p of rows) {
-    const channelStr = Object.entries(p.channels || {}).map(([ch, v]) => ch + ': ' + money(v)).join(' · ');
-    html += '<tr>' +
-      '<td>' + esc(p.productId) + '</td>' +
-      '<td title="' + esc(channelStr) + '">' + esc(p.title) + '</td>' +
-      '<td class="num">' + p.orders + '</td>' +
-      '<td class="num">' + p.units + '</td>' +
-      '<td class="num">' + money(p.gross) + '</td>' +
-      '<td class="num">' + money(p.discounts) + '</td>' +
-      '<td class="num">' + money(p.refunds) + '</td>' +
-      '<td class="num">' + money(p.net) + '</td>' +
-      '</tr>';
-  }
-  html += '<tr class="totalrow"><td colspan="2">TOTAL (' + rows.length + ' products)</td>' +
-    '<td class="num">' + totals.orders + '</td>' +
-    '<td class="num">' + totals.units + '</td>' +
-    '<td class="num">' + money(totals.gross) + '</td>' +
-    '<td class="num">' + money(totals.discounts) + '</td>' +
-    '<td class="num">' + money(totals.refunds) + '</td>' +
-    '<td class="num">' + money(totals.net) + '</td></tr>';
-  tbody.innerHTML = html;
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (jOpenRows.has(id)) jOpenRows.delete(id); else jOpenRows.add(id);
+      jRenderOrdersTable();
+    });
+  });
 }
 
-function jExportCsv(){
-  if (!J_DATA) return;
-  const rows = J_DATA.rows || [];
-  const channelSet = new Set();
-  rows.forEach(p => Object.keys(p.channels || {}).forEach(c => channelSet.add(c)));
-  const channels = [...channelSet];
-  const header = ['Product ID','Product Title','Orders','Units','Gross','Discounts','Refunds','Net', ...channels.map(c => c + ' - Net')];
-  const lines = [header];
-  for (const p of rows) {
-    lines.push([p.productId, p.title, p.orders, p.units, p.gross, p.discounts, p.refunds, p.net, ...channels.map(c => (p.channels||{})[c] || 0)]);
-  }
-  const totals = J_DATA.totals || {};
-  lines.push(['TOTAL','', totals.orders, totals.units, totals.gross, totals.discounts, totals.refunds, totals.net, ...channels.map(c => (totals.channels||{})[c] || 0)]);
-  const csv = lines.map(r => r.map(v => { const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+['jq_order','jq_product'].forEach(id => document.getElementById(id).addEventListener('input', jRenderOrdersTable));
+document.getElementById('jf_channel').addEventListener('change', jRenderOrdersTable);
+document.getElementById('jResetFilters').addEventListener('click', () => {
+  document.getElementById('jq_order').value = '';
+  document.getElementById('jq_product').value = '';
+  document.getElementById('jf_channel').value = '';
+  jRenderOrdersTable();
+});
+
+function downloadCsv(content, filename){
+  const BOM = '﻿';
+  const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'jackson-sales-' + J_CURRENT_MONTH + '.csv';
+  a.download = filename;
   a.click();
 }
-document.getElementById('jExportCsv').addEventListener('click', jExportCsv);
+function csvCell(v){ const s = String(v === null || v === undefined ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+
+function jExportOrdersCsv(){
+  if (!J_DATA) return;
+  const rows = jFlatOrderRows();
+  const header = ['Group','Order Name','Order ID','Created At','Product Title','Product ID','SKU','Qty','Gross','Discounts','Refunds','Net','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Type','All Sessions','Journey Status'];
+  const lines = [header];
+  for (const r of rows) {
+    const o = r.order, item = r.item, fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' -> ') || '';
+    lines.push([r.group, o.orderName, o.orderLegacyId, o.createdAt, item.productTitle, item.productId, item.sku, item.quantity, item.grossSales, item.discounts, item.refunds, item.netSales, o.currency, o.financialStatus, o.fulfillmentStatus, fv.source, fv.sourceType, allSessionsLabel, o.journeyStatus]);
+  }
+  const csv = lines.map(r => r.map(csvCell).join(',')).join('\n');
+  downloadCsv(csv, 'jackson-sales-order-detail-' + J_CURRENT_MONTH + '.csv');
+}
+document.getElementById('jExportOrdersCsv').addEventListener('click', jExportOrdersCsv);
 
 jLoad(false);
 </script>

@@ -1,0 +1,1269 @@
+{
+  "success": true,
+  "staff": {
+    "name": "Jackson",
+    "department": "SEO",
+    "store": "ledsone.co.uk"
+  },
+  "reportPeriod": {
+    "month": "2026-05",
+    "label": "May 1–31, 2026",
+    "start": "2026-05-01T00:00:00.000Z",
+    "endExclusive": "2026-06-01T00:00:00.000Z",
+    "timezone": "Europe/London"
+  },
+  "supportedMonths": [
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07"
+  ],
+  "isLive": false,
+  "productIdsTracked": 50,
+  "groupBreakdown": [
+    {
+      "group": "Direct",
+      "ordersCount": 11,
+      "unitsSold": 30,
+      "grossSales": 169.82,
+      "discounts": 0,
+      "refunds": 0,
+      "netSales": 169.82,
+      "averageRevenuePerOrder": 15.44,
+      "uniqueProductsSold": 8,
+      "currency": "GBP"
+    },
+    {
+      "group": "No Journey Data",
+      "ordersCount": 1,
+      "unitsSold": 5,
+      "grossSales": 19.25,
+      "discounts": 0,
+      "refunds": 0,
+      "netSales": 19.25,
+      "averageRevenuePerOrder": 19.25,
+      "uniqueProductsSold": 1,
+      "currency": "GBP"
+    },
+    {
+      "group": "Other",
+      "ordersCount": 1,
+      "unitsSold": 2,
+      "grossSales": 6.5,
+      "discounts": 0,
+      "refunds": 0,
+      "netSales": 6.5,
+      "averageRevenuePerOrder": 6.5,
+      "uniqueProductsSold": 1,
+      "currency": "GBP"
+    },
+    {
+      "group": "Organic Search",
+      "ordersCount": 1,
+      "unitsSold": 1,
+      "grossSales": 5.14,
+      "discounts": 0,
+      "refunds": 0,
+      "netSales": 5.14,
+      "averageRevenuePerOrder": 5.14,
+      "uniqueProductsSold": 1,
+      "currency": "GBP"
+    }
+  ],
+  "totals": {
+    "units": 38,
+    "gross": 200.71,
+    "discounts": 0,
+    "refunds": 0,
+    "net": 200.71,
+    "orders": 14
+  },
+  "allJacksonOrders": [
+    {
+      "orderId": "gid://shopify/Order/13020453896578",
+      "orderLegacyId": "13020453896578",
+      "orderName": "#LED52258",
+      "createdAt": "2026-05-02T10:58:23Z",
+      "updatedAt": "2026-05-03T07:13:16Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 28.23,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18763131126146",
+        "occurredAt": "2026-05-02T10:44:11Z",
+        "landingPage": "https://ledsone.co.uk/collections/e27-base-bulb",
+        "referrerUrl": "https://ledsone.co.uk/",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18763131126146",
+        "occurredAt": "2026-05-02T10:44:11Z",
+        "landingPage": "https://ledsone.co.uk/collections/e27-base-bulb",
+        "referrerUrl": "https://ledsone.co.uk/",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18763131126146",
+          "occurredAt": "2026-05-02T10:44:11Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": "https://ledsone.co.uk/",
+          "landingPage": "https://ledsone.co.uk/collections/e27-base-bulb",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37539701293442",
+          "productTitle": "Edison Style E27 G95 Bulb 4W Dimmable Screw Vintage Globe Decorative Bulb~1531",
+          "productId": "6669353779361",
+          "variantTitle": null,
+          "variantId": "39654604964001",
+          "sku": "LDMG95E274",
+          "quantity": 2,
+          "grossSales": 6.5,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 6.5,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13020979659138",
+      "orderLegacyId": "13020979659138",
+      "orderName": "#LED52272",
+      "createdAt": "2026-05-02T13:00:13Z",
+      "updatedAt": "2026-05-03T05:30:29Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 12.04,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18763698405762",
+        "occurredAt": "2026-05-02T12:47:18Z",
+        "landingPage": "https://ledsone.nl/products/edison-screw-white-ceramic-porcelain-lamp-holder-for-table-lamp-e27-socket-uk",
+        "referrerUrl": "https://www.google.com/",
+        "source": "Google",
+        "sourceDescription": "1st session from Google",
+        "sourceType": "SEO",
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18763698405762",
+        "occurredAt": "2026-05-02T12:47:18Z",
+        "landingPage": "https://ledsone.nl/products/edison-screw-white-ceramic-porcelain-lamp-holder-for-table-lamp-e27-socket-uk",
+        "referrerUrl": "https://www.google.com/",
+        "source": "Google",
+        "sourceDescription": "1st session from Google",
+        "sourceType": "SEO",
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18763698405762",
+          "occurredAt": "2026-05-02T12:47:18Z",
+          "classification": "ORGANIC_SEARCH",
+          "evidence": "search engine match (google), medium=none",
+          "source": "Google",
+          "sourceDescription": "1st session from Google",
+          "sourceType": "SEO",
+          "referrerUrl": "https://www.google.com/",
+          "landingPage": "https://ledsone.nl/products/edison-screw-white-ceramic-porcelain-lamp-holder-for-table-lamp-e27-socket-uk",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37540833329538",
+          "productTitle": "White Ceramic E27 Edison Screw Lamp Holder for Pendant Lights~4111",
+          "productId": "7865820414202",
+          "variantTitle": "Single",
+          "variantId": "43763599999226",
+          "sku": "LHC6E27WH",
+          "quantity": 1,
+          "grossSales": 5.14,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 5.14,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Organic Search",
+      "group": "Organic Search"
+    },
+    {
+      "orderId": "gid://shopify/Order/13034142695810",
+      "orderLegacyId": "13034142695810",
+      "orderName": "#LED52536",
+      "createdAt": "2026-05-05T23:30:04Z",
+      "updatedAt": "2026-05-06T06:51:29Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 21.94,
+      "currency": "GBP",
+      "journeyStatus": "NO_JOURNEY_DATA",
+      "journeyReason": "no CustomerVisit moments and no first/last visit",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": null,
+      "firstVisit": null,
+      "lastVisit": null,
+      "sessions": [],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37569851720066",
+          "productTitle": "Waterproof Electrical Junction Box Cable Connector Wire IP68 UK~3556",
+          "productId": "7585585332474",
+          "variantTitle": "T Connecter",
+          "variantId": "42621052584186",
+          "sku": "COT9ABM",
+          "quantity": 5,
+          "grossSales": 19.25,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 19.25,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "No Journey Data",
+      "group": "No Journey Data"
+    },
+    {
+      "orderId": "gid://shopify/Order/13035603624322",
+      "orderLegacyId": "13035603624322",
+      "orderName": "#LED52556",
+      "createdAt": "2026-05-06T11:41:25Z",
+      "updatedAt": "2026-05-06T14:00:28Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 27.88,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18786143469954",
+        "occurredAt": "2026-05-06T11:34:56Z",
+        "landingPage": "https://ledsone.co.uk/collections/led-modules",
+        "referrerUrl": "https://ledsone.co.uk/products/dc-12v-ip67-led-modules-smd-injection-light-waterproof-led-strip",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18786143502722",
+        "occurredAt": "2026-05-06T11:38:37Z",
+        "landingPage": "https://ledsone.co.uk/products/cob-injection-led-module-waterproof-ip67-module",
+        "referrerUrl": "https://www.google.com/",
+        "source": "Google",
+        "sourceDescription": "Converted after a visit from Google",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": {
+          "source": "Google_Ads",
+          "medium": "PMax",
+          "campaign": "Shop_DM_PMax-46_AguAsset",
+          "term": "Our_Hreo",
+          "content": null
+        }
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18786143469954",
+          "occurredAt": "2026-05-06T11:34:56Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": "https://ledsone.co.uk/products/dc-12v-ip67-led-modules-smd-injection-light-waterproof-led-strip",
+          "landingPage": "https://ledsone.co.uk/collections/led-modules",
+          "referralCode": null,
+          "utm": null
+        },
+        {
+          "sessionNumber": 2,
+          "visitId": "gid://shopify/CustomerVisit/18786143502722",
+          "occurredAt": "2026-05-06T11:38:37Z",
+          "classification": "PAID_SEARCH",
+          "evidence": "paid utm_medium=pmax",
+          "source": "Google",
+          "sourceDescription": "Converted after a visit from Google",
+          "sourceType": null,
+          "referrerUrl": "https://www.google.com/",
+          "landingPage": "https://ledsone.co.uk/products/cob-injection-led-module-waterproof-ip67-module",
+          "referralCode": null,
+          "utm": {
+            "source": "Google_Ads",
+            "medium": "PMax",
+            "campaign": "Shop_DM_PMax-46_AguAsset",
+            "term": "Our_Hreo",
+            "content": null
+          }
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37572934893954",
+          "productTitle": "Industrial 12V IP67 Waterproof Warm White Injection LED Modules ~ 5677",
+          "productId": "14886272434562",
+          "variantTitle": "100 Pcs",
+          "variantId": "55219110707586",
+          "sku": "IMWWFPK",
+          "quantity": 1,
+          "grossSales": 23.19,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 23.19,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13037013926274",
+      "orderLegacyId": "13037013926274",
+      "orderName": "#LED52593",
+      "createdAt": "2026-05-06T18:25:25Z",
+      "updatedAt": "2026-05-07T06:31:08Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 21.17,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18788395975042",
+        "occurredAt": "2026-05-06T18:06:50Z",
+        "landingPage": "https://ledsone.co.uk/products/metal-hanging-chain",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18788395975042",
+        "occurredAt": "2026-05-06T18:06:50Z",
+        "landingPage": "https://ledsone.co.uk/products/metal-hanging-chain",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18788395975042",
+          "occurredAt": "2026-05-06T18:06:50Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/products/metal-hanging-chain",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37576073478530",
+          "productTitle": "3 Core Round Braided Army Green Fabric Lighting Cable 1M/5M/10M~3184",
+          "productId": "4417278115936",
+          "variantTitle": "5M",
+          "variantId": "54976019267970",
+          "sku": "CL3RAG5PK",
+          "quantity": 1,
+          "grossSales": 9.89,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 9.89,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13100438716802",
+      "orderLegacyId": "13100438716802",
+      "orderName": "#LED53411",
+      "createdAt": "2026-05-16T13:51:20Z",
+      "updatedAt": "2026-05-17T07:49:24Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 6.44,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 2,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18837666070914",
+        "occurredAt": "2026-05-12T10:39:29Z",
+        "landingPage": "https://account.ledsone.co.uk/orders/ce7854ec912d382b8cb53e5c4dec4716",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": null,
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18837666136450",
+        "occurredAt": "2026-05-16T13:49:16Z",
+        "landingPage": "https://ledsone.co.uk/cart",
+        "referrerUrl": "https://account.ledsone.co.uk/",
+        "source": "https://account.ledsone.co.uk/",
+        "sourceDescription": "1st session from ledsone.co.uk",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18837666070914",
+          "occurredAt": "2026-05-12T10:39:29Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": null,
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://account.ledsone.co.uk/orders/ce7854ec912d382b8cb53e5c4dec4716",
+          "referralCode": null,
+          "utm": null
+        },
+        {
+          "sessionNumber": 2,
+          "visitId": "gid://shopify/CustomerVisit/18837666103682",
+          "occurredAt": "2026-05-12T10:39:34Z",
+          "classification": "PAID_SEARCH",
+          "evidence": "paid utm_medium=pmax",
+          "source": "Google",
+          "sourceDescription": null,
+          "sourceType": null,
+          "referrerUrl": "https://www.google.com/",
+          "landingPage": "https://ledsone.co.uk/collections/premium-lighting/products/longlife-waterproof-electrical-junction-box-cable-connector-wire-ip68-outdoor-uk",
+          "referralCode": null,
+          "utm": {
+            "source": "Google_Ads",
+            "medium": "Pmax",
+            "campaign": "GCSS_ALL_ROAS_400_SAJEE_PMAX",
+            "term": "ASSET_SJ",
+            "content": null
+          }
+        },
+        {
+          "sessionNumber": 3,
+          "visitId": "gid://shopify/CustomerVisit/18837666136450",
+          "occurredAt": "2026-05-16T13:49:16Z",
+          "classification": "REFERRAL",
+          "evidence": "non-search referrer: account.ledsone.co.uk",
+          "source": "https://account.ledsone.co.uk/",
+          "sourceDescription": "1st session from ledsone.co.uk",
+          "sourceType": null,
+          "referrerUrl": "https://account.ledsone.co.uk/",
+          "landingPage": "https://ledsone.co.uk/cart",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37652760723842",
+          "productTitle": "Waterproof Electrical Junction Box Cable Connector Wire IP68 UK~3556",
+          "productId": "7585585332474",
+          "variantTitle": "Y Connecter",
+          "variantId": "42621052616954",
+          "sku": "COY9ABM",
+          "quantity": 1,
+          "grossSales": 3.75,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 3.75,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13107249086850",
+      "orderLegacyId": "13107249086850",
+      "orderName": "#LED53592",
+      "createdAt": "2026-05-18T13:38:02Z",
+      "updatedAt": "2026-05-19T07:09:10Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 53.06,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18847587926402",
+        "occurredAt": "2026-05-18T13:28:21Z",
+        "landingPage": "https://ledsone.co.uk/products/3-core-army-green-round-vintage-italian-braided-fabric-cable-flex-0-75mm-uk",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18847587926402",
+        "occurredAt": "2026-05-18T13:28:21Z",
+        "landingPage": "https://ledsone.co.uk/products/3-core-army-green-round-vintage-italian-braided-fabric-cable-flex-0-75mm-uk",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18847587926402",
+          "occurredAt": "2026-05-18T13:28:21Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/products/3-core-army-green-round-vintage-italian-braided-fabric-cable-flex-0-75mm-uk",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37667700081026",
+          "productTitle": "3 Core Round Braided Army Green Fabric Lighting Cable 1M/5M/10M~3184",
+          "productId": "4417278115936",
+          "variantTitle": "5M",
+          "variantId": "54976019267970",
+          "sku": "CL3RAG5PK",
+          "quantity": 1,
+          "grossSales": 9.89,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 9.89,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13114946322818",
+      "orderLegacyId": "13114946322818",
+      "orderName": "#LED53816",
+      "createdAt": "2026-05-20T16:15:07Z",
+      "updatedAt": "2026-05-21T15:17:23Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 40.41,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 2,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18859601396098",
+        "occurredAt": "2026-05-20T15:19:25Z",
+        "landingPage": "https://ledsone.co.uk/",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18859601428866",
+        "occurredAt": "2026-05-20T16:05:55Z",
+        "landingPage": "https://ledsone.co.uk/checkouts/cn/hWNCNwSYgqVizniSefsERnRj/en-gb",
+        "referrerUrl": "https://ledsone.co.uk/",
+        "source": "direct",
+        "sourceDescription": "Converted after a direct visit",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18859601396098",
+          "occurredAt": "2026-05-20T15:19:25Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/",
+          "referralCode": null,
+          "utm": null
+        },
+        {
+          "sessionNumber": 2,
+          "visitId": "gid://shopify/CustomerVisit/18859601428866",
+          "occurredAt": "2026-05-20T16:05:55Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "Converted after a direct visit",
+          "sourceType": null,
+          "referrerUrl": "https://ledsone.co.uk/",
+          "landingPage": "https://ledsone.co.uk/checkouts/cn/hWNCNwSYgqVizniSefsERnRj/en-gb",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37684390822274",
+          "productTitle": "Industrial Vintage Various colours Ceiling Light Fitting E27 Pendant Light ~4050",
+          "productId": "7738421936378",
+          "variantTitle": "Grey / No",
+          "variantId": "43233919467770",
+          "sku": "CRSF100GY+PHCH1PWRSGY",
+          "quantity": 2,
+          "grossSales": 17.78,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 17.78,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13133453492610",
+      "orderLegacyId": "13133453492610",
+      "orderName": "#LED54047",
+      "createdAt": "2026-05-23T18:22:45Z",
+      "updatedAt": "2026-05-24T07:10:31Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 53.9,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 3,
+      "daysToConversion": 4,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18875219018114",
+        "occurredAt": "2026-05-19T19:40:57Z",
+        "landingPage": "https://ledsone.co.uk/",
+        "referrerUrl": "https://ledsone.co.uk/checkouts/cn/hWNCM0SaijQ4ssQZ0bqrWLVT/en-gb/thank-you",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18875219050882",
+        "occurredAt": "2026-05-23T18:19:47Z",
+        "landingPage": "https://ledsone.co.uk/products/longlife-waterproof-electrical-junction-box-cable-connector-wire-ip68-outdoor-uk",
+        "referrerUrl": "https://www.google.com/",
+        "source": "Google",
+        "sourceDescription": "Converted after a visit from Google",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": {
+          "source": "Google_Ads",
+          "medium": "PMax",
+          "campaign": "Shop_DM_PMax-46_AguAsset",
+          "term": "Our_Hreo",
+          "content": null
+        }
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18875219018114",
+          "occurredAt": "2026-05-19T19:40:57Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": "https://ledsone.co.uk/checkouts/cn/hWNCM0SaijQ4ssQZ0bqrWLVT/en-gb/thank-you",
+          "landingPage": "https://ledsone.co.uk/",
+          "referralCode": null,
+          "utm": null
+        },
+        {
+          "sessionNumber": 2,
+          "visitId": "gid://shopify/CustomerVisit/18875219050882",
+          "occurredAt": "2026-05-23T18:19:47Z",
+          "classification": "PAID_SEARCH",
+          "evidence": "paid utm_medium=pmax",
+          "source": "Google",
+          "sourceDescription": "Converted after a visit from Google",
+          "sourceType": null,
+          "referrerUrl": "https://www.google.com/",
+          "landingPage": "https://ledsone.co.uk/products/longlife-waterproof-electrical-junction-box-cable-connector-wire-ip68-outdoor-uk",
+          "referralCode": null,
+          "utm": {
+            "source": "Google_Ads",
+            "medium": "PMax",
+            "campaign": "Shop_DM_PMax-46_AguAsset",
+            "term": "Our_Hreo",
+            "content": null
+          }
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37709120635266",
+          "productTitle": "Waterproof Electrical Junction Box Cable Connector Wire IP68 UK~3556",
+          "productId": "7585585332474",
+          "variantTitle": "4 Way 3 core Connecter",
+          "variantId": "55171090743682",
+          "sku": "COWP4W3CBM",
+          "quantity": 10,
+          "grossSales": 38.9,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 38.9,
+          "currency": "GBP"
+        },
+        {
+          "lineItemId": "gid://shopify/LineItem/37709120668034",
+          "productTitle": "Waterproof Electrical Junction Box Cable Connector Wire IP68 UK~3556",
+          "productId": "7585585332474",
+          "variantTitle": "Y Connecter",
+          "variantId": "42621052616954",
+          "sku": "COY9ABM",
+          "quantity": 4,
+          "grossSales": 15,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 15,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13150270161282",
+      "orderLegacyId": "13150270161282",
+      "orderName": "#LED54150",
+      "createdAt": "2026-05-25T13:10:17Z",
+      "updatedAt": "2026-05-26T06:46:21Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 41.78,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18882919399810",
+        "occurredAt": "2026-05-25T12:33:25Z",
+        "landingPage": "https://ledsone.co.uk/products/longlife-waterproof-electrical-junction-box-cable-connector-wire-ip68-outdoor-uk",
+        "referrerUrl": "https://ledsone.co.uk/",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18882919399810",
+        "occurredAt": "2026-05-25T12:33:25Z",
+        "landingPage": "https://ledsone.co.uk/products/longlife-waterproof-electrical-junction-box-cable-connector-wire-ip68-outdoor-uk",
+        "referrerUrl": "https://ledsone.co.uk/",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18882919399810",
+          "occurredAt": "2026-05-25T12:33:25Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": "https://ledsone.co.uk/",
+          "landingPage": "https://ledsone.co.uk/products/longlife-waterproof-electrical-junction-box-cable-connector-wire-ip68-outdoor-uk",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37720973967746",
+          "productTitle": "Waterproof Electrical Junction Box Cable Connector Wire IP68 UK~3556",
+          "productId": "7585585332474",
+          "variantTitle": "T Connecter",
+          "variantId": "42621052584186",
+          "sku": "COT9ABM",
+          "quantity": 5,
+          "grossSales": 19.25,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 19.25,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13151516819842",
+      "orderLegacyId": "13151516819842",
+      "orderName": "#LED54177",
+      "createdAt": "2026-05-25T19:24:46Z",
+      "updatedAt": "2026-05-26T06:51:31Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 32.02,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18884901339522",
+        "occurredAt": "2026-05-24T19:20:12Z",
+        "landingPage": "https://ledsone.co.uk/products/bush-fit-20mm-female-x-fit-3-4-male-reducing-bush-converter-conduit-fixture",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18884901437826",
+        "occurredAt": "2026-05-25T19:12:34Z",
+        "landingPage": "https://ledsone.co.uk/cart",
+        "referrerUrl": "https://ledsone.co.uk/products/pipe-lighting-accessories-iron-6way-cross",
+        "source": "direct",
+        "sourceDescription": "Converted after a direct visit",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18884901339522",
+          "occurredAt": "2026-05-24T19:20:12Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/products/bush-fit-20mm-female-x-fit-3-4-male-reducing-bush-converter-conduit-fixture",
+          "referralCode": null,
+          "utm": null
+        },
+        {
+          "sessionNumber": 2,
+          "visitId": "gid://shopify/CustomerVisit/18884901372290",
+          "occurredAt": "2026-05-24T22:33:16Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": null,
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/products/bush-fit-20mm-female-x-fit-3-4-male-reducing-bush-converter-conduit-fixture",
+          "referralCode": null,
+          "utm": null
+        },
+        {
+          "sessionNumber": 3,
+          "visitId": "gid://shopify/CustomerVisit/18884901405058",
+          "occurredAt": "2026-05-25T18:05:55Z",
+          "classification": "PAID_SEARCH",
+          "evidence": "paid utm_medium=pmax",
+          "source": "Google",
+          "sourceDescription": null,
+          "sourceType": null,
+          "referrerUrl": "https://www.google.com/",
+          "landingPage": "https://ledsone.co.uk/",
+          "referralCode": null,
+          "utm": {
+            "source": "google",
+            "medium": "pmax",
+            "campaign": "Thiso-PMax-HI-12-3-2026",
+            "term": "THISOBAN",
+            "content": null
+          }
+        },
+        {
+          "sessionNumber": 4,
+          "visitId": "gid://shopify/CustomerVisit/18884901437826",
+          "occurredAt": "2026-05-25T19:12:34Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "Converted after a direct visit",
+          "sourceType": null,
+          "referrerUrl": "https://ledsone.co.uk/products/pipe-lighting-accessories-iron-6way-cross",
+          "landingPage": "https://ledsone.co.uk/cart",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37723734999426",
+          "productTitle": "Industrial Malleable Iron 5 Way Pipe Fitting Cross 3/4 Inch~1836",
+          "productId": "5928354545825",
+          "variantTitle": null,
+          "variantId": "37208304648353",
+          "sku": "PCRN5WC",
+          "quantity": 1,
+          "grossSales": 3.79,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 3.79,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13154829599106",
+      "orderLegacyId": "13154829599106",
+      "orderName": "#LED54246",
+      "createdAt": "2026-05-26T17:52:36Z",
+      "updatedAt": "2026-05-27T06:36:47Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 6.68,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18889614000514",
+        "occurredAt": "2026-05-26T17:50:08Z",
+        "landingPage": "https://ledsone.co.uk/checkouts/cn/hWNCcJ7cRuTkpMfc7Ocn9FoZ/en-gb",
+        "referrerUrl": "https://ledsone.co.uk/",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18889614000514",
+        "occurredAt": "2026-05-26T17:50:08Z",
+        "landingPage": "https://ledsone.co.uk/checkouts/cn/hWNCcJ7cRuTkpMfc7Ocn9FoZ/en-gb",
+        "referrerUrl": "https://ledsone.co.uk/",
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18889614000514",
+          "occurredAt": "2026-05-26T17:50:08Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": "https://ledsone.co.uk/",
+          "landingPage": "https://ledsone.co.uk/checkouts/cn/hWNCcJ7cRuTkpMfc7Ocn9FoZ/en-gb",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37730919448962",
+          "productTitle": "E27 Black Bakelite Lamp Holder Industrial Socket Light Bulb Holder ~5735",
+          "productId": "14921103278466",
+          "variantTitle": "3 Pack",
+          "variantId": "54996473053570",
+          "sku": "LHRTE27BM3PK",
+          "quantity": 1,
+          "grossSales": 3.99,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 3.99,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    },
+    {
+      "orderId": "gid://shopify/Order/13157202166146",
+      "orderLegacyId": "13157202166146",
+      "orderName": "#LED54270",
+      "createdAt": "2026-05-27T08:14:55Z",
+      "updatedAt": "2026-05-27T12:10:20Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 28.81,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18891874894210",
+        "occurredAt": "2026-05-27T06:26:24Z",
+        "landingPage": "https://ledsone.co.uk/products/vintage-style-semi-flush-mount-ceiling-light-e27",
+        "referrerUrl": null,
+        "source": "an unknown source",
+        "sourceDescription": "1st session from an unknown source",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": {
+          "source": "Meta",
+          "medium": "ANDRO MEDA Sales Ads | Broad Audience | Video Ads",
+          "campaign": "Sales Ads",
+          "term": "120243086044820367",
+          "content": "Video 10"
+        }
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18891874926978",
+        "occurredAt": "2026-05-27T08:12:16Z",
+        "landingPage": "https://ledsone.co.uk/products/2-pack-semi-flush-ceiling-light",
+        "referrerUrl": null,
+        "source": "an unknown source",
+        "sourceDescription": "Converted after a visit from an unknown source",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": {
+          "source": "Meta",
+          "medium": "ANDRO MEDA Sales Ads | Broad Audience | Video Ads",
+          "campaign": "Sales Ads",
+          "term": "120243086044820367",
+          "content": "Video 10"
+        }
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18891874894210",
+          "occurredAt": "2026-05-27T06:26:24Z",
+          "classification": "OTHER",
+          "evidence": "unrecognized source: an unknown source",
+          "source": "an unknown source",
+          "sourceDescription": "1st session from an unknown source",
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/products/vintage-style-semi-flush-mount-ceiling-light-e27",
+          "referralCode": null,
+          "utm": {
+            "source": "Meta",
+            "medium": "ANDRO MEDA Sales Ads | Broad Audience | Video Ads",
+            "campaign": "Sales Ads",
+            "term": "120243086044820367",
+            "content": "Video 10"
+          }
+        },
+        {
+          "sessionNumber": 2,
+          "visitId": "gid://shopify/CustomerVisit/18891874926978",
+          "occurredAt": "2026-05-27T08:12:16Z",
+          "classification": "OTHER",
+          "evidence": "unrecognized source: an unknown source",
+          "source": "an unknown source",
+          "sourceDescription": "Converted after a visit from an unknown source",
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/products/2-pack-semi-flush-ceiling-light",
+          "referralCode": null,
+          "utm": {
+            "source": "Meta",
+            "medium": "ANDRO MEDA Sales Ads | Broad Audience | Video Ads",
+            "campaign": "Sales Ads",
+            "term": "120243086044820367",
+            "content": "Video 10"
+          }
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37737349579138",
+          "productTitle": "Edison Style E27 G95 Bulb 4W Dimmable Screw Vintage Globe Decorative Bulb~1531",
+          "productId": "6669353779361",
+          "variantTitle": null,
+          "variantId": "39654604964001",
+          "sku": "LDMG95E274",
+          "quantity": 2,
+          "grossSales": 6.5,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 6.5,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Other",
+      "group": "Other"
+    },
+    {
+      "orderId": "gid://shopify/Order/13171141345666",
+      "orderLegacyId": "13171141345666",
+      "orderName": "#LED54498",
+      "createdAt": "2026-05-30T13:57:54Z",
+      "updatedAt": "2026-05-31T07:07:49Z",
+      "financialStatus": "PAID",
+      "fulfillmentStatus": "FULFILLED",
+      "orderTotal": 20.58,
+      "currency": "GBP",
+      "journeyStatus": "CLASSIFIED",
+      "journeyReason": "classified by first session",
+      "journeyReady": true,
+      "customerOrderIndex": 1,
+      "daysToConversion": 1,
+      "firstVisit": {
+        "id": "gid://shopify/CustomerVisit/18910289297794",
+        "occurredAt": "2026-05-30T13:55:49Z",
+        "landingPage": "https://ledsone.co.uk/",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "lastVisit": {
+        "id": "gid://shopify/CustomerVisit/18910289297794",
+        "occurredAt": "2026-05-30T13:55:49Z",
+        "landingPage": "https://ledsone.co.uk/",
+        "referrerUrl": null,
+        "source": "direct",
+        "sourceDescription": "1st session was direct to your store",
+        "sourceType": null,
+        "referralCode": null,
+        "utmParameters": null
+      },
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "visitId": "gid://shopify/CustomerVisit/18910289297794",
+          "occurredAt": "2026-05-30T13:55:49Z",
+          "classification": "DIRECT",
+          "evidence": "source=\"direct\"",
+          "source": "direct",
+          "sourceDescription": "1st session was direct to your store",
+          "sourceType": null,
+          "referrerUrl": null,
+          "landingPage": "https://ledsone.co.uk/",
+          "referralCode": null,
+          "utm": null
+        }
+      ],
+      "matchedItems": [
+        {
+          "lineItemId": "gid://shopify/LineItem/37766597050754",
+          "productTitle": "Conduit Pipe Table Lamp Kit with Dimmer Switch Steampunk Light -5651",
+          "productId": "14882306818434",
+          "variantTitle": "NO",
+          "variantId": "54884341809538",
+          "sku": "ENC8078",
+          "quantity": 1,
+          "grossSales": 17.89,
+          "discounts": 0,
+          "refunds": 0,
+          "netSales": 17.89,
+          "currency": "GBP"
+        }
+      ],
+      "channel": "Direct",
+      "group": "Direct"
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-07-17T09:41:32.414Z",
+    "cacheStatus": "miss",
+    "ordersScanned": 2130,
+    "ordersWithJacksonProducts": 14,
+    "pagesFetched": 68,
+    "throttleRetries": 0,
+    "executionMs": null,
+    "regeneratedViaChunking": true
+  }
+}

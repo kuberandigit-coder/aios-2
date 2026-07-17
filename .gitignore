@@ -6,6 +6,8 @@ node_modules/
 .claude/
 shopify.theme.toml.local
 *.json
+!reports/digital-marketing-member-pages/api/data/*.json
+!reports/digital-marketing-member-pages/vercel.json
 
 # Shopify theme repos — each has its own .git
 shopify-themes/
