@@ -20,8 +20,9 @@ h1{font-size:22px;letter-spacing:.2px;}
 .chip.stale{background:#fdecea;color:var(--bad);}
 .chip.warn{background:#fff6e0;color:#8a5a00;}
 .filters button{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;transition:all .15s;}
-.filters button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-.filters button.primary:hover{background:#1749cc;}
+.filters button.primary,button.primary{background:var(--accent);color:#fff;border-color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;}
+.filters button.primary:hover,button.primary:hover{background:#1749cc;}
+.exportbar{display:flex;justify-content:flex-end;}
 .filters button:disabled{opacity:.6;cursor:wait;}
 .filters button.primary:disabled::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;vertical-align:-1px;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -105,7 +106,7 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab active" data-month="2026-06" onclick="kSelectMonth('2026-06')">June</div>
 </div>
 
-<div style="margin-bottom:14px;">
+<div class="exportbar" style="margin-bottom:14px;">
   <button id="kGroupExportCsv" class="primary">Export CSV</button>
 </div>
 
@@ -137,7 +138,6 @@ tbody tr:hover{background:var(--accent-soft);}
     <span id="kcCnt">&ndash;</span>
     <input type="text" id="kcq_order" placeholder="Search order name&hellip;">
     <input type="text" id="kcq_product" placeholder="Search Product ID&hellip;">
-    <button id="kChannelExportCsv" class="primary">Export CSV</button>
   </div>
   <div class="tbar" style="border-top:0;">
     <label>Group <select id="kcf_channel">
@@ -195,7 +195,7 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab active" data-month="2026-06" onclick="dSelectMonth('2026-06')">June</div>
 </div>
 
-<div style="margin-bottom:14px;">
+<div class="exportbar" style="margin-bottom:14px;">
   <button id="dGroupExportCsv" class="primary">Export CSV</button>
 </div>
 
@@ -227,7 +227,6 @@ tbody tr:hover{background:var(--accent-soft);}
     <span id="dcCnt">&ndash;</span>
     <input type="text" id="dcq_order" placeholder="Search order name&hellip;">
     <input type="text" id="dcq_product" placeholder="Search Product ID&hellip;">
-    <button id="dChannelExportCsv" class="primary">Export CSV</button>
   </div>
   <div class="tbar" style="border-top:0;">
     <label>Group <select id="dcf_channel">
@@ -529,7 +528,6 @@ function kcExportCsv(){
   const monthTag = K_DATA ? K_DATA.reportPeriod.month : K_CURRENT_MONTH;
   downloadCsv(lines.join('\r\n'), monthTag + '_kamsi-organic-sales-ledsone-co-uk.csv');
 }
-document.getElementById('kChannelExportCsv').addEventListener('click', kcExportCsv);
 
 function kGroupExportCsv(){
   const cb = kcGroupBreakdown();
@@ -792,7 +790,6 @@ function dcExportCsv(){
   const monthTag = D_DATA ? D_DATA.reportPeriod.month : D_CURRENT_MONTH;
   downloadCsv(lines.join('\r\n'), monthTag + '_dilaksi-organic-sales-ledsone-co-uk.csv');
 }
-document.getElementById('dChannelExportCsv').addEventListener('click', dcExportCsv);
 
 function dGroupExportCsv(){
   const cb = dcGroupBreakdown();
