@@ -114,13 +114,13 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="kcLastOk" style="font-size:13px;">&ndash;</div></div>
 </div>
 
-<div class="sub" style="margin-bottom:14px;">Every order this month containing a Kamsi product, across <strong>every</strong> traffic channel &mdash; Organic Search, Google Ads / Paid Search, Direct, Social, Email, Referral, and any journey Shopify could not attribute. Click a channel row below to filter the table to just that channel.</div>
+<div class="sub" style="margin-bottom:14px;">Kamsi's organic sales definition only &mdash; Fully Organic, First-Session Organic, Direct, Referral, No Journey Data, and AI Tools. Google Ads / Paid Search, Social, Email, and non-AI Other are excluded from these two tables. Click a group row below to filter the table to just that group.</div>
 
 <div class="tablebox" style="margin-bottom:14px;">
   <div class="scroll" style="max-height:none;overflow-y:visible;">
     <table style="min-width:900px;">
       <thead><tr>
-        <th>Channel</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+        <th>Group</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
       </tr></thead>
       <tbody id="kChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
     </table>
@@ -135,8 +135,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <button id="kChannelExportCsv" class="primary">Export CSV</button>
   </div>
   <div class="tbar" style="border-top:0;">
-    <label>Channel <select id="kcf_channel">
-      <option value="">All Channels</option>
+    <label>Group <select id="kcf_channel">
+      <option value="">All Groups</option>
     </select></label>
     <button id="kcResetFilters">Clear Filters</button>
   </div>
@@ -144,7 +144,7 @@ tbody tr:hover{background:var(--accent-soft);}
     <table>
       <thead><tr>
         <th></th>
-        <th>Channel</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Kamsi Product</th><th>Product ID</th><th>SKU</th>
+        <th>Group</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Kamsi Product</th><th>Product ID</th><th>SKU</th>
         <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
         <th>Financial Status</th><th>Fulfilment Status</th>
         <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Journey Status</th>
@@ -243,11 +243,29 @@ function kRenderAll(){
   kcRenderAll();
 }
 
-// ===== All Channels table (Google Ads, Direct, Social, Email, Referral, Organic, No Journey Data, etc.) =====
+// ===== Kamsi's organic-sales definition only: Fully Organic, First-Session
+// Organic, Direct, Referral, No Journey Data, AI Tools. Google Ads / Paid
+// Search, Social, Email, Affiliate, and non-AI Other are excluded from
+// both tables below, per the confirmed original spec. =====
+const K_AI_SOURCES = ['chatgpt', 'perplexity', 'gemini', 'copilot', 'claude', 'bing chat', 'bingchat', 'character.ai', 'meta ai', 'grok'];
+const K_GROUP_ORDER = ['Fully Organic', 'First-Session Organic', 'Direct', 'Referral', 'No Journey Data', 'AI Tools'];
+
+function kGroupOf(o){
+  if (o.journeyStatus === 'FULLY_ORGANIC') return 'Fully Organic';
+  if (o.journeyStatus === 'FIRST_SESSION_ORGANIC') return 'First-Session Organic';
+  if (o.channel === 'Direct') return 'Direct';
+  if (o.channel === 'Referral') return 'Referral';
+  if (o.channel === 'No Journey Data' || o.channel === 'Unknown' || o.channel === 'Attribution Pending') return 'No Journey Data';
+  if (o.channel === 'Other' && o.firstVisit && K_AI_SOURCES.some(ai => String(o.firstVisit.source || '').toLowerCase().includes(ai))) return 'AI Tools';
+  return null; // Google Ads/Paid Search, Social, Email, Affiliate, non-AI Other — excluded
+}
+
 function kcFlatRows(){
   const rows = [];
   for (const o of (K_DATA ? K_DATA.allKamsiOrders : []) || []) {
-    for (const item of o.matchedItems) rows.push({ order: o, item });
+    const group = kGroupOf(o);
+    if (!group) continue;
+    for (const item of o.matchedItems) rows.push({ order: o, item, group });
   }
   return rows;
 }
@@ -255,22 +273,54 @@ function kcFlatRows(){
 function kcFilteredRows(){
   const qOrder = document.getElementById('kcq_order').value.trim().toLowerCase();
   const qProduct = document.getElementById('kcq_product').value.trim().toLowerCase();
-  const channelF = document.getElementById('kcf_channel').value;
+  const groupF = document.getElementById('kcf_channel').value;
   return kcFlatRows().filter(r => {
     const o = r.order, item = r.item;
     if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
     if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
-    if (channelF && o.channel !== channelF) return false;
+    if (groupF && r.group !== groupF) return false;
     return true;
   });
 }
 
+function kcGroupBreakdown(){
+  const byGroup = new Map();
+  for (const r of kcFlatRows()) {
+    if (!byGroup.has(r.group)) byGroup.set(r.group, new Set());
+    byGroup.get(r.group).add(r.order); // dedupe by order (breakdown is order-level, not line-item-level)
+  }
+  const currency = (K_DATA && K_DATA.combinedSummary && K_DATA.combinedSummary.currency) || 'GBP';
+  return K_GROUP_ORDER.map(group => {
+    const orders = byGroup.has(group) ? [...byGroup.get(group)] : [];
+    let unitsSold = 0, grossSales = 0, discounts = 0, refunds = 0;
+    const products = new Set();
+    for (const o of orders) {
+      for (const item of o.matchedItems) {
+        unitsSold += item.quantity;
+        grossSales += item.grossSales;
+        discounts += item.discounts;
+        refunds += item.refunds;
+        products.add(item.productId);
+      }
+    }
+    const netSales = grossSales - discounts - refunds;
+    return {
+      group, ordersCount: orders.length, unitsSold,
+      grossSales: Math.round(grossSales * 100) / 100, discounts: Math.round(discounts * 100) / 100,
+      refunds: Math.round(refunds * 100) / 100, netSales: Math.round(netSales * 100) / 100,
+      uniqueProductsSold: products.size,
+      averageRevenuePerOrder: orders.length ? Math.round((grossSales / orders.length) * 100) / 100 : 0,
+      currency,
+    };
+  }).filter(g => g.ordersCount > 0);
+}
+
 function kcRenderAll(){
   if (!K_DATA) return;
-  const cb = K_DATA.channelBreakdown || [];
+  const cb = kcGroupBreakdown();
   document.getElementById('kChannelCardsBody').innerHTML = cb.map(c =>
-    '<tr class="kChannelRow" data-channel="' + esc(c.channel) + '" style="cursor:pointer;" title="Click to filter table below to this channel">' +
-    '<td><strong>' + esc(c.channel) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<tr class="kChannelRow" data-channel="' + esc(c.group) + '" style="cursor:pointer;" title="Click to filter table below to this group">' +
+    '<td><strong>' + esc(c.group) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
     '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
     '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
   ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
@@ -285,7 +335,7 @@ function kcRenderAll(){
 
   const sel = document.getElementById('kcf_channel');
   const prevVal = sel.value;
-  sel.innerHTML = '<option value="">All Channels</option>' + cb.map(c => '<option value="' + esc(c.channel) + '">' + esc(c.channel) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.innerHTML = '<option value="">All Groups</option>' + cb.map(c => '<option value="' + esc(c.group) + '">' + esc(c.group) + ' (' + c.ordersCount + ')</option>').join('');
   sel.value = prevVal;
 
   kcRenderTable();
@@ -311,7 +361,7 @@ function kcRenderTable(){
     html.push(
       '<tr>' +
       '<td><button class="sessBtn' + (kOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
-      '<td><strong>' + esc(o.channel) + '</strong></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
       '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
       '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
       '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
@@ -370,17 +420,17 @@ function downloadCsv(content, filename){
 
 function kcExportCsv(){
   const rows = kcFilteredRows();
-  const header = ['Channel','Order Name','Order ID','Order Created At','Kamsi Product','Product ID','SKU','Kamsi Quantity','Kamsi Gross Sales','Kamsi Discounts','Kamsi Refunds','Kamsi Net Sales','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Type','All Sessions Classification','All Sessions JSON','Journey Status','Extraction Timestamp','Report Period'];
+  const header = ['Group','Order Name','Order ID','Order Created At','Kamsi Product','Product ID','SKU','Kamsi Quantity','Kamsi Gross Sales','Kamsi Discounts','Kamsi Refunds','Kamsi Net Sales','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Type','All Sessions Classification','All Sessions JSON','Journey Status','Extraction Timestamp','Report Period'];
   const lines = [header.join(',')];
   const genAt = K_DATA ? K_DATA.meta.generatedAt : '';
   const period = K_DATA ? K_DATA.reportPeriod.label : '';
   rows.forEach(r => {
     const o = r.order, item = r.item;
     const fv = o.firstVisit || {};
-    lines.push([o.channel, o.orderName, o.orderLegacyId, o.createdAt, item.productTitle, item.productId, item.sku, item.quantity, item.grossSales, item.discounts, item.refunds, item.netSales, o.currency, o.financialStatus, o.fulfillmentStatus, fv.source, fv.sourceType, (o.sessions||[]).map(s => s.classification).join(' -> '), JSON.stringify(o.sessions || []), o.journeyStatus, genAt, period].map(csvSafe).join(','));
+    lines.push([r.group, o.orderName, o.orderLegacyId, o.createdAt, item.productTitle, item.productId, item.sku, item.quantity, item.grossSales, item.discounts, item.refunds, item.netSales, o.currency, o.financialStatus, o.fulfillmentStatus, fv.source, fv.sourceType, (o.sessions||[]).map(s => s.classification).join(' -> '), JSON.stringify(o.sessions || []), o.journeyStatus, genAt, period].map(csvSafe).join(','));
   });
   const monthTag = K_DATA ? K_DATA.reportPeriod.month : K_CURRENT_MONTH;
-  downloadCsv(lines.join('\r\n'), monthTag + '_kamsi-all-channels-sales-ledsone-co-uk.csv');
+  downloadCsv(lines.join('\r\n'), monthTag + '_kamsi-organic-sales-ledsone-co-uk.csv');
 }
 document.getElementById('kChannelExportCsv').addEventListener('click', kcExportCsv);
 
