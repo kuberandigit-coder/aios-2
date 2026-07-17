@@ -39,20 +39,34 @@ function londonMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-// Supported reporting months for this dashboard — Jan through Jun 2026.
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'];
+// Supported reporting months for this dashboard — Jan through Jun 2026 are
+// closed/historical (served from a static snapshot, numbers frozen). Jul
+// 2026 onward is the "current" open month — always fetched live (no static
+// snapshot file exists for it), with a manual Refresh button on the client
+// instead of a fixed historical view. CURRENT_LIVE_MONTHS is not
+// auto-rolled by a date check — a new month is added here explicitly when
+// it starts, keeping the list (and month-tab UI) an explicit, reviewable
+// decision rather than a silently-changing one. (Mirrors sales-kamsi.js.)
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
+const CURRENT_LIVE_MONTHS = ['2026-07'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-06';
   const [y, m] = month.split('-').map(Number);
   const startMs = londonMidnightUTCMs(y, m, 1);
-  const endMs = m === 12 ? londonMidnightUTCMs(y + 1, 1, 1) : londonMidnightUTCMs(y, m + 1, 1);
+  const monthEndMs = m === 12 ? londonMidnightUTCMs(y + 1, 1, 1) : londonMidnightUTCMs(y, m + 1, 1);
+  const isLive = CURRENT_LIVE_MONTHS.includes(month);
+  // Month-to-date for the live month — never a future instant, capped at
+  // "now" (London) each request, so a live-month fetch never reaches past
+  // today even if the calendar month hasn't finished yet.
+  const endMs = isLive ? Math.min(monthEndMs, Date.now()) : monthEndMs;
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const endDay = isLive ? Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric' }).format(new Date(endMs))) : daysInMonth;
   return {
-    month, startMs, endMs,
+    month, startMs, endMs, isLive,
     startISO: new Date(startMs).toISOString(),
     endISO: new Date(endMs).toISOString(),
-    label: `${MONTH_NAMES[m - 1]} 1–${daysInMonth}, ${y}`,
+    label: isLive ? `${MONTH_NAMES[m - 1]} 1–${endDay} (month to date), ${y}` : `${MONTH_NAMES[m - 1]} 1–${daysInMonth}, ${y}`,
     // Shopify's date-only query net (broad, one day padding each side) —
     // exact inclusion is enforced by startMs/endMs above, never trusted
     // from Shopify's own date-only parsing. See the historical
@@ -695,6 +709,7 @@ module.exports = async function handler(req, res) {
 
     const responsePayload = {
       success: true,
+      isLive: monthConfig.isLive,
       staff: { name: 'Dilaksi', department: 'SEO', store: 'ledsone.co.uk' },
       reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/London' },
       supportedMonths: SUPPORTED_MONTHS,

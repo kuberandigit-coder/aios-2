@@ -187,6 +187,7 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="dLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="dLastRefresh" style="display:none;"></span>
+    <button id="dRefreshBtn" class="primary" style="display:none;" onclick="dLoad(true)">Refresh</button>
   </div>
 </header>
 
@@ -196,7 +197,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" data-month="2026-03" onclick="dSelectMonth('2026-03')">March</div>
   <div class="reqtab" data-month="2026-04" onclick="dSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="dSelectMonth('2026-05')">May</div>
-  <div class="reqtab active" data-month="2026-06" onclick="dSelectMonth('2026-06')">June</div>
+  <div class="reqtab" data-month="2026-06" onclick="dSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="dSelectMonth('2026-07')">July (live)</div>
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
@@ -835,7 +837,8 @@ function kGroupExportCsv(){
 document.getElementById('kGroupExportCsv').addEventListener('click', kGroupExportCsv);
 
 // ===== Dilaksi tab (mirrors Kamsi tab above, distinct D-prefixed globals/functions) =====
-let D_CURRENT_MONTH = '2026-06';
+let D_CURRENT_MONTH = '2026-07';
+const D_LIVE_MONTHS = ['2026-07'];
 function dSelectMonth(month){
   D_CURRENT_MONTH = month;
   document.querySelectorAll('#dMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -851,7 +854,11 @@ let dLastSuccessfulAt = null;
 async function dLoad(force){
   if (dLoading) return;
   dLoading = true;
-  document.getElementById('dLiveChip').textContent = 'Loading historical data from Shopify…';
+  const isLive = D_LIVE_MONTHS.includes(D_CURRENT_MONTH);
+  const refreshBtn = document.getElementById('dRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('dLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('dLiveChip').className = 'chip';
   if (dAbortController) dAbortController.abort();
   dAbortController = new AbortController();
@@ -862,22 +869,23 @@ async function dLoad(force){
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
     D_DATA = data;
     dLastSuccessfulAt = new Date();
-    document.getElementById('dLiveChip').textContent = 'Historical data retrieved from Shopify';
+    document.getElementById('dLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
     document.getElementById('dLiveChip').className = 'chip';
     document.getElementById('dLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('dLastRefresh').style.display = '';
     document.getElementById('dFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('dcLastOk').textContent = dLastSuccessfulAt.toLocaleTimeString();
-    document.getElementById('dPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Dilaksi-owned products only &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period &mdash; not a live/updating view.';
+    document.getElementById('dPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Dilaksi-owned products only &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
     dOpenRows = new Set();
     dRenderAll();
   } catch (e) {
-    if (e.name === 'AbortError') { dLoading = false; return; }
+    if (e.name === 'AbortError') { dLoading = false; refreshBtn.disabled = false; return; }
     document.getElementById('dLiveChip').textContent = 'Failed to load: ' + e.message + (D_DATA ? ' — showing last successful data' : '');
     document.getElementById('dLiveChip').className = 'chip stale';
     if (!D_DATA) document.getElementById('dcTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
   } finally {
     dLoading = false;
+    refreshBtn.disabled = false;
   }
 }
 
