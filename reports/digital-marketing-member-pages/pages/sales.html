@@ -362,12 +362,181 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div id="sukirthaDE" style="display:none;">
-  <div class="tablebox">
-    <div class="empty" style="padding:60px 20px;">
-      <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">DE &middot; Coming soon</div>
-      <div>Sukirtha's email-marketing sales for <strong>ledsone.de</strong> will be added here in a future update. This UK tab is fully live; DE is scaffolded but intentionally not wired up yet.</div>
+<div class="sub" style="margin-bottom:14px;">Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Sukirtha owns both Email Marketing and Organic Search performance on this store &nbsp;&middot;&nbsp; both sections below are store-wide (every order counts, no product filter), mirroring the UK Email tab's scope.</div>
+
+<div class="tablebox" style="margin-bottom:18px;padding:22px 24px;">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">DE &middot; Organic Search</div>
+  <h1 style="font-size:19px;margin-bottom:6px;">DE Organic Sales</h1>
+  <div class="sub" id="sdoPeriodSub" style="margin-bottom:14px;">Store: <strong>ledsone.de</strong> &middot; Store-wide (all orders, no product filter) &middot; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters" style="margin-bottom:14px;">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="sdoLiveChip">Loading historical data from Shopify&hellip;</span>
+    <span class="chip" id="sdoLastRefresh" style="display:none;"></span>
+    <button id="sdoRefreshBtn" class="primary" style="display:none;" onclick="sdoLoad(true)">Refresh</button>
+  </div>
+
+  <div class="reqtabs" style="margin-bottom:14px;" id="sdoMonthTabs">
+    <div class="reqtab" data-month="2026-01" onclick="sdoSelectMonth('2026-01')">January</div>
+    <div class="reqtab" data-month="2026-02" onclick="sdoSelectMonth('2026-02')">February</div>
+    <div class="reqtab" data-month="2026-03" onclick="sdoSelectMonth('2026-03')">March</div>
+    <div class="reqtab" data-month="2026-04" onclick="sdoSelectMonth('2026-04')">April</div>
+    <div class="reqtab" data-month="2026-05" onclick="sdoSelectMonth('2026-05')">May</div>
+    <div class="reqtab" data-month="2026-06" onclick="sdoSelectMonth('2026-06')">June</div>
+    <div class="reqtab active" data-month="2026-07" onclick="sdoSelectMonth('2026-07')">July (live)</div>
+  </div>
+
+  <div class="exportbar" style="margin-bottom:14px;">
+    <button id="sdoGroupExportCsv" class="primary">Export CSV</button>
+  </div>
+
+  <div class="cards" id="sdoCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+    <div class="card"><div class="label">Total DE Organic Orders</div><div class="value" id="sdokOrders">&ndash;</div></div>
+    <div class="card"><div class="label">Total Units Sold</div><div class="value" id="sdokUnits">&ndash;</div></div>
+    <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="sdokGross">&ndash;</div></div>
+    <div class="card"><div class="label">Total Refunds</div><div class="value" id="sdokRefunds">&ndash;</div></div>
+    <div class="card"><div class="label">Total Net Sales</div><div class="value" id="sdokNet">&ndash;</div></div>
+    <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="sdokProducts">&ndash;</div></div>
+    <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="sdocLastOk" style="font-size:13px;">&ndash;</div></div>
+  </div>
+
+  <div class="sub" style="margin-bottom:14px;">Store-wide organic-search sales only, two groups: <strong>Fully Organic</strong> (every touchpoint in the order's journey classifies as Organic Search) and <strong>First-Session Organic</strong> (the order's first visit classifies as Organic Search, but the rest of the journey does not). Mirrors Kamsi's definition exactly, but store-wide (no product filter). Click a group row below to filter the table to just that group.</div>
+
+  <div class="tablebox" style="margin-bottom:14px;">
+    <div class="scroll" style="max-height:none;overflow-y:visible;">
+      <table style="min-width:900px;">
+        <thead><tr>
+          <th>Group</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+        </tr></thead>
+        <tbody id="sdoChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+      </table>
     </div>
   </div>
+
+  <div class="tablebox">
+    <div class="tbar">
+      <span id="sdocCnt">&ndash;</span>
+      <input type="text" id="sdocq_order" placeholder="Search order name&hellip;">
+      <input type="text" id="sdocq_product" placeholder="Search Product ID&hellip;">
+    </div>
+    <div class="tbar" style="border-top:0;">
+      <label>Group <select id="sdocf_channel">
+        <option value="">All Groups</option>
+      </select></label>
+      <button id="sdocResetFilters">Clear Filters</button>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th></th>
+          <th>Group</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Product</th><th>Product ID</th><th>SKU</th>
+          <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+          <th>Financial Status</th><th>Fulfilment Status</th>
+          <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Journey Status</th>
+        </tr></thead>
+        <tbody id="sdocTbody"><tr><td colspan="20" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty" id="sdocEmpty" style="display:none;">No orders match the current filters.</div>
+  </div>
+
+  <div class="footnotes">
+    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-sukirtha-de-organic</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+    <strong>Store-wide scope:</strong> like the Email section below and the UK Email tab, this is NOT product-scoped &mdash; there is no product allocation file and no line-item matching step. Every line item on every order that qualifies for one of the two groups below counts.<br>
+    <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above.<br>
+    <strong>Group definitions:</strong> <em>Fully Organic</em> = every touchpoint in the order's <code>customerJourneySummary</code> classifies as Organic Search. <em>First-Session Organic</em> = the order's first visit classifies as Organic Search, but the journey is not fully organic. Mirrors Kamsi's definition (<code>sales-kamsi.js</code>) exactly, minus product matching.<br>
+    <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button. Data is fetched from Shopify once per month tab and cached server-side (~55 seconds).<br>
+    <strong>Live month (July onward):</strong> the current month is month-to-date &mdash; a <strong>Refresh</strong> button appears to re-fetch the latest data. No automatic/background polling.<br>
+    <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+    <strong>Last refresh timestamp:</strong> <span id="sdoFootRefresh">&ndash;</span>
+  </div>
+</div>
+
+<div class="tablebox" style="padding:22px 24px;">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">DE &middot; Email Marketing</div>
+  <h1 style="font-size:19px;margin-bottom:6px;">DE Email Sales</h1>
+  <div class="sub" id="sdePeriodSub" style="margin-bottom:14px;">Store: <strong>ledsone.de</strong> &middot; Store-wide (all orders, no product filter) &middot; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters" style="margin-bottom:14px;">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="sdeLiveChip">Loading historical data from Shopify&hellip;</span>
+    <span class="chip" id="sdeLastRefresh" style="display:none;"></span>
+    <button id="sdeRefreshBtn" class="primary" style="display:none;" onclick="sdeLoad(true)">Refresh</button>
+  </div>
+
+  <div class="reqtabs" style="margin-bottom:14px;" id="sdeMonthTabs">
+    <div class="reqtab" data-month="2026-01" onclick="sdeSelectMonth('2026-01')">January</div>
+    <div class="reqtab" data-month="2026-02" onclick="sdeSelectMonth('2026-02')">February</div>
+    <div class="reqtab" data-month="2026-03" onclick="sdeSelectMonth('2026-03')">March</div>
+    <div class="reqtab" data-month="2026-04" onclick="sdeSelectMonth('2026-04')">April</div>
+    <div class="reqtab" data-month="2026-05" onclick="sdeSelectMonth('2026-05')">May</div>
+    <div class="reqtab" data-month="2026-06" onclick="sdeSelectMonth('2026-06')">June</div>
+    <div class="reqtab active" data-month="2026-07" onclick="sdeSelectMonth('2026-07')">July (live)</div>
+  </div>
+
+  <div class="exportbar" style="margin-bottom:14px;">
+    <button id="sdeGroupExportCsv" class="primary">Export CSV</button>
+  </div>
+
+  <div class="cards" id="sdeCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+    <div class="card"><div class="label">Total DE Email Orders</div><div class="value" id="sdekOrders">&ndash;</div></div>
+    <div class="card"><div class="label">Total Units Sold</div><div class="value" id="sdekUnits">&ndash;</div></div>
+    <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="sdekGross">&ndash;</div></div>
+    <div class="card"><div class="label">Total Refunds</div><div class="value" id="sdekRefunds">&ndash;</div></div>
+    <div class="card"><div class="label">Total Net Sales</div><div class="value" id="sdekNet">&ndash;</div></div>
+    <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="sdekProducts">&ndash;</div></div>
+    <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="sdecLastOk" style="font-size:13px;">&ndash;</div></div>
+  </div>
+
+  <div class="sub" style="margin-bottom:14px;">Store-wide email-channel sales only, two groups: <strong>Fully Email</strong> and <strong>First-Session Email</strong>. Mirrors the UK Email tab's definition exactly, just for ledsone.de. Click a group row below to filter the table to just that group.</div>
+
+  <div class="tablebox" style="margin-bottom:14px;">
+    <div class="scroll" style="max-height:none;overflow-y:visible;">
+      <table style="min-width:900px;">
+        <thead><tr>
+          <th>Group</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+        </tr></thead>
+        <tbody id="sdeChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tablebox">
+    <div class="tbar">
+      <span id="sdecCnt">&ndash;</span>
+      <input type="text" id="sdecq_order" placeholder="Search order name&hellip;">
+      <input type="text" id="sdecq_product" placeholder="Search Product ID&hellip;">
+    </div>
+    <div class="tbar" style="border-top:0;">
+      <label>Group <select id="sdecf_channel">
+        <option value="">All Groups</option>
+      </select></label>
+      <button id="sdecResetFilters">Clear Filters</button>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th></th>
+          <th>Group</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Product</th><th>Product ID</th><th>SKU</th>
+          <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+          <th>Financial Status</th><th>Fulfilment Status</th>
+          <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Journey Status</th>
+        </tr></thead>
+        <tbody id="sdecTbody"><tr><td colspan="20" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty" id="sdecEmpty" style="display:none;">No orders match the current filters.</div>
+  </div>
+
+  <div class="footnotes">
+    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-sukirtha-de-email</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+    <strong>Store-wide scope:</strong> same as the Organic section above and the UK Email tab &mdash; no product allocation file, no line-item matching. Every line item on every qualifying order counts.<br>
+    <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above.<br>
+    <strong>Group definitions:</strong> <em>Fully Email</em> = every touchpoint classifies as Email (Shopify <code>sourceType=NEWSLETTER</code>, or <code>medium=email</code>, or source/description containing "email"). <em>First-Session Email</em> = the order's first visit classifies as Email, but the journey is not fully email.<br>
+    <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button. Data is fetched from Shopify once per month tab and cached server-side (~55 seconds).<br>
+    <strong>Live month (July onward):</strong> the current month is month-to-date &mdash; a <strong>Refresh</strong> button appears to re-fetch the latest data. No automatic/background polling.<br>
+    <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+    <strong>Last refresh timestamp:</strong> <span id="sdeFootRefresh">&ndash;</span>
+  </div>
+</div>
 </div>
 </div>
 
@@ -1172,12 +1341,512 @@ function sGroupExportCsv(){
 }
 document.getElementById('sGroupExportCsv').addEventListener('click', sGroupExportCsv);
 
+// ===== Sukirtha DE Organic tab (ledsone.de, store-wide, mirrors Kamsi's
+// Fully Organic / First-Session Organic definition). SDO-prefixed globals/
+// functions — verified against K_/D_/S_/SDE_ prefixed identifiers for zero
+// collisions. Includes the July-live-month + Refresh-button pattern from
+// day one (mirrors K_LIVE_MONTHS / kLoad). =====
+let SDO_CURRENT_MONTH = '2026-07';
+const SDO_LIVE_MONTHS = ['2026-07'];
+function sdoSelectMonth(month){
+  SDO_CURRENT_MONTH = month;
+  document.querySelectorAll('#sdoMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  sdoLoad(false);
+}
+
+let SDO_DATA = null;
+let sdoOpenRows = new Set();
+let sdoLoading = false;
+let sdoAbortController = null;
+let sdoLastSuccessfulAt = null;
+
+async function sdoLoad(force){
+  if (sdoLoading) return;
+  sdoLoading = true;
+  const isLive = SDO_LIVE_MONTHS.includes(SDO_CURRENT_MONTH);
+  const refreshBtn = document.getElementById('sdoRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('sdoLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  document.getElementById('sdoLiveChip').className = 'chip';
+  if (sdoAbortController) sdoAbortController.abort();
+  sdoAbortController = new AbortController();
+  try {
+    const url = '/api/sales-sukirtha-de-organic?month=' + encodeURIComponent(SDO_CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const res = await fetch(url, { signal: sdoAbortController.signal });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    SDO_DATA = data;
+    sdoLastSuccessfulAt = new Date();
+    document.getElementById('sdoLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('sdoLiveChip').className = 'chip';
+    document.getElementById('sdoLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('sdoLastRefresh').style.display = '';
+    document.getElementById('sdoFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('sdocLastOk').textContent = sdoLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('sdoPeriodSub').innerHTML = 'Store: <strong>ledsone.de</strong> &middot; Store-wide (all orders, no product filter) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/Berlin) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    sdoOpenRows = new Set();
+    sdoRenderAll();
+  } catch (e) {
+    if (e.name === 'AbortError') { sdoLoading = false; refreshBtn.disabled = false; return; }
+    document.getElementById('sdoLiveChip').textContent = 'Failed to load: ' + e.message + (SDO_DATA ? ' — showing last successful data' : '');
+    document.getElementById('sdoLiveChip').className = 'chip stale';
+    if (!SDO_DATA) document.getElementById('sdocTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    sdoLoading = false;
+    refreshBtn.disabled = false;
+  }
+}
+
+function sdoRenderAll(){
+  if (!SDO_DATA) return;
+  const c = SDO_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'EUR' };
+  document.getElementById('sdokOrders').textContent = num(c.ordersCount);
+  document.getElementById('sdokUnits').textContent = num(c.unitsSold);
+  document.getElementById('sdokGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('sdokRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('sdokNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('sdokProducts').textContent = num(c.uniqueProductsSold);
+  sdocRenderAll();
+}
+
+const SDO_GROUP_ORDER = ['Fully Organic', 'First-Session Organic'];
+function sdoGroupOf(o){ return o.group || null; }
+
+function sdocFlatRows(){
+  const rows = [];
+  for (const o of (SDO_DATA ? SDO_DATA.allSukirthaOrders : []) || []) {
+    const group = sdoGroupOf(o);
+    if (!group) continue;
+    for (const item of o.matchedItems) rows.push({ order: o, item, group });
+  }
+  return rows;
+}
+
+function sdocFilteredRows(){
+  const qOrder = document.getElementById('sdocq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('sdocq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('sdocf_channel').value;
+  return sdocFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function sdocGroupBreakdown(){
+  const byGroup = new Map();
+  for (const r of sdocFlatRows()) {
+    if (!byGroup.has(r.group)) byGroup.set(r.group, new Set());
+    byGroup.get(r.group).add(r.order);
+  }
+  const currency = (SDO_DATA && SDO_DATA.combinedSummary && SDO_DATA.combinedSummary.currency) || 'EUR';
+  return SDO_GROUP_ORDER.map(group => {
+    const orders = byGroup.has(group) ? [...byGroup.get(group)] : [];
+    let unitsSold = 0, grossSales = 0, discounts = 0, refunds = 0;
+    const products = new Set();
+    for (const o of orders) {
+      for (const item of o.matchedItems) {
+        unitsSold += item.quantity;
+        grossSales += item.grossSales;
+        discounts += item.discounts;
+        refunds += item.refunds;
+        products.add(item.productId);
+      }
+    }
+    const netSales = grossSales - discounts - refunds;
+    return {
+      group, ordersCount: orders.length, unitsSold,
+      grossSales: Math.round(grossSales * 100) / 100, discounts: Math.round(discounts * 100) / 100,
+      refunds: Math.round(refunds * 100) / 100, netSales: Math.round(netSales * 100) / 100,
+      uniqueProductsSold: products.size,
+      averageRevenuePerOrder: orders.length ? Math.round((grossSales / orders.length) * 100) / 100 : 0,
+      currency,
+    };
+  }).filter(g => g.ordersCount > 0);
+}
+
+function sdocRenderAll(){
+  if (!SDO_DATA) return;
+  const cb = sdocGroupBreakdown();
+  document.getElementById('sdoChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="sdoChannelRow" data-channel="' + esc(c.group) + '" style="cursor:pointer;" title="Click to filter table below to this group">' +
+    '<td><strong>' + esc(c.group) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.sdoChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('sdocf_channel').value = tr.getAttribute('data-channel');
+      sdocRenderTable();
+      document.getElementById('sdocTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('sdocf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Groups</option>' + cb.map(c => '<option value="' + esc(c.group) + '">' + esc(c.group) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  sdocRenderTable();
+}
+
+function sdocRenderTable(){
+  const rows = sdocFilteredRows();
+  document.getElementById('sdocCnt').textContent = rows.length.toLocaleString() + ' of ' + sdocFlatRows().length.toLocaleString() + ' line items';
+  const tbody = document.getElementById('sdocTbody');
+  const emptyEl = document.getElementById('sdocEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (sdoOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.journeyStatus) + '</td>' +
+      '</tr>'
+    );
+    if (sdoOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="20"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (sdoOpenRows.has(id)) sdoOpenRows.delete(id); else sdoOpenRows.add(id);
+      sdocRenderTable();
+    });
+  });
+}
+
+['sdocq_order','sdocq_product'].forEach(id => document.getElementById(id).addEventListener('input', sdocRenderTable));
+document.getElementById('sdocf_channel').addEventListener('change', sdocRenderTable);
+document.getElementById('sdocResetFilters').addEventListener('click', () => {
+  document.getElementById('sdocq_order').value = '';
+  document.getElementById('sdocq_product').value = '';
+  document.getElementById('sdocf_channel').value = '';
+  sdocRenderTable();
+});
+
+function sdocExportCsv(){
+  const rows = sdocFilteredRows();
+  const header = ['Group','Order Name','Order ID','Order Created At','Product','Product ID','SKU','Quantity','Gross Sales','Discounts','Refunds','Net Sales','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Type','All Sessions Classification','All Sessions JSON','Journey Status','Extraction Timestamp','Report Period'];
+  const lines = [header.join(',')];
+  const genAt = SDO_DATA ? SDO_DATA.meta.generatedAt : '';
+  const period = SDO_DATA ? SDO_DATA.reportPeriod.label : '';
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    lines.push([r.group, o.orderName, o.orderLegacyId, o.createdAt, item.productTitle, item.productId, item.sku, item.quantity, item.grossSales, item.discounts, item.refunds, item.netSales, o.currency, o.financialStatus, o.fulfillmentStatus, fv.source, fv.sourceType, (o.sessions||[]).map(s => s.classification).join(' -> '), JSON.stringify(o.sessions || []), o.journeyStatus, genAt, period].map(csvSafe).join(','));
+  });
+  const monthTag = SDO_DATA ? SDO_DATA.reportPeriod.month : SDO_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_sukirtha-de-organic-sales-ledsone-de.csv');
+}
+
+function sdoGroupExportCsv(){
+  const cb = sdocGroupBreakdown();
+  const header = ['Group','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = SDO_DATA ? SDO_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.group, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = SDO_DATA ? SDO_DATA.reportPeriod.month : SDO_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_sukirtha-de-organic-sales-group-summary-ledsone-de.csv');
+}
+document.getElementById('sdoGroupExportCsv').addEventListener('click', sdoGroupExportCsv);
+
+// ===== Sukirtha DE Email tab (ledsone.de, store-wide, mirrors UK Email
+// tab's Fully Email / First-Session Email definition). SDE-prefixed
+// globals/functions — verified against K_/D_/S_/SDO_ prefixed identifiers
+// for zero collisions. Includes the July-live-month + Refresh-button
+// pattern from day one. =====
+let SDE_CURRENT_MONTH = '2026-07';
+const SDE_LIVE_MONTHS = ['2026-07'];
+function sdeSelectMonth(month){
+  SDE_CURRENT_MONTH = month;
+  document.querySelectorAll('#sdeMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  sdeLoad(false);
+}
+
+let SDE_DATA = null;
+let sdeOpenRows = new Set();
+let sdeLoading = false;
+let sdeAbortController = null;
+let sdeLastSuccessfulAt = null;
+
+async function sdeLoad(force){
+  if (sdeLoading) return;
+  sdeLoading = true;
+  const isLive = SDE_LIVE_MONTHS.includes(SDE_CURRENT_MONTH);
+  const refreshBtn = document.getElementById('sdeRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('sdeLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  document.getElementById('sdeLiveChip').className = 'chip';
+  if (sdeAbortController) sdeAbortController.abort();
+  sdeAbortController = new AbortController();
+  try {
+    const url = '/api/sales-sukirtha-de-email?month=' + encodeURIComponent(SDE_CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const res = await fetch(url, { signal: sdeAbortController.signal });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    SDE_DATA = data;
+    sdeLastSuccessfulAt = new Date();
+    document.getElementById('sdeLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('sdeLiveChip').className = 'chip';
+    document.getElementById('sdeLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('sdeLastRefresh').style.display = '';
+    document.getElementById('sdeFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('sdecLastOk').textContent = sdeLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('sdePeriodSub').innerHTML = 'Store: <strong>ledsone.de</strong> &middot; Store-wide (all orders, no product filter) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/Berlin) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    sdeOpenRows = new Set();
+    sdeRenderAll();
+  } catch (e) {
+    if (e.name === 'AbortError') { sdeLoading = false; refreshBtn.disabled = false; return; }
+    document.getElementById('sdeLiveChip').textContent = 'Failed to load: ' + e.message + (SDE_DATA ? ' — showing last successful data' : '');
+    document.getElementById('sdeLiveChip').className = 'chip stale';
+    if (!SDE_DATA) document.getElementById('sdecTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    sdeLoading = false;
+    refreshBtn.disabled = false;
+  }
+}
+
+function sdeRenderAll(){
+  if (!SDE_DATA) return;
+  const c = SDE_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'EUR' };
+  document.getElementById('sdekOrders').textContent = num(c.ordersCount);
+  document.getElementById('sdekUnits').textContent = num(c.unitsSold);
+  document.getElementById('sdekGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('sdekRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('sdekNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('sdekProducts').textContent = num(c.uniqueProductsSold);
+  sdecRenderAll();
+}
+
+const SDE_GROUP_ORDER = ['Fully Email', 'First-Session Email'];
+function sdeGroupOf(o){ return o.group || null; }
+
+function sdecFlatRows(){
+  const rows = [];
+  for (const o of (SDE_DATA ? SDE_DATA.allSukirthaOrders : []) || []) {
+    const group = sdeGroupOf(o);
+    if (!group) continue;
+    for (const item of o.matchedItems) rows.push({ order: o, item, group });
+  }
+  return rows;
+}
+
+function sdecFilteredRows(){
+  const qOrder = document.getElementById('sdecq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('sdecq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('sdecf_channel').value;
+  return sdecFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function sdecGroupBreakdown(){
+  const byGroup = new Map();
+  for (const r of sdecFlatRows()) {
+    if (!byGroup.has(r.group)) byGroup.set(r.group, new Set());
+    byGroup.get(r.group).add(r.order);
+  }
+  const currency = (SDE_DATA && SDE_DATA.combinedSummary && SDE_DATA.combinedSummary.currency) || 'EUR';
+  return SDE_GROUP_ORDER.map(group => {
+    const orders = byGroup.has(group) ? [...byGroup.get(group)] : [];
+    let unitsSold = 0, grossSales = 0, discounts = 0, refunds = 0;
+    const products = new Set();
+    for (const o of orders) {
+      for (const item of o.matchedItems) {
+        unitsSold += item.quantity;
+        grossSales += item.grossSales;
+        discounts += item.discounts;
+        refunds += item.refunds;
+        products.add(item.productId);
+      }
+    }
+    const netSales = grossSales - discounts - refunds;
+    return {
+      group, ordersCount: orders.length, unitsSold,
+      grossSales: Math.round(grossSales * 100) / 100, discounts: Math.round(discounts * 100) / 100,
+      refunds: Math.round(refunds * 100) / 100, netSales: Math.round(netSales * 100) / 100,
+      uniqueProductsSold: products.size,
+      averageRevenuePerOrder: orders.length ? Math.round((grossSales / orders.length) * 100) / 100 : 0,
+      currency,
+    };
+  }).filter(g => g.ordersCount > 0);
+}
+
+function sdecRenderAll(){
+  if (!SDE_DATA) return;
+  const cb = sdecGroupBreakdown();
+  document.getElementById('sdeChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="sdeChannelRow" data-channel="' + esc(c.group) + '" style="cursor:pointer;" title="Click to filter table below to this group">' +
+    '<td><strong>' + esc(c.group) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.sdeChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('sdecf_channel').value = tr.getAttribute('data-channel');
+      sdecRenderTable();
+      document.getElementById('sdecTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('sdecf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Groups</option>' + cb.map(c => '<option value="' + esc(c.group) + '">' + esc(c.group) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  sdecRenderTable();
+}
+
+function sdecRenderTable(){
+  const rows = sdecFilteredRows();
+  document.getElementById('sdecCnt').textContent = rows.length.toLocaleString() + ' of ' + sdecFlatRows().length.toLocaleString() + ' line items';
+  const tbody = document.getElementById('sdecTbody');
+  const emptyEl = document.getElementById('sdecEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (sdeOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.journeyStatus) + '</td>' +
+      '</tr>'
+    );
+    if (sdeOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="20"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (sdeOpenRows.has(id)) sdeOpenRows.delete(id); else sdeOpenRows.add(id);
+      sdecRenderTable();
+    });
+  });
+}
+
+['sdecq_order','sdecq_product'].forEach(id => document.getElementById(id).addEventListener('input', sdecRenderTable));
+document.getElementById('sdecf_channel').addEventListener('change', sdecRenderTable);
+document.getElementById('sdecResetFilters').addEventListener('click', () => {
+  document.getElementById('sdecq_order').value = '';
+  document.getElementById('sdecq_product').value = '';
+  document.getElementById('sdecf_channel').value = '';
+  sdecRenderTable();
+});
+
+function sdecExportCsv(){
+  const rows = sdecFilteredRows();
+  const header = ['Group','Order Name','Order ID','Order Created At','Product','Product ID','SKU','Quantity','Gross Sales','Discounts','Refunds','Net Sales','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Type','All Sessions Classification','All Sessions JSON','Journey Status','Extraction Timestamp','Report Period'];
+  const lines = [header.join(',')];
+  const genAt = SDE_DATA ? SDE_DATA.meta.generatedAt : '';
+  const period = SDE_DATA ? SDE_DATA.reportPeriod.label : '';
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    lines.push([r.group, o.orderName, o.orderLegacyId, o.createdAt, item.productTitle, item.productId, item.sku, item.quantity, item.grossSales, item.discounts, item.refunds, item.netSales, o.currency, o.financialStatus, o.fulfillmentStatus, fv.source, fv.sourceType, (o.sessions||[]).map(s => s.classification).join(' -> '), JSON.stringify(o.sessions || []), o.journeyStatus, genAt, period].map(csvSafe).join(','));
+  });
+  const monthTag = SDE_DATA ? SDE_DATA.reportPeriod.month : SDE_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_sukirtha-de-email-sales-ledsone-de.csv');
+}
+
+function sdeGroupExportCsv(){
+  const cb = sdecGroupBreakdown();
+  const header = ['Group','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = SDE_DATA ? SDE_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.group, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = SDE_DATA ? SDE_DATA.reportPeriod.month : SDE_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_sukirtha-de-email-sales-group-summary-ledsone-de.csv');
+}
+document.getElementById('sdeGroupExportCsv').addEventListener('click', sdeGroupExportCsv);
+
 // Historical/closed-period data — loaded once per month selection, no
 // auto-refresh polling and no manual Refresh button (these months are
 // already over; the numbers won't change on their own).
 kLoad(false);
 dLoad(false);
 sLoad(false);
+sdoLoad(false);
+sdeLoad(false);
 
 </script>
 </body>
