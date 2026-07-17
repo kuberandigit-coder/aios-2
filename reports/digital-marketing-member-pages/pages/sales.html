@@ -95,6 +95,7 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="kLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="kLastRefresh" style="display:none;"></span>
+    <button id="kRefreshBtn" class="primary" style="display:none;" onclick="kLoad(true)">Refresh</button>
   </div>
 </header>
 
@@ -104,7 +105,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" data-month="2026-03" onclick="kSelectMonth('2026-03')">March</div>
   <div class="reqtab" data-month="2026-04" onclick="kSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="kSelectMonth('2026-05')">May</div>
-  <div class="reqtab active" data-month="2026-06" onclick="kSelectMonth('2026-06')">June</div>
+  <div class="reqtab" data-month="2026-06" onclick="kSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="kSelectMonth('2026-07')">July (live)</div>
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
@@ -168,7 +170,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <strong>Channel classification:</strong> derived from the customer's first session (<code>customerJourneySummary.firstVisit</code>) — Organic Search, Google Ads/Paid Search, Direct, Social, Email, Referral, or No Journey Data/Unknown when Shopify recorded no session at all.<br>
   <strong>Kamsi attribution:</strong> only line items matching a Kamsi-owned Shopify Product ID/GID (Variant ID/GID preferred when available) contribute to Kamsi's sales figures &mdash; mixed-product orders are never fully credited to Kamsi.<br>
   <strong>Known limitation:</strong> the current LEDSone database does not store persistent Shopify Variant IDs for Kamsi's catalog (see allocation CSV), so matching currently operates at Product ID/GID level (Shopify collection membership is per-product, so this does not affect correctness of which orders qualify).<br>
-  <strong>Historical data:</strong> these are completed, closed calendar months (Jan&ndash;Jun 2026) &mdash; the numbers do not change on their own, so there is no auto-refresh or Refresh button. Data is fetched from Shopify once when a month tab is selected and cached server-side (~55 seconds) to avoid re-scanning on repeated page views.<br>
+  <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; the numbers do not change on their own, so there is no auto-refresh or Refresh button for those tabs. Data is fetched from Shopify once when one of those month tabs is selected and cached server-side (~55 seconds) to avoid re-scanning on repeated page views.<br>
+  <strong>Live month (July onward):</strong> the current month is month-to-date and can still receive new orders, so a <strong>Refresh</strong> button appears next to the status chip &mdash; click it to re-fetch the latest data from Shopify. There is no automatic/background polling; the numbers only update when Refresh is clicked.<br>
   <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
   <strong>Last refresh timestamp:</strong> <span id="kFootRefresh">&ndash;</span>
 </div>
@@ -395,7 +398,8 @@ function showSukirthaRegion(r){
   document.getElementById('sukirthaDE').style.display = r === 'de' ? '' : 'none';
 }
 
-let K_CURRENT_MONTH = '2026-06';
+let K_CURRENT_MONTH = '2026-07';
+const K_LIVE_MONTHS = ['2026-07'];
 function kSelectMonth(month){
   K_CURRENT_MONTH = month;
   document.querySelectorAll('#kMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -411,7 +415,11 @@ let kLastSuccessfulAt = null;
 async function kLoad(force){
   if (kLoading) return;
   kLoading = true;
-  document.getElementById('kLiveChip').textContent = 'Loading historical data from Shopify…';
+  const isLive = K_LIVE_MONTHS.includes(K_CURRENT_MONTH);
+  const refreshBtn = document.getElementById('kRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('kLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('kLiveChip').className = 'chip';
   if (kAbortController) kAbortController.abort();
   kAbortController = new AbortController();
@@ -422,22 +430,23 @@ async function kLoad(force){
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
     K_DATA = data;
     kLastSuccessfulAt = new Date();
-    document.getElementById('kLiveChip').textContent = 'Historical data retrieved from Shopify';
+    document.getElementById('kLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
     document.getElementById('kLiveChip').className = 'chip';
     document.getElementById('kLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('kLastRefresh').style.display = '';
     document.getElementById('kFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('kcLastOk').textContent = kLastSuccessfulAt.toLocaleTimeString();
-    document.getElementById('kPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Kamsi-owned products only &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period &mdash; not a live/updating view.';
+    document.getElementById('kPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Kamsi-owned products only &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
     kOpenRows = new Set();
     kRenderAll();
   } catch (e) {
-    if (e.name === 'AbortError') { kLoading = false; return; }
+    if (e.name === 'AbortError') { kLoading = false; refreshBtn.disabled = false; return; }
     document.getElementById('kLiveChip').textContent = 'Failed to load: ' + e.message + (K_DATA ? ' — showing last successful data' : '');
     document.getElementById('kLiveChip').className = 'chip stale';
     if (!K_DATA) document.getElementById('kcTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
   } finally {
     kLoading = false;
+    refreshBtn.disabled = false;
   }
 }
 
