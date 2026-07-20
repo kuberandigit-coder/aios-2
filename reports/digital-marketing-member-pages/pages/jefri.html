@@ -3,22 +3,292 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jefri — Digital Marketing Member Reports</title>
-<link rel="stylesheet" href="../assets/css/style.css">
+<title>Jefri — Product Status Labels</title>
+<style>
+:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;}
+.wrap{max-width:1500px;margin:0 auto;}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+h1{font-size:22px;letter-spacing:.2px;}
+.sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
+.chip.live{background:#eef7ee;color:var(--good);}
+.chip.stale{background:#fdecea;color:var(--bad);}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.card .value{font-size:24px;font-weight:700;margin-top:6px;}
+.card .note{font-size:11.5px;color:var(--muted);margin-top:4px;}
+.card.hero .value{color:#b98b1e;}
+.card.villain .value{color:var(--bad);}
+.card.zombie .value{color:var(--na);}
+.card.sidekick .value{color:var(--accent);}
+.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.tbar{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.tbar input,.tbar select{padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;color:var(--ink);}
+.tbar input{flex:1;min-width:200px;}
+.tbar select{cursor:pointer;}
+.tbar button{padding:7px 16px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:12.5px;font-weight:600;}
+.tbar button:hover{background:#1848cc;}
+.tbar button:disabled{opacity:.6;cursor:default;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:1200px;}
+thead th{background:#f0f3f8;text-align:left;padding:12px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap;}
+thead th:hover{background:#e8ecf5;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle;line-height:1.4;}
+tbody tr:nth-child(even){background:#fafbfd;}
+tbody tr:hover{background:var(--accent-soft);}
+td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:var(--accent);text-decoration:none;word-break:break-all;}
+.thumb{width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#f0f3f8;display:block;}
+.thumb-fallback{width:36px;height:36px;border-radius:6px;border:1px solid var(--line);background:#f0f3f8;display:flex;align-items:center;justify-content:center;color:var(--na);font-size:10px;}
+.pill{display:inline-block;border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;white-space:nowrap;color:#fff;}
+.pill.eligible{background:#2e7d32;}
+.pill.noteligible{background:#c62828;}
+.pill.limited{background:#b98b1e;}
+.pill.disapproved{background:#c62828;}
+.pill.unknown{background:#9aa3b2;}
+.tag-badge{display:inline-block;font-size:12.5px;font-weight:600;white-space:nowrap;}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+.loading{padding:60px 20px;text-align:center;color:var(--muted);}
+.error-box{padding:30px 24px;text-align:center;color:var(--bad);background:#fdecea;border-radius:10px;margin:16px 20px;}
+.footnotes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:12.5px;color:var(--muted);line-height:1.65;}
+.footnotes strong{color:var(--ink);}
+@media(max-width:700px){h1{font-size:18px;}.card .value{font-size:19px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+</style>
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="../index.html">&larr; Back to all members</a>
-  <div class="placeholder">
-    <h2>Jefri</h2>
-    <span class="badge pending">Pending</span>
-    <dl>
-      <dt>Status</dt><dd>Pending requirement — page not built yet.</dd>
-      <dt>Source required</dt><dd>Google Sheet / MD requirement from Jefri (Digital Marketing team).</dd>
-      <dt>Next step</dt><dd>Create a PostgreSQL-backed report page once the requirement is received.</dd>
-    </dl>
+<a class="back" href="../index.html">&larr; Back to all members</a>
+
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 1 (Live)</div>
+  <h1>Product Status Labels</h1>
+  <div class="sub">Which advertised products are Heroes, Villains, Zombies or Sidekicks based on current Google Ads product performance? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads)</div>
+  <div class="filters">
+    <span class="chip" id="rangeChip">Date range: &ndash;</span>
+    <span class="chip" id="liveChip">Loading…</span>
+    <button id="refreshBtn" type="button">Refresh</button>
   </div>
-  <footer class="site">Digital Marketing Member Reports · AIOS · generated 2026-07-02</footer>
+</header>
+
+<div class="cards" id="cards">
+  <div class="card"><div class="label">Total Products</div><div class="value" id="cTotal">&ndash;</div></div>
+  <div class="card hero"><div class="label">🏆 Heroes</div><div class="value" id="cHero">&ndash;</div></div>
+  <div class="card villain"><div class="label">🩸 Villains</div><div class="value" id="cVillain">&ndash;</div></div>
+  <div class="card zombie"><div class="label">🧟 Zombies</div><div class="value" id="cZombie">&ndash;</div></div>
+  <div class="card sidekick"><div class="label">🥷 Sidekicks</div><div class="value" id="cSidekick">&ndash;</div></div>
 </div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="q" placeholder="Search Product ID, SKU or URL…">
+    <label>Tag <select id="f_tag">
+      <option value="">All tags</option>
+      <option value="hero">🏆 Hero</option>
+      <option value="villain">🩸 Villain</option>
+      <option value="zombie">🧟 Zombie</option>
+      <option value="sidekick">🥷 Sidekick</option>
+      <option value="unclassified">⚪ Unclassified</option>
+    </select></label>
+    <label>Status <select id="f_status">
+      <option value="">All statuses</option>
+      <option value="Eligible">Eligible</option>
+      <option value="Not eligible">Not eligible</option>
+      <option value="Limited">Limited</option>
+      <option value="Disapproved">Disapproved</option>
+      <option value="Unknown">Unknown</option>
+    </select></label>
+    <span id="cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th data-k="productId">Product ID</th>
+        <th data-k="sku">SKU</th>
+        <th>Product URL</th>
+        <th>Image</th>
+        <th class="num" data-k="price">Price</th>
+        <th data-k="status">Status</th>
+        <th class="num" data-k="stock">Current Stock</th>
+        <th class="num" data-k="impressions">Impressions</th>
+        <th class="num" data-k="clicks">Clicks</th>
+        <th class="num" data-k="convValue">Conv. Value</th>
+        <th class="num" data-k="cost">Cost</th>
+        <th class="num" data-k="roas">ROAS</th>
+        <th data-k="tag">Tag</th>
+      </tr></thead>
+      <tbody id="tbody"><tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="empty" style="display:none;">No products match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);justify-content:space-between;">
+    <span id="pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="psize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="pgFirst" style="background:#fff;color:var(--ink);border-color:var(--line);">&laquo;</button>
+      <button id="pgPrev" style="background:#fff;color:var(--ink);border-color:var(--line);">&lsaquo; Prev</button>
+      <button id="pgNext" style="background:#fff;color:var(--ink);border-color:var(--line);">Next &rsaquo;</button>
+      <button id="pgLast" style="background:#fff;color:var(--ink);border-color:var(--line);">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> PostgreSQL (read-only), tables <code>google_ads.product_performance</code>, <code>google_ads.campaigns</code>, <code>google_ads.ad_group_products</code>, <code>listings.shopify_listings</code> &middot; fetched via a server-side serverless function (<code>/api/jefri/product-status</code>) using database credentials stored only as Vercel server-side environment variables &mdash; never present in this HTML or any client-side script.<br>
+  <strong>ROAS:</strong> (Conv. Value &divide; Cost) &times; 100, calculated from aggregated 90-day totals per product (not averaged daily). Shown as &ldquo;&mdash;&rdquo; when Cost and Conv. Value are both zero.<br>
+  <strong>Status:</strong> Merchant Center eligibility (Eligible / Disapproved / Limited) where available from Shopping/Search ad-group data. Performance Max campaigns do not expose per-product eligibility in this system, so those products show &ldquo;Unknown&rdquo; &mdash; this is a documented data gap, not a calculated guess.<br>
+  <strong>Current Stock:</strong> latest Shopify listing quantity for the advertised item (variant-level where the Google Ads item ID maps to a Shopify variant; falls back to a representative child variant when the item ID is a parent-level product).<br>
+  <strong>Tag priority:</strong> Zombie is evaluated first (no impressions, no clicks), then Hero, then Villain, then Sidekick. Products matching none of the rules show ⚪ Unclassified rather than being forced into another category.
+</div>
+
+</div>
+
+<script>
+let ALL = [];
+let SUMMARY = null;
+let pg = 1;
+let sortKey = 'cost';
+let sortDir = -1;
+
+function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(v){return v==null?'—':Number(v).toLocaleString();}
+function eur(v){return v==null?'—':'€'+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function roasDisp(p){
+  if (p.roasAnomaly) return 'Unavailable (∞)';
+  if (p.roas==null) return '—';
+  return p.roas.toLocaleString()+'%';
+}
+function statusClass(s){
+  if(s==='Eligible') return 'eligible';
+  if(s==='Not eligible') return 'noteligible';
+  if(s==='Limited') return 'limited';
+  if(s==='Disapproved') return 'disapproved';
+  return 'unknown';
+}
+
+async function load(){
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = 'Refreshing…';
+  document.getElementById('liveChip').textContent = 'Fetching live from PostgreSQL…';
+  document.getElementById('liveChip').className = 'chip';
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  try {
+    const res = await fetch('/api/jefri/product-status');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    ALL = data.products;
+    SUMMARY = data.summary;
+    document.getElementById('rangeChip').textContent = 'Date range: ' + (data.dateRange.start||'—') + ' to ' + (data.dateRange.end||'—') + ' (last 90 days)';
+    document.getElementById('liveChip').textContent = 'Live — fetched ' + new Date(data.generatedAt).toLocaleString();
+    document.getElementById('liveChip').className = 'chip live';
+    document.getElementById('cTotal').textContent = num(SUMMARY.totalProducts);
+    document.getElementById('cHero').textContent = num(SUMMARY.heroes);
+    document.getElementById('cVillain').textContent = num(SUMMARY.villains);
+    document.getElementById('cZombie').textContent = num(SUMMARY.zombies);
+    document.getElementById('cSidekick').textContent = num(SUMMARY.sidekicks);
+    pg = 1;
+    render();
+  } catch (e) {
+    document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message;
+    document.getElementById('liveChip').className = 'chip stale';
+    document.getElementById('tbody').innerHTML = '';
+    document.getElementById('empty').style.display = 'none';
+    const tablebox = document.querySelector('.scroll');
+    tablebox.innerHTML = '<div class="error-box">Could not load live product status data. ' + esc(e.message) + '<br>Please try Refresh, or contact the site administrator if this continues.</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Refresh';
+  }
+}
+
+function filteredRows(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const tagF = document.getElementById('f_tag').value;
+  const statusF = document.getElementById('f_status').value;
+  let rows = ALL.filter(r => {
+    const textHit = !q || (r.productId||'').toLowerCase().includes(q) || (r.sku||'').toLowerCase().includes(q) || (r.url||'').toLowerCase().includes(q);
+    const tagHit = !tagF || r.tagKey === tagF;
+    const statusHit = !statusF || r.status === statusF;
+    return textHit && tagHit && statusHit;
+  });
+  rows.sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (av == null) av = sortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = sortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = (bv||'').toLowerCase(); }
+    if (av < bv) return -1*sortDir;
+    if (av > bv) return 1*sortDir;
+    return 0;
+  });
+  return rows;
+}
+
+function maxpg(rows){
+  const size = parseInt(document.getElementById('psize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function render(){
+  const rows = filteredRows();
+  const size = parseInt(document.getElementById('psize').value, 10);
+  const mp = maxpg(rows);
+  if (pg > mp) pg = mp;
+  if (pg < 1) pg = 1;
+  document.getElementById('cnt').textContent = 'Showing ' + rows.length.toLocaleString() + ' of ' + ALL.length.toLocaleString() + ' products';
+  const tbody = document.getElementById('tbody');
+  const emptyEl = document.getElementById('empty');
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('pinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (pg-1)*size;
+  const pageRows = rows.slice(from, from+size);
+  tbody.innerHTML = pageRows.map(r => (
+    '<tr>' +
+    '<td>'+esc(r.productId)+'</td>' +
+    '<td>'+esc(r.sku||'—')+'</td>' +
+    '<td class="urlcell">'+(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.url)+'</a>':'—')+'</td>' +
+    '<td>'+(r.image?'<img class="thumb" src="'+esc(r.image)+'" loading="lazy" onerror="this.outerHTML=\'<div class=&quot;thumb-fallback&quot;>N/A</div>\'">':'<div class="thumb-fallback">N/A</div>')+'</td>' +
+    '<td class="num">'+eur(r.price)+'</td>' +
+    '<td><span class="pill '+statusClass(r.status)+'">'+esc(r.status)+'</span></td>' +
+    '<td class="num">'+num(r.stock)+'</td>' +
+    '<td class="num">'+num(r.impressions)+'</td>' +
+    '<td class="num">'+num(r.clicks)+'</td>' +
+    '<td class="num">'+eur(r.convValue)+'</td>' +
+    '<td class="num">'+eur(r.cost)+'</td>' +
+    '<td class="num">'+roasDisp(r)+'</td>' +
+    '<td><span class="tag-badge">'+esc(r.tag)+'</span></td>' +
+    '</tr>'
+  )).join('');
+  document.getElementById('pinfo').textContent = 'Rows ' + (from+1) + '-' + Math.min(from+size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + pg + ' of ' + mp + ')';
+}
+
+document.getElementById('refreshBtn').addEventListener('click', load);
+document.getElementById('q').addEventListener('input', () => { pg=1; render(); });
+document.getElementById('f_tag').addEventListener('change', () => { pg=1; render(); });
+document.getElementById('f_status').addEventListener('change', () => { pg=1; render(); });
+document.getElementById('psize').addEventListener('change', () => { pg=1; render(); });
+document.getElementById('pgFirst').addEventListener('click', () => { pg=1; render(); });
+document.getElementById('pgPrev').addEventListener('click', () => { if(pg>1){pg--;render();} });
+document.getElementById('pgNext').addEventListener('click', () => { if(pg<maxpg(filteredRows())){pg++;render();} });
+document.getElementById('pgLast').addEventListener('click', () => { pg=maxpg(filteredRows()); render(); });
+document.querySelectorAll('thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.getAttribute('data-k');
+    if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+    render();
+  });
+});
+
+load();
+</script>
 </body>
 </html>

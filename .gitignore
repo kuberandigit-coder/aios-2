@@ -8,6 +8,7 @@ shopify.theme.toml.local
 *.json
 !reports/digital-marketing-member-pages/api/data/*.json
 !reports/digital-marketing-member-pages/vercel.json
+!reports/digital-marketing-member-pages/package.json
 
 # Shopify theme repos — each has its own .git
 shopify-themes/

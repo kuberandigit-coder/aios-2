@@ -1,12 +1,14 @@
-// Sukirtha — Organic Search Sales (ledsone.de), store-wide (NOT product-scoped)
+// Sukirtha / Mahima — DE Sales (ledsone.de), merged endpoint.
 // Server-side only: reads SHOPIFY_ADMIN_TOKEN from env, never exposed to client.
 // Read-only Shopify Admin GraphQL API — zero mutations.
 //
-// New DE scope (beyond the existing UK Email tab): Sukirtha also owns
-// organic search performance on ledsone.de. Store-wide like the Email
-// tab — no product allocation CSV, no line-item matching, every order
-// in the store counts. Mirrors Kamsi's Fully Organic / First-Session
-// Organic classification logic exactly, applied store-wide.
+// Merges the former api/sales-sukirtha-de-organic.js (Sukirtha Organic +
+// Mahima Organic + Mahima Ads, via ?staff=) and api/sales-sukirtha-de-email.js
+// (Sukirtha Email) into one function to stay under the Vercel Hobby-plan
+// 12-function cap (freed a slot for api/jefri/product-status.js, 2026-07-20).
+// Routing: ?type=email selects the Email logic below; anything else (including
+// no type param, for backward compatibility with existing callers) runs the
+// original Organic/Mahima/Mahima-Ads logic unchanged.
 //
 // Credentials: uses the EXISTING SHOPIFY_ADMIN_TOKEN env var (already used
 // by api/sukirtha-req2-duplicate-check.js and api/sukirtha-req3-slow-moving-stock.js
@@ -19,8 +21,7 @@ const STORE_DOMAIN = 'ledsone-de.myshopify.com';
 const API_VERSION = '2024-10';
 const TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
 
-// Europe/Berlin month boundaries, DST-aware (same approach as sales-kamsi.js,
-// but Germany's timezone, since this is the ledsone.de store).
+// Europe/Berlin month boundaries, DST-aware.
 function berlinOffsetMinutesAt(utcGuessMs) {
   const dtf = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Europe/Berlin', hour12: false,
@@ -37,11 +38,8 @@ function berlinMidnightUTCMs(year, month, day) {
   return guess - offsetMin * 60000;
 }
 
-// Product IDs owned by Mahima (a different team member) — excluded from
-// Sukirtha's organic sales even though the order/session itself is organic,
-// because Mahima (not Sukirtha) is responsible for these specific products.
-// Added 2026-07-17 per explicit user list. Line-item level exclusion: an
-// order can still count for Sukirtha for its non-Mahima line items.
+// Product IDs owned by Mahima — excluded from Sukirtha's organic sales,
+// included (as the inverse filter) for Mahima's own views. Added 2026-07-17.
 const MAHIMA_EXCLUDED_PRODUCT_IDS = new Set([
   '8286052679945','8381824893193','5507042934951','5513782329511','5480332558503',
   '5507047325863','5513782722727','7508068237542','8355709321481','5480361951399',
@@ -177,9 +175,45 @@ const MAHIMA_EXCLUDED_PRODUCT_IDS = new Set([
   '15628388696329',
 ]);
 
+// Mahima's Google Ads (Performance Max / Shopping) campaign names, provided
+// by the user 2026-07-20, for the Mahima Ads sub-tab (staff=mahima-ads).
+const MAHIMA_ADS_CAMPAIGNS = [
+  'Pmax DE | Mahi | Klarna | DE | All_Myid | MCV',
+  'Pmax DE | Mahi | Shoptimised | LIGHTINGSOLUTION | All_Myid_1 | MCV',
+  'Pmax DE | Mahi | Shoptimised |JAN-TOP-SALES | JanTopSales_3 | MCV',
+  'Pmax DE | Mahi | Shoptimised| BESTEN-BELEUCHTUNG | priceGT10_5 | MCV',
+  'Shopping DE | Mahi | klarna | TOP-MAHI | Verkaufsprodukt | tROAS | 11/06',
+];
+
+function normalizeCampaignName(s) {
+  return (s || '').toString().toLowerCase().replace(/\s*\|\s*/g, '|').replace(/\s+/g, ' ').trim();
+}
+
+function extractCampaignName(visit) {
+  if (!visit) return null;
+  const utm = visit.utmParameters || {};
+  if (utm.campaign) return utm.campaign;
+  const urlFields = [visit.landingPage, visit.referrerUrl].filter(Boolean);
+  for (const u of urlFields) {
+    const m = /[?&]utm_campaign=([^&]+)/i.exec(u);
+    if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; } }
+  }
+  return null;
+}
+
+function matchAdsCampaign(rawCampaign) {
+  if (!rawCampaign) return null;
+  const actual = normalizeCampaignName(rawCampaign);
+  let best = null;
+  for (const known of MAHIMA_ADS_CAMPAIGNS) {
+    const norm = normalizeCampaignName(known);
+    if (actual === norm) return known;
+    if (actual.includes(norm) || norm.includes(actual)) best = known;
+  }
+  return best;
+}
+
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-// Jan-Jun 2026 closed/historical, Jul 2026 is the live month-to-date tab
-// (mirrors the Kamsi pattern added 2026-07-17 — see CURRENT_LIVE_MONTHS).
 const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
 const CURRENT_LIVE_MONTHS = ['2026-07'];
 
@@ -202,7 +236,7 @@ function resolveReportMonth(monthParam) {
   };
 }
 
-// ---------- Session classification (identical logic to sales-kamsi.js) ----------
+// ---------- Session classification (shared by Organic and Email) ----------
 const SEARCH_ENGINES = ['google', 'bing', 'yahoo', 'duckduckgo', 'ecosia', 'yandex', 'baidu', 'aol', 'ask'];
 const PAID_UTM_MEDIUMS = ['cpc', 'ppc', 'paid', 'paid_search', 'paidsearch', 'display', 'shopping', 'paid_social', 'cpv', 'cpm', 'cpa', 'pmax', 'performance_max', 'demandgen', 'demand_gen', 'discovery'];
 const PAID_CLICK_IDS = ['gclid', 'gbraid', 'wbraid', 'msclkid', 'dclid'];
@@ -271,7 +305,7 @@ function classifySession(visit) {
 }
 
 // ---------- Journey / order classification (ORGANIC variant) ----------
-function classifyOrderJourney(order) {
+function classifyOrderJourneyOrganic(order) {
   if (order.test) return { status: 'EXCLUDED_TEST_ORDER', reason: 'test=true' };
   if (order.cancelledAt) return { status: 'EXCLUDED_CANCELLED_ORDER', reason: `cancelledAt=${order.cancelledAt}` };
 
@@ -319,6 +353,43 @@ function deriveChannel(journey) {
     return map[journey.first.classification] || 'Unknown';
   }
   return 'Unknown';
+}
+
+// ---------- Journey / order classification (EMAIL variant) ----------
+function classifyOrderJourneyEmail(order) {
+  if (order.test) return { status: 'EXCLUDED_TEST_ORDER', reason: 'test=true' };
+  if (order.cancelledAt) return { status: 'EXCLUDED_CANCELLED_ORDER', reason: `cancelledAt=${order.cancelledAt}` };
+
+  const cjs = order.customerJourneySummary;
+  if (!cjs) return { status: 'NO_JOURNEY_DATA', reason: 'customerJourneySummary is null' };
+  if (!cjs.ready) return { status: 'ATTRIBUTION_PENDING', reason: 'customerJourneySummary.ready=false' };
+
+  const moments = (cjs.moments && cjs.moments.edges || []).map(e => e.node).filter(n => n.__typename === 'CustomerVisit');
+  const visits = moments.length ? moments : [cjs.firstVisit, cjs.lastVisit].filter(Boolean);
+  if (!visits.length) return { status: 'NO_JOURNEY_DATA', reason: 'no CustomerVisit moments and no first/last visit' };
+
+  const classifications = visits.map(v => ({ visit: v, ...classifySession(v) }));
+  const first = cjs.firstVisit ? classifySession(cjs.firstVisit) : null;
+  const last = cjs.lastVisit ? classifySession(cjs.lastVisit) : null;
+  const firstSessionEmail = !!(first && first.classification === 'EMAIL');
+
+  if (classifications.some(c => c.classification === 'UNKNOWN')) {
+    return { status: 'UNKNOWN_ATTRIBUTION', reason: 'at least one session has insufficient evidence', classifications, first, last, firstSessionEmail };
+  }
+
+  const allEmail = classifications.every(c => c.classification === 'EMAIL')
+    && first && first.classification === 'EMAIL'
+    && last && last.classification === 'EMAIL';
+
+  if (allEmail) {
+    return { status: 'FULLY_EMAIL', reason: 'first, last, and every available session confidently Email', classifications, first, last, firstSessionEmail };
+  }
+
+  const anyEmail = classifications.some(c => c.classification === 'EMAIL');
+  if (anyEmail) {
+    return { status: 'MIXED_JOURNEY', reason: 'mixture of Email and other channel sessions', classifications, first, last, firstSessionEmail };
+  }
+  return { status: 'NON_EMAIL', reason: 'no qualifying Email session found', classifications, first, last, firstSessionEmail };
 }
 
 // ---------- Shopify GraphQL ----------
@@ -455,18 +526,95 @@ async function fetchOrdersForMonth(monthConfig, retryState) {
   return { orders, pages };
 }
 
-// ---------- Financials (store-wide, no product filter) ----------
+// ---------- Financials (store-wide, no product filter unless noted) ----------
 function amt(moneySet) { return moneySet ? round2(Number(moneySet.shopMoney.amount)) : 0; }
 function ccy(moneySet) { return moneySet ? moneySet.shopMoney.currencyCode : null; }
 function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
 
-function buildSukirthaOrderRow(order, journey) {
+function buildSukirthaOrderRow(order, journey, staff) {
   const items = [];
   for (const edge of order.lineItems.edges) {
     const li = edge.node;
 
     const productId = li.variant && li.variant.product ? li.variant.product.legacyResourceId : null;
-    if (productId && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(productId))) continue;
+    if (staff === 'mahima') {
+      if (!productId || !MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(productId))) continue;
+    } else if (productId && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(productId))) {
+      continue;
+    }
+
+    const grossUnit = amt(li.originalUnitPriceSet);
+    const gross = round2(grossUnit * li.quantity);
+    const discounted = amt(li.discountedTotalSet);
+    const discount = round2(Math.max(0, gross - discounted));
+
+    let refund = 0;
+    for (const rEdge of (order.refunds || [])) {
+      for (const rliEdge of (rEdge.refundLineItems && rEdge.refundLineItems.edges || [])) {
+        const rli = rliEdge.node;
+        if (rli.lineItem && rli.lineItem.id === li.id) refund += amt(rli.subtotalSet);
+      }
+    }
+    refund = round2(refund);
+
+    items.push({
+      lineItemId: li.id,
+      productTitle: li.title,
+      productId: li.variant && li.variant.product ? li.variant.product.legacyResourceId : null,
+      variantTitle: li.variantTitle,
+      variantId: li.variant ? li.variant.legacyResourceId : null,
+      sku: li.sku,
+      quantity: li.quantity,
+      grossSales: gross,
+      discounts: discount,
+      refunds: refund,
+      netSales: round2(gross - discount - refund),
+      currency: ccy(li.originalUnitPriceSet),
+    });
+  }
+  if (!items.length) return null;
+
+  return {
+    orderId: order.id,
+    orderLegacyId: order.legacyResourceId,
+    orderName: order.name,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    financialStatus: order.displayFinancialStatus,
+    fulfillmentStatus: order.displayFulfillmentStatus,
+    orderTotal: amt(order.currentTotalPriceSet),
+    currency: ccy(order.currentTotalPriceSet),
+    journeyStatus: journey.status,
+    journeyReason: journey.reason,
+    journeyReady: order.customerJourneySummary ? order.customerJourneySummary.ready : false,
+    customerOrderIndex: order.customerJourneySummary ? order.customerJourneySummary.customerOrderIndex : null,
+    daysToConversion: order.customerJourneySummary ? order.customerJourneySummary.daysToConversion : null,
+    firstVisit: order.customerJourneySummary ? order.customerJourneySummary.firstVisit : null,
+    lastVisit: order.customerJourneySummary ? order.customerJourneySummary.lastVisit : null,
+    sessions: (journey.classifications || []).map((c, i) => ({
+      sessionNumber: i + 1,
+      visitId: c.visit.id,
+      occurredAt: c.visit.occurredAt,
+      classification: c.classification,
+      evidence: c.evidence,
+      source: c.visit.source,
+      sourceDescription: c.visit.sourceDescription,
+      sourceType: c.visit.sourceType,
+      referrerUrl: c.visit.referrerUrl,
+      landingPage: c.visit.landingPage,
+      referralCode: c.visit.referralCode,
+      utm: c.visit.utmParameters,
+    })),
+    matchedItems: items,
+  };
+}
+
+// Email variant of the row builder: store-wide, no product filter at all
+// (matches the original api/sales-sukirtha-de-email.js exactly).
+function buildSukirthaOrderRowEmail(order, journey) {
+  const items = [];
+  for (const edge of order.lineItems.edges) {
+    const li = edge.node;
 
     const grossUnit = amt(li.originalUnitPriceSet);
     const gross = round2(grossUnit * li.quantity);
@@ -565,152 +713,319 @@ function summarizeRows(rows) {
   };
 }
 
+async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
+  const cacheKey = 'email:' + monthConfig.month;
+  const cached = CACHE.get(cacheKey);
+  if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
+    res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
+    return;
+  }
+
+  if (!forceRefresh) {
+    const staticPath = path.join(__dirname, 'data', `sukirtha-de-email-sales-${monthConfig.month}.json`);
+    if (fs.existsSync(staticPath)) {
+      const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+      const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+      CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
+      res.status(200).json(payload);
+      return;
+    }
+  }
+
+  const retryState = { throttleRetries: 0 };
+  const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
+
+  const classificationCounts = {
+    fullyEmail: 0, mixedJourney: 0, nonEmail: 0, attributionPending: 0,
+    noJourneyData: 0, unknownAttribution: 0, excludedCancelled: 0, excludedTest: 0,
+    firstSessionEmail: 0,
+  };
+
+  const fullyEmailRows = [];
+  const firstSessionEmailRows = [];
+
+  for (const order of orders) {
+    const journey = classifyOrderJourneyEmail(order);
+    const row = buildSukirthaOrderRowEmail(order, journey);
+    if (!row) continue;
+    row.channel = journey.first ? journey.first.classification : 'Unknown';
+
+    const isFirstSessionEmailBucket = journey.firstSessionEmail && (journey.status === 'MIXED_JOURNEY' || journey.status === 'NON_EMAIL');
+
+    if (journey.status === 'FULLY_EMAIL') {
+      fullyEmailRows.push(row);
+      classificationCounts.fullyEmail++;
+    } else if (isFirstSessionEmailBucket) {
+      row.journeyStatus = 'FIRST_SESSION_EMAIL';
+      firstSessionEmailRows.push(row);
+      classificationCounts.firstSessionEmail++;
+    } else {
+      switch (journey.status) {
+        case 'MIXED_JOURNEY': classificationCounts.mixedJourney++; break;
+        case 'NON_EMAIL': classificationCounts.nonEmail++; break;
+        case 'ATTRIBUTION_PENDING': classificationCounts.attributionPending++; break;
+        case 'NO_JOURNEY_DATA': classificationCounts.noJourneyData++; break;
+        case 'UNKNOWN_ATTRIBUTION': classificationCounts.unknownAttribution++; break;
+        case 'EXCLUDED_CANCELLED_ORDER': classificationCounts.excludedCancelled++; break;
+        case 'EXCLUDED_TEST_ORDER': classificationCounts.excludedTest++; break;
+      }
+    }
+  }
+
+  const fullyEmailSummary = summarizeRows(fullyEmailRows);
+  const firstSessionEmailSummary = summarizeRows(firstSessionEmailRows);
+  const combinedSummary = summarizeRows([...fullyEmailRows, ...firstSessionEmailRows]);
+
+  fullyEmailRows.forEach(r => { r.group = 'Fully Email'; });
+  firstSessionEmailRows.forEach(r => { r.group = 'First-Session Email'; });
+  const allSukirthaOrders = [...fullyEmailRows, ...firstSessionEmailRows];
+
+  const { grossSales, discounts, refunds, netSales, currency, multiCurrencyWarning } = fullyEmailSummary;
+
+  const responsePayload = {
+    success: true,
+    staff: { name: 'Sukirtha', department: 'Email Marketing', store: 'ledsone.de' },
+    reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+    supportedMonths: SUPPORTED_MONTHS,
+    isLive: monthConfig.isLive,
+    source: {
+      scope: 'store-wide — every order counts, no product allocation / matching (mirrors sales-sukirtha-uk.js, DE store)',
+      orders: 'Shopify Admin GraphQL API',
+      journey: 'Shopify customerJourneySummary',
+    },
+    summary: {
+      fullyEmailOrders: fullyEmailRows.length,
+      unitsSold: fullyEmailSummary.unitsSold, grossSales, discounts, refunds, netSales,
+      averageRevenuePerOrder: fullyEmailSummary.averageRevenuePerOrder,
+      uniqueProductsSold: fullyEmailSummary.uniqueProductsSold,
+      currency, multiCurrencyWarning,
+    },
+    firstSessionEmailSummary,
+    combinedSummary,
+    allSukirthaOrders,
+    classificationCounts,
+    meta: {
+      generatedAt: new Date().toISOString(),
+      cacheStatus: 'miss',
+      ordersFetched: orders.length,
+      fullyEmailOrders: fullyEmailRows.length,
+      firstSessionEmailOrders: firstSessionEmailRows.length,
+      pagesFetched: pages,
+      throttleRetries: retryState.throttleRetries,
+      executionMs: Date.now() - startTime,
+    },
+  };
+
+  CACHE.set(cacheKey, { data: responsePayload, generatedAt: Date.now() });
+  res.status(200).json(responsePayload);
+}
+
+async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
+  const staffParam = req.query && req.query.staff;
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : 'sukirtha';
+  const cacheKey = staff + ':' + monthConfig.month;
+
+  const cached = CACHE.get(cacheKey);
+  if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
+    res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
+    return;
+  }
+
+  if (!forceRefresh) {
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : 'sukirtha-de-organic';
+    const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
+    if (fs.existsSync(staticPath)) {
+      const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+      const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+      CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
+      res.status(200).json(payload);
+      return;
+    }
+  }
+
+  const retryState = { throttleRetries: 0 };
+  const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
+
+  if (staff === 'mahima-ads') {
+    const adsRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRow(order, journey, 'mahima');
+      if (!row) continue;
+      if (!journey.first || journey.first.classification !== 'PAID_SEARCH') continue;
+      const rawCampaign = extractCampaignName(order.customerJourneySummary && order.customerJourneySummary.firstVisit);
+      const matched = matchAdsCampaign(rawCampaign);
+      row.campaign = matched || (rawCampaign ? 'Other Google Ads Campaign' : 'Google Ads (Campaign Unknown)');
+      row.rawCampaign = rawCampaign;
+      adsRows.push(row);
+    }
+
+    const campaignGroupOrder = [...MAHIMA_ADS_CAMPAIGNS, 'Other Google Ads Campaign', 'Google Ads (Campaign Unknown)'];
+    const byCampaign = new Map();
+    for (const r of adsRows) {
+      if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+      byCampaign.get(r.campaign).push(r);
+    }
+    const campaignSummary = campaignGroupOrder
+      .map(name => ({ campaign: name, ...summarizeRows(byCampaign.get(name) || []) }))
+      .filter(c => c.ordersCount > 0);
+
+    const combinedSummary = summarizeRows(adsRows);
+
+    const adsPayload = {
+      success: true,
+      staff: { name: 'Mahima', department: 'Google Ads (Paid Search)', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `product-scoped to Mahima's ${MAHIMA_EXCLUDED_PRODUCT_IDS.size} owned product IDs, PAID_SEARCH first-session orders only, grouped by first-session utm_campaign matched against Mahima's 5 named Google Ads campaigns`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: MAHIMA_ADS_CAMPAIGNS,
+      combinedSummary,
+      campaignSummary,
+      allMahimaAdsOrders: adsRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        paidSearchMahimaOrders: adsRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: adsPayload, generatedAt: Date.now() });
+    res.status(200).json(adsPayload);
+    return;
+  }
+
+  const classificationCounts = {
+    fullyOrganic: 0, mixedJourney: 0, nonOrganic: 0, attributionPending: 0,
+    noJourneyData: 0, unknownAttribution: 0, excludedCancelled: 0, excludedTest: 0,
+    firstSessionOrganic: 0,
+  };
+
+  const fullyOrganicRows = [];
+  const firstSessionOrganicRows = [];
+  const allOrderRows = [];
+
+  for (const order of orders) {
+    const journey = classifyOrderJourneyOrganic(order);
+    const row = buildSukirthaOrderRow(order, journey, staff);
+    if (!row) continue;
+    row.channel = deriveChannel(journey);
+    allOrderRows.push(row);
+
+    const isFirstSessionOrganicBucket = journey.firstSessionOrganic && (journey.status === 'MIXED_JOURNEY' || journey.status === 'NON_ORGANIC');
+
+    if (journey.status === 'FULLY_ORGANIC') {
+      fullyOrganicRows.push(row);
+      classificationCounts.fullyOrganic++;
+    } else if (isFirstSessionOrganicBucket) {
+      row.journeyStatus = 'FIRST_SESSION_ORGANIC';
+      firstSessionOrganicRows.push(row);
+      classificationCounts.firstSessionOrganic++;
+    } else {
+      switch (journey.status) {
+        case 'MIXED_JOURNEY': classificationCounts.mixedJourney++; break;
+        case 'NON_ORGANIC': classificationCounts.nonOrganic++; break;
+        case 'ATTRIBUTION_PENDING': classificationCounts.attributionPending++; break;
+        case 'NO_JOURNEY_DATA': classificationCounts.noJourneyData++; break;
+        case 'UNKNOWN_ATTRIBUTION': classificationCounts.unknownAttribution++; break;
+        case 'EXCLUDED_CANCELLED_ORDER': classificationCounts.excludedCancelled++; break;
+        case 'EXCLUDED_TEST_ORDER': classificationCounts.excludedTest++; break;
+      }
+    }
+  }
+
+  const fullyOrganicSummary = summarizeRows(fullyOrganicRows);
+  const firstSessionOrganicSummary = summarizeRows(firstSessionOrganicRows);
+
+  const AI_SOURCES = ['chatgpt', 'perplexity', 'gemini', 'copilot', 'claude', 'bing chat', 'bingchat', 'character.ai', 'meta ai', 'grok'];
+  const directRows = allOrderRows.filter(r => r.channel === 'Direct');
+  const referralRows = allOrderRows.filter(r => r.channel === 'Referral');
+  const noJourneyRows = allOrderRows.filter(r => r.channel === 'No Journey Data' || r.channel === 'Unknown' || r.channel === 'Attribution Pending');
+  const aiRows = allOrderRows.filter(r => r.channel === 'Other' && r.firstVisit && AI_SOURCES.some(ai => lower(r.firstVisit.source).includes(ai)));
+  const directSummary = summarizeRows(directRows);
+  const referralSummary = summarizeRows(referralRows);
+  const noJourneySummary = summarizeRows(noJourneyRows);
+  const aiSummary = summarizeRows(aiRows);
+
+  const combinedSummary = summarizeRows([
+    ...fullyOrganicRows, ...firstSessionOrganicRows, ...directRows, ...referralRows, ...noJourneyRows, ...aiRows,
+  ]);
+
+  fullyOrganicRows.forEach(r => { r.group = 'Fully Organic'; });
+  firstSessionOrganicRows.forEach(r => { r.group = 'First-Session Organic'; });
+  directRows.forEach(r => { r.group = 'Direct'; });
+  referralRows.forEach(r => { r.group = 'Referral'; });
+  noJourneyRows.forEach(r => { r.group = 'No Journey Data'; });
+  aiRows.forEach(r => { r.group = 'AI Tools'; });
+  const allOrders = [...fullyOrganicRows, ...firstSessionOrganicRows, ...directRows, ...referralRows, ...noJourneyRows, ...aiRows];
+
+  const { grossSales, discounts, refunds, netSales, currency, multiCurrencyWarning } = fullyOrganicSummary;
+
+  const responsePayload = {
+    success: true,
+    staff: staff === 'mahima'
+      ? { name: 'Mahima', department: 'Organic Search', store: 'ledsone.de' }
+      : { name: 'Sukirtha', department: 'Organic Search (SEO)', store: 'ledsone.de' },
+    reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+    supportedMonths: SUPPORTED_MONTHS,
+    isLive: monthConfig.isLive,
+    source: staff === 'mahima'
+      ? { scope: `product-scoped to Mahima's ${MAHIMA_EXCLUDED_PRODUCT_IDS.size} owned product IDs (the same list excluded from Sukirtha's store-wide organic sales below), ORGANIC channel classification`, orders: 'Shopify Admin GraphQL API', journey: 'Shopify customerJourneySummary' }
+      : { scope: 'store-wide — every order counts, no product allocation / matching (mirrors sales-sukirtha-uk.js Email pattern, ORGANIC channel instead)', orders: 'Shopify Admin GraphQL API', journey: 'Shopify customerJourneySummary' },
+    summary: {
+      fullyOrganicOrders: fullyOrganicRows.length,
+      unitsSold: fullyOrganicSummary.unitsSold, grossSales, discounts, refunds, netSales,
+      averageRevenuePerOrder: fullyOrganicSummary.averageRevenuePerOrder,
+      uniqueProductsSold: fullyOrganicSummary.uniqueProductsSold,
+      currency, multiCurrencyWarning,
+    },
+    firstSessionOrganicSummary,
+    combinedSummary,
+    directSummary, referralSummary, noJourneySummary, aiSummary,
+    allSukirthaOrders: allOrders,
+    allMahimaOrders: allOrders,
+    classificationCounts,
+    meta: {
+      generatedAt: new Date().toISOString(),
+      cacheStatus: 'miss',
+      ordersFetched: orders.length,
+      fullyOrganicOrders: fullyOrganicRows.length,
+      firstSessionOrganicOrders: firstSessionOrganicRows.length,
+      pagesFetched: pages,
+      throttleRetries: retryState.throttleRetries,
+      executionMs: Date.now() - startTime,
+    },
+  };
+
+  CACHE.set(cacheKey, { data: responsePayload, generatedAt: Date.now() });
+  res.status(200).json(responsePayload);
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   const startTime = Date.now();
   const forceRefresh = req.query && req.query.refresh === '1';
   const monthConfig = resolveReportMonth(req.query && req.query.month);
-  const cacheKey = monthConfig.month;
+  const type = req.query && req.query.type === 'email' ? 'email' : 'organic';
 
   try {
     if (!TOKEN) {
       res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
       return;
     }
-
-    const cached = CACHE.get(cacheKey);
-    if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
-      res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
-      return;
+    if (type === 'email') {
+      await handleEmail(req, res, monthConfig, forceRefresh, startTime);
+    } else {
+      await handleOrganic(req, res, monthConfig, forceRefresh, startTime);
     }
-
-    if (!forceRefresh) {
-      const staticPath = path.join(__dirname, 'data', `sukirtha-de-organic-sales-${monthConfig.month}.json`);
-      if (fs.existsSync(staticPath)) {
-        const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
-        const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
-        CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
-        res.status(200).json(payload);
-        return;
-      }
-    }
-
-    const retryState = { throttleRetries: 0 };
-    const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
-
-    const classificationCounts = {
-      fullyOrganic: 0, mixedJourney: 0, nonOrganic: 0, attributionPending: 0,
-      noJourneyData: 0, unknownAttribution: 0, excludedCancelled: 0, excludedTest: 0,
-      firstSessionOrganic: 0,
-    };
-
-    const fullyOrganicRows = [];
-    const firstSessionOrganicRows = [];
-    const allOrderRows = []; // every order that produced a row, any channel — for the 4 extra groups below
-
-    for (const order of orders) {
-      const journey = classifyOrderJourney(order);
-      const row = buildSukirthaOrderRow(order, journey);
-      if (!row) continue;
-      row.channel = deriveChannel(journey);
-      allOrderRows.push(row);
-
-      const isFirstSessionOrganicBucket = journey.firstSessionOrganic && (journey.status === 'MIXED_JOURNEY' || journey.status === 'NON_ORGANIC');
-
-      if (journey.status === 'FULLY_ORGANIC') {
-        fullyOrganicRows.push(row);
-        classificationCounts.fullyOrganic++;
-      } else if (isFirstSessionOrganicBucket) {
-        row.journeyStatus = 'FIRST_SESSION_ORGANIC';
-        firstSessionOrganicRows.push(row);
-        classificationCounts.firstSessionOrganic++;
-      } else {
-        switch (journey.status) {
-          case 'MIXED_JOURNEY': classificationCounts.mixedJourney++; break;
-          case 'NON_ORGANIC': classificationCounts.nonOrganic++; break;
-          case 'ATTRIBUTION_PENDING': classificationCounts.attributionPending++; break;
-          case 'NO_JOURNEY_DATA': classificationCounts.noJourneyData++; break;
-          case 'UNKNOWN_ATTRIBUTION': classificationCounts.unknownAttribution++; break;
-          case 'EXCLUDED_CANCELLED_ORDER': classificationCounts.excludedCancelled++; break;
-          case 'EXCLUDED_TEST_ORDER': classificationCounts.excludedTest++; break;
-        }
-      }
-    }
-
-    const fullyOrganicSummary = summarizeRows(fullyOrganicRows);
-    const firstSessionOrganicSummary = summarizeRows(firstSessionOrganicRows);
-
-    // Sukirtha's DE Organic definition mirrors Kamsi's SEO "organic sales"
-    // definition exactly (2026-07-17 correction): all sales EXCEPT paid
-    // advertising — Fully Organic, First-Session Organic, Direct, Referral,
-    // No Journey Data (incl. Unknown / Attribution Pending), and AI Tools
-    // (extracted out of the "Other" channel bucket by source match).
-    // Excludes Google Ads/Paid Search, Social, Email. Store-wide (no
-    // product allocation filter), ledsone.de.
-    const AI_SOURCES = ['chatgpt', 'perplexity', 'gemini', 'copilot', 'claude', 'bing chat', 'bingchat', 'character.ai', 'meta ai', 'grok'];
-    const directRows = allOrderRows.filter(r => r.channel === 'Direct');
-    const referralRows = allOrderRows.filter(r => r.channel === 'Referral');
-    const noJourneyRows = allOrderRows.filter(r => r.channel === 'No Journey Data' || r.channel === 'Unknown' || r.channel === 'Attribution Pending');
-    const aiRows = allOrderRows.filter(r => r.channel === 'Other' && r.firstVisit && AI_SOURCES.some(ai => lower(r.firstVisit.source).includes(ai)));
-    const directSummary = summarizeRows(directRows);
-    const referralSummary = summarizeRows(referralRows);
-    const noJourneySummary = summarizeRows(noJourneyRows);
-    const aiSummary = summarizeRows(aiRows);
-
-    const combinedSummary = summarizeRows([
-      ...fullyOrganicRows, ...firstSessionOrganicRows, ...directRows, ...referralRows, ...noJourneyRows, ...aiRows,
-    ]);
-
-    fullyOrganicRows.forEach(r => { r.group = 'Fully Organic'; });
-    firstSessionOrganicRows.forEach(r => { r.group = 'First-Session Organic'; });
-    directRows.forEach(r => { r.group = 'Direct'; });
-    referralRows.forEach(r => { r.group = 'Referral'; });
-    noJourneyRows.forEach(r => { r.group = 'No Journey Data'; });
-    aiRows.forEach(r => { r.group = 'AI Tools'; });
-    const allSukirthaOrders = [...fullyOrganicRows, ...firstSessionOrganicRows, ...directRows, ...referralRows, ...noJourneyRows, ...aiRows];
-
-    const { grossSales, discounts, refunds, netSales, currency, multiCurrencyWarning } = fullyOrganicSummary;
-
-    const responsePayload = {
-      success: true,
-      staff: { name: 'Sukirtha', department: 'Organic Search (SEO)', store: 'ledsone.de' },
-      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
-      supportedMonths: SUPPORTED_MONTHS,
-      isLive: monthConfig.isLive,
-      source: {
-        scope: 'store-wide — every order counts, no product allocation / matching (mirrors sales-sukirtha-uk.js Email pattern, ORGANIC channel instead)',
-        orders: 'Shopify Admin GraphQL API',
-        journey: 'Shopify customerJourneySummary',
-      },
-      summary: {
-        fullyOrganicOrders: fullyOrganicRows.length,
-        unitsSold: fullyOrganicSummary.unitsSold, grossSales, discounts, refunds, netSales,
-        averageRevenuePerOrder: fullyOrganicSummary.averageRevenuePerOrder,
-        uniqueProductsSold: fullyOrganicSummary.uniqueProductsSold,
-        currency, multiCurrencyWarning,
-      },
-      firstSessionOrganicSummary,
-      combinedSummary,
-      // Breakdown of the 4 extra groups folded into combinedSummary above
-      // (mirrors sales-kamsi.js's directSummary/referralSummary/noJourneySummary/chatgptSummary).
-      directSummary, referralSummary, noJourneySummary, aiSummary,
-      allSukirthaOrders,
-      classificationCounts,
-      meta: {
-        generatedAt: new Date().toISOString(),
-        cacheStatus: 'miss',
-        ordersFetched: orders.length,
-        fullyOrganicOrders: fullyOrganicRows.length,
-        firstSessionOrganicOrders: firstSessionOrganicRows.length,
-        pagesFetched: pages,
-        throttleRetries: retryState.throttleRetries,
-        executionMs: Date.now() - startTime,
-      },
-    };
-
-    CACHE.set(cacheKey, { data: responsePayload, generatedAt: Date.now() });
-    res.status(200).json(responsePayload);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
   }
-}
+};
