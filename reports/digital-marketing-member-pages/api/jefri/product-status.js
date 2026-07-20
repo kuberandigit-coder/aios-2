@@ -46,8 +46,20 @@ function getPool() {
   return pool;
 }
 
-const ACCOUNT_ID = 9031058245; // google_ads.accounts.account_id for "ledsone.de"
 const CHANNEL = 'LEDSone DE';   // listings.shopify_listings.channel for the DE store
+
+// Jefri's 5 named campaigns (2026-07-20 — user-provided list, confirmed exact
+// matches against google_ads.campaigns for account 9031058245, all ENABLED).
+// The dashboard is scoped to ONLY these campaigns' products, not the whole
+// ledsone.de account.
+const JEFRI_CAMPAIGNS = [
+  { id: '23141810147', name: 'Pmax | Jeff | Klarna | NEWALL | All Products | MCV | DE -16/10' },
+  { id: '23411228109', name: 'Pmax | Jeff | Shoparize | ALL | All Products | MCV | DE-01/01/26' },
+  { id: '22539594891', name: 'Shopping | Jeff | Shoptimised | AOVU15 | TROAS | DE -12/05' },
+  { id: '23473840779', name: 'Pmax | Jeff | Shoparize | FTJ | FinetunedProducts | TROAS | DE-20.01' },
+  { id: '23340277562', name: 'Pmax | Jeff | Shoparize | IT | Italy | TROAS | IT-08/12' },
+];
+const JEFRI_CAMPAIGN_IDS = JEFRI_CAMPAIGNS.map((c) => c.id);
 
 function isValidDate(s) {
   return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -57,8 +69,7 @@ const QUERY = `
 WITH latest AS (
   SELECT MAX(pp.date) AS max_date
   FROM google_ads.product_performance pp
-  JOIN google_ads.campaigns c ON c.campaign_id = pp.campaign_id
-  WHERE c.account_id = $1
+  WHERE pp.campaign_id = ANY($1::bigint[])
 ),
 range AS (
   SELECT
@@ -67,14 +78,14 @@ range AS (
 ),
 perf AS (
   SELECT pp.product_item_id,
+    array_agg(DISTINCT pp.campaign_id) AS campaign_ids,
     SUM(pp.impressions) AS impressions,
     SUM(pp.clicks) AS clicks,
     SUM(pp.conversion_value) AS conv_value,
     SUM(pp.cost) AS cost
   FROM google_ads.product_performance pp
-  JOIN google_ads.campaigns c ON c.campaign_id = pp.campaign_id
   CROSS JOIN range r
-  WHERE c.account_id = $1
+  WHERE pp.campaign_id = ANY($1::bigint[])
     AND pp.date BETWEEN r.start_date AND r.end_date
   GROUP BY pp.product_item_id
 ),
@@ -89,7 +100,7 @@ resolved_ids AS (
 status_agg AS (
   SELECT agp.product_item_id, MAX(agp.status) AS status
   FROM google_ads.ad_group_products agp
-  WHERE agp.campaign_id IN (SELECT campaign_id FROM google_ads.campaigns WHERE account_id = $1)
+  WHERE agp.campaign_id = ANY($1::bigint[])
   GROUP BY agp.product_item_id
 ),
 child_fallback AS (
@@ -112,6 +123,7 @@ resolved_listing AS (
 )
 SELECT
   p.product_item_id,
+  p.campaign_ids,
   rl.sku,
   rl.url,
   rl.image,
@@ -203,9 +215,16 @@ module.exports = async function handler(req, res) {
   try {
     const from = isValidDate(req.query.from) ? req.query.from : null;
     const to = isValidDate(req.query.to) ? req.query.to : null;
+    // ?campaign=<id> scopes to one of Jefri's 5 campaigns; default (or
+    // "all"/omitted) includes all 5 combined.
+    const campaignParam = req.query.campaign;
+    const campaignIds = (campaignParam && JEFRI_CAMPAIGN_IDS.includes(campaignParam))
+      ? [campaignParam]
+      : JEFRI_CAMPAIGN_IDS;
 
-    const result = await client.query(QUERY, [ACCOUNT_ID, from, to, CHANNEL]);
+    const result = await client.query(QUERY, [campaignIds, from, to, CHANNEL]);
     const rows = result.rows;
+    const campaignNameById = new Map(JEFRI_CAMPAIGNS.map((c) => [c.id, c.name]));
 
     let rangeStart = null, rangeEnd = null;
     const products = rows.map((r) => {
@@ -213,6 +232,7 @@ module.exports = async function handler(req, res) {
       rangeEnd = r.range_end;
       const roas = computeRoas(r.conv_value, r.cost);
       const tag = computeTag(r.impressions, r.clicks, roas, r.cost, r.conv_value);
+      const rowCampaignIds = (r.campaign_ids || []).map(String);
       return {
         productId: r.product_item_id,
         sku: r.sku || null,
@@ -230,6 +250,8 @@ module.exports = async function handler(req, res) {
         roasAnomaly: roas === Infinity,
         tagKey: tag.key,
         tag: tag.label,
+        campaignIds: rowCampaignIds,
+        campaignNames: rowCampaignIds.map((id) => campaignNameById.get(id) || id),
       };
     });
 
@@ -249,6 +271,8 @@ module.exports = async function handler(req, res) {
     res.status(200).json({
       generatedAt: new Date().toISOString(),
       dateRange: { start: rangeStart, end: rangeEnd },
+      campaignList: JEFRI_CAMPAIGNS,
+      selectedCampaign: campaignIds.length === 1 ? campaignIds[0] : 'all',
       summary,
       products,
     });

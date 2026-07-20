@@ -68,7 +68,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 <header>
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 1 (Live)</div>
   <h1>Product Status Labels</h1>
-  <div class="sub">Which advertised products are Heroes, Villains, Zombies or Sidekicks based on current Google Ads product performance? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads)</div>
+  <div class="sub">Which advertised products are Heroes, Villains, Zombies or Sidekicks based on current Google Ads product performance? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads) &nbsp;&middot;&nbsp; Scope: Jefri's 5 named campaigns only (Klarna NEWALL, Shoparize ALL, Shoptimised AOVU15, Shoparize FTJ, Shoparize IT)</div>
   <div class="filters">
     <span class="chip" id="rangeChip">Date range: &ndash;</span>
     <span class="chip" id="liveChip">Loading…</span>
@@ -87,6 +87,9 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 <div class="tablebox">
   <div class="tbar">
     <input type="text" id="q" placeholder="Search Product ID, SKU or URL…">
+    <label>Campaign <select id="f_campaign">
+      <option value="all">All campaigns</option>
+    </select></label>
     <label>Tag <select id="f_tag">
       <option value="">All tags</option>
       <option value="hero">🏆 Hero</option>
@@ -179,11 +182,21 @@ async function load(){
   document.getElementById('liveChip').className = 'chip';
   document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
   try {
-    const res = await fetch('/api/jefri/product-status');
+    const campaignSel = document.getElementById('f_campaign');
+    const campaignParam = campaignSel.value && campaignSel.value !== 'all' ? '?campaign=' + encodeURIComponent(campaignSel.value) : '';
+    const res = await fetch('/api/jefri/product-status' + campaignParam);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     ALL = data.products;
     SUMMARY = data.summary;
+    if (data.campaignList && campaignSel.options.length <= 1) {
+      data.campaignList.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        campaignSel.appendChild(opt);
+      });
+    }
     document.getElementById('rangeChip').textContent = 'Date range: ' + (data.dateRange.start||'—') + ' to ' + (data.dateRange.end||'—') + ' (last 90 days)';
     document.getElementById('liveChip').textContent = 'Live — fetched ' + new Date(data.generatedAt).toLocaleString();
     document.getElementById('liveChip').className = 'chip live';
@@ -275,6 +288,7 @@ document.getElementById('refreshBtn').addEventListener('click', load);
 document.getElementById('q').addEventListener('input', () => { pg=1; render(); });
 document.getElementById('f_tag').addEventListener('change', () => { pg=1; render(); });
 document.getElementById('f_status').addEventListener('change', () => { pg=1; render(); });
+document.getElementById('f_campaign').addEventListener('change', () => { load(); });
 document.getElementById('psize').addEventListener('change', () => { pg=1; render(); });
 document.getElementById('pgFirst').addEventListener('click', () => { pg=1; render(); });
 document.getElementById('pgPrev').addEventListener('click', () => { if(pg>1){pg--;render();} });
