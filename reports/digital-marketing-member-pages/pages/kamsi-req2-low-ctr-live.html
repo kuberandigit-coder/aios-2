@@ -169,8 +169,8 @@ async function load(){
 
   const start = document.getElementById('rangeStart').value;
   const end = document.getElementById('rangeEnd').value;
-  let url = '/api/gsc-low-ctr';
-  if (start && end) url += '?start=' + start + '&end=' + end;
+  let url = '/api/gsc-ctr?store=uk';
+  if (start && end) url += '&start=' + start + '&end=' + end;
 
   try {
     const res = await fetch(url);

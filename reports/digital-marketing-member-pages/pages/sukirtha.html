@@ -505,8 +505,8 @@ async function load(){
 
   const start = document.getElementById('rangeStart').value;
   const end = document.getElementById('rangeEnd').value;
-  let url = '/api/gsc-sukirtha-low-ctr';
-  if (start && end) url += '?start=' + start + '&end=' + end;
+  let url = '/api/gsc-ctr?store=de';
+  if (start && end) url += '&start=' + start + '&end=' + end;
 
   try {
     const res = await fetch(url);
