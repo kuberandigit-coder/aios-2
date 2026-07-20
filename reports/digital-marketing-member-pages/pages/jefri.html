@@ -68,7 +68,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 <header>
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 1 (Live)</div>
   <h1>Product Status Labels</h1>
-  <div class="sub">Which advertised products are Heroes, Villains, Zombies or Sidekicks based on current Google Ads product performance? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads) &nbsp;&middot;&nbsp; Scope: Jefri's 5 named campaigns only (Klarna NEWALL, Shoparize ALL, Shoptimised AOVU15, Shoparize FTJ, Shoparize IT)</div>
+  <div class="sub">Which advertised products are Heroes, Villains, Zombies or Sidekicks based on current Google Ads product performance? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads) &nbsp;&middot;&nbsp; Scope: Jefri's 5 named campaigns, currently-active products only (Klarna NEWALL, Shoparize ALL, Shoptimised AOVU15, Shoparize FTJ, Shoparize IT)</div>
   <div class="filters">
     <span class="chip" id="rangeChip">Date range: &ndash;</span>
     <span class="chip" id="liveChip">Loading…</span>
@@ -147,7 +147,8 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
   <strong>ROAS:</strong> (Conv. Value &divide; Cost) &times; 100, calculated from aggregated 90-day totals per product (not averaged daily). Shown as &ldquo;&mdash;&rdquo; when Cost and Conv. Value are both zero.<br>
   <strong>Status:</strong> Merchant Center eligibility (Eligible / Disapproved / Limited) where available from Shopping/Search ad-group data. Performance Max campaigns do not expose per-product eligibility in this system, so those products show &ldquo;Unknown&rdquo; &mdash; this is a documented data gap, not a calculated guess.<br>
   <strong>Current Stock:</strong> fetched LIVE from the Shopify Admin GraphQL API on every load/refresh (not a database snapshot) &mdash; variant-level available inventory, summed across locations, for the advertised item (falls back to a representative child variant when the item ID is a parent-level product). Shows &ldquo;&mdash;&rdquo; when the item isn't inventory-tracked or has no resolvable Shopify listing.<br>
-  <strong>Tag priority:</strong> Zombie is evaluated first (no impressions, no clicks), then Hero, then Villain, then Sidekick. Products matching none of the rules show ⚪ Unclassified rather than being forced into another category.
+  <strong>Tag priority:</strong> Zombie is evaluated first (no impressions, no clicks), then Hero, then Villain, then Sidekick. Products matching none of the rules show ⚪ Unclassified rather than being forced into another category.<br>
+  <strong>Currently-active products only:</strong> a product only appears here if it had performance data in the last 7 days &mdash; not just anytime in the 90-day window. Products removed from a campaign stop generating performance rows entirely, so recent silence reliably means "no longer in this campaign", matching what Google Ads' own live Products report shows. The displayed metrics (Impressions, Clicks, Conv. Value, Cost) still cover the full 90-day window for whichever products remain.
 </div>
 
 </div>

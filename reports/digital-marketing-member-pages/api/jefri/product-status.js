@@ -95,6 +95,23 @@ perf AS (
     AND pp.date BETWEEN r.start_date AND r.end_date
   GROUP BY pp.product_item_id
 ),
+-- "Currently in the campaign" filter: a product only counts as active if it
+-- had performance data within the last 7 days, not just anytime in the
+-- 90-day window. Products removed from a campaign's feed stop generating
+-- performance rows entirely (confirmed empirically, e.g. a product last
+-- seen 2026-05-25 while its campaign kept reporting through 2026-07-20),
+-- so recent silence is a reliable signal of removal, matching what Google
+-- Ads' own live Products report shows. The displayed metrics still cover
+-- the full 90-day window - only the product LIST is scoped to "currently
+-- active", per explicit user instruction (2026-07-20).
+active_products AS (
+  SELECT DISTINCT pp.product_item_id
+  FROM google_ads.product_performance pp
+  CROSS JOIN range r
+  WHERE pp.campaign_id = ANY($1::bigint[])
+    AND pp.date >= GREATEST(r.start_date, r.end_date - INTERVAL '6 days')
+    AND pp.date <= r.end_date
+),
 resolved_ids AS (
   SELECT p.product_item_id,
     CASE WHEN p.product_item_id LIKE 'shopify\\_%'
@@ -147,6 +164,7 @@ SELECT
   (SELECT start_date FROM range) AS range_start,
   (SELECT end_date FROM range) AS range_end
 FROM perf p
+JOIN active_products ap ON ap.product_item_id = p.product_item_id
 JOIN resolved_ids ri ON ri.product_item_id = p.product_item_id
 LEFT JOIN resolved_listing rl ON rl.item_id = ri.shopify_id
 LEFT JOIN status_agg s ON s.product_item_id = p.product_item_id
