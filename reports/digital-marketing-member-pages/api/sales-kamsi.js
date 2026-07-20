@@ -437,16 +437,30 @@ async function fetchOrdersForMonth(monthConfig, retryState) {
   return { orders, pages };
 }
 
+// Product IDs permanently excluded from Kamsi's sales, across every month
+// (historical and live) — added 2026-07-20 per explicit user instruction.
+// Checked before allocation matching so these never appear regardless of
+// how they were originally allocated to Kamsi.
+const KAMSI_EXCLUDED_PRODUCT_IDS = new Set([
+  '5304784879777', '5928567898273', '6024709374113', '6994098520225',
+  '7659907776762', '7659907973370', '7661567901946', '7661568688378',
+  '7661569343738', '8013202063610',
+]);
+
 // ---------- Kamsi matching + financials ----------
 function matchLineItemToKamsi(lineItem, allocation) {
   const variant = lineItem.variant;
   if (!variant) return null;
+  const product = variant.product;
+  const productId = product ? product.legacyResourceId : null;
+  if (productId && KAMSI_EXCLUDED_PRODUCT_IDS.has(String(productId))) return null;
+  if (variant.legacyResourceId && KAMSI_EXCLUDED_PRODUCT_IDS.has(String(variant.legacyResourceId))) return null;
+
   if (variant.id && allocation.variantGids.has(variant.id)) return { matchedOn: 'variant_gid' };
   if (variant.legacyResourceId && allocation.variantIds.has(String(variant.legacyResourceId))) return { matchedOn: 'variant_id' };
-  const product = variant.product;
   if (product) {
     if (product.id && allocation.productGids.has(product.id)) return { matchedOn: 'product_gid' };
-    if (product.legacyResourceId && allocation.productIds.has(String(product.legacyResourceId))) return { matchedOn: 'product_id' };
+    if (productId && allocation.productIds.has(String(productId))) return { matchedOn: 'product_id' };
   }
   return null;
 }
