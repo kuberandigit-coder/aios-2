@@ -437,16 +437,41 @@ async function fetchOrdersForMonth(monthConfig, retryState) {
   return { orders, pages };
 }
 
+// Product IDs permanently excluded from Dilaksi's sales, across every month
+// (historical and live) — added 2026-07-20 per explicit user instruction
+// (these belong to Kamsi, not Dilaksi). Checked before allocation matching
+// so these never appear regardless of how they were originally allocated.
+const DILAKSI_EXCLUDED_PRODUCT_IDS = new Set([
+  '8436644249850', '8172508381434', '8140971213050', '8010965057786',
+  '8010959716602', '8010954113274', '8009118974202', '8009117368570',
+  '7630661910778', '6894937866401', '6008905466017', '6008904548513',
+  '5866683498657', '5752972902561', '5742783922337', '5556566655137',
+  '5282331197601', '5282330738849', '5265738629281', '4536806539360',
+  '4536806506592', '4536806473824', '4536806375520', '4536806146144',
+  '4536805982304', '4536795693152', '4495624274016', '4495624175712',
+  '4417288732768', '14879662702978', '14879664472450', '14880118145410',
+  '14881058324866', '14882049458562', '14882306818434', '14896149889410',
+  '14898962596226', '14899845497218', '14973874569602', '14979285942658',
+  '14979601891714', '14983364116866', '14984874131842', '15008542491010',
+  '15260815720834', '4417267925088', '4417268351072', '4417268809824',
+  '4417277460576', '4417277788256', '4417277886560', '4417278115936',
+  '4417282736224', '14874202472834', '14875761344898',
+]);
+
 // ---------- Dilaksi matching + financials ----------
 function matchLineItemToDilaksi(lineItem, allocation) {
   const variant = lineItem.variant;
   if (!variant) return null;
+  const product = variant.product;
+  const productId = product ? product.legacyResourceId : null;
+  if (productId && DILAKSI_EXCLUDED_PRODUCT_IDS.has(String(productId))) return null;
+  if (variant.legacyResourceId && DILAKSI_EXCLUDED_PRODUCT_IDS.has(String(variant.legacyResourceId))) return null;
+
   if (variant.id && allocation.variantGids.has(variant.id)) return { matchedOn: 'variant_gid' };
   if (variant.legacyResourceId && allocation.variantIds.has(String(variant.legacyResourceId))) return { matchedOn: 'variant_id' };
-  const product = variant.product;
   if (product) {
     if (product.id && allocation.productGids.has(product.id)) return { matchedOn: 'product_gid' };
-    if (product.legacyResourceId && allocation.productIds.has(String(product.legacyResourceId))) return { matchedOn: 'product_id' };
+    if (productId && allocation.productIds.has(String(productId))) return { matchedOn: 'product_id' };
   }
   return null;
 }
