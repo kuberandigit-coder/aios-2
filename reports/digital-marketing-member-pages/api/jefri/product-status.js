@@ -8,8 +8,14 @@
 //   google_ads.product_performance  — daily impressions/clicks/conversion_value/cost per product_item_id
 //   google_ads.campaigns            — campaign_id -> account_id, used to scope to ledsone.de (account_id 9031058245)
 //   google_ads.ad_group_products    — status (ELIGIBLE/DISAPPROVED/PENDING), scoped to Shopping/Search only (not PMax)
-//   listings.shopify_listings       — sku, price, main_image_url, listing_url, quantity, channel='LEDSone DE'
+//   listings.shopify_listings       — sku, price, main_image_url, listing_url, channel='LEDSone DE' (NOT stock — see below)
 //   listings.shopify_listings_parent_child_mapping — resolves parent-level item IDs to a representative child variant
+//
+// Current Stock (2026-07-20 change): fetched LIVE from the Shopify Admin
+// GraphQL API on every request (ProductVariant.inventoryItem.inventoryLevels,
+// summed "available" across locations) — NOT read from the Postgres
+// listings.shopify_listings.quantity snapshot. Uses the same
+// SHOPIFY_ADMIN_TOKEN env var as the Sukirtha DE endpoints, no new credential.
 //
 // Identifier note: google_ads.product_item_id is usually a raw Shopify product/variant ID,
 // but for some PMax rows it is the full Merchant Center product_id format
@@ -115,7 +121,11 @@ resolved_listing AS (
     COALESCE(sl.price, child_sl.price) AS price,
     COALESCE(NULLIF(sl.main_image_url, ''), child_sl.main_image_url) AS image,
     sl.listing_url AS url,
-    COALESCE(sl.quantity, child_sl.quantity) AS stock
+    -- Item ID to use for the LIVE Shopify stock lookup: the listing's own
+    -- item_id when it's a real sellable variant (all_list=1), otherwise the
+    -- representative child variant's item_id (parent-level listings have no
+    -- inventory of their own).
+    CASE WHEN sl.all_list = 1 THEN sl.item_id ELSE child_sl.item_id END AS live_stock_item_id
   FROM listings.shopify_listings sl
   LEFT JOIN child_fallback cf ON cf.parent_listing_id = sl.id
   LEFT JOIN listings.shopify_listings child_sl ON child_sl.id = cf.child_listing_id
@@ -129,7 +139,7 @@ SELECT
   rl.image,
   rl.price,
   s.status,
-  rl.stock,
+  rl.live_stock_item_id,
   p.impressions,
   p.clicks,
   p.conv_value,
@@ -189,6 +199,89 @@ function computeTag(impressions, clicks, roas, cost, convValue) {
   return { key: 'unclassified', label: '⚪ Unclassified' };
 }
 
+// ---------- Live Current Stock (Shopify Admin GraphQL API, read-only) ----------
+// Uses the existing SHOPIFY_ADMIN_TOKEN env var (already used by
+// api/sukirtha-req2-duplicate-check.js and api/sukirtha-req3-slow-moving-stock.js
+// for ledsone-de.myshopify.com) — no new credential.
+const SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
+const SHOPIFY_API_VERSION = '2024-10';
+const shopifySleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function shopifyGraphQL(query, variables) {
+  const token = process.env.SHOPIFY_ADMIN_TOKEN;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let res;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      res = await fetch(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+    } catch (e) {
+      await shopifySleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
+      await shopifySleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+    const json = await res.json();
+    const throttled = json.errors && Array.isArray(json.errors) && json.errors.some((e) => e.extensions && e.extensions.code === 'THROTTLED');
+    if (throttled) { await shopifySleep(800 * Math.pow(2, attempt)); continue; }
+    if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+    return json.data;
+  }
+  throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
+}
+
+const NODES_QUERY = `
+query($ids: [ID!]!) {
+  nodes(ids: $ids) {
+    ... on ProductVariant {
+      id
+      inventoryItem {
+        tracked
+        inventoryLevels(first: 10) {
+          edges { node { quantities(names: ["available"]) { name quantity } } }
+        }
+      }
+    }
+  }
+}`;
+
+// Fetches live "available" inventory for a list of Shopify variant item IDs,
+// batched at Shopify's node-query limit (250 per call). Returns a Map of
+// item_id (string) -> stock (number, or null if not inventory-tracked).
+async function fetchLiveStock(itemIds) {
+  const stockById = new Map();
+  const uniqueIds = [...new Set(itemIds.filter(Boolean).map(String))];
+  const BATCH = 250;
+  for (let i = 0; i < uniqueIds.length; i += BATCH) {
+    const batch = uniqueIds.slice(i, i + BATCH);
+    const gids = batch.map((id) => `gid://shopify/ProductVariant/${id}`);
+    const data = await shopifyGraphQL(NODES_QUERY, { ids: gids });
+    for (const node of data.nodes) {
+      if (!node || !node.id) continue;
+      const numericId = node.id.split('/').pop();
+      if (!node.inventoryItem || !node.inventoryItem.tracked) {
+        stockById.set(numericId, null);
+        continue;
+      }
+      const total = node.inventoryItem.inventoryLevels.edges.reduce((sum, e) => {
+        const avail = e.node.quantities.find((q) => q.name === 'available');
+        return sum + (avail ? avail.quantity : 0);
+      }, 0);
+      stockById.set(numericId, total);
+    }
+  }
+  return stockById;
+}
+
 function normalizeStatus(status) {
   if (!status) return 'Unknown';
   const map = {
@@ -226,6 +319,21 @@ module.exports = async function handler(req, res) {
     const rows = result.rows;
     const campaignNameById = new Map(JEFRI_CAMPAIGNS.map((c) => [c.id, c.name]));
 
+    // Current Stock: live from Shopify Admin API, not the Postgres snapshot.
+    // Fetched once per request for every distinct variant needed.
+    let liveStockById = new Map();
+    let stockSourceError = null;
+    if (!process.env.SHOPIFY_ADMIN_TOKEN) {
+      stockSourceError = 'SHOPIFY_ADMIN_TOKEN missing — Current Stock unavailable';
+    } else {
+      try {
+        liveStockById = await fetchLiveStock(rows.map((r) => r.live_stock_item_id));
+      } catch (e) {
+        console.error('[jefri/product-status] Live stock fetch failed:', e && e.message);
+        stockSourceError = 'Could not fetch live stock from Shopify';
+      }
+    }
+
     let rangeStart = null, rangeEnd = null;
     const products = rows.map((r) => {
       rangeStart = r.range_start;
@@ -233,6 +341,7 @@ module.exports = async function handler(req, res) {
       const roas = computeRoas(r.conv_value, r.cost);
       const tag = computeTag(r.impressions, r.clicks, roas, r.cost, r.conv_value);
       const rowCampaignIds = (r.campaign_ids || []).map(String);
+      const liveStock = r.live_stock_item_id ? liveStockById.get(String(r.live_stock_item_id)) : undefined;
       return {
         productId: r.product_item_id,
         sku: r.sku || null,
@@ -240,7 +349,7 @@ module.exports = async function handler(req, res) {
         image: r.image || null,
         price: r.price !== null ? Number(r.price) : null,
         status: normalizeStatus(r.status),
-        stock: r.stock !== null ? Number(r.stock) : null,
+        stock: liveStock === undefined || liveStock === null ? null : Number(liveStock),
         impressions: Number(r.impressions) || 0,
         clicks: Number(r.clicks) || 0,
         convValue: Number(r.conv_value) || 0,
@@ -273,6 +382,7 @@ module.exports = async function handler(req, res) {
       dateRange: { start: rangeStart, end: rangeEnd },
       campaignList: JEFRI_CAMPAIGNS,
       selectedCampaign: campaignIds.length === 1 ? campaignIds[0] : 'all',
+      stockSourceError,
       summary,
       products,
     });

@@ -2,6 +2,7 @@
   "functions": {
     "api/sales-jackson.js": { "maxDuration": 300 },
     "api/sales-kamsi.js": { "maxDuration": 300 },
-    "api/kamsi-live.js": { "maxDuration": 300 }
+    "api/kamsi-live.js": { "maxDuration": 300 },
+    "api/jefri/product-status.js": { "maxDuration": 300 }
   }
 }
