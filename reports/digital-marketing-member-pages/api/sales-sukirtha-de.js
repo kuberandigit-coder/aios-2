@@ -21,6 +21,36 @@ const STORE_DOMAIN = 'ledsone-de.myshopify.com';
 const API_VERSION = '2024-10';
 const TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
 
+// LEDSone FR (ledsone.fr) — added 2026-07-21 for Hetheesha (Organic) and
+// Thivagini (Google Ads) tabs. Reuses this same merged function (rather
+// than a new api/*.js file) to stay under the Vercel Hobby plan's
+// 12-function-per-deployment cap.
+const STORE_DOMAIN_FR = 'jedsz8-km.myshopify.com';
+const TOKEN_FR = process.env.SHOPIFY_FR_ADMIN_TOKEN;
+
+// ledsone.co.uk — added 2026-07-21 for Sajeepan's Google Ads tab. Reuses
+// the existing Vercel env vars already set up for api/sales-sukirtha-uk.js
+// (no new credential handling needed) rather than a new file, to stay
+// under the Vercel Hobby plan's 12-function-per-deployment cap.
+const STORE_DOMAIN_UK = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
+const TOKEN_UK = process.env.SHOPIFY_UK_ADMIN_TOKEN;
+const API_VERSION_UK = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
+
+// Sajeepan (ledsone.co.uk, Google Ads) — utm_term exact match, confirmed by
+// user 2026-07-21. Raw values as given, lowercased for case-insensitive
+// comparison against Shopify's stored utm_term (ValueTrack placeholders
+// like "{keyword}" appear literally unsubstituted in some of her campaigns'
+// tracking templates, which is expected/normal for certain ad formats).
+const SAJEEPAN_TERMS = new Set([
+  'genai&keyword=genai&content=sj',
+  '{keyword}',
+  'top_sell&keyword=gen2&content=asset',
+  'lighting_sj&keyword={keyword}',
+  'wall_light&keyword=gen2&content=ads',
+  'shopping_sj&keyword={keyword}',
+  'unnai_nampu',
+].map(s => s.toLowerCase()));
+
 // Europe/Berlin month boundaries, DST-aware.
 function berlinOffsetMinutesAt(utcGuessMs) {
   const dtf = new Intl.DateTimeFormat('en-US', {
@@ -37,6 +67,24 @@ function berlinMidnightUTCMs(year, month, day) {
   const offsetMin = berlinOffsetMinutesAt(guess);
   return guess - offsetMin * 60000;
 }
+
+// Hetheesha "No Journey Data" orders (ledsone.fr) manually reassigned to
+// Thivagini — added 2026-07-21, per explicit user decision after reviewing
+// each order individually. Rule used to select these: order's product had
+// at least one real Google Ads click (not just an impression) within the
+// 90 days before the order's purchase date (Google's own conversion
+// attribution window), cross-checked against google_ads.product_performance.
+// Covers Jan–Jul 2026 (the months audited so far). Orders NOT in this set
+// stay with Hetheesha even if No Journey Data, since they showed zero click
+// evidence of ads influence.
+const HETHEESHA_TO_THIVAGINI_NOJOURNEY_ORDERS = new Set([
+  'LSFR1158','LSFR1185','LSFR1186','LSFR1187','LSFR1192','LSFR1196','LSFR1208',
+  'LSFR1214','LSFR1220','LSFR1221','LSFR1228','LSFR1240','LSFR1253','LSFR1262',
+  'LSFR1266','LSFR1269','LSFR1273','LSFR1302','LSFR1306','LSFR1318','LSFR1325',
+  'LSFR1331','LSFR1345','LSFR1347','LSFR1351','LSFR1360','LSFR1361','LSFR1362',
+  'LSFR1370','LSFR1372','LSFR1381','LSFR1384','LSFR1392','LSFR1417','LSFR1425',
+  'LSFR1427','LSFR1444','LSFR1476','LSFR1485','LSFR1497','LSFR1516',
+]);
 
 // Product IDs owned by Mahima — excluded from Sukirtha's organic sales,
 // included (as the inverse filter) for Mahima's own views. Added 2026-07-17.
@@ -173,45 +221,23 @@ const MAHIMA_EXCLUDED_PRODUCT_IDS = new Set([
   '15627491082505','15627503862025','15627506712841','15627527651593','15628294816009',
   '15628298191113','15628301598985','15628329320713','15628367200521','15628374671625',
   '15628388696329',
+  '8357095440649','8435480625417','8375907352841','8436361494793',
 ]);
 
-// Mahima's Google Ads (Performance Max / Shopping) campaign names, provided
-// by the user 2026-07-20, for the Mahima Ads sub-tab (staff=mahima-ads).
-const MAHIMA_ADS_CAMPAIGNS = [
-  'Pmax DE | Mahi | Klarna | DE | All_Myid | MCV',
-  'Pmax DE | Mahi | Shoptimised | LIGHTINGSOLUTION | All_Myid_1 | MCV',
-  'Pmax DE | Mahi | Shoptimised |JAN-TOP-SALES | JanTopSales_3 | MCV',
-  'Pmax DE | Mahi | Shoptimised| BESTEN-BELEUCHTUNG | priceGT10_5 | MCV',
-  'Shopping DE | Mahi | klarna | TOP-MAHI | Verkaufsprodukt | tROAS | 11/06',
-];
+// Ad-platform source strings shared by Google Ads-family traffic on this
+// store (Shopping/Pmax feeds routed through these tools) — classifySession()
+// often mislabels these as OTHER/REFERRAL since they aren't recognized paid
+// mediums, so this substring-on-source check is the reliable way to detect
+// "is this Google Ads family traffic" regardless of that mislabeling.
+const GOOGLE_FAMILY_SOURCES = ['google', 'klarna', 'shoptimised', 'shoptimise', 'shoparize'];
 
-function normalizeCampaignName(s) {
-  return (s || '').toString().toLowerCase().replace(/\s*\|\s*/g, '|').replace(/\s+/g, ' ').trim();
-}
-
-function extractCampaignName(visit) {
-  if (!visit) return null;
-  const utm = visit.utmParameters || {};
-  if (utm.campaign) return utm.campaign;
-  const urlFields = [visit.landingPage, visit.referrerUrl].filter(Boolean);
-  for (const u of urlFields) {
-    const m = /[?&]utm_campaign=([^&]+)/i.exec(u);
-    if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; } }
-  }
-  return null;
-}
-
-function matchAdsCampaign(rawCampaign) {
-  if (!rawCampaign) return null;
-  const actual = normalizeCampaignName(rawCampaign);
-  let best = null;
-  for (const known of MAHIMA_ADS_CAMPAIGNS) {
-    const norm = normalizeCampaignName(known);
-    if (actual === norm) return known;
-    if (actual.includes(norm) || norm.includes(actual)) best = known;
-  }
-  return best;
-}
+// Mahima Ads matching: an order belongs to Mahima's Google Ads sales if its
+// first session has "mahi" anywhere in source/medium/campaign/term/content
+// (see the mahima-ads branch in the handler below). Superseded an earlier
+// exact-code-match-against-a-fixed-list approach on 2026-07-20 after the
+// user found real Shopify order data proving many of Mahima's ad mediums
+// (klarna, shoptimised, shoptimise1/2/3) weren't being recognized as paid
+// search at all under the old logic, silently dropping ~half her orders.
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
@@ -395,15 +421,18 @@ function classifyOrderJourneyEmail(order) {
 // ---------- Shopify GraphQL ----------
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-async function shopifyGraphQL(query, variables, retryState) {
+async function shopifyGraphQL(query, variables, retryState, storeDomain, token, apiVersion) {
+  const domain = storeDomain || STORE_DOMAIN;
+  const authToken = token || TOKEN;
+  const version = apiVersion || API_VERSION;
   for (let attempt = 0; attempt < 6; attempt++) {
     let res;
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
-      res = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+      res = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': TOKEN },
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': authToken },
         body: JSON.stringify({ query, variables }),
         signal: controller.signal,
       });
@@ -480,6 +509,7 @@ query SukirthaDEOrders($cursor: String, $query: String!) {
               id name title variantTitle sku quantity refundableQuantity
               originalUnitPriceSet { shopMoney { amount currencyCode } }
               discountedTotalSet { shopMoney { amount currencyCode } }
+              taxLines { priceSet { shopMoney { amount currencyCode } } rate title }
               variant {
                 id legacyResourceId title sku
                 product { id legacyResourceId title handle }
@@ -507,14 +537,16 @@ query SukirthaDEOrders($cursor: String, $query: String!) {
   }
 }`;
 
-async function fetchOrdersForMonth(monthConfig, retryState) {
+async function fetchOrdersForMonth(monthConfig, retryState, storeDomain, token, apiVersion) {
   const q = `created_at:>=${monthConfig.queryStart} AND created_at:<${monthConfig.queryEnd}`;
   const orders = [];
   let after = null;
   let hasNext = true;
   let pages = 0;
+  let rawEdgesSeen = 0;
   while (hasNext) {
-    const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState);
+    const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState, storeDomain, token, apiVersion);
+    rawEdgesSeen += data.orders.edges.length;
     for (const edge of data.orders.edges) {
       const t = new Date(edge.node.createdAt).getTime();
       if (t >= monthConfig.startMs && t < monthConfig.endMs) orders.push(edge.node);
@@ -522,14 +554,50 @@ async function fetchOrdersForMonth(monthConfig, retryState) {
     hasNext = data.orders.pageInfo.hasNextPage;
     after = data.orders.pageInfo.endCursor;
     pages++;
+    if (pages > 200) break;
   }
-  return { orders, pages };
+  return { orders, pages, rawEdgesSeen };
 }
 
 // ---------- Financials (store-wide, no product filter unless noted) ----------
 function amt(moneySet) { return moneySet ? round2(Number(moneySet.shopMoney.amount)) : 0; }
 function ccy(moneySet) { return moneySet ? moneySet.shopMoney.currencyCode : null; }
 function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+// Fix added 2026-07-21: line-item `discountedTotalSet` frequently comes back
+// equal to the undiscounted price even when the order has a real discount
+// (confirmed via debugOrderRaw on LSFR1366 — order-level discount code
+// applied, but not allocated onto discountedTotalSet on this store's data).
+// The order's own currentTotalDiscountsSet IS reliable, so: if per-item
+// discounts already sum to less than the order-level discount, distribute
+// the shortfall across items proportional to gross share (last item takes
+// the rounding remainder so the total always ties out exactly). This makes
+// Gross/Net Sales reconcile with Shopify's own Gross Sales/Discounts report.
+function reconcileOrderDiscounts(items, order) {
+  // currentTotalDiscountsSet is on the same tax-inclusive basis as
+  // originalUnitPriceSet (see grossInclTax note above), but item.discounts
+  // is already ex-tax at this point — convert using this order's actual
+  // blended tax rate (real tax / real ex-tax gross) so units match before
+  // allocating the shortfall.
+  const orderLevelDiscountInclTax = amt(order.currentTotalDiscountsSet);
+  if (orderLevelDiscountInclTax <= 0 || !items.length) return;
+  const totalGrossExTax = items.reduce((s, i) => s + i.grossSales, 0);
+  const totalTax = items.reduce((s, i) => s + (i.taxes || 0), 0);
+  if (totalGrossExTax <= 0) return;
+  const blendedRate = totalTax / totalGrossExTax;
+  const orderLevelDiscount = round2(orderLevelDiscountInclTax / (1 + blendedRate));
+  const itemDiscountSum = round2(items.reduce((s, i) => s + i.discounts, 0));
+  const shortfall = round2(orderLevelDiscount - itemDiscountSum);
+  if (shortfall <= 0) return;
+  let allocated = 0;
+  items.forEach((item, idx) => {
+    const isLast = idx === items.length - 1;
+    const extra = isLast ? round2(shortfall - allocated) : round2(shortfall * (item.grossSales / totalGrossExTax));
+    allocated = round2(allocated + extra);
+    item.discounts = round2(item.discounts + extra);
+    item.netSales = round2(item.grossSales - item.discounts - item.refunds);
+  });
+}
 
 function buildSukirthaOrderRow(order, journey, staff) {
   const items = [];
@@ -544,9 +612,19 @@ function buildSukirthaOrderRow(order, journey, staff) {
     }
 
     const grossUnit = amt(li.originalUnitPriceSet);
-    const gross = round2(grossUnit * li.quantity);
+    const grossInclTax = round2(grossUnit * li.quantity);
+    // Fix added 2026-07-21: this store's prices are tax-inclusive (confirmed
+    // via debugOrderRaw on LSFR1366 — FR TVA 20% taxLines present), but
+    // Shopify's own Gross Sales/Net Sales report always excludes tax. Without
+    // this, our Gross Sales overstated Shopify's report by the full VAT
+    // amount on every line item. Subtract the line item's own taxLines here
+    // so grossSales matches Shopify's Gross Sales report basis exactly.
+    const tax = round2((li.taxLines || []).reduce((s, t) => s + amt(t.priceSet), 0));
+    const gross = round2(grossInclTax - tax);
     const discounted = amt(li.discountedTotalSet);
-    const discount = round2(Math.max(0, gross - discounted));
+    const discountInclTax = round2(Math.max(0, grossInclTax - discounted));
+    const itemTaxRate = grossInclTax > 0 ? tax / (grossInclTax - tax || 1) : 0;
+    const discount = round2(discountInclTax / (1 + itemTaxRate));
 
     let refund = 0;
     for (const rEdge of (order.refunds || [])) {
@@ -566,6 +644,7 @@ function buildSukirthaOrderRow(order, journey, staff) {
       sku: li.sku,
       quantity: li.quantity,
       grossSales: gross,
+      taxes: tax,
       discounts: discount,
       refunds: refund,
       netSales: round2(gross - discount - refund),
@@ -573,6 +652,7 @@ function buildSukirthaOrderRow(order, journey, staff) {
     });
   }
   if (!items.length) return null;
+  reconcileOrderDiscounts(items, order);
 
   return {
     orderId: order.id,
@@ -617,9 +697,19 @@ function buildSukirthaOrderRowEmail(order, journey) {
     const li = edge.node;
 
     const grossUnit = amt(li.originalUnitPriceSet);
-    const gross = round2(grossUnit * li.quantity);
+    const grossInclTax = round2(grossUnit * li.quantity);
+    // Fix added 2026-07-21: this store's prices are tax-inclusive (confirmed
+    // via debugOrderRaw on LSFR1366 — FR TVA 20% taxLines present), but
+    // Shopify's own Gross Sales/Net Sales report always excludes tax. Without
+    // this, our Gross Sales overstated Shopify's report by the full VAT
+    // amount on every line item. Subtract the line item's own taxLines here
+    // so grossSales matches Shopify's Gross Sales report basis exactly.
+    const tax = round2((li.taxLines || []).reduce((s, t) => s + amt(t.priceSet), 0));
+    const gross = round2(grossInclTax - tax);
     const discounted = amt(li.discountedTotalSet);
-    const discount = round2(Math.max(0, gross - discounted));
+    const discountInclTax = round2(Math.max(0, grossInclTax - discounted));
+    const itemTaxRate = grossInclTax > 0 ? tax / (grossInclTax - tax || 1) : 0;
+    const discount = round2(discountInclTax / (1 + itemTaxRate));
 
     let refund = 0;
     for (const rEdge of (order.refunds || [])) {
@@ -639,6 +729,7 @@ function buildSukirthaOrderRowEmail(order, journey) {
       sku: li.sku,
       quantity: li.quantity,
       grossSales: gross,
+      taxes: tax,
       discounts: discount,
       refunds: refund,
       netSales: round2(gross - discount - refund),
@@ -646,6 +737,7 @@ function buildSukirthaOrderRowEmail(order, journey) {
     });
   }
   if (!items.length) return null;
+  reconcileOrderDiscounts(items, order);
 
   return {
     orderId: order.id,
@@ -687,7 +779,7 @@ const CACHE = new Map();
 const CACHE_TTL_MS = 55 * 1000;
 
 function summarizeRows(rows) {
-  let unitsSold = 0, grossSales = 0, discounts = 0, refunds = 0;
+  let unitsSold = 0, grossSales = 0, discounts = 0, refunds = 0, orderTotalSum = 0;
   const uniqueProducts = new Set();
   const currencies = new Set();
   for (const row of rows) {
@@ -699,15 +791,23 @@ function summarizeRows(rows) {
       uniqueProducts.add(item.productId);
       if (item.currency) currencies.add(item.currency);
     }
+    orderTotalSum += row.orderTotal || 0;
   }
   grossSales = round2(grossSales);
   discounts = round2(discounts);
   refunds = round2(refunds);
+  orderTotalSum = round2(orderTotalSum);
   const netSales = round2(grossSales - discounts - refunds);
   const currency = currencies.size === 1 ? [...currencies][0] : (currencies.size === 0 ? 'EUR' : 'MIXED');
   const multiCurrencyWarning = currencies.size > 1 ? [...currencies] : null;
   return {
     ordersCount: rows.length, unitsSold, grossSales, discounts, refunds, netSales,
+    // orderTotalSum = real Shopify order total (product + tax + shipping),
+    // summed from each order's currentTotalPriceSet. grossSales/netSales
+    // above are product-line-only (Shopify Sales-channel convention used
+    // everywhere on this page) and will NOT match Shopify's own order
+    // total/admin reports — orderTotalSum is the one that reconciles.
+    orderTotalSum,
     averageRevenuePerOrder: rows.length ? round2(netSales / rows.length) : 0,
     uniqueProductsSold: uniqueProducts.size, currency, multiCurrencyWarning,
   };
@@ -822,8 +922,10 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
 
 async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   const staffParam = req.query && req.query.staff;
-  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : 'sukirtha';
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'mahima-id-ads' ? 'mahima-id-ads' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : 'sukirtha';
   const cacheKey = staff + ':' + monthConfig.month;
+  const isFrStaff = staff === 'hetheesha-organic' || staff === 'thivagini-ads';
+  const isUkStaff = staff === 'sajeepan-ads';
 
   const cached = CACHE.get(cacheKey);
   if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
@@ -832,7 +934,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (!forceRefresh) {
-    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : 'sukirtha-de-organic';
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'mahima-id-ads' ? 'mahima-de-id-ads' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : 'sukirtha-de-organic';
     const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -843,32 +945,120 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     }
   }
 
+  if (isFrStaff && !TOKEN_FR) {
+    res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_FR_ADMIN_TOKEN missing' });
+    return;
+  }
+  if (isUkStaff && !TOKEN_UK) {
+    res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing' });
+    return;
+  }
+
+  if (req.query && req.query.debugConfig === '1') {
+    res.status(200).json({
+      success: true, staff, isFrStaff, isUkStaff,
+      domainUsed: isFrStaff ? STORE_DOMAIN_FR : isUkStaff ? STORE_DOMAIN_UK : STORE_DOMAIN,
+      apiVersionUsed: isUkStaff ? API_VERSION_UK : API_VERSION,
+      tokenPresent: isFrStaff ? !!TOKEN_FR : isUkStaff ? !!TOKEN_UK : !!TOKEN,
+      tokenLength: isFrStaff ? (TOKEN_FR || '').length : isUkStaff ? (TOKEN_UK || '').length : (TOKEN || '').length,
+      monthConfig: { month: monthConfig.month, startISO: monthConfig.startISO, endISO: monthConfig.endISO, queryStart: monthConfig.queryStart, queryEnd: monthConfig.queryEnd },
+    });
+    return;
+  }
+
   const retryState = { throttleRetries: 0 };
-  const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
+  const { orders, pages, rawEdgesSeen } = await fetchOrdersForMonth(
+    monthConfig, retryState,
+    isFrStaff ? STORE_DOMAIN_FR : isUkStaff ? STORE_DOMAIN_UK : undefined,
+    isFrStaff ? TOKEN_FR : isUkStaff ? TOKEN_UK : undefined,
+    isUkStaff ? API_VERSION_UK : undefined
+  );
+
+  if (req.query && req.query.debugFetch === '1') {
+    res.status(200).json({ success: true, pages, rawEdgesSeen, ordersInRange: orders.length, sampleOrderNames: orders.slice(0, 3).map(o => o.name) });
+    return;
+  }
+  if (req.query && req.query.debugRawNoFilter === '1') {
+    const rs = { throttleRetries: 0 };
+    const domain = isFrStaff ? STORE_DOMAIN_FR : isUkStaff ? STORE_DOMAIN_UK : STORE_DOMAIN;
+    const tok = isFrStaff ? TOKEN_FR : isUkStaff ? TOKEN_UK : TOKEN;
+    const ver = isUkStaff ? API_VERSION_UK : API_VERSION;
+    try {
+      const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: null, query: '' }, rs, domain, tok, ver);
+      res.status(200).json({ success: true, edgeCount: data.orders.edges.length, sample: data.orders.edges.slice(0,3).map(e=>({name:e.node.name, createdAt:e.node.createdAt})) });
+    } catch (e) {
+      res.status(200).json({ success: false, error: e.message });
+    }
+    return;
+  }
+
+  if (req.query && req.query.debugOrderRaw) {
+    const target = orders.find(o => o.name === req.query.debugOrderRaw);
+    res.status(200).json({ success: true, found: !!target, order: target || null });
+    return;
+  }
 
   if (staff === 'mahima-ads') {
+    // Confirmed rule (user, 2026-07-20, verified against real Shopify order
+    // data for January before being applied to all months): an order
+    // belongs to Mahima's Google Ads sales if its FIRST SESSION ONLY has
+    // "mahi" anywhere in source / medium / campaign / term / content —
+    // regardless of channel classification (some of her ad mediums, e.g.
+    // "klarna", "shoptimised", "shoptimise1/2/3", weren't recognized as
+    // PAID_SEARCH by classifySession() and were being silently dropped
+    // under the old exact-code/PAID_SEARCH-only logic — that was the bug
+    // Mahima flagged). A later session mentioning "mahi" does NOT count if
+    // the first session doesn't (explicitly confirmed: Organic Search/Direct/
+    // generic Shoptimised-Klarna-Shoparize first touches are excluded even
+    // if a later session in the same journey is a confirmed Mahima ad).
+    // Store-wide, NOT product-scoped. Applies to every month including the
+    // live current month (July onward).
+    //
+    // Extended 2026-07-20, then partially reverted same day: DB lookup
+    // (ledsone Postgres, google_ads.campaigns, group_name='Mahima', 16 rows
+    // — matches the "Campaigns (16)" count in the Google Ads UI) found two
+    // campaigns whose Shopify utm tags never contain the literal word
+    // "mahi": "Pmax DE | Mahi | Shoparize-29-01-26~Mahi" (utm source=
+    // Shoparize) and "...LOW-CLICK-SALES | Lowclickssales_2..." (utm
+    // campaign=LowClick). Adding "Shoparize" caused the dashboard to exceed
+    // Google Ads' own reported conversion value for the month — all
+    // Shoparize orders share utm_term=Jeff, the exact same tag the user
+    // separately confirmed does NOT belong to Mahima (on a Shoptimised/
+    // BlackFriday order) — meaning "Shoparize" traffic in Shopify is not
+    // reliably traceable to that one specific DB-confirmed campaign (the
+    // platform/tag is likely shared with other, non-Mahima campaigns).
+    // Reverted per user confirmation 2026-07-20. "LowClick" had no such
+    // contradiction and stays.
     const adsRows = [];
     for (const order of orders) {
       const journey = classifyOrderJourneyOrganic(order);
-      const row = buildSukirthaOrderRow(order, journey, 'mahima');
+      const row = buildSukirthaOrderRowEmail(order, journey);
       if (!row) continue;
-      if (!journey.first || journey.first.classification !== 'PAID_SEARCH') continue;
-      const rawCampaign = extractCampaignName(order.customerJourneySummary && order.customerJourneySummary.firstVisit);
-      const matched = matchAdsCampaign(rawCampaign);
-      row.campaign = matched || (rawCampaign ? 'Other Google Ads Campaign' : 'Google Ads (Campaign Unknown)');
-      row.rawCampaign = rawCampaign;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const hasMahiSubstring = ['source', 'medium', 'campaign', 'term', 'content'].some(k => (utm[k] || '').toString().toLowerCase().includes('mahi'));
+      const isLowClick = (utm.campaign || '').toString().toLowerCase().includes('lowclick');
+      const hasMahi = hasMahiSubstring || isLowClick;
+      if (!hasMahi) continue;
+      row.campaign = utm.campaign || '(no campaign value)';
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
       adsRows.push(row);
     }
 
-    const campaignGroupOrder = [...MAHIMA_ADS_CAMPAIGNS, 'Other Google Ads Campaign', 'Google Ads (Campaign Unknown)'];
     const byCampaign = new Map();
     for (const r of adsRows) {
       if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
       byCampaign.get(r.campaign).push(r);
     }
-    const campaignSummary = campaignGroupOrder
-      .map(name => ({ campaign: name, ...summarizeRows(byCampaign.get(name) || []) }))
-      .filter(c => c.ordersCount > 0);
+    const campaignSummary = [...byCampaign.keys()].sort()
+      .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
 
     const combinedSummary = summarizeRows(adsRows);
 
@@ -879,11 +1069,11 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       supportedMonths: SUPPORTED_MONTHS,
       isLive: monthConfig.isLive,
       source: {
-        scope: `product-scoped to Mahima's ${MAHIMA_EXCLUDED_PRODUCT_IDS.size} owned product IDs, PAID_SEARCH first-session orders only, grouped by first-session utm_campaign matched against Mahima's 5 named Google Ads campaigns`,
+        scope: `store-wide (NOT product-scoped) — every order counts regardless of product or channel classification; an order belongs to Mahima if its first-session source, medium, campaign, term, or content contains "mahi" anywhere, OR campaign contains "lowclick" (DB-confirmed via google_ads.campaigns group_name='Mahima', 2026-07-20; a "shoparize" rule was tried and reverted same day — see code comment)`,
         orders: 'Shopify Admin GraphQL API',
         journey: 'Shopify customerJourneySummary',
       },
-      campaignList: MAHIMA_ADS_CAMPAIGNS,
+      campaignList: [...byCampaign.keys()].sort(),
       combinedSummary,
       campaignSummary,
       allMahimaAdsOrders: adsRows,
@@ -899,6 +1089,655 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     };
     CACHE.set(cacheKey, { data: adsPayload, generatedAt: Date.now() });
     res.status(200).json(adsPayload);
+    return;
+  }
+
+  if (staff === 'jeffri-ads') {
+    // Jeffri Ads tab — rule confirmed 2026-07-21 (replaces the earlier
+    // substring/Google-family-platform rule): an order belongs to Jeffri
+    // if its first-session utm_term is exactly "jeff" or "Jeichitom_Maara"
+    // (case-insensitive). Fallback: if the order has NO utm_term at all
+    // (empty/null), check utm_medium === "SMARKETER_sale" instead. Store-
+    // wide, NOT product-scoped, all months including live July.
+    const JEFFRI_TERMS = new Set(['jeff', 'jeichitom_maara']);
+    // debugAllTermsJeffri=1: temporary diagnostic, added 2026-07-21 — for
+    // every order in the month, dumps first-session source/medium/term/
+    // content regardless of match, so all real values can be eyeballed
+    // for missed variants of Jeffri's identifiers. Not used by the tab.
+    if (req.query && req.query.debugAllTermsJeffri === '1') {
+      const rows = [];
+      for (const order of orders) {
+        const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        const utm = (fv && fv.utmParameters) || {};
+        rows.push({ orderName: order.name, source: utm.source || null, medium: utm.medium || null, campaign: utm.campaign || null, term: utm.term || null, content: utm.content || null });
+      }
+      res.status(200).json({ success: true, ordersFetched: orders.length, rows });
+      return;
+    }
+    const adsRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      const medium = (utm.medium || '').toString().toLowerCase();
+      let matched = null;
+      if (term && JEFFRI_TERMS.has(term)) {
+        matched = utm.term;
+      } else if (!term && medium === 'smarketer_sale') {
+        matched = '(no term) medium=SMARKETER_sale';
+      }
+      if (!matched) continue;
+      row.campaign = matched;
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      adsRows.push(row);
+    }
+
+    const byCampaign = new Map();
+    for (const r of adsRows) {
+      if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+      byCampaign.get(r.campaign).push(r);
+    }
+    const campaignSummary = [...byCampaign.keys()].sort()
+      .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(adsRows);
+
+    const jeffriPayload = {
+      success: true,
+      staff: { name: 'Jeffri', department: 'Google Ads (Paid Search)', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `store-wide (NOT product-scoped) — an order belongs to Jeffri if its first-session utm_term exactly matches "jeff" or "Jeichitom_Maara" (case-insensitive); if there's no utm_term at all, falls back to checking utm_medium === "SMARKETER_sale" (confirmed rule, 2026-07-21)`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: [...byCampaign.keys()].sort(),
+      combinedSummary,
+      campaignSummary,
+      allJeffriAdsOrders: adsRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        paidSearchJeffriOrders: adsRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: jeffriPayload, generatedAt: Date.now() });
+    res.status(200).json(jeffriPayload);
+    return;
+  }
+
+  if (staff === 'thasitha-ads') {
+    // Thasitha Ads tab — added 2026-07-21, mirrors the Jeffri Ads logic
+    // exactly: an order belongs to Thasitha if its first-session utm_term
+    // exactly matches "thasi" (case-insensitive). Store-wide, NOT
+    // product-scoped, all months including live July. ledsone.de store
+    // (same as Jeffri and Mahima), Google Ads channel.
+    const THASITHA_TERMS = new Set(['thasi']);
+    const adsRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      if (!THASITHA_TERMS.has(term)) continue;
+      row.campaign = utm.term || null;
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      adsRows.push(row);
+    }
+
+    const byCampaign = new Map();
+    for (const r of adsRows) {
+      if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+      byCampaign.get(r.campaign).push(r);
+    }
+    const campaignSummary = [...byCampaign.keys()].sort()
+      .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(adsRows);
+
+    const thasithaPayload = {
+      success: true,
+      staff: { name: 'Thasitha', department: 'Google Ads (Paid Search)', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `store-wide (NOT product-scoped) — an order belongs to Thasitha if its first-session utm_term exactly matches "thasi" (case-insensitive) (confirmed rule, 2026-07-21)`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: [...byCampaign.keys()].sort(),
+      combinedSummary,
+      campaignSummary,
+      allThasithaAdsOrders: adsRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: adsRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: thasithaPayload, generatedAt: Date.now() });
+    res.status(200).json(thasithaPayload);
+    return;
+  }
+
+  if (staff === 'sajeepan-ads') {
+    if (req.query && req.query.debugAllTermsSajeepan === '1') {
+      const rows = [];
+      for (const order of orders) {
+        const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        const utm = (fv && fv.utmParameters) || {};
+        rows.push({ orderName: order.name, source: utm.source || null, medium: utm.medium || null, campaign: utm.campaign || null, term: utm.term || null, content: utm.content || null });
+      }
+      res.status(200).json({ success: true, ordersFetched: orders.length, rows });
+      return;
+    }
+    // Sajeepan Ads tab — added 2026-07-21, ledsone.co.uk (STORE_DOMAIN_UK),
+    // mirrors Jeffri/Thasitha's structure: an order belongs to Sajeepan if
+    // its first-session utm_term exactly matches one of her 7 confirmed
+    // terms (case-insensitive) — several are literal unsubstituted Google
+    // Ads ValueTrack placeholders ("{keyword}") or raw tracking-template
+    // fragments, as given directly by the user. Store-wide, NOT
+    // product-scoped, all months including live July.
+    const adsRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      if (!term || !SAJEEPAN_TERMS.has(term)) continue;
+      row.campaign = utm.term || null;
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      adsRows.push(row);
+    }
+
+    const byCampaign = new Map();
+    for (const r of adsRows) {
+      if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+      byCampaign.get(r.campaign).push(r);
+    }
+    const campaignSummary = [...byCampaign.keys()].sort()
+      .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(adsRows);
+
+    const sajeepanPayload = {
+      success: true,
+      staff: { name: 'Sajeepan', department: 'Google Ads (Paid Search)', store: 'ledsone.co.uk' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/London' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `store-wide (NOT product-scoped) — an order belongs to Sajeepan if its first-session utm_term exactly matches one of her 7 confirmed values (case-insensitive): "GENAI&keyword=GENAI&Content=SJ", "{keyword}", "Top_SELL&keyword=GEN2&Content=Asset", "LIGHTING_SJ&keyword={keyword}", "Wall_Light&keyword=GEN2&Content=Ads", "Shopping_SJ&keyword={keyword}", "unnai_nampu" (confirmed rule, 2026-07-21)`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: [...byCampaign.keys()].sort(),
+      combinedSummary,
+      campaignSummary,
+      allSajeepanAdsOrders: adsRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: adsRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: sajeepanPayload, generatedAt: Date.now() });
+    res.status(200).json(sajeepanPayload);
+    return;
+  }
+
+  if (staff === 'mahima-id-ads') {
+    // Mahima "ID Sales" tab — added 2026-07-20, corrected same day per
+    // explicit user instruction: product-scoped to Mahima's owned product
+    // IDs, Google Ads channel only (Organic excluded — already covered by
+    // the Organic sub-tab). "Mahima has only her IDs in all her campaigns"
+    // means: no broad Google-Ads-platform test is needed or wanted — an
+    // order counts ONLY if its FIRST SESSION has "mahi" (→ Mahima) or
+    // "jeff" (→ Jeffri, a different DE staff member). There is no
+    // "Other/Unattributed" bucket anymore (the earlier broad
+    // isPaidSearch/isAdPlatformFamily test that produced one was wrong —
+    // reverted). If the first session is "mahi" but the SECOND session is
+    // "jeff", it still counts as Mahima (first-session-only rule,
+    // unchanged), but is flagged visibly (row.secondSessionOwner) so this
+    // crossover case is never hidden.
+    const idAdsRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRow(order, journey, 'mahima');
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const fieldsHave = (u, word) => ['source', 'medium', 'campaign', 'term', 'content'].some(k => (u[k] || '').toString().toLowerCase().includes(word));
+      const hasMahi = fieldsHave(utm, 'mahi');
+      const hasJeff = fieldsHave(utm, 'jeff');
+      const owner = hasMahi ? 'Mahima' : hasJeff ? 'Jeffri' : null;
+      if (!owner) continue;
+      row.owner = owner;
+      const secondSession = row.sessions && row.sessions[1];
+      row.secondSessionOwner = secondSession ? (fieldsHave(secondSession.utm || {}, 'mahi') ? 'Mahima' : fieldsHave(secondSession.utm || {}, 'jeff') ? 'Jeffri' : null) : null;
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      idAdsRows.push(row);
+    }
+
+    const OWNER_ORDER = ['Mahima', 'Jeffri'];
+    const byOwner = new Map();
+    for (const r of idAdsRows) {
+      if (!byOwner.has(r.owner)) byOwner.set(r.owner, []);
+      byOwner.get(r.owner).push(r);
+    }
+    const ownerSummary = OWNER_ORDER
+      .map(owner => ({ owner, ...summarizeRows(byOwner.get(owner) || []) }))
+      .filter(o => o.ordersCount > 0);
+
+    const crossoverRows = idAdsRows.filter(r => r.owner === 'Mahima' && r.secondSessionOwner === 'Jeffri');
+
+    const combinedSummary = summarizeRows(idAdsRows);
+
+    const idAdsPayload = {
+      success: true,
+      staff: { name: 'Mahima', department: 'Google Ads — Product ID Sales', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `product-scoped to Mahima's ${MAHIMA_EXCLUDED_PRODUCT_IDS.size} owned product IDs; an order counts ONLY if its first session has "mahi" (Mahima) or "jeff" (Jeffri) — no other/unattributed bucket. Crossover cases (first session mahi, second session jeff) still count as Mahima per the first-session-only rule, but are flagged separately for visibility (${crossoverRows.length} such orders this month)`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      ownerList: OWNER_ORDER,
+      combinedSummary,
+      ownerSummary,
+      crossoverCount: crossoverRows.length,
+      allMahimaIdAdsOrders: idAdsRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: idAdsRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: idAdsPayload, generatedAt: Date.now() });
+    res.status(200).json(idAdsPayload);
+    return;
+  }
+
+  if (staff === 'mahima-total') {
+    // Mahima "Total" tab — added 2026-07-21 per explicit user request:
+    // product-scoped to Mahima's owned product IDs (same MAHIMA_EXCLUDED_
+    // PRODUCT_IDS set used elsewhere). Originally applied no channel
+    // filtering at all; user confirmed 2026-07-21 that Social and Email
+    // channel sales are NOT Mahima's and must be permanently excluded from
+    // this tab (not just hidden in the UI — excluded from the underlying
+    // data everywhere/every month, including live). All other channels
+    // (Organic, Google Ads/Paid, Direct, Referral, No Journey Data, Other)
+    // remain included, unfiltered.
+    const EXCLUDED_CHANNELS = ['Social', 'Email'];
+    const totalRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRow(order, journey, 'mahima');
+      if (!row) continue;
+      row.channel = deriveChannel(journey);
+      if (EXCLUDED_CHANNELS.includes(row.channel)) continue;
+      totalRows.push(row);
+    }
+
+    const byChannel = new Map();
+    for (const r of totalRows) {
+      if (!byChannel.has(r.channel)) byChannel.set(r.channel, []);
+      byChannel.get(r.channel).push(r);
+    }
+    const channelSummary = [...byChannel.keys()].sort()
+      .map(channel => ({ channel, ...summarizeRows(byChannel.get(channel) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(totalRows);
+
+    const totalPayload = {
+      success: true,
+      staff: { name: 'Mahima', department: 'Total Sales (All Channels, Unfiltered)', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `product-scoped to Mahima's ${MAHIMA_EXCLUDED_PRODUCT_IDS.size} owned product IDs — every order containing one of her products counts regardless of Organic/Paid/Direct/Referral/Other channel, EXCEPT Social and Email (confirmed not Mahima's, permanently excluded 2026-07-21)`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      channelList: [...byChannel.keys()].sort(),
+      combinedSummary,
+      channelSummary,
+      allMahimaTotalOrders: totalRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: totalRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: totalPayload, generatedAt: Date.now() });
+    res.status(200).json(totalPayload);
+    return;
+  }
+
+  if (staff === 'mahima-ads-term') {
+    // Mahima "Google Ads" tab (fresh build) — added 2026-07-21 per explicit
+    // user instruction: match by FIRST SESSION utm_term (exact match,
+    // case-insensitive), not by substring-anywhere-in-any-field like the
+    // earlier retired "mahima-ads" tab. Confirmed Mahima term values:
+    // mahi, bestselling, march_15, sep_25, {searchterm}, april_01,
+    // april_15, dec_30. Store-wide (NOT product-scoped) — every order
+    // whose first session has one of these exact utm_term values counts,
+    // regardless of product. Deployed for April 2026 only per instruction.
+    const MAHIMA_AD_TERMS = new Set([
+      'mahi', 'bestselling', 'march_15', 'sep_25', '{searchterm}', 'april_01', 'april_15', 'dec_30',
+    ]);
+    // debugAllTerms=1: temporary diagnostic, added 2026-07-21 — returns
+    // every distinct first-session utm_term value seen this month
+    // (matched or not), so near-miss variants (typos, casing, extra
+    // whitespace) of the 8 confirmed terms can be caught by eye. Not used
+    // by the deployed tab.
+    if (req.query && req.query.debugAllTerms === '1') {
+      const termCounts = new Map();
+      for (const order of orders) {
+        const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        const utm = (fv && fv.utmParameters) || {};
+        const key = JSON.stringify(utm.term === undefined ? null : utm.term);
+        termCounts.set(key, (termCounts.get(key) || 0) + 1);
+      }
+      res.status(200).json({ success: true, allDistinctFirstSessionTerms: Object.fromEntries(termCounts) });
+      return;
+    }
+    const termRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      if (!MAHIMA_AD_TERMS.has(term)) continue;
+      row.matchedTerm = utm.term || null;
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      termRows.push(row);
+    }
+
+    const byTerm = new Map();
+    for (const r of termRows) {
+      if (!byTerm.has(r.matchedTerm)) byTerm.set(r.matchedTerm, []);
+      byTerm.get(r.matchedTerm).push(r);
+    }
+    const termSummary = [...MAHIMA_AD_TERMS]
+      .map(term => ({ term, ...summarizeRows(byTerm.get(term) || []) }))
+      .filter(t => t.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(termRows);
+
+    const termPayload = {
+      success: true,
+      staff: { name: 'Mahima', department: 'Google Ads (utm_term match)', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `store-wide (NOT product-scoped) — an order belongs to Mahima if its first-session utm_term exactly matches one of 8 confirmed values: mahi, bestselling, march_15, sep_25, {searchterm}, april_01, april_15, dec_30 (2026-07-21)`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      termList: [...MAHIMA_AD_TERMS],
+      combinedSummary,
+      termSummary,
+      allMahimaAdsTermOrders: termRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: termRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: termPayload, generatedAt: Date.now() });
+    res.status(200).json(termPayload);
+    return;
+  }
+
+  if (staff === 'hetheesha-organic') {
+    // Hetheesha — Organic Search sales, ledsone.fr — added 2026-07-21.
+    // Store-wide (NOT product-scoped, like Sukirtha's DE Organic tab and
+    // unlike Kamsi/Dilaksi/Mahima's product-scoped tabs), since Hetheesha
+    // and Thivagini split responsibility for ledsone.fr by CHANNEL, not
+    // by product. Identical organic-sales definition used everywhere else
+    // on this page: Fully Organic, First-Session Organic, Direct,
+    // Referral, No Journey Data, AI Tools. Excludes Google Ads/Paid
+    // Search (that's Thivagini's tab), Social, Email.
+    const heRows = [];
+    const heClassificationCounts = {
+      fullyOrganic: 0, mixedJourney: 0, nonOrganic: 0, attributionPending: 0,
+      noJourneyData: 0, unknownAttribution: 0, excludedCancelled: 0, excludedTest: 0,
+      firstSessionOrganic: 0,
+    };
+    const heFullyOrganicRows = [];
+    const heFirstSessionOrganicRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      row.channel = deriveChannel(journey);
+      heRows.push(row);
+      const isFirstSessionOrganicBucket = journey.firstSessionOrganic && (journey.status === 'MIXED_JOURNEY' || journey.status === 'NON_ORGANIC');
+      if (journey.status === 'FULLY_ORGANIC') {
+        heFullyOrganicRows.push(row);
+        heClassificationCounts.fullyOrganic++;
+      } else if (isFirstSessionOrganicBucket) {
+        row.journeyStatus = 'FIRST_SESSION_ORGANIC';
+        heFirstSessionOrganicRows.push(row);
+        heClassificationCounts.firstSessionOrganic++;
+      } else {
+        switch (journey.status) {
+          case 'MIXED_JOURNEY': heClassificationCounts.mixedJourney++; break;
+          case 'NON_ORGANIC': heClassificationCounts.nonOrganic++; break;
+          case 'ATTRIBUTION_PENDING': heClassificationCounts.attributionPending++; break;
+          case 'NO_JOURNEY_DATA': heClassificationCounts.noJourneyData++; break;
+          case 'UNKNOWN_ATTRIBUTION': heClassificationCounts.unknownAttribution++; break;
+          case 'EXCLUDED_CANCELLED_ORDER': heClassificationCounts.excludedCancelled++; break;
+          case 'EXCLUDED_TEST_ORDER': heClassificationCounts.excludedTest++; break;
+        }
+      }
+    }
+    const AI_SOURCES_HE = ['chatgpt', 'perplexity', 'gemini', 'copilot', 'claude', 'bing chat', 'bingchat', 'character.ai', 'meta ai', 'grok'];
+    const heDirectRows = heRows.filter(r => r.channel === 'Direct');
+    const heReferralRows = heRows.filter(r => r.channel === 'Referral');
+    const heNoJourneyRows = heRows.filter(r => (r.channel === 'No Journey Data' || r.channel === 'Unknown' || r.channel === 'Attribution Pending') && !HETHEESHA_TO_THIVAGINI_NOJOURNEY_ORDERS.has(r.orderName));
+    const heAiRows = heRows.filter(r => r.channel === 'Other' && r.firstVisit && AI_SOURCES_HE.some(ai => lower(r.firstVisit.source).includes(ai)));
+    heFullyOrganicRows.forEach(r => { r.group = 'Fully Organic'; });
+    heFirstSessionOrganicRows.forEach(r => { r.group = 'First-Session Organic'; });
+    heDirectRows.forEach(r => { r.group = 'Direct'; });
+    heReferralRows.forEach(r => { r.group = 'Referral'; });
+    heNoJourneyRows.forEach(r => { r.group = 'No Journey Data'; });
+    heAiRows.forEach(r => { r.group = 'AI Tools'; });
+    const allHetheeshaOrders = [...heFullyOrganicRows, ...heFirstSessionOrganicRows, ...heDirectRows, ...heReferralRows, ...heNoJourneyRows, ...heAiRows];
+    const heCombinedSummary = summarizeRows(allHetheeshaOrders);
+    const heFullyOrganicSummary = summarizeRows(heFullyOrganicRows);
+    const heFirstSessionOrganicSummary = summarizeRows(heFirstSessionOrganicRows);
+    const heDirectSummary = summarizeRows(heDirectRows);
+    const heReferralSummary = summarizeRows(heReferralRows);
+    const heNoJourneySummary = summarizeRows(heNoJourneyRows);
+    const heAiSummary = summarizeRows(heAiRows);
+
+    const hePayload = {
+      success: true,
+      staff: { name: 'Hetheesha', department: 'Organic Search (SEO)', store: 'ledsone.fr' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Paris' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: 'store-wide — every order counts, no product allocation / matching; mirrors Kamsi/Sukirtha\'s organic-sales definition exactly (Fully Organic, First-Session Organic, Direct, Referral, No Journey Data, AI Tools). Excludes Google Ads/Paid Search (Thivagini\'s tab), Social, Email.',
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      summary: { fullyOrganicOrders: heFullyOrganicRows.length, ...heFullyOrganicSummary },
+      firstSessionOrganicSummary: heFirstSessionOrganicSummary,
+      combinedSummary: heCombinedSummary,
+      directSummary: heDirectSummary, referralSummary: heReferralSummary, noJourneySummary: heNoJourneySummary, aiSummary: heAiSummary,
+      allSukirthaOrders: allHetheeshaOrders,
+      classificationCounts: heClassificationCounts,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: hePayload, generatedAt: Date.now() });
+    res.status(200).json(hePayload);
+    return;
+  }
+
+  if (staff === 'thivagini-ads') {
+    // Thivagini — ledsone.fr — corrected 2026-07-21 per explicit user
+    // clarification ("after organic add all to thivagini"): Thivagini
+    // gets the BALANCE of every order NOT in Hetheesha's organic bucket —
+    // not just Paid Search. Originally built too narrowly (Paid Search
+    // only), which left Social/Email/Affiliate/non-AI-Other orders
+    // uncounted by either tab (Hetheesha + Thivagini didn't sum to the
+    // store total). Fixed by using the exact same group-assignment logic
+    // as Hetheesha's tab and taking everything that does NOT fall into
+    // one of her 6 groups (Fully Organic, First-Session Organic, Direct,
+    // Referral, No Journey Data, AI Tools) — guaranteeing the two tabs
+    // always sum to 100% of the store's orders, with a breakdown by
+    // channel shown below (Google Ads/Paid Search, Social, Email,
+    // Affiliate, Other) for transparency.
+    const AI_SOURCES_TV = ['chatgpt', 'perplexity', 'gemini', 'copilot', 'claude', 'bing chat', 'bingchat', 'character.ai', 'meta ai', 'grok'];
+    function isHetheeshaOrganicGroup(row, journey) {
+      if (HETHEESHA_TO_THIVAGINI_NOJOURNEY_ORDERS.has(row.orderName)) return false;
+      if (journey.status === 'FULLY_ORGANIC') return true;
+      const isFirstSessionOrganicBucket = journey.firstSessionOrganic && (journey.status === 'MIXED_JOURNEY' || journey.status === 'NON_ORGANIC');
+      if (isFirstSessionOrganicBucket) return true;
+      if (row.channel === 'Direct' || row.channel === 'Referral') return true;
+      if (row.channel === 'No Journey Data' || row.channel === 'Unknown' || row.channel === 'Attribution Pending') return true;
+      if (row.channel === 'Other' && row.firstVisit && AI_SOURCES_TV.some(ai => lower(row.firstVisit.source).includes(ai))) return true;
+      return false;
+    }
+    const tvRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      row.channel = deriveChannel(journey);
+      if (isHetheeshaOrganicGroup(row, journey)) continue;
+      if (HETHEESHA_TO_THIVAGINI_NOJOURNEY_ORDERS.has(row.orderName)) row.channel = 'No Journey Data (Ad-Click Matched)';
+      row.firstSessionChannel = row.channel;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      tvRows.push(row);
+    }
+    const tvByChannel = new Map();
+    for (const r of tvRows) {
+      if (!tvByChannel.has(r.channel)) tvByChannel.set(r.channel, []);
+      tvByChannel.get(r.channel).push(r);
+    }
+    const tvChannelSummary = [...tvByChannel.keys()].sort()
+      .map(channel => ({ channel, ...summarizeRows(tvByChannel.get(channel) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+    const tvCombinedSummary = summarizeRows(tvRows);
+
+    const tvPayload = {
+      success: true,
+      staff: { name: 'Thivagini', department: 'Google Ads + Balance (Non-Organic)', store: 'ledsone.fr' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Paris' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: 'store-wide (NOT product-scoped) — every order that does NOT fall into one of Hetheesha\'s 6 organic groups counts here (Google Ads/Paid Search, Social, Email, Affiliate, non-AI Other). Hetheesha + Thivagini always sum to the store\'s full order total for the month.',
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      channelSummary: tvChannelSummary,
+      combinedSummary: tvCombinedSummary,
+      allThivaginiAdsOrders: tvRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: tvRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: tvPayload, generatedAt: Date.now() });
+    res.status(200).json(tvPayload);
     return;
   }
 
