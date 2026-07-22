@@ -49,14 +49,6 @@
   .status{font-size:9.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;}
   .status.live{background:var(--good-soft);color:var(--good);}
 
-  /* ── Name cards (bigger, this page's main content) ── */
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:640px;margin:0 auto;}
-  a.namecard{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:40px 24px;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(12,26,48,.05);transition:transform .15s,box-shadow .15s,border-color .15s;}
-  a.namecard:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(12,26,48,.12);border-color:var(--gold);}
-  .namecard .avatar{width:72px;height:72px;font-size:26px;}
-  .namecard .nm{font-size:18px;font-weight:700;letter-spacing:.2px;}
-  .namecard .role{font-size:12px;color:var(--muted);margin-top:4px;}
-
   footer.site{max-width:1180px;margin:0 auto;padding:26px 32px 44px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center;}
   @media(max-width:900px){
     .statrow{border-left:none;padding-left:0;width:100%;justify-content:space-between;}
@@ -97,20 +89,14 @@
   </div>
 
   <div class="section-title">Workspaces <span class="count">2</span></div>
-  <div class="cards">
-    <a class="namecard" href="home.html">
+  <div class="roster">
+    <a class="row" href="home.html" data-name="kuberan">
       <span class="avatar live">K</span>
-      <span class="who">
-        <span class="nm">Kuberan</span>
-        <span class="role">Digital Marketing · Member Reporting Directory</span>
-      </span>
+      <span class="who"><span class="nm">Kuberan</span><span class="role">Digital Marketing · Member Reporting Directory</span></span>
     </a>
-    <a class="namecard" href="https://staff-requirements-02.vercel.app/">
+    <a class="row" href="https://staff-requirements-02.vercel.app/" data-name="piranav">
       <span class="avatar live">P</span>
-      <span class="who">
-        <span class="nm">Piranav</span>
-        <span class="role">Staff Requirements Dashboard</span>
-      </span>
+      <span class="who"><span class="nm">Piranav</span><span class="role">Staff Requirements Dashboard</span></span>
     </a>
   </div>
 
