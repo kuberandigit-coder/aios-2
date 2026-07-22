@@ -34,6 +34,14 @@ const jefriProductStatusHandlerModule = (function() {
 
 const { Pool } = require('pg');
 
+// Short-TTL cache: this endpoint runs a Postgres query PLUS a live Shopify
+// stock lookup (batched Admin GraphQL calls) on every request, which is slow
+// (multiple seconds) and was being re-run on every tab switch / filter
+// change even when nothing had changed. 60s is short enough to stay
+// reasonably live, long enough to absorb repeat hits from the UI.
+const JEFRI_CACHE = new Map();
+const JEFRI_CACHE_TTL_MS = 60 * 1000;
+
 let pool;
 function getPool() {
   if (!pool) {
@@ -321,6 +329,16 @@ function normalizeStatus(status) {
 
 async function jefriProductStatusHandler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  const cacheKey = [req.query.campaign || 'all', req.query.from || '', req.query.to || ''].join('|');
+  if (req.query.refresh !== '1') {
+    const cached = JEFRI_CACHE.get(cacheKey);
+    if (cached && (Date.now() - cached.at) < JEFRI_CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+  }
+
   const client = await (async () => {
     return await getPool().connect();
   })().catch((err) => {
@@ -404,7 +422,7 @@ async function jefriProductStatusHandler(req, res) {
       totalCost: Math.round(products.reduce((s, p) => s + p.cost, 0) * 100) / 100,
     };
 
-    res.status(200).json({
+    const payload = {
       generatedAt: new Date().toISOString(),
       dateRange: { start: rangeStart, end: rangeEnd },
       campaignList: JEFRI_CAMPAIGNS,
@@ -412,7 +430,9 @@ async function jefriProductStatusHandler(req, res) {
       stockSourceError,
       summary,
       products,
-    });
+    };
+    JEFRI_CACHE.set(cacheKey, { data: payload, at: Date.now() });
+    res.status(200).json(payload);
   } catch (err) {
     console.error('[jefri/product-status] Query failed:', err && err.message);
     res.status(500).json({ error: 'Could not load product status data. Please try again shortly.' });
