@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Digital Marketing Member Reports</title>
+<title>Digital Marketing Reporting · Directory</title>
 <style>
   :root{
     --navy:#0c1a30; --navy-2:#13284a; --ink:#1a2233; --muted:#5b6577;
@@ -16,7 +16,6 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:"Nirmala UI","Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;}
 
-  /* ── Masthead (official letterhead feel) ── */
   .topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--navy-2) 55%,var(--gold) 100%);}
   .masthead{background:var(--card);color:var(--ink);padding:22px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(12,26,48,.03);}
   .masthead .inner{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:22px;}
@@ -31,12 +30,9 @@
   .stat .v{font-size:20px;font-weight:700;color:var(--navy);letter-spacing:.2px;}
   .stat .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:3px;}
 
-  /* ── Body ── */
   .page{max-width:1180px;margin:0 auto;padding:28px 32px 44px;}
   .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--line);}
   .toolbar .hint{font-size:12.5px;color:var(--muted);}
-  #member-search{height:42px;padding:0 16px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;width:280px;max-width:100%;background:var(--card);outline:none;transition:box-shadow .15s,border-color .15s;box-sizing:border-box;}
-  #member-search:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);}
 
   .section-title{display:flex;align-items:center;gap:12px;font-size:11.5px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:var(--navy-2);margin:20px 0 10px;}
   .section-title::after{content:"";flex:1;height:1px;background:var(--line);}
@@ -47,17 +43,19 @@
   a.row:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(12,26,48,.09);border-color:var(--gold);}
   .avatar{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:16px;font-weight:600;}
   .avatar.live{background:var(--navy);color:#e8d59a;border:1.5px solid var(--gold);}
-  .avatar.idle{background:var(--na-soft);color:var(--na);border:1.5px solid var(--line);}
   .who{min-width:0;}
   .who .nm{display:block;font-size:13.5px;font-weight:700;letter-spacing:.2px;}
   .who .role{display:block;font-size:10.5px;color:var(--muted);margin-top:2px;}
-  .tags{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;}
-  .tag{font-size:9px;font-weight:700;letter-spacing:.3px;border-radius:4px;padding:2px 6px;white-space:nowrap;}
-  .tag.r{background:var(--accent-soft);color:var(--accent);}
-  .tag.none{background:var(--na-soft);color:var(--na);}
   .status{font-size:9.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;}
   .status.live{background:var(--good-soft);color:var(--good);}
-  .status.pending{background:var(--gold-soft);color:var(--gold);}
+
+  /* ── Name cards (bigger, this page's main content) ── */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:640px;margin:0 auto;}
+  a.namecard{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:40px 24px;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(12,26,48,.05);transition:transform .15s,box-shadow .15s,border-color .15s;}
+  a.namecard:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(12,26,48,.12);border-color:var(--gold);}
+  .namecard .avatar{width:72px;height:72px;font-size:26px;}
+  .namecard .nm{font-size:18px;font-weight:700;letter-spacing:.2px;}
+  .namecard .role{font-size:12px;color:var(--muted);margin-top:4px;}
 
   footer.site{max-width:1180px;margin:0 auto;padding:26px 32px 44px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center;}
   @media(max-width:900px){
@@ -67,7 +65,6 @@
     .masthead{padding:24px 20px;}
     .masthead h1{font-size:19px;}
     .page{padding:32px 18px 48px;}
-    .roster{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
   }
 </style>
 </head>
@@ -79,14 +76,12 @@
     <span class="eyebrow"><span class="mark">DM</span></span>
     <div class="headtxt">
       <p class="kicker">Digit Web Lanka · Official Directory</p>
-      <h1>Digital Marketing · Member Reporting Directory</h1>
-      <p class="lede">Select a member to open their dashboard at Requirement 1 — all requirements appear as tabs on the page.</p>
+      <h1>Digital Marketing · Reporting Directory</h1>
+      <p class="lede">Select a workspace to open its dashboards.</p>
     </div>
     <div class="statrow">
-      <div class="stat"><div class="v">12</div><div class="l">Members</div></div>
-      <div class="stat"><div class="v">12</div><div class="l">Active Dashboards</div></div>
-      <div class="stat"><div class="v">39</div><div class="l">Live Reports</div></div>
-      <div class="stat"><div class="v">2026-07-20</div><div class="l">Updated</div></div>
+      <div class="stat"><div class="v">2</div><div class="l">Workspaces</div></div>
+      <div class="stat"><div class="v">2026-07-22</div><div class="l">Updated</div></div>
     </div>
   </div>
 </header>
@@ -94,7 +89,6 @@
 <main class="page">
 
   <div class="toolbar">
-    <input id="member-search" type="text" placeholder="Filter members by name…" aria-label="Filter members by name">
     <a class="row" href="pages/sales.html" title="Sales Dashboard — LEDSone UK" style="height:42px;box-sizing:border-box;flex-direction:row;width:auto;text-align:left;padding:0 16px 0 10px;gap:8px;">
       <span class="avatar live" style="width:26px;height:26px;font-size:11px;flex:none;">S</span>
       <span class="nm" style="font-size:13px;">ledsone.co.uk</span>
@@ -102,81 +96,27 @@
     <span class="hint">Data pages are PostgreSQL / Shopify / GSC-sourced snapshots · read-only</span>
   </div>
 
-  <div class="section-title">Active Dashboards <span class="count">11</span></div>
-  <div class="roster" id="roster-active">
-    <a class="row" href="pages/jefri.html" data-name="jefri">
-      <span class="avatar live">J</span>
-      <span class="who"><span class="nm">Jefri</span><span class="role">Google Ads · ledsone.de</span></span>
-      <span class="status live">1 Report Live</span>
-    </a>
-    <a class="row" href="pages/dilaksi.html" data-name="dilaksi">
-      <span class="avatar live">D</span>
-      <span class="who"><span class="nm">Dilaksi</span><span class="role">SEO &amp; Digital Marketing · ledsone.co.uk</span></span>
-      <span class="status live">3 Reports Live</span>
-    </a>
-    <a class="row" href="pages/hetheesha.html" data-name="hetheesha">
-      <span class="avatar live">H</span>
-      <span class="who"><span class="nm">Hetheesha</span><span class="role">SEO &amp; Digital Marketing · ledsone.fr</span></span>
-      <span class="status live">4 Reports Live</span>
-    </a>
-    <a class="row" href="pages/kamsi-req1-slow-moving-products.html" data-name="kamsi">
+  <div class="section-title">Workspaces <span class="count">2</span></div>
+  <div class="cards">
+    <a class="namecard" href="home.html">
       <span class="avatar live">K</span>
-      <span class="who"><span class="nm">Kamsi</span><span class="role">SEO &amp; Digital Marketing · ledsone.co.uk</span></span>
-      <span class="status live">6 Reports Live</span>
+      <span class="who">
+        <span class="nm">Kuberan</span>
+        <span class="role">Digital Marketing · Member Reporting Directory</span>
+      </span>
     </a>
-    <a class="row" href="pages/mahima.html" data-name="mahima">
-      <span class="avatar live">M</span>
-      <span class="who"><span class="nm">Mahima</span><span class="role">Google Ads · ledsone.de</span></span>
-      <span class="status live">3 Reports Live</span>
-    </a>
-    <a class="row" href="pages/sonya.html" data-name="sonya">
-      <span class="avatar live">S</span>
-      <span class="who"><span class="nm">Sonya</span><span class="role">Google Ads · UK</span></span>
-      <span class="status live">5 Reports Live</span>
-    </a>
-    <a class="row" href="pages/thivajini.html" data-name="thivajini">
-      <span class="avatar live">T</span>
-      <span class="who"><span class="nm">Thivajini</span><span class="role">Digital Marketing team</span></span>
-      <span class="status live">4 Reports Live</span>
-    </a>
-    <a class="row" href="pages/thasitha.html" data-name="thasitha">
-      <span class="avatar live">T</span>
-      <span class="who"><span class="nm">Thasitha</span><span class="role">Google Ads · ledsone.de</span></span>
-      <span class="status live">4 Reports Live</span>
-    </a>
-    <a class="row" href="pages/jakshan.html" data-name="jakshan">
-      <span class="avatar live">J</span>
-      <span class="who"><span class="nm">Jakshan</span><span class="role">SEO &amp; Digital Marketing · ledsone.co.uk</span></span>
-      <span class="status live">2 Reports Live</span>
-    </a>
-    <a class="row" href="pages/sukirtha.html" data-name="sukirtha">
-      <span class="avatar live">S</span>
-      <span class="who"><span class="nm">Sukirtha</span><span class="role">SEO &amp; Digital Marketing · ledsone.de</span></span>
-      <span class="status live">4 Reports Live</span>
-    </a>
-    <a class="row" href="pages/sajeepan.html" data-name="sajeepan">
-      <span class="avatar live">S</span>
-      <span class="who"><span class="nm">Sajeepan</span><span class="role">Google Ads · ledsone.de</span></span>
-      <span class="status live">1 Report Live</span>
-    </a>
-    <a class="row" href="pages/theekshy.html" data-name="theekshy">
-      <span class="avatar live">T</span>
-      <span class="who"><span class="nm">Theekshy</span><span class="role">Google Ads · ledsone.co.uk</span></span>
-      <span class="status live">2 Reports Live</span>
+    <a class="namecard" href="https://staff-requirements-02.vercel.app/" target="_blank" rel="noopener">
+      <span class="avatar live">P</span>
+      <span class="who">
+        <span class="nm">Piranav</span>
+        <span class="role">Staff Requirements Dashboard</span>
+      </span>
     </a>
   </div>
 
 </main>
 
-<footer class="site">Digital Marketing Member Reports · AIOS · updated 2026-07-15 · data pages are PostgreSQL-sourced snapshots</footer>
+<footer class="site">Digital Marketing Reporting Directory · AIOS · updated 2026-07-22</footer>
 
-<script>
-document.getElementById('member-search').addEventListener('input',function(){
-  var q=this.value.trim().toLowerCase();
-  document.querySelectorAll('a.row').forEach(function(r){
-    r.style.display=r.getAttribute('data-name').indexOf(q)>-1?'':'none';
-  });
-});
-</script>
 </body>
 </html>

@@ -1414,6 +1414,24 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (staff === 'sonya-ads') {
+    if (req.query && req.query.debugAllTermsSonya === '1') {
+      const rows = [];
+      for (const order of orders) {
+        const journey = classifyOrderJourneyOrganic(order);
+        const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        const utm = (fv && fv.utmParameters) || {};
+        const productIds = (order.lineItems && order.lineItems.edges || []).map(e => e.node.variant && e.node.variant.product && e.node.variant.product.legacyResourceId).filter(Boolean);
+        const variantIds = (order.lineItems && order.lineItems.edges || []).map(e => e.node.variant && e.node.variant.legacyResourceId).filter(Boolean);
+        rows.push({
+          orderName: order.name, journeyStatus: journey.status, createdAt: order.createdAt,
+          source: utm.source || null, medium: utm.medium || null, campaign: utm.campaign || null, term: utm.term || null, content: utm.content || null,
+          orderTotal: amt(order.currentTotalPriceSet), currency: ccy(order.currentTotalPriceSet),
+          productIds, variantIds,
+        });
+      }
+      res.status(200).json({ success: true, ordersFetched: orders.length, rows });
+      return;
+    }
     // Sonya Ads tab — added 2026-07-22, ledsone.co.uk (STORE_DOMAIN_UK),
     // UK Google Ads team. Confirmed rule: an order belongs to Sonya if its
     // first-session utm_term exactly matches one of her 5 confirmed terms
