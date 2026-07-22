@@ -36,20 +36,37 @@ const STORE_DOMAIN_UK = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopif
 const TOKEN_UK = process.env.SHOPIFY_UK_ADMIN_TOKEN;
 const API_VERSION_UK = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
 
-// Sajeepan (ledsone.co.uk, Google Ads) — utm_term exact match, confirmed by
-// user 2026-07-21. Raw values as given, lowercased for case-insensitive
-// comparison against Shopify's stored utm_term (ValueTrack placeholders
-// like "{keyword}" appear literally unsubstituted in some of her campaigns'
-// tracking templates, which is expected/normal for certain ad formats).
-const SAJEEPAN_TERMS = new Set([
-  'genai&keyword=genai&content=sj',
-  '{keyword}',
-  'top_sell&keyword=gen2&content=asset',
-  'lighting_sj&keyword={keyword}',
-  'wall_light&keyword=gen2&content=ads',
-  'shopping_sj&keyword={keyword}',
-  'unnai_nampu',
-].map(s => s.toLowerCase()));
+// Sajeepan (ledsone.co.uk, Google Ads) — utm_campaign exact/prefix match,
+// confirmed by user 2026-07-22. The original rule (utm_term exact match)
+// was found to be wrong: real Shopify data shows Google Ads does NOT pass
+// the literal ValueTrack template text into utm_term for most of her
+// campaigns (e.g. utm_term came back null or a short code like "ASSET_SJ"
+// instead of the raw "lighting_sj&keyword={keyword}" template) — a deep
+// January audit found the term-only rule caught only 2 of 55 real orders
+// from her named campaigns. utm_campaign is stable and correctly recorded,
+// so campaign name is now the match key. 11 confirmed tracking-template
+// URLs -> 11 base campaign names below (case-insensitive; matched by exact
+// equality OR by prefix, since at least one campaign name is stored with a
+// trailing "_asset" suffix in Shopify: "sajeepan_pmax_gcss_ceiling_rose_
+// fitting" -> "sajeepan_pmax_gcss_ceiling_rose_fitting_asset").
+const SAJEEPAN_CAMPAIGNS = [
+  'klarna_p',
+  'sj_top_20x',
+  'gcss_all_roas_400_sajee_pmax',
+  'accessories_sj',
+  'sj_pmax_scale_heroes_25',
+  'klarna_css_sj25_pmax',
+  'sj-wl-pmx',
+  'gcss_all_roas_400_sajee',
+  'p_max_klarna_css_sj_old',
+  'sajeepan_pmax_gcss_ceiling_rose_fitting',
+  'klarna_g3',
+];
+function isSajeepanCampaign(campaign) {
+  const c = (campaign || '').toString().toLowerCase();
+  if (!c) return false;
+  return SAJEEPAN_CAMPAIGNS.some(base => c === base || c.startsWith(base));
+}
 
 // Europe/Berlin month boundaries, DST-aware.
 function berlinOffsetMinutesAt(utcGuessMs) {
@@ -1256,17 +1273,16 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       for (const order of orders) {
         const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
         const utm = (fv && fv.utmParameters) || {};
-        rows.push({ orderName: order.name, source: utm.source || null, medium: utm.medium || null, campaign: utm.campaign || null, term: utm.term || null, content: utm.content || null });
+        rows.push({ orderName: order.name, source: utm.source || null, medium: utm.medium || null, campaign: utm.campaign || null, term: utm.term || null, content: utm.content || null, orderTotal: amt(order.currentTotalPriceSet), currency: ccy(order.currentTotalPriceSet) });
       }
       res.status(200).json({ success: true, ordersFetched: orders.length, rows });
       return;
     }
-    // Sajeepan Ads tab — added 2026-07-21, ledsone.co.uk (STORE_DOMAIN_UK),
-    // mirrors Jeffri/Thasitha's structure: an order belongs to Sajeepan if
-    // its first-session utm_term exactly matches one of her 7 confirmed
-    // terms (case-insensitive) — several are literal unsubstituted Google
-    // Ads ValueTrack placeholders ("{keyword}") or raw tracking-template
-    // fragments, as given directly by the user. Store-wide, NOT
+    // Sajeepan Ads tab — added 2026-07-21, corrected 2026-07-22 to match by
+    // utm_campaign (see isSajeepanCampaign/SAJEEPAN_CAMPAIGNS above),
+    // ledsone.co.uk (STORE_DOMAIN_UK). An order belongs to Sajeepan if its
+    // first-session utm_campaign exactly matches (or is a prefixed variant
+    // of) one of her 11 confirmed campaign names. Store-wide, NOT
     // product-scoped, all months including live July.
     const adsRows = [];
     for (const order of orders) {
@@ -1275,9 +1291,8 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       if (!row) continue;
       const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
       const utm = (fv && fv.utmParameters) || {};
-      const term = (utm.term || '').toString().toLowerCase();
-      if (!term || !SAJEEPAN_TERMS.has(term)) continue;
-      row.campaign = utm.term || null;
+      if (!isSajeepanCampaign(utm.campaign)) continue;
+      row.campaign = utm.campaign || null;
       row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
       row.rawCampaign = utm.campaign || null;
       row.firstVisitSource = utm.source || null;
@@ -1306,7 +1321,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       supportedMonths: SUPPORTED_MONTHS,
       isLive: monthConfig.isLive,
       source: {
-        scope: `store-wide (NOT product-scoped) — an order belongs to Sajeepan if its first-session utm_term exactly matches one of her 7 confirmed values (case-insensitive): "GENAI&keyword=GENAI&Content=SJ", "{keyword}", "Top_SELL&keyword=GEN2&Content=Asset", "LIGHTING_SJ&keyword={keyword}", "Wall_Light&keyword=GEN2&Content=Ads", "Shopping_SJ&keyword={keyword}", "unnai_nampu" (confirmed rule, 2026-07-21)`,
+        scope: `store-wide (NOT product-scoped) — an order belongs to Sajeepan if its first-session utm_campaign exactly matches (or is a prefixed variant of) one of her 11 confirmed campaign names: Klarna_P, SJ_TOP_20X, GCSS_ALL_ROAS_400_SAJEE_PMAX, Accessories_sj, SJ_PMAX_Scale_Heroes_25, KLARNA_CSS_SJ25_PMAX, SJ-WL-PMX, GCSS_ALL_ROAS_400_SAJEE, P_Max_Klarna_CSS_SJ_OLD, sajeepan_pmax_gcss_ceiling_rose_fitting, Klarna_G3 (corrected rule, 2026-07-22 — supersedes the earlier utm_term-based rule, which a January audit showed missed ~96% of her real orders)`,
         orders: 'Shopify Admin GraphQL API',
         journey: 'Shopify customerJourneySummary',
       },
