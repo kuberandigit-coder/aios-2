@@ -65,6 +65,13 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 <div class="wrap">
 <a class="back" href="../home.html">&larr; Back to all members</a>
 
+<div class="reqtabs" style="display:flex;gap:8px;margin-bottom:14px;">
+  <div class="reqtab" id="tabBtnReq1" onclick="showReqTab('req1')" style="cursor:pointer;padding:9px 18px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:700;color:var(--ink);">Requirement 1</div>
+  <div class="reqtab" id="tabBtnReq2" onclick="showReqTab('req2')" style="cursor:pointer;padding:9px 18px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:700;color:var(--ink);">Requirement 2</div>
+</div>
+<style>.reqtab.active{background:var(--accent) !important;color:#fff !important;border-color:var(--accent) !important;}</style>
+
+<div id="req1Tab">
 <header>
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 1 (Live)</div>
   <h1>Product Status Labels</h1>
@@ -150,8 +157,92 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
   <strong>Tag priority:</strong> Zombie is evaluated first (no impressions, no clicks), then Hero, then Villain, then Sidekick. Products matching none of the rules show ⚪ Unclassified rather than being forced into another category.<br>
   <strong>Currently-active products only:</strong> a product only appears here if it had performance data in the last 7 days &mdash; not just anytime in the 90-day window. Products removed from a campaign stop generating performance rows entirely, so recent silence reliably means "no longer in this campaign", matching what Google Ads' own live Products report shows. The displayed metrics (Impressions, Clicks, Conv. Value, Cost) still cover the full 90-day window for whichever products remain.
 </div>
-
 </div>
+
+<div id="req2Tab" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 2 (Live)</div>
+  <h1>Search Terms Labels</h1>
+  <div class="sub">Last 90 Days &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads) &nbsp;&middot;&nbsp; Scope: Jefri's 5 named campaigns, search terms from Shopping/Search and Performance Max</div>
+  <div class="filters">
+    <span class="chip" id="r2LiveChip">Loading…</span>
+    <button id="r2RefreshBtn" type="button">Refresh</button>
+  </div>
+</header>
+
+<div class="cards" id="r2Cards">
+  <div class="card"><div class="label">Total Terms</div><div class="value" id="r2cTotal">&ndash;</div></div>
+  <div class="card hero"><div class="label">🏆 Heroes</div><div class="value" id="r2cHero">&ndash;</div></div>
+  <div class="card villain"><div class="label">🩸 Villains</div><div class="value" id="r2cVillain">&ndash;</div></div>
+  <div class="card zombie"><div class="label">🧟 Zombies</div><div class="value" id="r2cZombie">&ndash;</div></div>
+  <div class="card sidekick"><div class="label">🥷 Sidekicks</div><div class="value" id="r2cSidekick">&ndash;</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="r2q" placeholder="Search term or match type…">
+    <label>Tag <select id="r2f_tag">
+      <option value="">All tags (includes untagged)</option>
+      <option value="Hero">🏆 Hero</option>
+      <option value="Villain">🩸 Villain</option>
+      <option value="Zombie">🧟 Zombie</option>
+      <option value="Sidekick">🥷 Sidekick</option>
+    </select></label>
+    <button id="r2ExportCsv" type="button">Export CSV</button>
+    <span id="r2cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table>
+      <thead style="position:sticky;top:0;z-index:5;"><tr>
+        <th data-k="searchTerm">Search Term</th>
+        <th data-k="matchType">Match Type</th>
+        <th class="num" data-k="clicks">Clicks</th>
+        <th class="num" data-k="impressions">Impressions</th>
+        <th class="num" data-k="ctr">CTR</th>
+        <th class="num" data-k="avgCpc">Avg CPC</th>
+        <th class="num" data-k="cost">Cost</th>
+        <th class="num" data-k="conversionValue">Conv. Value</th>
+        <th class="num" data-k="conversions">Conversions</th>
+        <th class="num" data-k="costPerConversion">Cost / Conversion</th>
+        <th class="num" data-k="roas">ROAS</th>
+        <th data-k="tag">Tag</th>
+      </tr></thead>
+      <tbody id="r2tbody"><tr><td colspan="12" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r2empty" style="display:none;">No search terms match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);justify-content:space-between;">
+    <span id="r2pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="r2psize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="r2pgFirst" style="background:#fff;color:var(--ink);border-color:var(--line);">&laquo;</button>
+      <button id="r2pgPrev" style="background:#fff;color:var(--ink);border-color:var(--line);">&lsaquo; Prev</button>
+      <button id="r2pgNext" style="background:#fff;color:var(--ink);border-color:var(--line);">Next &rsaquo;</button>
+      <button id="r2pgLast" style="background:#fff;color:var(--ink);border-color:var(--line);">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.campaign_search_term_data</code>, <code>google_ads.pmax_campaign_search_term_data</code>) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=jefri-search-terms</code>) using <code>DATABASE_URL</code> stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Scope:</strong> Jefri's 5 named campaigns (same as Requirement 1), rolling last 90 days, search terms from both Shopping/Search and Performance Max campaign types (a term appearing in either is included; if it appears in both, they're shown as separate rows by Match Type).<br>
+  <strong>ROAS:</strong> (Conversion Value &divide; Cost) &times; 100, shown as 0% when Cost is 0.<br>
+  <strong>Tag rules (confirmed 2026-07-22):</strong> 🏆 Hero = Clicks &ge; 3 AND ROAS &ge; 400%. 🩸 Villain = Clicks &ge; 3 AND (ROAS &lt; 400% OR Conversions = 0). 🧟 Zombie = Impressions &gt; 0 AND Clicks = 0. 🥷 Sidekick = Clicks 1&ndash;2 AND ROAS &ge; 400%. Rows matching none of these are left untagged.
+</div>
+</div>
+
+<script>
+let R2_LOADED = false;
+function showReqTab(which){
+  document.getElementById('req1Tab').style.display = which === 'req1' ? '' : 'none';
+  document.getElementById('req2Tab').style.display = which === 'req2' ? '' : 'none';
+  document.getElementById('tabBtnReq1').classList.toggle('active', which === 'req1');
+  document.getElementById('tabBtnReq2').classList.toggle('active', which === 'req2');
+  if (which === 'req2' && !R2_LOADED) { R2_LOADED = true; r2Load(); }
+}
+showReqTab('req1');
+</script>
 
 <script>
 let ALL = [];
@@ -305,6 +396,156 @@ document.querySelectorAll('thead th[data-k]').forEach(th => {
 });
 
 load();
+</script>
+
+<script>
+// ===== Requirement 2 — Search Terms Labels (distinct r2-prefixed identifiers, zero collisions with Req1's script above) =====
+let R2_ALL = [];
+let r2pg = 1;
+let r2SortKey = 'cost';
+let r2SortDir = -1;
+
+const TAG_COLORS = { Hero: '#0a7d4f', Villain: '#c62828', Zombie: '#9aa3b2', Sidekick: '#1f5eff' };
+function r2TagBadge(tag){
+  if (!tag) return '<span class="tag-badge" style="color:var(--muted);">&mdash;</span>';
+  const color = TAG_COLORS[tag] || 'var(--muted)';
+  const icon = tag === 'Hero' ? '🏆' : tag === 'Villain' ? '🩸' : tag === 'Zombie' ? '🧟' : tag === 'Sidekick' ? '🥷' : '';
+  return '<span class="tag-badge" style="color:' + color + ';">' + icon + ' ' + esc(tag) + '</span>';
+}
+function r2Pct(v){ return v == null ? '—' : Number(v).toLocaleString() + '%'; }
+
+async function r2Load(){
+  const btn = document.getElementById('r2RefreshBtn');
+  btn.disabled = true; btn.textContent = 'Refreshing…';
+  document.getElementById('r2LiveChip').textContent = 'Fetching live from PostgreSQL…';
+  document.getElementById('r2LiveChip').className = 'chip';
+  document.getElementById('r2tbody').innerHTML = '<tr><td colspan="12" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  try {
+    const res = await fetch('/api/requirement?fn=jefri-search-terms');
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    R2_ALL = data.rows;
+    document.getElementById('r2LiveChip').textContent = 'Live — fetched ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('r2LiveChip').className = 'chip live';
+    document.getElementById('r2cTotal').textContent = num(data.summary.totalTerms);
+    document.getElementById('r2cHero').textContent = num(data.summary.hero);
+    document.getElementById('r2cVillain').textContent = num(data.summary.villain);
+    document.getElementById('r2cZombie').textContent = num(data.summary.zombie);
+    document.getElementById('r2cSidekick').textContent = num(data.summary.sidekick);
+    r2pg = 1;
+    r2Render();
+  } catch (e) {
+    document.getElementById('r2LiveChip').textContent = 'Failed to load: ' + e.message;
+    document.getElementById('r2LiveChip').className = 'chip stale';
+    document.getElementById('r2tbody').innerHTML = '';
+    document.getElementById('r2empty').style.display = 'none';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Refresh';
+  }
+}
+
+function r2FilteredRows(){
+  const q = document.getElementById('r2q').value.trim().toLowerCase();
+  const tagF = document.getElementById('r2f_tag').value;
+  let rows = R2_ALL.filter(r => {
+    const textHit = !q || (r.searchTerm||'').toLowerCase().includes(q) || (r.matchType||'').toLowerCase().includes(q);
+    const tagHit = !tagF || r.tag === tagF;
+    return textHit && tagHit;
+  });
+  rows.sort((a,b) => {
+    let av = a[r2SortKey], bv = b[r2SortKey];
+    if (av == null) av = r2SortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = r2SortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = (bv||'').toLowerCase(); }
+    if (av < bv) return -1*r2SortDir;
+    if (av > bv) return 1*r2SortDir;
+    return 0;
+  });
+  return rows;
+}
+
+function r2Maxpg(rows){
+  const size = parseInt(document.getElementById('r2psize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function r2Render(){
+  const rows = r2FilteredRows();
+  const size = parseInt(document.getElementById('r2psize').value, 10);
+  const mp = r2Maxpg(rows);
+  if (r2pg > mp) r2pg = mp;
+  if (r2pg < 1) r2pg = 1;
+  document.getElementById('r2cnt').textContent = 'Showing ' + rows.length.toLocaleString() + ' of ' + R2_ALL.length.toLocaleString() + ' terms';
+  const tbody = document.getElementById('r2tbody');
+  const emptyEl = document.getElementById('r2empty');
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('r2pinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (r2pg-1)*size;
+  const pageRows = rows.slice(from, from+size);
+  tbody.innerHTML = pageRows.map(r => (
+    '<tr>' +
+    '<td>'+esc(r.searchTerm)+'</td>' +
+    '<td>'+esc(r.matchType)+'</td>' +
+    '<td class="num">'+num(r.clicks)+'</td>' +
+    '<td class="num">'+num(r.impressions)+'</td>' +
+    '<td class="num">'+r2Pct(r.ctr)+'</td>' +
+    '<td class="num">'+eur(r.avgCpc)+'</td>' +
+    '<td class="num">'+eur(r.cost)+'</td>' +
+    '<td class="num">'+eur(r.conversionValue)+'</td>' +
+    '<td class="num">'+num(r.conversions)+'</td>' +
+    '<td class="num">'+(r.costPerConversion==null?'—':eur(r.costPerConversion))+'</td>' +
+    '<td class="num">'+r2Pct(r.roas)+'</td>' +
+    '<td>'+r2TagBadge(r.tag)+'</td>' +
+    '</tr>'
+  )).join('');
+  document.getElementById('r2pinfo').textContent = 'Rows ' + (from+1) + '-' + Math.min(from+size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + r2pg + ' of ' + mp + ')';
+}
+
+function r2ExportCsv(){
+  const rows = r2FilteredRows();
+  const header = ['Search Term','Match Type','Clicks','Impressions','CTR','Avg CPC','Cost','Conv. Value','Conversions','Cost / Conversion','ROAS','Tag'];
+  const csvSafe = (v) => {
+    if (v === null || v === undefined) return '';
+    let s = String(v);
+    if (/^[=+\-@]/.test(s)) s = "'" + s;
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    lines.push([r.searchTerm, r.matchType, r.clicks, r.impressions, r.ctr, r.avgCpc, r.cost, r.conversionValue, r.conversions, r.costPerConversion, r.roas, r.tag].map(csvSafe).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'jefri-search-terms-labels-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('r2RefreshBtn').addEventListener('click', r2Load);
+document.getElementById('r2q').addEventListener('input', () => { r2pg=1; r2Render(); });
+document.getElementById('r2f_tag').addEventListener('change', () => { r2pg=1; r2Render(); });
+document.getElementById('r2psize').addEventListener('change', () => { r2pg=1; r2Render(); });
+document.getElementById('r2ExportCsv').addEventListener('click', r2ExportCsv);
+document.getElementById('r2pgFirst').addEventListener('click', () => { r2pg=1; r2Render(); });
+document.getElementById('r2pgPrev').addEventListener('click', () => { if(r2pg>1){r2pg--;r2Render();} });
+document.getElementById('r2pgNext').addEventListener('click', () => { if(r2pg<r2Maxpg(r2FilteredRows())){r2pg++;r2Render();} });
+document.getElementById('r2pgLast').addEventListener('click', () => { r2pg=r2Maxpg(r2FilteredRows()); r2Render(); });
+document.querySelectorAll('#req2Tab thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.getAttribute('data-k');
+    if (r2SortKey === k) r2SortDir = -r2SortDir; else { r2SortKey = k; r2SortDir = 1; }
+    r2Render();
+  });
+});
 </script>
 </body>
 </html>

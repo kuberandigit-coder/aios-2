@@ -444,6 +444,154 @@ async function jefriProductStatusHandler(req, res) {
   return jefriProductStatusHandler;
 })();
 
+// ===== Jefri Requirement 2 — Search Terms Labels (2026-07-22) =====
+// Server-side only: reads DATABASE_URL from env, never exposed to the
+// client. Read-only queries only -- no writes, no schema changes.
+// Uses its own isolated pg Pool (not shared with Req1's module above)
+// so this new feature can never affect the already-working Req1 code.
+//
+// Source tables (read-only PostgreSQL, discovered via
+// mcp__ledsone-db-mcp__search_objects, 2026-07-22):
+//   google_ads.campaign_search_term_data      (Shopping/Search campaigns)
+//   google_ads.pmax_campaign_search_term_data  (Performance Max campaigns)
+// Both share: search_term, match_type, clicks, impressions, cost,
+// conversions, conversions_value, campaign_id, date. Jefri's 5 campaign
+// IDs (same JEFRI_CAMPAIGNS list as Req1, ledsone.de) are shared across
+// both tables since his campaigns are a mix of Shopping and PMax types --
+// a search term can appear in either or both, so results are UNIONed
+// and re-aggregated by (search_term, match_type).
+const jefriSearchTermsHandlerModule = (function() {
+const { Pool } = require('pg');
+
+let pool2;
+function getPool2() {
+  if (!pool2) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString && !process.env.PGHOST) {
+      throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+    }
+    pool2 = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+    });
+  }
+  return pool2;
+}
+
+const JEFRI_CAMPAIGN_IDS_R2 = ['23141810147', '23411228109', '22539594891', '23473840779', '23340277562'];
+
+const QUERY_R2 = `
+  SELECT search_term, match_type,
+         SUM(clicks)::bigint AS clicks,
+         SUM(impressions)::bigint AS impressions,
+         SUM(cost)::numeric AS cost,
+         SUM(conversions)::numeric AS conversions,
+         SUM(conversions_value)::numeric AS conv_value
+  FROM (
+    SELECT search_term, match_type, clicks, impressions, cost, conversions, conversions_value
+    FROM google_ads.campaign_search_term_data
+    WHERE campaign_id = ANY($1) AND date >= CURRENT_DATE - INTERVAL '90 days'
+    UNION ALL
+    SELECT search_term, match_type, clicks, impressions, cost, conversions, conversions_value
+    FROM google_ads.pmax_campaign_search_term_data
+    WHERE campaign_id = ANY($1) AND date >= CURRENT_DATE - INTERVAL '90 days'
+  ) t
+  WHERE search_term IS NOT NULL
+  GROUP BY search_term, match_type
+`;
+
+// Tagging rules (Jefri Req2, updated 2026-07-22 per revised business rules
+// -- supersedes the earlier version of this function; the earlier version's
+// Hero/Villain boundary ambiguity at exactly ROAS=400% is now resolved
+// explicitly by the updated spec's own validation example: clicks=763,
+// ROAS=400%, conversions=2 -> Hero, confirming >=400 is inclusive on the
+// Hero side):
+//   Hero:     clicks >= 3 AND ROAS >= 400%
+//   Villain:  clicks >= 3 AND (ROAS < 400% OR conversions = 0)
+//   Zombie:   impressions > 0 AND clicks = 0
+//   Sidekick: clicks BETWEEN 1 AND 2 AND ROAS >= 400%
+//   (none match): tag is left empty ('')
+function classifyTag(clicks, impressions, cost, conversions, roas) {
+  if (clicks >= 3) {
+    if (roas >= 400) return 'Hero';
+    if (roas < 400 || conversions === 0) return 'Villain';
+  }
+  if (impressions > 0 && clicks === 0) return 'Zombie';
+  if (clicks >= 1 && clicks <= 2 && roas >= 400) return 'Sidekick';
+  return '';
+}
+
+async function jefriSearchTermsHandler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  let client;
+  try {
+    client = await getPool2().connect();
+  } catch (err) {
+    console.error('[jefri/search-terms] DB connect failed:', err && err.message);
+    res.status(500).json({ error: 'Server not configured or database unreachable. Contact the site administrator.' });
+    return;
+  }
+
+  try {
+    const result = await client.query(QUERY_R2, [JEFRI_CAMPAIGN_IDS_R2]);
+    const rows = result.rows.map((r) => {
+      const clicks = Number(r.clicks) || 0;
+      const impressions = Number(r.impressions) || 0;
+      const cost = Number(r.cost) || 0;
+      const conversions = Number(r.conversions) || 0;
+      const convValue = Number(r.conv_value) || 0;
+      const ctr = impressions > 0 ? round2((clicks / impressions) * 100) : 0;
+      const avgCpc = clicks > 0 ? round2(cost / clicks) : 0;
+      const costPerConversion = conversions > 0 ? round2(cost / conversions) : null;
+      const roas = cost > 0 ? round2((convValue / cost) * 100) : 0;
+      const tag = classifyTag(clicks, impressions, cost, conversions, roas);
+      return {
+        searchTerm: r.search_term,
+        matchType: r.match_type,
+        clicks, impressions, ctr, avgCpc, cost,
+        conversionValue: round2(convValue),
+        conversions: round2(conversions),
+        costPerConversion,
+        roas,
+        tag,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      staff: { name: 'Jefri', department: 'Google Ads', store: 'ledsone.de' },
+      reportPeriod: { label: 'Last 90 Days', days: 90 },
+      source: {
+        scope: `Jefri's 5 campaigns (${JEFRI_CAMPAIGN_IDS_R2.join(', ')}), search terms from both Shopping/Search and Performance Max campaigns, rolling last 90 days`,
+        tables: ['google_ads.campaign_search_term_data', 'google_ads.pmax_campaign_search_term_data'],
+      },
+      summary: {
+        totalTerms: rows.length,
+        hero: rows.filter((r) => r.tag === 'Hero').length,
+        villain: rows.filter((r) => r.tag === 'Villain').length,
+        zombie: rows.filter((r) => r.tag === 'Zombie').length,
+        sidekick: rows.filter((r) => r.tag === 'Sidekick').length,
+      },
+      rows,
+      meta: { generatedAt: new Date().toISOString() },
+    });
+  } catch (err) {
+    console.error('[jefri/search-terms] Query failed:', err && err.message);
+    res.status(500).json({ error: 'Could not load search term data. Please try again shortly.' });
+  } finally {
+    if (client) client.release();
+  }
+}
+
+function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+return jefriSearchTermsHandler;
+})();
+
 
 // ===== Merged from check-urls.js, kamsi-live.js, sukirtha-req2-req3.js, sukirtha-req4-ga4-seo.js =====
 // (2026-07-22, consolidated into requirement.js to further reduce Vercel Hobby-plan serverless
@@ -1890,6 +2038,7 @@ function relatedReasonOf(url) {
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
+  if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'check-urls') return checkUrlsHandlerModule(req, res);
   if (fn === 'kamsi-live') return kamsiLiveHandlerModule(req, res);
   if (fn === 'req2-req3') return req2Req3HandlerModule(req, res);
