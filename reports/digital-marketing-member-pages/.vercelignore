@@ -1,0 +1,4 @@
+# Dev-only tooling, not a web endpoint — excluded so Vercel doesn't try to
+# deploy it as a serverless function (it has no module.exports handler and
+# would either break the build or count toward the 12-function Hobby limit).
+api/scripts/

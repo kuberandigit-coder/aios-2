@@ -7,30 +7,34 @@
  * the API re-pulls every order in the whole store for that month. The fix
  * used everywhere on this page is a static snapshot JSON file per closed
  * month, served instead of a live Shopify fetch (see the `staticPath`
- * checks in api/sales-sukirtha-de.js and api/sales-sukirtha-uk.js).
+ * checks in api/sales.js).
  *
  * Instead of hand-running curl commands per month whenever a new staff
  * member is added, run this once:
  *
- *   node scripts/generate-snapshots.js <staff> [months...]
+ *   node api/scripts/generate-snapshots.js <staff> [months...]
  *
  * Examples:
- *   node scripts/generate-snapshots.js sajeepan-ads
+ *   node api/scripts/generate-snapshots.js sajeepan-ads
  *     -> generates all CLOSED months (skips the live month automatically)
- *   node scripts/generate-snapshots.js sajeepan-ads 2026-03 2026-04
+ *   node api/scripts/generate-snapshots.js sajeepan-ads 2026-03 2026-04
  *     -> generates just those two months
  *
  * <staff> must match one of the `staff=` query values the API already
  * understands (thasitha-ads, sajeepan-ads, hetheesha-organic, etc.) —
  * this script does not add new attribution logic, only automates
  * snapshot generation for whatever staff modes already exist.
+ *
+ * Lives in api/scripts/ (not api/) and is excluded via .vercelignore so
+ * Vercel never tries to deploy it as a serverless function — it has no
+ * module.exports handler and is only ever run manually via `node`.
  */
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
 const BASE_URL = process.env.SNAPSHOT_BASE_URL || 'https://digital-marketing-member-pages.vercel.app';
-const DATA_DIR = path.join(__dirname, '..', 'api', 'data');
+const DATA_DIR = path.join(__dirname, '..', 'data');
 
 // Mirrors SUPPORTED_MONTHS / CURRENT_LIVE_MONTHS in api/sales-sukirtha-de.js.
 // Update this one place when a new month opens — every future snapshot run
