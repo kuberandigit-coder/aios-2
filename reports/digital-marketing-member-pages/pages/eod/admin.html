@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Daily Attendance · Digit Web Lanka</title>
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f5f6fa; --white: #ffffff; --border: #e4e7ef; --border2: #d0d5e8;
+      --text: #111827; --text2: #374151; --text3: #6b7280; --text4: #9ca3af;
+      --blue: #3b5cf6; --blue-bg: #eef1fe; --blue-dim: rgba(59,92,246,.08); --blue-dim2: rgba(59,92,246,.18);
+      --green: #059669; --green-bg: #ecfdf5; --green-border: #a7f3d0;
+      --red: #dc2626; --red-bg: #fef2f2; --red-border: #fecaca;
+      --amber: #d97706; --amber-bg: #fffbeb; --amber-border: #fde68a;
+      --teal: #0d9488; --teal-bg: #f0fdfa;
+      --indigo: #4f46e5; --indigo-bg: #eef2ff;
+      --sidebar-w: 220px; --topbar-h: 60px; --r: 10px; --r-lg: 14px;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 8px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    }
+    [data-theme="dark"] {
+      --bg: #0d1117; --white: #161b22; --border: #21262d; --border2: #30363d;
+      --text: #e6edf3; --text2: #c9d1d9; --text3: #8b949e; --text4: #484f58;
+      --blue: #58a6ff; --blue-bg: #1a2332; --blue-dim: rgba(88,166,255,.1); --blue-dim2: rgba(88,166,255,.2);
+      --green: #3fb950; --green-bg: #0d2818; --green-border: #1a4029;
+      --red: #f85149; --red-bg: #2a0f0f; --red-border: #4a1a1a;
+      --amber: #d29922; --amber-bg: #271c00; --amber-border: #4a3500;
+      --teal: #2dd4bf; --teal-bg: #0a2020;
+      --indigo: #818cf8; --indigo-bg: #1e1a3a;
+      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 1px 8px rgba(0,0,0,.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+    /* ── LAYOUT ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--border); position: fixed; top: 0; left: 0; height: 100vh; display: flex; flex-direction: column; z-index: 200; overflow-y: auto; }
+    .sb-logo { display: flex; align-items: center; gap: .625rem; padding: 1.125rem 1rem; border-bottom: 1px solid var(--border); }
+    .sb-logo img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; }
+    .sb-logo-name { font-size: .75rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .sb-logo-sub  { font-size: .6rem; color: var(--text4); margin-top: .1rem; }
+    .sb-nav { padding: .75rem .625rem; flex: 1; }
+    .sb-section { font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text4); padding: .625rem .5rem .25rem; }
+    .sb-link { display: flex; align-items: center; gap: .5rem; padding: .4375rem .625rem; border-radius: 7px; font-size: .775rem; font-weight: 500; color: var(--text3); text-decoration: none; transition: background .12s, color .12s; border: none; background: none; cursor: pointer; width: 100%; text-align: left; }
+    .sb-link:hover  { background: var(--bg); color: var(--text2); }
+    .sb-link.active { background: var(--blue-bg); color: var(--blue); font-weight: 600; }
+    .sb-link .ico   { font-size: .875rem; width: 1rem; text-align: center; flex-shrink: 0; }
+    .sb-bottom { padding: .875rem .75rem; border-top: 1px solid var(--border); }
+    .date-widget { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: .75rem 1rem; }
+    .date-widget-label { font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text4); margin-bottom: .25rem; }
+    .date-widget-val   { font-size: .775rem; font-weight: 600; color: var(--text2); line-height: 1.4; }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+    /* ── TOPBAR ── */
+    .topbar { height: var(--topbar-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 1.75rem; position: sticky; top: 0; z-index: 100; }
+    .tb-left {}
+    .tb-page { font-size: .9375rem; font-weight: 700; color: var(--text); }
+    .tb-sub  { font-size: .7rem; color: var(--text4); margin-top: .1rem; }
+    .tb-right { display: flex; align-items: center; gap: .5rem; }
+    .admin-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .75rem; border-radius: 100px; background: var(--red-bg); border: 1px solid var(--red-border); font-size: .7rem; font-weight: 700; color: var(--red); }
+    .btn-icon { width: 32px; height: 32px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8125rem; color: var(--text3); transition: background .12s; }
+    .btn-icon:hover { background: var(--border); }
+    .chip { display: inline-flex; align-items: center; gap: .3rem; padding: .3125rem .75rem; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); font-size: .725rem; font-weight: 600; color: var(--text3); text-decoration: none; transition: background .12s; }
+    .chip:hover { background: var(--border); color: var(--text2); }
+
+    /* ── CONTENT ── */
+    .content { padding: 1.5rem 1.75rem 3rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+    /* PAGE HEADER */
+    .page-header { }
+    .page-header-title { font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+    .page-header-sub   { font-size: .8rem; color: var(--text3); margin-top: .25rem; }
+
+    /* DATE ROW */
+    .date-row { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.125rem 1.5rem; display: flex; align-items: center; gap: .875rem; flex-wrap: wrap; box-shadow: var(--shadow); }
+    .date-row-label { font-size: .8rem; font-weight: 600; color: var(--text2); white-space: nowrap; }
+    input[type="date"] {
+      height: 38px; padding: 0 .75rem;
+      background: var(--bg); color: var(--text);
+      border: 1.5px solid var(--border); border-radius: 7px;
+      font-family: inherit; font-size: .8125rem; font-weight: 500;
+      outline: none; -webkit-appearance: none; appearance: none;
+      color-scheme: light; cursor: pointer;
+      transition: border-color .15s;
+    }
+    [data-theme="dark"] input[type="date"] { color-scheme: dark; }
+    input[type="date"]:focus { border-color: var(--blue); }
+    .btn-check { height: 38px; padding: 0 1.125rem; background: var(--blue); color: #fff; font-family: inherit; font-size: .8125rem; font-weight: 700; border: none; border-radius: 7px; cursor: pointer; display: flex; align-items: center; gap: .4rem; transition: background .12s; }
+    .btn-check:hover:not(:disabled) { background: #2f4de0; }
+    .btn-check:disabled { opacity: .5; cursor: not-allowed; }
+    .date-row-divider { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+    .quick-btns { display: flex; gap: .4rem; }
+    .quick-btn { height: 34px; padding: 0 .875rem; background: var(--bg); border: 1.5px solid var(--border2); border-radius: 7px; font-family: inherit; font-size: .775rem; font-weight: 600; color: var(--text2); cursor: pointer; transition: border-color .12s, color .12s; }
+    .quick-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* STATS */
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: .875rem; }
+    .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1rem 1.125rem; box-shadow: var(--shadow); display: flex; align-items: flex-start; gap: .875rem; position: relative; overflow: hidden; transition: box-shadow .15s, transform .15s; }
+    .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .stat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+    .stat-card.s-blue::after  { background: var(--blue); }
+    .stat-card.s-green::after { background: var(--green); }
+    .stat-card.s-amber::after { background: var(--amber); }
+    .stat-card.s-red::after   { background: var(--red); }
+    .stat-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .stat-icon.s-blue  { background: var(--blue-bg); }
+    .stat-icon.s-green { background: var(--green-bg); }
+    .stat-icon.s-amber { background: var(--amber-bg); }
+    .stat-icon.s-red   { background: var(--red-bg); }
+    .stat-value { font-size: 1.625rem; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+    .stat-label { font-size: .7rem; color: var(--text3); margin-top: .25rem; }
+
+    /* FILTER BAR */
+    .filter-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
+    .filter-bar-left { font-size: .8rem; color: var(--text3); }
+    .filter-bar-left strong { color: var(--text2); }
+    .filter-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .filter-btn { height: 30px; padding: 0 .875rem; background: var(--white); border: 1.5px solid var(--border); border-radius: 100px; font-family: inherit; font-size: .725rem; font-weight: 600; color: var(--text3); cursor: pointer; display: flex; align-items: center; gap: .35rem; transition: all .12s; }
+    .filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .filter-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .f-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .f-dot.green { background: var(--green); }
+    .f-dot.amber { background: var(--amber); }
+    .f-dot.red   { background: var(--red); }
+
+    /* MEMBERS GRID */
+    .members-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 1rem; }
+    .member-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-lg); padding: 1rem 1.125rem 1rem 1.375rem; cursor: pointer; transition: box-shadow .15s, transform .15s; position: relative; overflow: hidden; }
+    .member-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .member-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: var(--r-lg) 0 0 var(--r-lg); }
+    .member-card.submitted::before { background: var(--green); }
+    .member-card.leave::before     { background: var(--amber); }
+    .member-card.missing::before   { background: var(--red); }
+    .mc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; gap: .5rem; }
+    .mc-name { font-size: .9rem; font-weight: 700; color: var(--text); }
+    .mc-badge { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .6rem; border-radius: 100px; font-size: .68rem; font-weight: 700; border: 1px solid; flex-shrink: 0; }
+    .badge-submitted { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+    .badge-leave     { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
+    .badge-missing   { background: var(--red-bg);   color: var(--red);   border-color: var(--red-border); }
+    .badge-loading   { background: var(--bg); color: var(--text4); border-color: var(--border); }
+    .mc-preview { font-size: .75rem; color: var(--text3); line-height: 1.5; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .mc-preview.err { color: var(--red); opacity: .7; }
+
+    /* STATE BOX */
+    .state-box { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 3.5rem 2rem; text-align: center; box-shadow: var(--shadow); }
+    .state-icon  { font-size: 2.5rem; margin-bottom: .75rem; }
+    .state-title { font-size: 1.125rem; font-weight: 800; color: var(--text); margin-bottom: .375rem; letter-spacing: -.02em; }
+    .state-sub   { font-size: .8125rem; color: var(--text3); line-height: 1.6; }
+    .spinner { width: 24px; height: 24px; border: 2.5px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .65s linear infinite; margin: 0 auto .875rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-wrap { margin-top: .875rem; background: var(--bg); border-radius: 100px; height: 5px; overflow: hidden; width: 180px; margin-left: auto; margin-right: auto; }
+    .progress-bar  { height: 100%; background: var(--blue); border-radius: 100px; transition: width .3s; }
+
+    /* MODALS — SHARED */
+    .eod-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; align-items: center; justify-content: center; padding: 1.5rem; }
+    .eod-overlay.visible { display: flex; animation: fadein .18s ease; }
+    .eod-modal { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); width: 100%; max-width: 540px; box-shadow: var(--shadow-md); overflow: hidden; max-height: 92vh; display: flex; flex-direction: column; animation: cardin .25s cubic-bezier(.34,1.2,.64,1); }
+    .eod-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-shrink: 0; }
+    .eod-title { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .eod-sub   { font-size: .72rem; color: var(--text3); margin-top: .15rem; }
+    .eod-badge { display: inline-flex; align-items: center; padding: .2rem .625rem; border-radius: 100px; font-size: .68rem; font-weight: 700; background: var(--indigo-bg); color: var(--indigo); border: 1px solid rgba(79,70,229,.2); }
+    .eod-close { width: 30px; height: 30px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); color: var(--text3); font-size: .8125rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .12s, color .12s; }
+    .eod-close:hover { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+    .eod-body { padding: 1.375rem 1.5rem; overflow-y: auto; flex: 1; }
+
+    /* FORM */
+    .sep { display: flex; align-items: center; gap: .625rem; margin-bottom: 1rem; }
+    .sep-text { font-size: .625rem; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+    .sep-line { flex: 1; height: 1px; background: var(--border); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: .35rem; }
+    .form-label { font-size: .775rem; font-weight: 600; color: var(--text2); }
+    .req { color: var(--blue); }
+    select, textarea {
+      width: 100%; background: var(--bg); color: var(--text);
+      border: 1.5px solid var(--border); border-radius: 7px;
+      font-family: inherit; font-size: .8125rem; font-weight: 500;
+      outline: none; -webkit-appearance: none; appearance: none;
+      transition: border-color .15s;
+    }
+    select:focus, textarea:focus { border-color: var(--blue); background: var(--white); }
+    select { height: 38px; padding: 0 2.25rem 0 .75rem; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; }
+    select option { background: var(--white); color: var(--text); }
+    textarea { min-height: 180px; resize: vertical; line-height: 1.8; padding: .75rem; }
+    textarea::placeholder { color: var(--text4); }
+    .char-hint { font-size: .7rem; color: var(--text4); text-align: right; margin-top: .25rem; }
+    .form-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+    .btn-submit { width: 100%; height: 40px; background: var(--blue); color: #fff; font-family: inherit; font-size: .875rem; font-weight: 700; border: none; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: .4rem; transition: background .12s; }
+    .btn-submit:hover:not(:disabled) { background: #2f4de0; }
+    .btn-submit:disabled { opacity: .45; cursor: not-allowed; }
+    .alert { display: flex; align-items: flex-start; gap: .5rem; padding: .75rem 1rem; border-radius: 7px; border: 1px solid; font-size: .8rem; font-weight: 500; line-height: 1.55; margin-top: .875rem; }
+    .alert-icon { flex-shrink: 0; font-size: .8125rem; margin-top: 1px; }
+    .alert-error   { background: var(--red-bg);   border-color: var(--red-border);   color: var(--red); }
+    .alert-success { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+    .alert-warning { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+
+    /* SUCCESS VIEW */
+    .eod-success { display: none; flex-direction: column; align-items: center; text-align: center; padding: 1rem 0 .5rem; }
+    .eod-success.visible { display: flex; animation: fadein .25s ease; }
+    .success-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--green-bg); border: 2px solid var(--green-border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.125rem; color: var(--green); }
+    .success-title { font-size: 1.125rem; font-weight: 800; color: var(--text); margin-bottom: .25rem; }
+    .success-sub   { font-size: .8125rem; color: var(--text3); margin-bottom: 1.25rem; line-height: 1.6; }
+    .success-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: .5rem; width: 100%; margin-bottom: .875rem; }
+    .success-item  { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: .625rem; text-align: left; }
+    .si-label { font-size: .6rem; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .2rem; }
+    .si-value { font-size: .8125rem; font-weight: 700; color: var(--text); }
+    .file-tag { display: inline-flex; align-items: center; gap: .4rem; background: var(--blue-bg); border: 1px solid rgba(59,92,246,.2); color: var(--blue); border-radius: 7px; padding: .4rem .875rem; font-size: .75rem; font-weight: 600; word-break: break-all; margin-bottom: 1.25rem; }
+    .btn-reset { padding: .5625rem 1.5rem; background: var(--white); color: var(--text2); font-family: inherit; font-size: .8125rem; font-weight: 600; border: 1.5px solid var(--border); border-radius: 7px; cursor: pointer; transition: border-color .12s, color .12s; }
+    .btn-reset:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* LEAVE INFO */
+    .leave-info { display: flex; align-items: flex-start; gap: .5rem; background: var(--blue-bg); border: 1px solid rgba(59,92,246,.2); border-radius: 7px; padding: .75rem .875rem; font-size: .8rem; color: var(--blue); line-height: 1.55; margin-bottom: 1.125rem; }
+    .btn-leave { width: 100%; height: 40px; background: var(--white); color: var(--blue); border: 1.5px solid rgba(59,92,246,.3); border-radius: 7px; font-family: inherit; font-size: .875rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: .4rem; transition: background .12s, border-color .12s; }
+    .btn-leave:hover:not(:disabled) { background: var(--blue-bg); border-color: var(--blue); }
+    .btn-leave:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* DETAIL MODAL */
+    .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: center; justify-content: center; padding: 1.5rem; }
+    .detail-overlay.visible { display: flex; animation: fadein .18s ease; }
+    .detail-modal { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); width: 100%; max-width: 660px; box-shadow: var(--shadow-md); overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; animation: cardin .25s cubic-bezier(.34,1.2,.64,1); }
+    .detail-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-shrink: 0; }
+    .detail-head-left { display: flex; align-items: center; gap: .75rem; }
+    .detail-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--blue-bg); border: 2px solid rgba(59,92,246,.2); display: flex; align-items: center; justify-content: center; font-size: .8125rem; font-weight: 800; color: var(--blue); flex-shrink: 0; text-transform: uppercase; }
+    .detail-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .detail-meta { font-size: .72rem; color: var(--text3); margin-top: .1rem; }
+    .detail-close { width: 30px; height: 30px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); color: var(--text3); font-size: .8125rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .12s, color .12s; }
+    .detail-close:hover { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+    .detail-body { padding: 1.375rem 1.5rem; overflow-y: auto; flex: 1; }
+    .detail-content { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 1.125rem; font-size: .8125rem; line-height: 1.85; color: var(--text2); white-space: pre-wrap; word-break: break-word; max-height: 55vh; overflow-y: auto; }
+    .detail-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text3); }
+    .detail-empty-icon  { font-size: 2rem; margin-bottom: .625rem; }
+    .detail-empty-title { font-size: .9375rem; font-weight: 800; color: var(--text2); margin-bottom: .25rem; }
+    .btn-link { display: flex; align-items: center; gap: .35rem; padding: .375rem .875rem; background: var(--blue-bg); border: 1.5px solid rgba(59,92,246,.2); border-radius: 7px; color: var(--blue); font-family: inherit; font-size: .775rem; font-weight: 700; cursor: pointer; text-decoration: none; transition: background .12s; }
+    .btn-link:hover { background: var(--blue-dim2); }
+
+    /* EOD VIEWER */
+    .setup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 400; align-items: center; justify-content: center; padding: 1.25rem; }
+    .setup-overlay.visible { display: flex; animation: fadein .18s ease; }
+    .viewer-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); transition: background .3s, border-color .3s; }
+    .viewer-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--white); flex-shrink: 0; }
+    .viewer-header-title { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .viewer-header-sub   { font-size: .72rem; color: var(--text3); margin-top: .125rem; }
+    .viewer-close-btn { background: none; border: 1px solid var(--border); border-radius: 7px; padding: .375rem .75rem; cursor: pointer; font-size: .8rem; color: var(--text2); font-family: inherit; transition: background .12s, color .12s; }
+    .viewer-close-btn:hover { background: var(--bg); color: var(--text); }
+    .viewer-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+    .viewer-sidebar { width: 240px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; padding: 1rem; background: var(--bg); }
+    .viewer-sidebar-label { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text4); margin-bottom: .625rem; }
+    .viewer-panel { flex: 1; overflow-y: auto; padding: 1.125rem 1.375rem; display: flex; flex-direction: column; gap: .75rem; min-width: 0; background: var(--white); }
+    .viewer-member-btn { display: flex; align-items: center; gap: .625rem; width: 100%; text-align: left; padding: .625rem .75rem; background: var(--white); border: 1px solid var(--border); font-family: inherit; font-size: .8rem; font-weight: 500; color: var(--text2); cursor: pointer; margin-bottom: .4rem; border-radius: 7px; transition: background .15s, border-color .15s; }
+    .viewer-member-btn:hover { background: var(--bg); border-color: var(--border2); }
+    .viewer-member-btn.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+    .viewer-member-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--blue); color: #fff; font-size: .65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .viewer-report-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: .625rem; overflow: hidden; }
+    .viewer-report-header { display: flex; align-items: center; justify-content: space-between; padding: .6875rem .875rem; background: var(--white); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; transition: background .12s; }
+    .viewer-report-header:hover { background: var(--bg); }
+    .viewer-report-body { padding: .875rem; font-size: .8125rem; line-height: 1.85; color: var(--text2); white-space: pre-wrap; word-break: break-word; display: none; }
+    .viewer-lock-btn { font-size: .7rem; padding: .25rem .625rem; background: none; border: 1px solid var(--border); border-radius: 7px; cursor: pointer; color: var(--text3); font-family: inherit; transition: background .12s, color .12s; }
+    .viewer-lock-btn:hover { background: var(--bg); color: var(--text2); border-color: var(--border2); }
+    .card-badge { font-size: .63rem; font-weight: 700; padding: .15rem .5rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; }
+    .card-badge.cb-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(59,92,246,.2); }
+
+    @keyframes fadein { from{opacity:0} to{opacity:1} }
+    @keyframes cardin { from{transform:translateY(16px) scale(.97);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+    @keyframes popin  { from{transform:scale(.3);opacity:0} to{transform:scale(1);opacity:1} }
+
+    /* RESPONSIVE */
+    @media (max-width: 1100px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 720px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .content { padding: 1rem 1rem 3rem; }
+    }
+    @media (max-width: 520px) {
+      .date-row-divider, .quick-btns { display: none; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ADD EOD OVERLAY -->
+<div class="eod-overlay" id="eodOverlay">
+  <div class="eod-modal">
+    <div class="eod-head">
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <div>
+          <div class="eod-title">Add EOD Report</div>
+          <div class="eod-sub">Submit a report for any member on any date</div>
+        </div>
+        <span class="eod-badge">Admin</span>
+      </div>
+      <button class="eod-close" id="eodClose">✕</button>
+    </div>
+    <div class="eod-body">
+      <div id="eodFormView">
+        <div class="sep"><span class="sep-text">Member &amp; Date</span><span class="sep-line"></span></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="eodMember">Member Name <span class="req">*</span></label>
+            <select id="eodMember">
+              <option value="" disabled selected>Select member…</option>
+              <option>Kuberan</option><option>Piranav</option><option>Mahima</option>
+              <option>Sonya</option><option>Kamsi</option><option>Hetheesha</option>
+              <option>Dilaksi</option><option>Sukirtha</option>
+              <option>Theekshy</option><option>Thivagini</option><option>Ripson</option>
+              <option>Jefri</option><option>Sajeepan</option><option>Jakshan</option>
+              <option>Thasitha</option><option>Thanishtika</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="eodDate">Report Date <span class="req">*</span></label>
+            <input type="date" id="eodDate" />
+          </div>
+        </div>
+        <div class="sep"><span class="sep-text">Report Content</span><span class="sep-line"></span></div>
+        <div class="form-group" style="margin-bottom:.375rem">
+          <label class="form-label" for="eodText">EOD Report <span class="req">*</span></label>
+          <textarea id="eodText" placeholder="Enter the member's EOD report…&#10;&#10;• Tasks completed&#10;• Campaigns managed or updated&#10;• Content created or published&#10;• Meetings attended&#10;• Blockers or issues&#10;• Plan for tomorrow"></textarea>
+          <div class="char-hint" id="eodCharHint">0 characters · Ctrl+Enter to submit</div>
+        </div>
+        <hr class="form-divider" />
+        <button class="btn-submit" id="eodSubmitBtn" type="button">
+          <span id="eodBtnIcon">✦</span><span id="eodBtnLabel">Submit EOD Report</span>
+        </button>
+        <div id="eodAlertBox"></div>
+      </div>
+      <!-- SUCCESS -->
+      <div class="eod-success" id="eodSuccessView">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Report Submitted!</div>
+        <div class="success-sub">The EOD report has been saved to the repository successfully.</div>
+        <div class="success-grid">
+          <div class="success-item"><div class="si-label">Member</div><div class="si-value" id="eodSName">—</div></div>
+          <div class="success-item"><div class="si-label">Date</div><div class="si-value" id="eodSDate">—</div></div>
+          <div class="success-item"><div class="si-label">Status</div><div class="si-value" id="eodSAction">—</div></div>
+        </div>
+        <div class="file-tag">📁 <span id="eodSPath">—</span></div>
+        <button class="btn-reset" id="eodResetBtn">Add Another Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEAVE OVERLAY -->
+<div class="eod-overlay" id="leaveOverlay">
+  <div class="eod-modal">
+    <div class="eod-head">
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <div>
+          <div class="eod-title">Mark Leave</div>
+          <div class="eod-sub">Log an absence for the team</div>
+        </div>
+        <span class="eod-badge" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);">Leave</span>
+      </div>
+      <button class="eod-close" id="leaveClose">✕</button>
+    </div>
+    <div class="eod-body">
+      <div class="leave-info">
+        <span style="flex-shrink:0;">ℹ️</span>
+        <span>Select a team member and the date they were on leave to record it in the attendance system.</span>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="leaveMember">Member Name <span class="req">*</span></label>
+          <select id="leaveMember">
+            <option value="" disabled selected>Select name…</option>
+            <option>Kuberan</option><option>Piranav</option><option>Mahima</option>
+            <option>Sonya</option><option>Kamsi</option><option>Hetheesha</option>
+            <option>Dilaksi</option><option>Sukirtha</option>
+            <option>Theekshy</option><option>Thivagini</option><option>Ripson</option>
+            <option>Jefri</option><option>Sajeepan</option><option>Jakshan</option>
+            <option>Thasitha</option><option>Thanishtika</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="leaveDate">Leave Date <span class="req">*</span></label>
+          <input type="date" id="leaveDate" />
+        </div>
+      </div>
+      <hr class="form-divider" />
+      <button class="btn-leave" id="leaveBtn" type="button">🏖 Mark as Leave</button>
+      <div id="leaveAlert" style="margin-top:.875rem;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL OVERLAY -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-modal">
+    <div class="detail-head">
+      <div class="detail-head-left">
+        <div class="detail-avatar" id="detailAvatar"></div>
+        <div>
+          <div class="detail-name" id="detailName"></div>
+          <div class="detail-meta" id="detailMeta"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;">
+        <button class="btn-link" id="detailEditBtn" style="display:none;">✏️ Edit</button>
+        <button class="btn-check" id="detailSaveBtn" style="display:none;height:34px;padding:0 .875rem;font-size:.775rem;">💾 Save</button>
+        <button class="detail-close" id="detailClose">✕</button>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div id="detailContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <img src="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" alt="Logo" />
+      <div>
+        <div class="sb-logo-name">Digit Web Lanka</div>
+        <div class="sb-logo-sub">Digital Marketing</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Admin</div>
+      <a href="admin.html" class="sb-link active"><span class="ico">🛡</span> Admin Panel</a>
+      <a href="review-status.html" class="sb-link"><span class="ico">📋</span> Review Status</a>
+      <div class="sb-section">Reports</div>
+      <a href="index.html" class="sb-link"><span class="ico">📝</span> EOD Report</a>
+      <a href="review.html" class="sb-link"><span class="ico">🔎</span> 14-Day Review</a>
+      <div class="sb-section">Actions</div>
+      <button class="sb-link" onclick="openEodModal()"><span class="ico">📝</span> Add EOD Report</button>
+      <button class="sb-link" onclick="document.getElementById('eodViewerOverlay').classList.add('visible')"><span class="ico">🔍</span> View EODs</button>
+      <a href="summary2.html" class="sb-link"><span class="ico">📊</span> Summary View</a>
+      <button class="sb-link" onclick="openLeaveModal()"><span class="ico">📂</span> Mark Leave</button>
+      <div class="sb-section">Dashboards</div>
+      <a href="https://kuberandigit-coder.github.io/blog-builder/" target="_blank" class="sb-link"><span class="ico">✍️</span> Blog Builder</a>
+      <a href="https://home-page-tracker.vercel.app/" target="_blank" class="sb-link"><span class="ico">🏠</span> Home Page Tracker</a>
+      <a href="https://sales-dashboard-tawny-one.vercel.app/" target="_blank" class="sb-link"><span class="ico">📈</span> Live Sales</a>
+      <a href="https://image-converter-phi-ruby.vercel.app/" target="_blank" class="sb-link"><span class="ico">🖼️</span> Image Converter</a>
+    </nav>
+    <div class="sb-bottom">
+      <div class="date-widget">
+        <div class="date-widget-label">Today</div>
+        <div class="date-widget-val" id="sidebarDate">Loading…</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <div class="tb-page">Daily Attendance</div>
+        <div class="tb-sub" id="topbarSub">Admin — EOD Submission Tracker</div>
+      </div>
+      <div class="tb-right">
+        <span class="admin-badge">🛡 Admin</span>
+        <button class="btn-icon" id="themeToggle" title="Toggle theme"><span id="themeIcon">🌙</span></button>
+        <a href="summary2.html" class="chip">📊 Summary</a>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="page-header">
+        <div class="page-header-title">EOD Attendance Tracker</div>
+        <div class="page-header-sub">Check who has submitted, who's on leave, and who's missing</div>
+      </div>
+
+      <!-- DATE ROW -->
+      <div class="date-row">
+        <span class="date-row-label">📅 Check date</span>
+        <input type="date" id="dateInput" />
+        <button class="btn-check" id="checkBtn">
+          <span id="checkBtnIcon">🔍</span>
+          <span id="checkBtnLabel">Check Submissions</span>
+        </button>
+        <div class="date-row-divider"></div>
+        <div class="quick-btns">
+          <button class="quick-btn" id="btnToday">Today</button>
+          <button class="quick-btn" id="btnYesterday">Yesterday</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row" id="statsRow" style="display:none">
+        <div class="stat-card s-blue">
+          <div class="stat-icon s-blue">👥</div>
+          <div><div class="stat-value" id="statTotal">16</div><div class="stat-label">Total Members</div></div>
+        </div>
+        <div class="stat-card s-green">
+          <div class="stat-icon s-green">✅</div>
+          <div><div class="stat-value" id="statSub">—</div><div class="stat-label">Submitted</div></div>
+        </div>
+        <div class="stat-card s-amber">
+          <div class="stat-icon s-amber">🏖</div>
+          <div><div class="stat-value" id="statLeave">—</div><div class="stat-label">On Leave</div></div>
+        </div>
+        <div class="stat-card s-red">
+          <div class="stat-icon s-red">⚠️</div>
+          <div><div class="stat-value" id="statMiss">—</div><div class="stat-label">Missing</div></div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar" id="filterBar" style="display:none">
+        <div class="filter-bar-left" id="filterLabel"></div>
+        <div class="filter-btns">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="submitted"><span class="f-dot green"></span> Submitted</button>
+          <button class="filter-btn" data-filter="leave"><span class="f-dot amber"></span> Leave</button>
+          <button class="filter-btn" data-filter="missing"><span class="f-dot red"></span> Missing</button>
+        </div>
+      </div>
+
+      <!-- MEMBERS GRID -->
+      <div class="members-grid" id="membersGrid" style="display:none"></div>
+
+      <!-- STATE BOX -->
+      <div class="state-box" id="stateBox">
+        <div class="state-icon">🛡</div>
+        <div class="state-title">Admin — Daily Attendance</div>
+        <div class="state-sub">Select a date and click <strong>Check Submissions</strong> to see who has submitted their EOD report.</div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- EOD VIEWER OVERLAY -->
+<div class="setup-overlay" id="eodViewerOverlay" style="z-index:500;">
+  <div style="width:100%;max-width:860px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-md);animation:cardin .28s cubic-bezier(.34,1.2,.64,1);" class="viewer-card">
+    <div class="viewer-header">
+      <div>
+        <div class="viewer-header-title">View EOD Reports</div>
+        <div class="viewer-header-sub">Admin · Click a member to view their reports</div>
+      </div>
+      <button class="viewer-close-btn" onclick="closeViewer()">✕ Close</button>
+    </div>
+    <div class="viewer-body">
+      <div class="viewer-sidebar">
+        <div class="viewer-sidebar-label">Team Members</div>
+        <div id="viewerMemberList"></div>
+      </div>
+      <div id="viewerReportsPanel" class="viewer-panel">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:.75rem;color:var(--text3);font-size:.875rem;padding:3rem 0;">
+          <div style="font-size:2.25rem;">👤</div>
+          <div>Select a team member to view their reports</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ══════════════ CONFIG ══════════════ */
+  const REPO_OWNER = "digitalmarketing69140951-sys";
+  const REPO_NAME  = "eod-reports";
+  const BRANCH     = "main";
+  const TOKEN_KEY  = "eod_gh_token";
+  const THEME_KEY  = "eod_theme";
+
+  const MEMBERS = [
+    "Kuberan","Piranav","Mahima","Sonya","Kamsi","Hetheesha",
+    "Dilaksi","Sukirtha","Thasitha","Theekshy","Thivagini",
+    "Ripson","Jefri","Sajeepan","Jakshan","Thanishtika"
+  ];
+
+  const $ = id => document.getElementById(id);
+  let allData   = [];
+  let curFilter = "all";
+  let curDate   = "";
+
+  /* ══════════════ THEME ══════════════ */
+  function applyTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    localStorage.setItem(THEME_KEY, t);
+    const icon = $("themeIcon"); if (icon) icon.textContent = t === "dark" ? "☀️" : "🌙";
+  }
+  (function initTheme() {
+    const s = localStorage.getItem(THEME_KEY);
+    applyTheme(s || (window.matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light"));
+  })();
+  $("themeToggle").addEventListener("click", () => {
+    applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  /* ══════════════ EOD VIEWER (admin — no password lock) ══════════════ */
+  const VIEWER_MEMBERS = [
+    "Kuberan","Piranav","Mahima","Sonya","Kamsi","Hetheesha",
+    "Dilaksi","Sukirtha","Theekshy","Thivagini","Ripson",
+    "Jefri","Sajeepan","Jakshan","Thasitha","Thanishtika"
+  ];
+  let viewerActiveBtn = null;
+
+  function closeViewer() {
+    document.getElementById('eodViewerOverlay').classList.remove('visible');
+  }
+  document.getElementById('eodViewerOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeViewer();
+  });
+
+  (function buildMemberList() {
+    const list = document.getElementById('viewerMemberList');
+    VIEWER_MEMBERS.forEach(name => {
+      const btn = document.createElement('button');
+      btn.className = 'viewer-member-btn';
+      btn.innerHTML = `
+        <span class="viewer-member-avatar">${name.slice(0,2).toUpperCase()}</span>
+        <span style="flex:1;color:var(--text2);">${name}</span>
+      `;
+      btn.addEventListener('click', () => {
+        if (viewerActiveBtn && viewerActiveBtn !== btn) viewerActiveBtn.classList.remove('active');
+        btn.classList.add('active');
+        viewerActiveBtn = btn;
+        loadMemberReports(name);
+      });
+      list.appendChild(btn);
+    });
+  })();
+
+  async function loadMemberReports(member) {
+    const panel = document.getElementById('viewerReportsPanel');
+    panel.innerHTML = `
+      <div style="font-size:1rem;font-weight:800;margin-bottom:.25rem;color:var(--text);">${member}</div>
+      <div style="display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:var(--text3);margin-bottom:1.25rem;">
+        <span class="spinner" style="width:14px;height:14px;border-width:2px;margin:0;"></span> Fetching reports from GitHub…
+      </div>
+    `;
+
+    if (!getToken()) {
+      panel.innerHTML = `<div class="alert alert-error"><span class="alert-icon">✕</span><span>No GitHub token. Save your token first.</span></div>`;
+      return;
+    }
+
+    try {
+      const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/eods/${encodeURIComponent(member)}`;
+      const r = await fetch(url, { headers: ghHeaders(), cache: "no-store" });
+
+      if (r.status === 404) {
+        panel.innerHTML = `
+          <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
+          <div class="alert alert-warning"><span class="alert-icon">📭</span><span>No reports found for ${member} yet.</span></div>`;
+        return;
+      }
+      if (!r.ok) throw new Error(`GitHub error ${r.status}`);
+
+      const files = await r.json();
+      const mdFiles = files.filter(f => f.name.endsWith('.md')).sort((a,b) => b.name.localeCompare(a.name));
+
+      if (!mdFiles.length) {
+        panel.innerHTML = `
+          <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
+          <div class="alert alert-warning"><span class="alert-icon">📭</span><span>No reports found for ${member} yet.</span></div>`;
+        return;
+      }
+
+      panel.innerHTML = `
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.125rem;">
+          <div>
+            <div style="font-size:1rem;font-weight:800;color:var(--text);">${member}</div>
+            <div style="font-size:.72rem;color:var(--text3);">${mdFiles.length} report${mdFiles.length!==1?'s':''} found</div>
+          </div>
+          <button class="viewer-lock-btn" onclick="loadMemberReports('${member}')" title="Refresh">🔄 Refresh</button>
+        </div>
+        <div id="viewerCards_${member}"></div>
+      `;
+
+      const cardsDiv = document.getElementById(`viewerCards_${member}`);
+
+      for (const file of mdFiles) {
+        const date = file.name.replace('.md','');
+        const card = document.createElement('div');
+        card.className = 'viewer-report-card';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'viewer-report-header';
+        headerDiv.innerHTML = `
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span style="font-size:.875rem;">📅</span>
+            <span style="font-size:.875rem;font-weight:600;color:var(--text);">${date}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span class="card-badge cb-blue" id="tag_${date}">EOD</span>
+            <span id="chev_${date}" style="color:var(--text3);transition:transform .2s;font-size:.8rem;">▾</span>
+          </div>
+        `;
+
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'viewer-report-body';
+        bodyDiv.textContent = 'Loading…';
+
+        let expanded = false;
+        let loaded = false;
+
+        headerDiv.addEventListener('click', async () => {
+          expanded = !expanded;
+          bodyDiv.style.display = expanded ? 'block' : 'none';
+          const chev = document.getElementById(`chev_${date}`);
+          if (chev) chev.style.transform = expanded ? 'rotate(180deg)' : '';
+
+          if (expanded && !loaded) {
+            loaded = true;
+            try {
+              const fr = await fetch(file.url, { headers: ghHeaders(), cache: "no-store" });
+              const data = await fr.json();
+              const text = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+              bodyDiv.textContent = text;
+              const tag = document.getElementById(`tag_${date}`);
+              if (tag) {
+                const isLv = text.includes('Status: On Leave');
+                tag.textContent = isLv ? 'Leave' : 'EOD';
+                if (isLv) {
+                  tag.className = 'card-badge';
+                  tag.style.cssText = 'background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);';
+                }
+              }
+            } catch(e) {
+              bodyDiv.textContent = 'Failed to load content.';
+            }
+          }
+        });
+
+        card.appendChild(headerDiv);
+        card.appendChild(bodyDiv);
+        cardsDiv.appendChild(card);
+      }
+
+    } catch(err) {
+      panel.innerHTML = `
+        <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
+        <div class="alert alert-error"><span class="alert-icon">✕</span><span>Failed to load: ${err.message}</span></div>`;
+    }
+  }
+  window.loadMemberReports = loadMemberReports;
+  window.closeViewer = closeViewer;
+
+  /* ══════════════ DATES ══════════════ */
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  function offsetISO(days) {
+    const d = new Date(); d.setDate(d.getDate() + days);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  function formatDateLong(iso) {
+    const [y,m,d] = iso.split("-");
+    return new Date(+y, +m-1, +d).toLocaleDateString("en-GB", {weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  }
+  function formatDateShort(iso) {
+    const [y,m,d] = iso.split("-");
+    return new Date(+y, +m-1, +d).toLocaleDateString("en-GB", {weekday:"short",day:"numeric",month:"short"});
+  }
+
+  function updateSidebarDate() {
+    const now = new Date();
+    const full = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+    const s = $("sidebarDate"); if (s) s.textContent = full;
+    const t = $("topbarSub"); if (t) t.textContent = "Admin — " + formatDateShort(todayISO());
+  }
+  updateSidebarDate();
+  setInterval(updateSidebarDate, 60000);
+
+  $("dateInput").value = todayISO();
+  $("btnToday").onclick     = () => { $("dateInput").value = todayISO();      checkSubmissions(); };
+  $("btnYesterday").onclick = () => { $("dateInput").value = offsetISO(-1);   checkSubmissions(); };
+
+  /* ══════════════ GITHUB ══════════════ */
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+
+  function ghHeaders() {
+    return {
+      "Authorization": `Bearer ${getToken()}`,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+  }
+
+  async function fetchFile(member, date) {
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/eods/${encodeURIComponent(member)}/${date}.md`;
+    const r = await fetch(url, { headers: ghHeaders(), cache: "no-store" });
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    try {
+      const bytes = Uint8Array.from(atob(j.content.replace(/\n/g,"")), c => c.charCodeAt(0));
+      return new TextDecoder("utf-8").decode(bytes);
+    } catch(e) { return ""; }
+  }
+
+  function isLeave(content) {
+    return content !== null && /^#\s*Leave\b/im.test(content);
+  }
+
+  /* ══════════════ RENDER ══════════════ */
+  function avatarInitials(name) {
+    return name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase();
+  }
+
+  function setLoading(on) {
+    const btn = $("checkBtn");
+    btn.disabled = on;
+    $("checkBtnIcon").textContent  = on ? "" : "🔍";
+    $("checkBtnLabel").textContent = on ? "Checking…" : "Check Submissions";
+    if (on) {
+      $("checkBtnIcon").innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;vertical-align:middle"></span>`;
+    }
+  }
+
+  function renderStats() {
+    const sub   = allData.filter(m => m.status === "submitted").length;
+    const leave = allData.filter(m => m.status === "leave").length;
+    const miss  = allData.filter(m => m.status === "missing").length;
+    $("statTotal").textContent = MEMBERS.length;
+    $("statSub").textContent   = sub;
+    $("statLeave").textContent = leave;
+    $("statMiss").textContent  = miss;
+    const pct = Math.round(((sub + leave) / MEMBERS.length) * 100);
+    $("filterLabel").innerHTML = `Showing results for <strong>${formatDateLong(curDate)}</strong> · ${pct}% accounted for`;
+  }
+
+  function renderCards(filter) {
+    curFilter = filter;
+    document.querySelectorAll(".filter-btn").forEach(b => {
+      b.classList.toggle("active", b.dataset.filter === filter);
+    });
+
+    const data = filter === "all" ? allData : allData.filter(m => m.status === filter);
+    const grid = $("membersGrid");
+
+    if (!data.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2.5rem;color:var(--text3);font-size:.875rem">No members in this category</div>`;
+      return;
+    }
+
+    grid.innerHTML = data.map(m => {
+      const badgeClass = m.status === "submitted" ? "badge-submitted"
+                       : m.status === "leave"     ? "badge-leave"
+                       : m.status === "missing"   ? "badge-missing"
+                       : "badge-loading";
+      const badgeText  = m.status === "submitted" ? "✓ Submitted"
+                       : m.status === "leave"     ? "🏖 On Leave"
+                       : m.status === "missing"   ? "⚠ Missing"
+                       : "…";
+
+      const previewText = m.status === "submitted"
+        ? m.content.replace(/^#[^\n]+\n?/m, "").replace(/\n/g," ").trim().slice(0, 90) || "(no content)"
+        : m.status === "leave"
+        ? "Marked as on leave for this date"
+        : "No report found for this date";
+
+      const previewClass = m.status === "missing" ? "mc-preview err" : "mc-preview";
+
+      return `<div class="member-card ${m.status}" data-name="${m.name}">
+        <div class="mc-top">
+          <span class="mc-name">${m.name}</span>
+          <span class="mc-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="${previewClass}">${previewText}</div>
+      </div>`;
+    }).join("");
+
+    grid.querySelectorAll(".member-card").forEach(card => {
+      card.onclick = () => openDetail(card.dataset.name);
+    });
+  }
+
+function openDetail(name) {
+    const m = allData.find(x => x.name === name);
+    if (!m) return;
+
+    $("detailAvatar").textContent = avatarInitials(name);
+    $("detailName").textContent   = name;
+    $("detailMeta").textContent   = formatDateLong(curDate) + (
+      m.status === "submitted" ? " · Submitted" :
+      m.status === "leave"     ? " · On Leave"  : " · No submission"
+    );
+
+    const editBtn = $("detailEditBtn");
+    const saveBtn = $("detailSaveBtn");
+    editBtn.style.display = (m.status === "submitted") ? "" : "none";
+    saveBtn.style.display = "none";
+
+    if (m.status === "submitted" && m.content) {
+      $("detailContent").innerHTML = `<div class="detail-content" id="detailText">${escapeHtml(m.content)}</div>`;
+    } else if (m.status === "leave") {
+      $("detailContent").innerHTML = `
+        <div class="detail-empty">
+          <div class="detail-empty-icon">🏖</div>
+          <div class="detail-empty-title">${name} is on leave</div>
+          <div style="font-size:.8rem;color:var(--text3);margin-top:.35rem">Leave recorded for ${formatDateLong(curDate)}</div>
+        </div>`;
+    } else {
+      $("detailContent").innerHTML = `
+        <div class="detail-empty">
+          <div class="detail-empty-icon">⚠️</div>
+          <div class="detail-empty-title">No report submitted</div>
+          <div style="font-size:.8rem;color:var(--text3);margin-top:.35rem">${name} has not submitted their EOD report for ${formatDateLong(curDate)}</div>
+        </div>`;
+    }
+
+    editBtn.onclick = () => {
+      const current = m.content || "";
+      $("detailContent").innerHTML = `<textarea id="detailEditArea" style="width:100%;min-height:300px;resize:vertical;background:var(--bg);color:var(--text);border:1.5px solid var(--blue);border-radius:var(--r);padding:1rem;font-family:inherit;font-size:.8125rem;line-height:1.8;outline:none;">${escapeHtml(current)}</textarea>`;
+      editBtn.style.display = "none";
+      saveBtn.style.display = "";
+      setTimeout(() => $("detailEditArea") && $("detailEditArea").focus(), 100);
+    };
+
+    saveBtn.onclick = async () => {
+      const newContent = $("detailEditArea") ? $("detailEditArea").value : "";
+      if (!newContent.trim()) return;
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+      try {
+        const url = apiURL(name, curDate);
+        const existing = await getFile(url);
+        await putFile(url, {
+          message: `EOD update: ${name} - ${curDate} [admin]`,
+          content: toBase64(newContent),
+          branch: BRANCH,
+          ...(existing?.sha ? { sha: existing.sha } : {})
+        });
+        m.content = newContent;
+        $("detailContent").innerHTML = `<div class="detail-content" id="detailText">${escapeHtml(newContent)}</div>`;
+        editBtn.style.display = "";
+        saveBtn.style.display = "none";
+        saveBtn.disabled = false;
+        saveBtn.textContent = "💾 Save";
+        const msg = document.createElement("div");
+        msg.className = "alert alert-success";
+        msg.style.marginTop = ".75rem";
+        msg.innerHTML = `<span class="alert-icon">✓</span><span>Report updated successfully!</span>`;
+        $("detailContent").appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+      } catch(err) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "💾 Save";
+        const msg = document.createElement("div");
+        msg.className = "alert alert-error";
+        msg.style.marginTop = ".75rem";
+        msg.innerHTML = `<span class="alert-icon">✕</span><span>Save failed: ${err.message}</span>`;
+        $("detailContent").appendChild(msg);
+      }
+    };
+
+    $("detailOverlay").classList.add("visible");
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  $("detailClose").onclick    = () => $("detailOverlay").classList.remove("visible");
+  $("detailOverlay").onclick  = e => { if (e.target === $("detailOverlay")) $("detailOverlay").classList.remove("visible"); };
+  document.addEventListener("keydown", e => { if (e.key === "Escape") $("detailOverlay").classList.remove("visible"); });
+
+  document.querySelectorAll(".filter-btn").forEach(b => {
+    b.onclick = () => renderCards(b.dataset.filter);
+  });
+
+  /* ══════════════ MAIN CHECK ══════════════ */
+  async function checkSubmissions() {
+    const date = $("dateInput").value || todayISO();
+    curDate = date;
+
+    if (!getToken()) {
+      $("stateBox").style.display = "";
+      $("stateBox").innerHTML = `
+        <div class="state-icon">🔑</div>
+        <div class="state-title">GitHub Token Required</div>
+        <div class="state-sub">
+          Your GitHub token isn't saved. Go to the <a href="index.html" style="color:var(--blue);font-weight:600">EOD Report page</a>,
+          enter your token, and come back here.
+        </div>`;
+      $("statsRow").style.display   = "none";
+      $("filterBar").style.display  = "none";
+      $("membersGrid").style.display = "none";
+      return;
+    }
+
+    setLoading(true);
+    $("stateBox").style.display    = "";
+    $("stateBox").innerHTML = `
+      <div class="spinner"></div>
+      <div class="state-title">Checking ${formatDateLong(date)}…</div>
+      <div class="state-sub">Scanning all ${MEMBERS.length} members</div>
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>`;
+    $("statsRow").style.display    = "none";
+    $("filterBar").style.display   = "none";
+    $("membersGrid").style.display = "none";
+
+    let done = 0;
+    const results = await Promise.all(MEMBERS.map(async name => {
+      try {
+        const content = await fetchFile(name, date);
+        const status  = content === null ? "missing"
+                      : isLeave(content)  ? "leave"
+                      : "submitted";
+        done++;
+        const pb = $("progressBar");
+        if (pb) pb.style.width = Math.round((done / MEMBERS.length) * 100) + "%";
+        return { name, status, content };
+      } catch(err) {
+        done++;
+        return { name, status: "missing", content: null };
+      }
+    }));
+
+    allData = results;
+
+    allData.sort((a,b) => {
+      const order = { submitted:0, leave:1, missing:2 };
+      if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+      return a.name.localeCompare(b.name);
+    });
+
+    setLoading(false);
+    $("stateBox").style.display    = "none";
+    $("statsRow").style.display    = "grid";
+    $("filterBar").style.display   = "flex";
+    $("membersGrid").style.display = "grid";
+
+    renderStats();
+    renderCards(curFilter);
+  }
+
+  $("checkBtn").addEventListener("click", checkSubmissions);
+  $("dateInput").addEventListener("keydown", e => { if (e.key === "Enter") checkSubmissions(); });
+
+  if (getToken()) checkSubmissions();
+
+  /* ══════════════ MARK LEAVE ══════════════ */
+  function openLeaveModal() {
+    $("leaveDate").value = todayISO();
+    $("leaveMember").value = "";
+    $("leaveAlert").innerHTML = "";
+    $("leaveOverlay").classList.add("visible");
+    setTimeout(() => $("leaveMember").focus(), 150);
+  }
+  function closeLeaveModal() { $("leaveOverlay").classList.remove("visible"); }
+
+  $("leaveClose").addEventListener("click", closeLeaveModal);
+  $("leaveOverlay").addEventListener("click", e => { if (e.target === $("leaveOverlay")) closeLeaveModal(); });
+
+  function showLeaveAlert(type, msg) {
+    const el = $("leaveAlert");
+    el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    if (type === "success") setTimeout(() => closeLeaveModal(), 2000);
+  }
+
+  $("leaveBtn").addEventListener("click", async () => {
+    const member = $("leaveMember").value.trim(), date = $("leaveDate").value;
+    if (!member) { showLeaveAlert("error", "Please select a member."); $("leaveMember").focus(); return; }
+    if (!date)   { showLeaveAlert("error", "Please select a leave date."); return; }
+    if (!getToken()) { closeLeaveModal(); return; }
+    const btn = $("leaveBtn");
+    btn.disabled = true; btn.innerHTML = `<span class="spinner" style="border-top-color:var(--blue);border-color:var(--border2);width:16px;height:16px;margin:0;"></span> Saving…`;
+    try {
+      const url = apiURL(member, date), existing = await getFile(url);
+      const content = `# Leave\n\nMember: ${member}\nDate: ${date}\nStatus: On Leave`;
+      await putFile(url, { message: `Leave: ${member} - ${date}`, content: toBase64(content), branch: BRANCH, ...(existing?.sha ? { sha: existing.sha } : {}) });
+      showLeaveAlert("success", `✓ Leave marked for <strong>${member}</strong> on <strong>${date}</strong>`);
+    } catch (err) {
+      const msg = err.message.includes("401") ? `Token expired. Update your GitHub Token.` : `Failed: ${err.message}`;
+      showLeaveAlert("error", msg);
+    } finally { btn.disabled = false; btn.innerHTML = `🏖 Mark as Leave`; }
+  });
+
+  /* ══════════════ ADD EOD MODAL ══════════════ */
+  const toBase64 = s => btoa(unescape(encodeURIComponent(s)));
+
+  function apiURL(member, date) {
+    return `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/eods/${encodeURIComponent(member)}/${date}.md`;
+  }
+
+  async function getFile(url) {
+    const r = await fetch(url, { headers: ghHeaders(), cache: "no-store" });
+    if (r.status === 404) return null;
+    if (!r.ok) { const b = await r.json().catch(()=>{}); throw new Error(`${r.status}: ${b?.message||r.statusText}`); }
+    return r.json();
+  }
+
+  async function putFile(url, payload) {
+    const r = await fetch(url, { method: "PUT", headers: { ...ghHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const b = await r.json().catch(()=>{});
+    if (!r.ok) throw new Error(`${r.status}: ${b?.message||r.statusText}`);
+    return b;
+  }
+
+  function openEodModal() {
+    $("eodDate").value = todayISO();
+    $("eodOverlay").classList.add("visible");
+    setTimeout(() => $("eodMember").focus(), 150);
+  }
+
+  function closeEodModal() {
+    $("eodOverlay").classList.remove("visible");
+  }
+
+  function resetEodForm() {
+    $("eodMember").value = "";
+    $("eodDate").value = todayISO();
+    $("eodText").value = "";
+    $("eodCharHint").textContent = "0 characters · Ctrl+Enter to submit";
+    $("eodAlertBox").innerHTML = "";
+    $("eodSuccessView").classList.remove("visible");
+    $("eodFormView").style.display = "";
+  }
+
+  function setEodLoading(on) {
+    const btn = $("eodSubmitBtn"); btn.disabled = on;
+    if (on) {
+      $("eodBtnIcon").outerHTML = `<span style="display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite" id="eodBtnIcon"></span>`;
+      $("eodBtnLabel").textContent = "Submitting…";
+    } else {
+      const sp = $("eodSubmitBtn").querySelector("span[id='eodBtnIcon']");
+      if (sp) sp.outerHTML = `<span id="eodBtnIcon">✦</span>`;
+      $("eodBtnLabel").textContent = "Submit EOD Report";
+    }
+  }
+
+  async function handleEodSubmit() {
+    $("eodAlertBox").innerHTML = "";
+    const member = $("eodMember").value.trim();
+    const date   = $("eodDate").value;
+    const report = $("eodText").value.trim();
+
+    if (!member) { $("eodAlertBox").innerHTML = `<div class="alert alert-error"><span class="alert-icon">✕</span><span>Please select a member.</span></div>`; $("eodMember").focus(); return; }
+    if (!date)   { $("eodAlertBox").innerHTML = `<div class="alert alert-error"><span class="alert-icon">✕</span><span>Please select a date.</span></div>`; $("eodDate").focus(); return; }
+    if (!report) { $("eodAlertBox").innerHTML = `<div class="alert alert-error"><span class="alert-icon">✕</span><span>Report cannot be empty.</span></div>`; $("eodText").focus(); return; }
+    if (!getToken()) { $("eodAlertBox").innerHTML = `<div class="alert alert-error"><span class="alert-icon">✕</span><span>No GitHub token found. Save your token first.</span></div>`; return; }
+
+    setEodLoading(true);
+    try {
+      const url = apiURL(member, date);
+      const existing = await getFile(url);
+      const isUpdate = existing !== null;
+      await putFile(url, {
+        message: `EOD: ${member} - ${date} [admin]`,
+        content: toBase64(report),
+        branch: BRANCH,
+        ...(isUpdate && existing.sha ? { sha: existing.sha } : {})
+      });
+      $("eodSName").textContent   = member;
+      $("eodSDate").textContent   = date;
+      $("eodSAction").textContent = isUpdate ? "Updated" : "Created";
+      $("eodSPath").textContent   = `eods/${member}/${date}.md`;
+      $("eodFormView").style.display = "none";
+      $("eodSuccessView").classList.add("visible");
+    } catch(err) {
+      const msg = err.message.includes("401")
+        ? "Token expired — save a new token and try again."
+        : `Submission failed: ${err.message}`;
+      $("eodAlertBox").innerHTML = `<div class="alert alert-error"><span class="alert-icon">✕</span><span>${msg}</span></div>`;
+    } finally { setEodLoading(false); }
+  }
+
+  $("eodClose").addEventListener("click", closeEodModal);
+  $("eodOverlay").addEventListener("click", e => { if (e.target === $("eodOverlay")) closeEodModal(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { closeEodModal(); closeLeaveModal(); $("detailOverlay").classList.remove("visible"); }
+  });
+  $("eodSubmitBtn").addEventListener("click", handleEodSubmit);
+  $("eodResetBtn").addEventListener("click", resetEodForm);
+  $("eodText").addEventListener("input", () => {
+    const n = $("eodText").value.length;
+    $("eodCharHint").textContent = n === 0 ? "0 characters · Ctrl+Enter to submit" : `${n.toLocaleString()} character${n!==1?"s":""} · Ctrl+Enter to submit`;
+  });
+  $("eodText").addEventListener("keydown", e => { if ((e.ctrlKey||e.metaKey) && e.key === "Enter") handleEodSubmit(); });
+</script>
+</body>
+</html>
+
+<script>
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && ['u', 's'].includes(e.key.toLowerCase())) ||
+      (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+</script>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>14-Day Review — Digit Web Lanka</title>
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --bg: #f5f6fa; --white: #ffffff; --border: #e4e7ef; --border2: #d0d5e8;
+      --text: #111827; --text2: #374151; --text3: #6b7280; --text4: #9ca3af;
+      --blue: #3b5cf6; --blue-bg: #eef1fe;
+      --green: #059669; --green-bg: #ecfdf5; --green-border: #a7f3d0;
+      --red: #dc2626; --red-bg: #fef2f2; --red-border: #fecaca;
+      --amber: #d97706; --amber-bg: #fffbeb; --amber-border: #fde68a;
+      --teal: #0d9488; --teal-bg: #f0fdfa;
+      --purple: #7c3aed; --purple-bg: #f5f3ff; --purple-border: #ddd6fe;
+      --sidebar-w: 220px; --topbar-h: 60px; --r: 10px; --r-lg: 14px;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 8px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    }
+    [data-theme="dark"] {
+      --bg: #0d1117; --white: #161b22; --border: #21262d; --border2: #30363d;
+      --text: #e6edf3; --text2: #c9d1d9; --text3: #8b949e; --text4: #484f58;
+      --blue: #58a6ff; --blue-bg: #1a2332;
+      --green: #3fb950; --green-bg: #0d2818; --green-border: #1a4029;
+      --red: #f85149; --red-bg: #2a0f0f; --red-border: #4a1a1a;
+      --amber: #d29922; --amber-bg: #271c00; --amber-border: #4a3500;
+      --teal: #2dd4bf; --teal-bg: #0a2020;
+      --purple: #a78bfa; --purple-bg: #1e1433; --purple-border: #3b2d6e;
+      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 1px 8px rgba(0,0,0,.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+    }
+
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+    /* ── LAYOUT ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--border); position: fixed; top: 0; left: 0; height: 100vh; display: flex; flex-direction: column; z-index: 200; overflow-y: auto; }
+    .sb-logo { display: flex; align-items: center; gap: .625rem; padding: 1.125rem 1rem; border-bottom: 1px solid var(--border); }
+    .sb-logo img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; }
+    .sb-logo-name { font-size: .75rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .sb-logo-sub  { font-size: .6rem; color: var(--text4); margin-top: .1rem; }
+    .sb-nav { padding: .75rem .625rem; flex: 1; }
+    .sb-section { font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text4); padding: .625rem .5rem .25rem; }
+    .sb-link { display: flex; align-items: center; gap: .5rem; padding: .4375rem .625rem; border-radius: 7px; font-size: .775rem; font-weight: 500; color: var(--text3); text-decoration: none; transition: background .12s, color .12s; }
+    .sb-link:hover  { background: var(--bg); color: var(--text2); }
+    .sb-link.active { background: var(--blue-bg); color: var(--blue); font-weight: 600; }
+    .sb-link .ico   { font-size: .875rem; width: 1rem; text-align: center; flex-shrink: 0; }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+    /* ── TOPBAR ── */
+    .topbar { height: var(--topbar-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 1.75rem; position: sticky; top: 0; z-index: 100; }
+    .tb-left  { display: flex; align-items: center; gap: .75rem; }
+    .tb-right { display: flex; align-items: center; gap: .5rem; }
+    .tb-page  { font-size: .9375rem; font-weight: 700; color: var(--text); }
+    .tb-sub   { font-size: .7rem; color: var(--text4); margin-top: .1rem; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8125rem; color: var(--text3); transition: background .12s; }
+    .btn-icon:hover { background: var(--border); }
+    .chip { display: inline-flex; align-items: center; gap: .3rem; padding: .3125rem .75rem; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); font-size: .725rem; font-weight: 600; color: var(--text3); text-decoration: none; transition: background .12s; }
+    .chip:hover { background: var(--border); color: var(--text2); }
+    .live-pill { display: flex; align-items: center; gap: .35rem; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 100px; padding: .25rem .7rem; font-size: .68rem; font-weight: 700; color: var(--green); }
+    .live-dot  { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.8s infinite; }
+
+    /* ── PAGE ── */
+    .body { padding: 1.5rem 1.75rem 5rem; max-width: 900px; }
+
+    /* ── PAGE HEADER ── */
+    .page-hd { margin-bottom: 1.5rem; }
+    .page-title { font-size: 1.375rem; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+    .page-sub   { font-size: .8125rem; color: var(--text3); margin-top: .3rem; line-height: 1.5; }
+    .page-chips { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .625rem; }
+    .page-chip  { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .7rem; border-radius: 100px; background: var(--white); border: 1px solid var(--border); font-size: .7rem; font-weight: 600; color: var(--text3); }
+    .page-chip.c-blue { background: var(--blue-bg); color: var(--blue); border-color: rgba(59,92,246,.2); }
+
+    /* ── SETUP BANNER ── */
+    .cfg-banner { background: var(--amber-bg); border: 1.5px solid var(--amber-border); border-radius: var(--r-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; display: none; }
+    .cfg-banner.open { display: block; }
+    .cfg-title { font-size: .9rem; font-weight: 700; color: var(--amber); margin-bottom: .5rem; }
+    .cfg-steps { font-size: .8rem; color: var(--text2); line-height: 2.1; }
+    .cfg-steps code { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: .15rem .5rem; font-family: monospace; font-size: .78rem; }
+
+    /* ── CARD ── */
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 1.25rem; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.375rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: .75rem; }
+    .card-head-l { display: flex; align-items: center; gap: .75rem; }
+    .card-ico { width: 36px; height: 36px; border-radius: 8px; background: var(--purple-bg); border: 1px solid var(--purple-border); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .card-title { font-size: .9375rem; font-weight: 700; color: var(--text); }
+    .card-sub   { font-size: .75rem; color: var(--text4); margin-top: .125rem; }
+    .card-body  { padding: 1.375rem; }
+
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; padding: .2rem .625rem; border-radius: 100px; font-size: .67rem; font-weight: 700; letter-spacing: .03em; }
+    .b-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+    .b-blue   { background: var(--blue-bg);   color: var(--blue);   border: 1px solid rgba(59,92,246,.2); }
+    .b-green  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+    .b-teal   { background: var(--teal-bg);   color: var(--teal);   border: 1px solid rgba(13,148,136,.2); }
+    .b-slate  { background: var(--bg);        color: var(--text3);  border: 1px solid var(--border); }
+
+    /* ── FORM ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.125rem; }
+    .fg { display: flex; flex-direction: column; gap: .375rem; }
+    .fg label { font-size: .75rem; font-weight: 600; color: var(--text3); }
+    .req { color: var(--red); margin-left: 2px; }
+    select, input[type="date"] {
+      width: 100%; height: 44px; background: var(--white); border: 1.5px solid var(--border);
+      border-radius: 7px; padding: 0 .875rem;
+      font-family: 'Inter', sans-serif; font-size: .8125rem; color: var(--text);
+      outline: none; appearance: none; cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right .875rem center; padding-right: 2.5rem;
+    }
+    select:focus, input[type="date"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+    select option { background: var(--white); color: var(--text); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+      font-weight: 600; border-radius: 7px; transition: all .15s ease; white-space: nowrap;
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-primary { background: var(--blue); color: #fff; font-size: .875rem; }
+    .btn-primary:hover:not(:disabled) { background: #2f4de0; }
+    .btn-success { background: var(--green); color: #fff; font-size: .875rem; }
+    .btn-success:hover:not(:disabled) { background: #047857; }
+    .btn-ghost  { background: var(--bg); border: 1.5px solid var(--border); color: var(--text3); font-size: .8125rem; }
+    .btn-ghost:hover:not(:disabled)  { background: var(--white); border-color: var(--border2); color: var(--text2); }
+    .btn-outline { background: transparent; border: 1.5px solid rgba(59,92,246,.25); color: var(--blue); font-size: .875rem; }
+    .btn-outline:hover:not(:disabled) { background: var(--blue-bg); border-color: var(--blue); }
+    .btn-full { width: 100%; }
+    .h44 { height: 40px; padding: 0 1.125rem; }
+    .h50 { height: 46px; padding: 0 1.375rem; }
+
+    /* ── ALERTS ── */
+    .alert { display: flex; align-items: flex-start; gap: .625rem; padding: .75rem 1rem; border-radius: 7px; font-size: .8rem; line-height: 1.55; margin-top: .875rem; }
+    .a-ico { flex-shrink: 0; font-size: .875rem; }
+    .a-err  { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
+    .a-warn { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+    .a-ok   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+
+    /* ── TASKS BAR ── */
+    .tasks-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.125rem; flex-wrap: wrap; gap: .75rem; }
+    .tasks-bar-l { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+    .t-count { font-size: .9375rem; font-weight: 700; color: var(--text); }
+    .t-count span { color: var(--blue); }
+
+    /* ── TASK REVIEW CARD ── */
+    .trc { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); margin-bottom: .875rem; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+    .trc:hover { box-shadow: var(--shadow-md); }
+    .trc.done  { border-color: var(--green-border); background: var(--green-bg); }
+    .trc.error { border-color: var(--red-border); }
+    .trc-top { display: flex; align-items: center; justify-content: space-between; padding: .875rem 1.125rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: .5rem; }
+    .trc-l { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .trc-r { display: flex; align-items: center; gap: .5rem; }
+    .trc-id { font-size: 1rem; font-weight: 800; color: var(--blue); }
+    .t-stat { font-size: .7rem; font-weight: 700; display: flex; align-items: center; gap: .3rem; }
+    .st-pending { color: var(--text4); }
+    .st-saved   { color: var(--green); }
+    .st-err     { color: var(--red); }
+    .trc-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .5rem 1.25rem; padding: .75rem 1.125rem; border-bottom: 1px solid var(--border); }
+    .ti-l { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text4); margin-bottom: .2rem; }
+    .ti-v { font-size: .78rem; font-weight: 600; color: var(--text2); }
+    .trc-desc { padding: .625rem 1.125rem; border-bottom: 1px solid var(--border); font-size: .78rem; color: var(--text3); line-height: 1.65; }
+    .trc-desc strong { color: var(--text4); font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; display: block; margin-bottom: .3rem; }
+    .trc-rev { padding: .875rem 1.125rem 1.125rem; }
+    .trc-rl { font-size: .75rem; font-weight: 600; color: var(--text3); margin-bottom: .5rem; display: flex; align-items: center; justify-content: space-between; }
+    .ta-hint { font-size: .68rem; color: var(--text4); }
+    textarea.ta {
+      width: 100%; min-height: 100px; padding: .75rem .875rem;
+      background: var(--bg); border: 1.5px solid var(--border); border-radius: 7px;
+      font-family: 'Inter', sans-serif; font-size: .8125rem; color: var(--text); line-height: 1.7;
+      outline: none; resize: vertical; transition: border-color .15s, box-shadow .15s;
+    }
+    textarea.ta:focus    { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); background: var(--white); }
+    textarea.ta:disabled { opacity: .5; cursor: not-allowed; resize: none; }
+
+    /* ── STICKY SUBMIT BAR ── */
+    .sub-bar {
+      position: sticky; bottom: 0; z-index: 50;
+      background: rgba(255,255,255,.95); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border); padding: .875rem 1.375rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      margin: 1.25rem -1.375rem -1.375rem;
+    }
+    [data-theme="dark"] .sub-bar { background: rgba(22,27,34,.95); }
+    .si-title { font-size: .9rem; font-weight: 700; color: var(--text); }
+    .si-sub   { font-size: .72rem; color: var(--text4); margin-top: .1rem; }
+    .sub-acts { display: flex; align-items: center; gap: .625rem; }
+
+    /* ── SUCCESS SCREEN ── */
+    .success { display: none; flex-direction: column; align-items: center; padding: 2.5rem 1.5rem 2rem; text-align: center; animation: slideup .25s ease; }
+    .success.open { display: flex; }
+    .ss-ico   { width: 56px; height: 56px; border-radius: 50%; background: var(--green-bg); border: 2px solid var(--green-border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--green); margin-bottom: 1rem; }
+    .ss-title { font-size: 1.375rem; font-weight: 800; color: var(--text); margin-bottom: .375rem; }
+    .ss-sub   { font-size: .8125rem; color: var(--text3); margin-bottom: 1.75rem; max-width: 340px; line-height: 1.6; }
+    .ss-grid  { display: grid; grid-template-columns: repeat(2, 1fr); gap: .625rem; width: 100%; max-width: 380px; margin-bottom: 1.25rem; }
+    .ss-item  { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: .75rem 1rem; text-align: left; }
+    .ss-lbl   { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text4); margin-bottom: .25rem; }
+    .ss-val   { font-size: .875rem; font-weight: 700; color: var(--text); }
+
+    /* ── SPINNER ── */
+    .spin { display: inline-block; width: 15px; height: 15px; border: 2.5px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: rotate .6s linear infinite; }
+
+    @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @keyframes rotate  { to{transform:rotate(360deg)} }
+    @keyframes slideup { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 720px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .body { padding: 1rem 1rem 5rem; }
+      .form-grid { grid-template-columns: 1fr; }
+      .sub-bar { padding: .75rem 1rem; margin: 1rem -1rem -1rem; flex-direction: column; align-items: stretch; }
+      .sub-acts { flex-direction: column; }
+      .sub-acts .btn { width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .trc-top { flex-direction: column; align-items: flex-start; }
+      .ss-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <img src="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" alt="" />
+      <div><div class="sb-logo-name">Digit Web Lanka</div><div class="sb-logo-sub">Digital Marketing</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Reports</div>
+      <a href="index.html"         class="sb-link"><span class="ico">📝</span> EOD Report</a>
+      <a href="review.html"        class="sb-link active"><span class="ico">🔎</span> 14-Day Review</a>
+      <div class="sb-section">Actions</div>
+      <a href="index.html#view-eods" class="sb-link"><span class="ico">🔍</span> View EODs</a>
+      <a href="index.html#leaveSection" class="sb-link"><span class="ico">📂</span> Mark Leave</a>
+      <a href="summary.html" class="sb-link"><span class="ico">📊</span> Summary View</a>
+      <div class="sb-section">Dashboards</div>
+      <a href="https://kuberandigit-coder.github.io/blog-builder/" target="_blank" rel="noopener" class="sb-link"><span class="ico">✍️</span> Blog Builder</a>
+      <a href="https://home-page-tracker.vercel.app/" target="_blank" rel="noopener" class="sb-link"><span class="ico">🏠</span> Home Page Tracker</a>
+      <a href="https://sales-dashboard-tawny-one.vercel.app/" target="_blank" rel="noopener" class="sb-link"><span class="ico">📈</span> Live Sales</a>
+      <a href="https://image-converter-phi-ruby.vercel.app/" target="_blank" rel="noopener" class="sb-link"><span class="ico">🖼️</span> Image Converter</a>
+    </nav>
+    <div style="padding:.875rem .75rem;border-top:1px solid var(--border);">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:.75rem 1rem;">
+        <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text4);margin-bottom:.25rem;">Today</div>
+        <div style="font-size:.775rem;font-weight:600;color:var(--text2);line-height:1.4;" id="sidebarDate">Loading…</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="tb-left">
+        <div>
+          <div class="tb-page">14-Day Task Review</div>
+          <div class="tb-sub" id="tbSub">Review &amp; Output Submission</div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <div class="live-pill"><span class="live-dot"></span>Live</div>
+        <button class="btn-icon" id="themeBtn" title="Toggle theme">🌙</button>
+        <a href="summary.html" class="chip">📊 Summary</a>
+      </div>
+    </header>
+
+    <!-- PAGE -->
+    <div class="body">
+
+      <!-- PAGE HEADER -->
+      <div class="page-hd">
+        <div class="page-title">Submit 14-Day Reviews</div>
+        <div class="page-sub">Pick a member and date — all their tasks load automatically — fill outputs and submit all at once.</div>
+        <div class="page-chips">
+          <div class="page-chip">🗂 All Departments</div>
+          <div class="page-chip c-blue" id="todayChip">📅 Today</div>
+        </div>
+      </div>
+
+      <!-- SETUP BANNER -->
+      <div class="cfg-banner" id="cfgBanner">
+        <div class="cfg-title">⚙️ Apps Script URL not set — setup required</div>
+        <div class="cfg-steps">
+          1. Open <code>EOD/AppsScript.js</code> in this project<br>
+          2. In Google Sheet → <strong>Extensions → Apps Script</strong> → paste the code → Save<br>
+          3. <strong>Deploy → New Deployment → Web App</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong><br>
+          4. Copy the Web App URL<br>
+          5. In <code>review.html</code> line 1, set <code>SCRIPT_URL</code> to that URL → reload
+        </div>
+      </div>
+
+      <!-- SEARCH CARD -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-l">
+            <div class="card-ico">🔎</div>
+            <div>
+              <div class="card-title" id="cardTitle">Find Tasks</div>
+              <div class="card-sub"   id="cardSub">Select a member and date to load their tasks</div>
+            </div>
+          </div>
+          <span class="badge b-purple">14-Day</span>
+        </div>
+
+        <div class="card-body">
+
+          <!-- SELECT VIEW -->
+          <div id="selectView">
+            <div class="form-grid">
+              <div class="fg">
+                <label for="memberSel">Team Member <span class="req">*</span></label>
+                <select id="memberSel">
+                  <option value="" disabled selected>Select member…</option>
+                  <option>Kuberan</option><option>Piranav</option><option>Mahima</option>
+                  <option>Sonya</option><option>Kamsi</option><option>Hetheesha</option>
+                  <option>Dilaksi</option><option>Sukirtha</option><option>Theekshy</option>
+                  <option>Thivagini</option><option>Ripson</option><option>Jefri</option>
+                  <option>Sajeepan</option><option>Jakshan</option><option>Thasitha</option>
+                  <option>Thanishtika</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label for="dateSel">Task Date <span class="req">*</span></label>
+                <input type="date" id="dateSel" />
+              </div>
+            </div>
+            <button class="btn btn-primary btn-full h50" id="loadBtn">
+              <span id="loadIco">🔍</span><span id="loadLbl">Load Tasks</span>
+            </button>
+            <div id="loadAlert"></div>
+          </div>
+
+          <!-- TASKS VIEW -->
+          <div id="tasksView" style="display:none;">
+            <div class="tasks-bar">
+              <div class="tasks-bar-l">
+                <div class="t-count" id="tCount">— tasks</div>
+                <span class="badge b-green" id="mBadge"></span>
+              </div>
+              <button class="btn btn-ghost h44" id="backBtn">← Change</button>
+            </div>
+
+            <div id="tasksList"></div>
+
+            <div class="sub-bar">
+              <div>
+                <div class="si-title" id="subTitle">Ready to submit</div>
+                <div class="si-sub"   id="subSub">Fill all review outputs above then submit</div>
+              </div>
+              <div class="sub-acts">
+                <button class="btn btn-ghost h44" id="backBtn2">← Change</button>
+                <button class="btn btn-success h50" id="submitBtn">
+                  <span id="subIco">✦</span><span id="subLbl">Submit All Reviews</span>
+                </button>
+              </div>
+            </div>
+            <div id="subAlert"></div>
+          </div>
+
+          <!-- SUCCESS VIEW -->
+          <div class="success" id="successView">
+            <div class="ss-ico">✓</div>
+            <div class="ss-title">Reviews Submitted!</div>
+            <div class="ss-sub">All 14-day review outputs have been saved to Google Sheets successfully.</div>
+            <div class="ss-grid">
+              <div class="ss-item"><div class="ss-lbl">Member</div><div class="ss-val" id="sMember">—</div></div>
+              <div class="ss-item"><div class="ss-lbl">Task Date</div><div class="ss-val" id="sDate">—</div></div>
+              <div class="ss-item"><div class="ss-lbl">Reviewed</div><div class="ss-val" id="sCount">—</div></div>
+              <div class="ss-item"><div class="ss-lbl">Status</div><div class="ss-val" style="color:var(--green)">Saved ✓</div></div>
+            </div>
+            <button class="btn btn-outline btn-full h44" id="anotherBtn" style="max-width:300px;margin-top:.5rem;">Review Another Member</button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ════════════════════════════════════════════════════
+     CONFIG  ← paste your Apps Script Web App URL here
+  ════════════════════════════════════════════════════ */
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJHUSm1CkYN-WPB3Nb_u_c1bgRZRNI-FF4e4vTPBzQMnRPBJ-C0Fu25jVgTWWwkxqy2w/exec";
+  const SECRET     = "dwl-review-2026";
+
+  /* ════════════════════════════════════════════════════
+     UTILS
+  ════════════════════════════════════════════════════ */
+  const $ = id => document.getElementById(id);
+  const isoToSheet = iso => { const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+
+  /* ════════════════════════════════════════════════════
+     NOT CONFIGURED CHECK
+  ════════════════════════════════════════════════════ */
+  if (!SCRIPT_URL || SCRIPT_URL === "PASTE_YOUR_SCRIPT_URL_HERE") {
+    $("cfgBanner").classList.add("open");
+    $("loadBtn").disabled = true;
+  }
+
+  /* ════════════════════════════════════════════════════
+     THEME
+  ════════════════════════════════════════════════════ */
+  const TK = "eod_theme";
+  function applyTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    localStorage.setItem(TK, t);
+    $("themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
+  }
+  applyTheme(localStorage.getItem(TK) || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light"));
+  $("themeBtn").addEventListener("click", () =>
+    applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark")
+  );
+
+  /* ════════════════════════════════════════════════════
+     DATE DISPLAY
+  ════════════════════════════════════════════════════ */
+  (function(){
+    const n = new Date();
+    $("todayChip").textContent = "📅 " + n.toLocaleDateString("en-GB", { day:"numeric", month:"short" });
+    $("tbSub").textContent = n.toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+    const sd = document.getElementById("sidebarDate");
+    if (sd) sd.textContent = n.toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+  })();
+
+  /* ════════════════════════════════════════════════════
+     APPS SCRIPT CALLER
+     No Content-Type header → avoids CORS preflight.
+     Apps Script still receives body in e.postData.contents.
+  ════════════════════════════════════════════════════ */
+  async function callScript(payload) {
+    const r = await fetch(SCRIPT_URL, {
+      method: "POST",
+      redirect: "follow",
+      body: JSON.stringify({ secret: SECRET, ...payload })
+    });
+    if (!r.ok) throw new Error(`Network error ${r.status}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+  }
+
+  /* ════════════════════════════════════════════════════
+     ALERTS
+  ════════════════════════════════════════════════════ */
+  const mkA = (cls,ico,msg) => `<div class="alert ${cls}"><span class="a-ico">${ico}</span><span>${msg}</span></div>`;
+  const showLoad = (t,m) => $("loadAlert").innerHTML = mkA(t==="err"?"a-err":t==="ok"?"a-ok":"a-warn", t==="err"?"✕":t==="ok"?"✓":"⚠", m);
+  const showSub  = (t,m) => $("subAlert").innerHTML  = mkA(t==="err"?"a-err":t==="ok"?"a-ok":"a-warn", t==="err"?"✕":t==="ok"?"✓":"⚠", m);
+  const clrLoad  = () => $("loadAlert").innerHTML = "";
+  const clrSub   = () => $("subAlert").innerHTML  = "";
+
+  /* ════════════════════════════════════════════════════
+     STATE
+  ════════════════════════════════════════════════════ */
+  let tasks = [], curMember = "", curDate = "";
+
+  /* ════════════════════════════════════════════════════
+     LOAD TASKS
+  ════════════════════════════════════════════════════ */
+  async function loadTasks() {
+    clrLoad();
+    const member  = $("memberSel").value.trim();
+    const dateIso = $("dateSel").value;
+    if (!member)  { showLoad("warn","Please select a team member."); return; }
+    if (!dateIso) { showLoad("warn","Please select a task date."); return; }
+
+    curMember = member; curDate = isoToSheet(dateIso);
+
+    const btn = $("loadBtn"); btn.disabled = true;
+    $("loadIco").outerHTML = `<span class="spin" id="loadIco"></span>`;
+    $("loadLbl").textContent = "Searching all sheets…";
+
+    try {
+      const res = await callScript({ action:"search", member, date: curDate });
+      tasks = res.tasks || [];
+
+      if (!tasks.length) {
+        showLoad("warn", `No tasks found for <strong>${member}</strong> on <strong>${curDate}</strong>. Try a different date.`);
+        return;
+      }
+
+      renderTasks();
+      $("selectView").style.display = "none";
+      $("tasksView").style.display  = "block";
+      $("cardTitle").textContent = `${member}'s Tasks`;
+      $("cardSub").textContent   = `${tasks.length} task${tasks.length!==1?"s":""} found on ${curDate}`;
+
+    } catch(err) {
+      showLoad("err", err.message);
+    } finally {
+      btn.disabled = false;
+      const ic = document.getElementById("loadIco");
+      if (ic && ic.classList.contains("spin")) ic.outerHTML = `<span id="loadIco">🔍</span>`;
+      $("loadLbl").textContent = "Load Tasks";
+    }
+  }
+
+  /* ════════════════════════════════════════════════════
+     RENDER TASK CARDS
+  ════════════════════════════════════════════════════ */
+  function renderTasks() {
+    $("tCount").innerHTML   = `<span>${tasks.length}</span> task${tasks.length!==1?"s":""} found`;
+    $("mBadge").textContent = `${curMember} · ${curDate}`;
+    $("subTitle").textContent = `Submit ${tasks.length} review${tasks.length!==1?"s":""}`;
+    $("subSub").textContent   = `${curMember} · ${curDate}`;
+
+    const list = $("tasksList"); list.innerHTML = "";
+    tasks.forEach((t, i) => {
+      const r = t.row;
+      const tid      = r[0]||"—", dept = r[4]||"—", intent = r[5]||"—";
+      const tier     = r[6]||"—";
+      const tierDesc = (r[7]||"").split("|")[1]?.trim() || r[7] || "—";
+      const desc     = r[8]||"—", workedOn = r[17]||"—";
+      const existing = r[19]||"";
+
+      const el = document.createElement("div");
+      el.className = "trc"; el.id = `trc${i}`;
+      el.innerHTML = `
+        <div class="trc-top">
+          <div class="trc-l">
+            <span class="trc-id">${tid}</span>
+            <span class="badge b-blue">${dept}</span>
+            <span class="badge b-teal">${tier}</span>
+            <span class="badge b-slate">${tierDesc}</span>
+          </div>
+          <div class="trc-r"><span class="t-stat st-pending" id="stat${i}">● Pending</span></div>
+        </div>
+        <div class="trc-info">
+          <div><div class="ti-l">Weekly Intent</div><div class="ti-v">${intent}</div></div>
+          <div><div class="ti-l">Worked On</div><div class="ti-v">${workedOn}</div></div>
+        </div>
+        <div class="trc-desc"><strong>Task Description</strong>${desc}</div>
+        <div class="trc-rev">
+          <div class="trc-rl">
+            <span>14-Day Review Output <span class="req">*</span></span>
+            <span class="ta-hint" id="hint${i}">${existing.length} chars</span>
+          </div>
+          <textarea class="ta" id="ta${i}" placeholder="Write the 14-day review output…&#10;&#10;• What was the outcome of this task?&#10;• Was the metric target met?&#10;• Follow-up actions?&#10;• Lessons learned?">${existing}</textarea>
+        </div>`;
+      list.appendChild(el);
+      $(`ta${i}`).addEventListener("input", () => $(`hint${i}`).textContent = $(`ta${i}`).value.length + " chars");
+    });
+  }
+
+  /* ════════════════════════════════════════════════════
+     SUBMIT ALL
+  ════════════════════════════════════════════════════ */
+  async function submitAll() {
+    clrSub();
+    const reviews = tasks.map((t,i) => ({ t, i, text: ($(`ta${i}`)?.value||"").trim() }));
+    const missing = reviews.filter(r => !r.text);
+    if (missing.length) {
+      showSub("warn", `Please fill in ${missing.length} empty review${missing.length!==1?"s":""}.`);
+      $(`ta${missing[0].i}`)?.focus();
+      return;
+    }
+
+    const btn = $("submitBtn"); btn.disabled = true;
+    $("subIco").outerHTML = `<span class="spin" id="subIco"></span>`;
+    $("subLbl").textContent = `Submitting ${reviews.length}…`;
+
+    reviews.forEach(({i}) => { $(`stat${i}`).textContent = "↑ Saving…"; $(`stat${i}`).className = "t-stat st-pending"; });
+
+    try {
+      const payload = reviews.map(({t,text}) => ({ sheet:t.sheet, row:t.rowIndex, text }));
+      const res = await callScript({ action:"submit", reviews: payload });
+      const results = res.results || [];
+
+      results.forEach((r, i) => {
+        const stat = $(`stat${i}`), card = $(`trc${i}`), ta = $(`ta${i}`);
+        if (r.ok) {
+          stat.textContent = "✓ Saved"; stat.className = "t-stat st-saved";
+          card.classList.add("done"); if(ta) ta.disabled = true;
+        } else {
+          stat.textContent = "✗ Error"; stat.className = "t-stat st-err";
+          card.classList.add("error");
+        }
+      });
+
+      const failed = results.filter(r=>!r.ok).length;
+      const saved  = results.filter(r=> r.ok).length;
+
+      if (failed) {
+        showSub("err", `${failed} failed. ${saved} saved. Re-deploy the script and try again.`);
+      } else {
+        $("sMember").textContent = curMember;
+        $("sDate").textContent   = curDate;
+        $("sCount").textContent  = `${saved} / ${reviews.length}`;
+        $("tasksView").style.display = "none";
+        $("successView").classList.add("open");
+        $("cardTitle").textContent = "All Done";
+        $("cardSub").textContent   = `${saved} review${saved!==1?"s":""} saved successfully`;
+      }
+
+    } catch(err) {
+      showSub("err", err.message);
+      reviews.forEach(({i}) => {
+        const s=$(`stat${i}`); if(s&&s.textContent.includes("Saving")) { s.textContent="● Pending"; s.className="t-stat st-pending"; }
+      });
+    } finally {
+      btn.disabled = false;
+      const ic = document.getElementById("subIco");
+      if (ic && ic.classList.contains("spin")) ic.outerHTML = `<span id="subIco">✦</span>`;
+      $("subLbl").textContent = "Submit All Reviews";
+    }
+  }
+
+  /* ════════════════════════════════════════════════════
+     RESET
+  ════════════════════════════════════════════════════ */
+  function reset() {
+    tasks=[]; curMember=""; curDate="";
+    $("memberSel").value=""; $("dateSel").value="";
+    clrLoad(); clrSub(); $("tasksList").innerHTML="";
+    $("tasksView").style.display="none"; $("successView").classList.remove("open");
+    $("selectView").style.display="block";
+    $("cardTitle").textContent="Find Tasks";
+    $("cardSub").textContent="Select a member and date to load their tasks";
+  }
+
+  /* ════════════════════════════════════════════════════
+     EVENTS
+  ════════════════════════════════════════════════════ */
+  $("loadBtn").addEventListener("click", loadTasks);
+  $("backBtn").addEventListener("click",  () => { $("tasksView").style.display="none"; $("selectView").style.display="block"; clrSub(); });
+  $("backBtn2").addEventListener("click", () => { $("tasksView").style.display="none"; $("selectView").style.display="block"; clrSub(); });
+  $("submitBtn").addEventListener("click", submitAll);
+  $("anotherBtn").addEventListener("click", reset);
+  $("memberSel").addEventListener("change", clrLoad);
+  $("dateSel").addEventListener("change", clrLoad);
+</script>
+</body>
+</html>

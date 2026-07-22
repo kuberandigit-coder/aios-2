@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EOD Report — Digit Web Lanka</title>
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f5f6fa; --white: #ffffff; --border: #e4e7ef; --border2: #d0d5e8;
+      --text: #111827; --text2: #374151; --text3: #6b7280; --text4: #9ca3af;
+      --blue: #3b5cf6; --blue-bg: #eef1fe; --blue-hover: #2f4de0;
+      --blue-dim: rgba(59,92,246,.08); --blue-dim2: rgba(59,92,246,.16);
+      --green: #059669; --green-bg: #ecfdf5; --green-border: #a7f3d0;
+      --red: #dc2626; --red-bg: #fef2f2; --red-border: #fecaca;
+      --amber: #d97706; --amber-bg: #fffbeb; --amber-border: #fde68a;
+      --teal: #0d9488; --teal-bg: #f0fdfa;
+      --sidebar-w: 220px; --topbar-h: 60px; --r: 10px; --r-lg: 14px;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 8px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+      --overlay: rgba(0,0,0,.5);
+    }
+    [data-theme="dark"] {
+      --bg: #0d1117; --white: #161b22; --border: #21262d; --border2: #30363d;
+      --text: #e6edf3; --text2: #c9d1d9; --text3: #8b949e; --text4: #484f58;
+      --blue: #58a6ff; --blue-bg: #1a2332; --blue-hover: #79b8ff;
+      --blue-dim: rgba(88,166,255,.1); --blue-dim2: rgba(88,166,255,.2);
+      --green: #3fb950; --green-bg: #0d2818; --green-border: #1a4029;
+      --red: #f85149; --red-bg: #2a0f0f; --red-border: #4a1a1a;
+      --amber: #d29922; --amber-bg: #271c00; --amber-border: #4a3500;
+      --teal: #2dd4bf; --teal-bg: #0a2020;
+      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 1px 8px rgba(0,0,0,.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+      --overlay: rgba(0,0,0,.72);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+    /* ── LAYOUT ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--border); position: fixed; top: 0; left: 0; height: 100vh; display: flex; flex-direction: column; z-index: 200; overflow-y: auto; }
+    .sb-logo { display: flex; align-items: center; gap: .625rem; padding: 1.125rem 1rem; border-bottom: 1px solid var(--border); }
+    .sb-logo img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; }
+    .sb-logo-name { font-size: .75rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .sb-logo-sub  { font-size: .6rem; color: var(--text4); margin-top: .1rem; }
+    .sb-nav { padding: .75rem .625rem; flex: 1; }
+    .sb-section { font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text4); padding: .625rem .5rem .25rem; }
+    .sb-link { display: flex; align-items: center; gap: .5rem; padding: .4375rem .625rem; border-radius: 7px; font-size: .775rem; font-weight: 500; color: var(--text3); text-decoration: none; transition: background .12s, color .12s; border: none; background: none; cursor: pointer; width: 100%; }
+    .sb-link:hover  { background: var(--bg); color: var(--text2); }
+    .sb-link.active { background: var(--blue-bg); color: var(--blue); font-weight: 600; }
+    .sb-link .ico   { font-size: .875rem; width: 1rem; text-align: center; flex-shrink: 0; }
+    .sb-bottom { padding: .75rem .625rem; border-top: 1px solid var(--border); }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+    /* ── TOPBAR ── */
+    .topbar { height: var(--topbar-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 1.75rem; position: sticky; top: 0; z-index: 100; }
+    .tb-left {}
+    .tb-title { font-size: .9375rem; font-weight: 700; color: var(--text); }
+    .tb-sub   { font-size: .7rem; color: var(--text4); margin-top: .1rem; }
+    .tb-right { display: flex; align-items: center; gap: .5rem; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8125rem; color: var(--text3); transition: background .12s; }
+    .btn-icon:hover { background: var(--border); }
+    .live-badge { display: flex; align-items: center; gap: .375rem; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: .25rem .75rem; font-size: .7rem; font-weight: 600; color: var(--text3); }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; flex-shrink: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .chip-link { display: inline-flex; align-items: center; gap: .3rem; padding: .3125rem .75rem; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); font-size: .725rem; font-weight: 600; color: var(--text3); text-decoration: none; transition: background .12s; }
+    .chip-link:hover { background: var(--border); color: var(--text2); }
+
+    /* ── BODY ── */
+    .body { padding: 1.5rem 1.75rem 3rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+    /* ── PAGE HEADER ── */
+    .page-hdr { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
+    .page-hdr-title { font-size: 1.125rem; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+    .page-hdr-sub   { font-size: .775rem; color: var(--text3); margin-top: .2rem; }
+    .page-chips { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .page-chip { display: flex; align-items: center; gap: .3rem; background: var(--white); border: 1px solid var(--border); border-radius: 7px; padding: .3rem .75rem; font-size: .75rem; font-weight: 600; color: var(--text3); box-shadow: var(--shadow); }
+
+    /* ── STATS ── */
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: .875rem; }
+    .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1rem 1.125rem; box-shadow: var(--shadow); display: flex; align-items: flex-start; gap: .875rem; position: relative; overflow: hidden; }
+    .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+    .stat-card.s-blue::before { background: var(--blue); }
+    .stat-card.s-teal::before { background: var(--teal); }
+    .stat-card.s-slate::before { background: #64748b; }
+    .stat-card.s-indigo::before { background: #6366f1; }
+    .stat-ico { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-ico.s-blue   { background: var(--blue-bg); border: 1px solid var(--blue-dim2); }
+    .stat-ico.s-teal   { background: var(--teal-bg); border: 1px solid rgba(13,148,136,.15); }
+    .stat-ico.s-slate  { background: rgba(100,116,139,.07); border: 1px solid rgba(100,116,139,.15); }
+    .stat-ico.s-indigo { background: rgba(99,102,241,.07); border: 1px solid rgba(99,102,241,.15); }
+    .stat-val { font-size: 1.375rem; font-weight: 800; line-height: 1; margin-bottom: .2rem; color: var(--text); }
+    .stat-lbl { font-size: .7rem; color: var(--text3); }
+
+    /* ── GRID ── */
+    .report-grid { display: grid; grid-template-columns: 1fr 300px; gap: 1.25rem; align-items: start; }
+
+    /* ── CARD ── */
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden; }
+    .card-head { padding: 1.25rem 1.375rem .875rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+    .card-head-title { font-size: .9375rem; font-weight: 700; color: var(--text); }
+    .card-head-sub   { font-size: .72rem; color: var(--text4); margin-top: .15rem; }
+    .card-body { padding: 0 1.375rem 1.375rem; }
+    .card-badge { display: inline-flex; align-items: center; font-size: .675rem; font-weight: 700; letter-spacing: .04em; padding: .2rem .625rem; border-radius: 100px; text-transform: uppercase; }
+    .cb-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-dim2); }
+    .cb-teal { background: var(--teal-bg); color: var(--teal); border: 1px solid rgba(13,148,136,.2); }
+
+    /* ── FORM ── */
+    .sep { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+    .sep-text { font-size: .65rem; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: .09em; white-space: nowrap; }
+    .sep-line { flex: 1; height: 1px; background: var(--border); }
+    .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: .35rem; }
+    .form-label { font-size: .75rem; font-weight: 600; color: var(--text3); display: flex; align-items: center; gap: .25rem; }
+    .req { color: var(--blue); }
+
+    select, textarea, input[type="date"] {
+      width: 100%; background: var(--white); color: var(--text);
+      border: 1.5px solid var(--border); border-radius: 7px;
+      font-family: 'Inter', sans-serif; font-size: .8125rem; font-weight: 500;
+      outline: none; -webkit-appearance: none; appearance: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    select:focus, textarea:focus, input[type="date"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-dim2); }
+    select { height: 38px; padding: 0 2.25rem 0 .75rem; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; }
+    select option { background: var(--white); color: var(--text); }
+    textarea { min-height: 200px; resize: vertical; line-height: 1.75; padding: .75rem; }
+    textarea::placeholder { color: var(--text4); }
+    input[type="date"] { height: 38px; padding: 0 .75rem; color-scheme: light; cursor: pointer; }
+    [data-theme="dark"] input[type="date"] { color-scheme: dark; }
+
+    .date-display { height: 38px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 7px; display: flex; align-items: center; padding: 0 .75rem; gap: .5rem; font-size: .8125rem; font-weight: 700; color: var(--blue); pointer-events: none; }
+    .char-hint { font-size: .7rem; color: var(--text4); text-align: right; margin-top: .25rem; }
+    .form-divider { border: none; border-top: 1px solid var(--border); margin: 1.125rem 0; }
+
+    /* ── BUTTONS ── */
+    .btn-submit {
+      width: 100%; height: 40px;
+      background: var(--blue); color: #fff;
+      font-family: 'Inter', sans-serif; font-size: .875rem; font-weight: 600;
+      border: none; border-radius: 7px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      transition: background .15s, transform .1s;
+    }
+    .btn-submit:hover:not(:disabled) { background: var(--blue-hover); transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-leave {
+      width: 100%; height: 40px;
+      background: var(--white); color: var(--blue);
+      border: 1.5px solid var(--blue-dim2); border-radius: 7px;
+      font-family: 'Inter', sans-serif; font-size: .875rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: .5rem;
+      transition: background .15s, border-color .15s;
+    }
+    .btn-leave:hover:not(:disabled) { background: var(--blue-bg); border-color: var(--blue); }
+    .btn-leave:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-ghost { display: flex; align-items: center; gap: .4rem; width: 100%; padding: .5rem .75rem; background: none; border: 1px solid var(--border); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: .75rem; font-weight: 600; color: var(--text3); cursor: pointer; transition: color .12s, border-color .12s, background .12s; }
+    .btn-ghost:hover { color: var(--blue); border-color: var(--blue-dim2); background: var(--blue-bg); }
+
+    .btn-reset { padding: .625rem 2rem; background: var(--white); color: var(--text2); border: 1.5px solid var(--border); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: .8125rem; font-weight: 600; cursor: pointer; transition: border-color .12s, color .12s; }
+    .btn-reset:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* spinner */
+    .spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── ALERTS ── */
+    .alert { display: flex; align-items: flex-start; gap: .5rem; padding: .75rem .875rem; border-radius: 7px; border: 1px solid; font-size: .8rem; font-weight: 500; line-height: 1.55; margin-top: .875rem; }
+    .alert-icon { flex-shrink: 0; }
+    .alert-error   { background: var(--red-bg);   border-color: var(--red-border);   color: var(--red); }
+    .alert-success { background: var(--green-bg);  border-color: var(--green-border); color: var(--green); }
+    .alert-warning { background: var(--amber-bg);  border-color: var(--amber-border); color: var(--amber); }
+
+    /* ── SUCCESS ── */
+    .success-screen { display: none; flex-direction: column; align-items: center; text-align: center; padding: 1.5rem 0 .5rem; }
+    .success-screen.visible { display: flex; animation: fadein .25s ease; }
+    .success-icon { width: 68px; height: 68px; border-radius: 50%; background: var(--green-bg); border: 2px solid var(--green-border); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 1.125rem; color: var(--green); }
+    .success-title { font-size: 1.125rem; font-weight: 800; margin-bottom: .375rem; color: var(--text); }
+    .success-sub   { font-size: .8125rem; color: var(--text3); margin-bottom: 1.375rem; line-height: 1.6; }
+    .success-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: .625rem; width: 100%; margin-bottom: 1.125rem; }
+    .success-item  { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: .75rem; text-align: left; }
+    .si-label { font-size: .6rem; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .25rem; }
+    .si-value { font-size: .8125rem; font-weight: 700; color: var(--text); }
+
+    /* ── LEAVE INFO ── */
+    .leave-info { display: flex; align-items: flex-start; gap: .5rem; background: var(--blue-bg); border: 1px solid var(--blue-dim2); border-radius: 7px; padding: .75rem .875rem; font-size: .775rem; color: var(--blue); line-height: 1.55; margin-bottom: 1.125rem; }
+
+    /* ── SETUP OVERLAY ── */
+    .setup-overlay { display: none; position: fixed; inset: 0; background: var(--overlay); z-index: 400; align-items: center; justify-content: center; padding: 1.25rem; backdrop-filter: blur(8px); }
+    .setup-overlay.visible { display: flex; animation: fadein .2s ease; }
+    .setup-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 2rem; width: 100%; max-width: 440px; box-shadow: var(--shadow-md); animation: cardin .3s cubic-bezier(.34,1.2,.64,1); }
+    .setup-logo { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.5rem; }
+    .setup-logo img { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; }
+    .setup-logo-name { font-size: .9rem; font-weight: 700; color: var(--text); }
+    .setup-logo-sub  { font-size: .68rem; color: var(--text3); margin-top: .1rem; }
+    .setup-title { font-size: 1.125rem; font-weight: 800; color: var(--text); margin-bottom: .375rem; }
+    .setup-desc  { font-size: .8125rem; color: var(--text3); line-height: 1.65; margin-bottom: 1.375rem; }
+    .field-label { font-size: .75rem; font-weight: 600; color: var(--text3); margin-bottom: .375rem; display: block; }
+    .token-wrap { position: relative; }
+    .token-wrap input { width: 100%; height: 40px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 7px; padding: 0 2.5rem 0 .75rem; font-family: 'Courier New', monospace; font-size: .8125rem; color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s; }
+    .token-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-dim2); }
+    .toggle-vis { position: absolute; right: .75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text4); font-size: 1rem; }
+    .toggle-vis:hover { color: var(--text3); }
+    .setup-error { font-size: .775rem; color: var(--red); margin-top: .625rem; display: none; }
+    .btn-primary { display: flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; height: 40px; background: var(--blue); color: #fff; font-family: 'Inter', sans-serif; font-size: .875rem; font-weight: 700; border: none; border-radius: 7px; cursor: pointer; margin-top: 1.375rem; transition: background .15s, transform .1s; }
+    .btn-primary:hover:not(:disabled) { background: var(--blue-hover); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── VIEWER ── */
+    .viewer-card { background: var(--white); border: 1px solid var(--border); }
+    .viewer-header { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.375rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--white); }
+    .viewer-header-title { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .viewer-header-sub { font-size: .72rem; color: var(--text3); margin-top: .125rem; }
+    .viewer-close-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: .375rem .75rem; cursor: pointer; font-size: .8125rem; color: var(--text2); font-family: 'Inter', sans-serif; transition: background .12s, border-color .12s; }
+    .viewer-close-btn:hover { background: var(--border); border-color: var(--border2); }
+    .viewer-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+    .viewer-sidebar { width: 240px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; background: var(--bg); }
+    .viewer-sidebar-label { font-size: .6rem; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: .09em; margin-bottom: .625rem; }
+    .viewer-panel { flex: 1; overflow-y: auto; padding: 1.125rem 1.375rem; display: flex; flex-direction: column; gap: .75rem; min-width: 0; background: var(--white); }
+    .viewer-member-btn { display: flex; align-items: center; gap: .625rem; width: 100%; text-align: left; padding: .625rem .75rem; background: var(--white); border: 1px solid var(--border); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: .8rem; font-weight: 500; color: var(--text2); cursor: pointer; margin-bottom: .5rem; transition: background .12s, border-color .12s, color .12s; }
+    .viewer-member-btn:hover { background: var(--bg); border-color: var(--border2); color: var(--text); }
+    .viewer-member-btn.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+    .viewer-member-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: #fff; font-size: .68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .viewer-report-card { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; margin-bottom: .625rem; overflow: hidden; }
+    .viewer-report-header { display: flex; align-items: center; justify-content: space-between; padding: .625rem .875rem; background: var(--white); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; transition: background .12s; }
+    .viewer-report-header:hover { background: var(--bg); }
+    .viewer-report-body { padding: .875rem; font-size: .8rem; line-height: 1.8; color: var(--text); white-space: pre-wrap; word-break: break-word; display: none; }
+    .viewer-lock-btn { font-size: .7rem; padding: .25rem .625rem; background: none; border: 1px solid var(--border); border-radius: 7px; cursor: pointer; color: var(--text3); font-family: 'Inter', sans-serif; transition: background .12s, border-color .12s, color .12s; }
+    .viewer-lock-btn:hover { background: var(--bg); border-color: var(--border2); color: var(--text2); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadein { from{opacity:0} to{opacity:1} }
+    @keyframes cardin { from{transform:translateY(20px) scale(.97);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width:1100px) { .stats { grid-template-columns: 1fr 1fr; } .report-grid { grid-template-columns: 1fr; } }
+    @media (max-width:720px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .body { padding: 1rem 1rem 3rem; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width:480px) { .stats { grid-template-columns: 1fr; } .success-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <img src="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" alt="Logo" />
+      <div>
+        <div class="setup-logo-name">Digit Web Lanka</div>
+        <div class="setup-logo-sub">EOD Report Portal</div>
+      </div>
+    </div>
+    <div class="setup-title">Connect to EOD</div>
+    <div class="setup-desc">Enter your Personal Access Token to sync EOD reports. Stored only in <strong>your browser</strong> — never shared with anyone.</div>
+    <label class="field-label" for="tokenInput">Personal Access Token</label>
+    <div class="token-wrap">
+      <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
+      <button class="toggle-vis" id="toggleVis" type="button">👁</button>
+    </div>
+    <div class="setup-error" id="setupError"></div>
+    <button class="btn-primary" id="saveTokenBtn">Verify &amp; Continue</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <img src="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" alt="" />
+      <div>
+        <div class="sb-logo-name">Digit Web Lanka</div>
+        <div class="sb-logo-sub">Digital Marketing</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Reports</div>
+      <a href="index.html" class="sb-link active"><span class="ico">📝</span> EOD Report</a>
+      <a href="review.html" class="sb-link"><span class="ico">🔎</span> 14-Day Review</a>
+      <div class="sb-section">Actions</div>
+      <button class="sb-link" onclick="document.getElementById('eodViewerOverlay').classList.add('visible')"><span class="ico">🔍</span> View EODs</button>
+      <a href="#leaveSection" class="sb-link"><span class="ico">📂</span> Mark Leave</a>
+      <a href="summary.html" class="sb-link"><span class="ico">📊</span> Summary View</a>
+      <div class="sb-section">Dashboards</div>
+      <a href="https://kuberandigit-coder.github.io/blog-builder/" target="_blank" rel="noopener" class="sb-link"><span class="ico">✍️</span> Blog Builder</a>
+      <a href="https://home-page-tracker.vercel.app/" target="_blank" rel="noopener" class="sb-link"><span class="ico">🏠</span> Home Page Tracker</a>
+      <a href="https://sales-dashboard-tawny-one.vercel.app/" target="_blank" rel="noopener" class="sb-link"><span class="ico">📈</span> Live Sales</a>
+      <a href="https://image-converter-phi-ruby.vercel.app/" target="_blank" rel="noopener" class="sb-link"><span class="ico">🖼️</span> Image Converter</a>
+    </nav>
+    <div class="sb-bottom">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:.625rem;">
+        <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text4);margin-bottom:.25rem;">Today</div>
+        <div style="font-size:.775rem;font-weight:600;color:var(--text2);line-height:1.4;" id="sidebarDate">Loading…</div>
+      </div>
+      <button class="btn-ghost" id="resetTokenBtn"><span>🔑</span> Update Token</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <div class="tb-title">End of Day Report</div>
+        <div class="tb-sub" id="topbarDate">Daily Status Update</div>
+      </div>
+      <div class="tb-right">
+        <div class="live-badge"><span class="live-dot"></span> Live</div>
+        <button class="btn-icon" id="themeToggle" title="Toggle theme"><span id="themeIcon">🌙</span></button>
+        <a href="summary.html" class="chip-link">📊 Summary</a>
+      </div>
+    </header>
+
+    <div class="body">
+
+      <!-- PAGE HEADER -->
+      <div class="page-hdr">
+        <div>
+          <div class="page-hdr-title">Submit Your Report</div>
+          <div class="page-hdr-sub">Digital Marketing Team — Daily Status Update</div>
+        </div>
+        <div class="page-chips">
+          <div class="page-chip">👥 16 members</div>
+          <div class="page-chip">📅 <span id="metaDate">Today</span></div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div class="stat-card s-blue">
+          <div class="stat-ico s-blue">👥</div>
+          <div><div class="stat-val">16</div><div class="stat-lbl">Team Members</div></div>
+        </div>
+        <div class="stat-card s-teal">
+          <div class="stat-ico s-teal">📋</div>
+          <div><div class="stat-val">EOD</div><div class="stat-lbl">Report Type</div></div>
+        </div>
+        <div class="stat-card s-slate">
+          <div class="stat-ico s-slate">🕐</div>
+          <div>
+            <div class="stat-lbl" id="statLKDay">--</div>
+            <div class="stat-val" id="statLKTime" style="font-size:1rem;letter-spacing:.04em;">--:--:--</div>
+          </div>
+        </div>
+        <div class="stat-card s-indigo">
+          <div class="stat-ico s-indigo">🗓</div>
+          <div><div class="stat-val" id="statDate">—</div><div class="stat-lbl">Report Date</div></div>
+        </div>
+      </div>
+
+      <!-- REPORT GRID -->
+      <div class="report-grid">
+
+        <!-- FORM CARD -->
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-head-title">Daily Activity Report</div>
+              <div class="card-head-sub">Fill in your work summary for today</div>
+            </div>
+            <span class="card-badge cb-blue">EOD</span>
+          </div>
+          <div class="card-body">
+            <div id="formView">
+              <div class="sep"><span class="sep-text">Member Details</span><span class="sep-line"></span></div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="memberSelect">Your Name <span class="req">*</span></label>
+                  <select id="memberSelect">
+                    <option value="" disabled selected>Select your name…</option>
+                    <option>Kuberan</option><option>Piranav</option><option>Mahima</option>
+                    <option>Sonya</option><option>Kamsi</option><option>Hetheesha</option>
+                    <option>Dilaksi</option><option>Sukirtha</option>
+                    <option>Theekshy</option><option>Thivagini</option><option>Ripson</option>
+                    <option>Jefri</option><option>Sajeepan</option><option>Jakshan</option>
+                    <option>Thasitha</option><option>Thanishtika</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Today's Date</label>
+                  <div class="date-display" id="formDateDisplay"><span>📅</span><span>—</span></div>
+                </div>
+              </div>
+
+              <div class="sep"><span class="sep-text">Report Content</span><span class="sep-line"></span></div>
+              <div class="form-group" style="margin-bottom:.5rem">
+                <label class="form-label" for="eodText">Today's Report <span class="req">*</span></label>
+                <textarea id="eodText" placeholder="Summarise your day…&#10;&#10;• Campaigns managed or updated&#10;• Content created or published&#10;• Ads reviewed or optimised&#10;• Meetings attended&#10;• Blockers or issues&#10;• Plan for tomorrow"></textarea>
+                <div class="char-hint" id="charHint">0 characters · Ctrl+Enter to submit</div>
+              </div>
+              <hr class="form-divider" />
+              <button class="btn-submit" id="submitBtn" type="button">
+                <span id="btnIcon">✦</span><span id="btnLabel">Submit EOD Report</span>
+              </button>
+              <div id="alertBox"></div>
+            </div>
+
+            <!-- SUCCESS -->
+            <div class="success-screen" id="successView">
+              <div class="success-icon">✓</div>
+              <div class="success-title">Report Submitted!</div>
+              <div class="success-sub">Your EOD report has been saved to the repository successfully.</div>
+              <div class="success-grid">
+                <div class="success-item"><div class="si-label">Member</div><div class="si-value" id="sName">—</div></div>
+                <div class="success-item"><div class="si-label">Date</div><div class="si-value" id="sDate">—</div></div>
+                <div class="success-item"><div class="si-label">Status</div><div class="si-value" id="sAction">—</div></div>
+              </div>
+              <button class="btn-reset" id="submitAnotherBtn">Submit Another Report</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEAVE CARD -->
+        <div class="card" id="leaveSection">
+          <div class="card-head">
+            <div>
+              <div class="card-head-title">Mark Leave</div>
+              <div class="card-head-sub">Log an absence for the team</div>
+            </div>
+            <span class="card-badge cb-teal">Leave</span>
+          </div>
+          <div class="card-body">
+            <div class="leave-info">
+              <span>ℹ️</span>
+              <span>Select your name and the date you were on leave to record it in the system.</span>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+              <label class="form-label" for="leaveMember">Your Name <span class="req">*</span></label>
+              <select id="leaveMember">
+                <option value="" disabled selected>Select your name…</option>
+                <option>Kuberan</option><option>Piranav</option><option>Mahima</option>
+                <option>Sonya</option><option>Kamsi</option><option>Hetheesha</option>
+                <option>Dilaksi</option><option>Sukirtha</option><option>Thasitha</option>
+                <option>Theekshy</option><option>Thivagini</option><option>Ripson</option>
+                <option>Jefri</option><option>Sajeepan</option><option>Jakshan</option>
+                <option>Thanishtika</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:1.125rem">
+              <label class="form-label" for="leaveDate">Leave Date <span class="req">*</span></label>
+              <input type="date" id="leaveDate" />
+            </div>
+            <button class="btn-leave" id="leaveBtn" type="button">📂 Mark as Leave</button>
+            <div id="leaveAlert"></div>
+          </div>
+        </div>
+
+      </div><!-- end report-grid -->
+    </div><!-- end body -->
+  </main>
+</div><!-- end layout -->
+
+<script>
+  /* ══════════════ THEME TOGGLE ══════════════ */
+  const THEME_KEY = "eod_theme";
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem(THEME_KEY, theme);
+    const icon = document.getElementById("themeIcon");
+    if (icon) icon.textContent = theme === "dark" ? "☀️" : "🌙";
+  }
+
+  (function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) {
+      applyTheme(saved);
+    } else {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      applyTheme(prefersDark ? "dark" : "light");
+    }
+  })();
+
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme");
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
+
+  /* ══════════════ CORE APP ══════════════ */
+  const CONFIG = { REPO_OWNER:"digitalmarketing69140951-sys", REPO_NAME:"eod-reports", BRANCH:"main" };
+  const TOKEN_KEY = "eod_gh_token";
+  const getToken  = () => localStorage.getItem(TOKEN_KEY) || "";
+  const saveToken = t  => localStorage.setItem(TOKEN_KEY, t.trim());
+  const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+  const $ = id => document.getElementById(id);
+
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  function updateDate() {
+    function updateLiveClock() {
+      const now = new Date();
+      const lkTime = now.toLocaleTimeString("en-GB", {
+        timeZone: "Asia/Colombo", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+      });
+      const lkDay = now.toLocaleDateString("en-GB", { timeZone: "Asia/Colombo", weekday: "long" });
+      const t = $("statLKTime"); if (t) t.textContent = lkTime;
+      const d = $("statLKDay");  if (d) d.textContent = lkDay;
+    }
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
+
+    const now = new Date();
+    const full  = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+    const short = now.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+    const tiny  = now.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+    const set = (id,v) => { const e=$(id); if(e) e.textContent=v; };
+    set("topbarDate", full); set("sidebarDate", full);
+    set("metaDate", tiny);   set("statDate", tiny);
+    const fd = $("formDateDisplay");
+    if(fd) fd.innerHTML = `<span>📅</span><span>${short}</span>`;
+  }
+
+  function scheduleMidnight() {
+    const now = new Date();
+    const next = new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);
+    setTimeout(()=>{ updateDate(); scheduleMidnight(); }, next-now);
+  }
+
+  updateDate(); scheduleMidnight();
+
+  const toBase64 = s => btoa(unescape(encodeURIComponent(s)));
+  const apiURL   = (m,d) => `https://api.github.com/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/eods/${encodeURIComponent(m)}/${d}.md`;
+  const ghHeaders = () => ({
+    "Authorization":`Bearer ${getToken()}`,
+    "Accept":"application/vnd.github+json",
+    "Content-Type":"application/json",
+    "X-GitHub-Api-Version":"2022-11-28"
+  });
+
+  async function getFile(url) {
+    const r = await fetch(url,{headers:ghHeaders()});
+    if(r.status===404) return null;
+    if(!r.ok){const b=await r.json().catch(()=>{});throw new Error(`GET ${r.status}: ${b?.message||r.statusText}`);}
+    return r.json();
+  }
+
+  async function putFile(url,payload) {
+    const r = await fetch(url,{method:"PUT",headers:ghHeaders(),body:JSON.stringify(payload)});
+    const b = await r.json().catch(()=>{});
+    if(!r.ok) throw new Error(`PUT ${r.status}: ${b?.message||r.statusText}`);
+    return b;
+  }
+
+  if(!getToken()) showSetup();
+
+  function showSetup() {
+    $("tokenInput").value=""; $("setupError").style.display="none";
+    $("setupOverlay").classList.add("visible");
+    setTimeout(()=>$("tokenInput").focus(), 200);
+  }
+  function hideSetup() { $("setupOverlay").classList.remove("visible"); }
+
+  $("toggleVis").addEventListener("click",()=>{
+    const inp=$("tokenInput"), show=inp.type==="password";
+    inp.type = show?"text":"password";
+    $("toggleVis").textContent = show?"🙈":"👁";
+  });
+
+  $("saveTokenBtn").addEventListener("click", async()=>{
+    const token=$("tokenInput").value.trim(), errEl=$("setupError");
+    errEl.style.display="none";
+    if(!token.startsWith("ghp_")&&!token.startsWith("github_pat_")){
+      errEl.textContent="⚠ Enter a valid GitHub token (starts with ghp_)";
+      errEl.style.display="block"; return;
+    }
+    const btn=$("saveTokenBtn");
+    btn.disabled=true; btn.textContent="Verifying…";
+    try {
+      const r = await fetch(`https://api.github.com/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}`,{
+        headers:{"Authorization":`Bearer ${token}`,"Accept":"application/vnd.github+json"}
+      });
+      if(r.status===401) throw new Error("Invalid token — copy it again in full.");
+      if(r.status===404) throw new Error("Repository not found. Check CONFIG values.");
+      if(!r.ok) throw new Error(`GitHub error ${r.status}`);
+      saveToken(token); hideSetup();
+    } catch(err) {
+      errEl.textContent=`⚠ ${err.message}`; errEl.style.display="block";
+    } finally { btn.disabled=false; btn.textContent="Verify & Continue"; }
+  });
+
+  $("tokenInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("saveTokenBtn").click(); });
+  $("resetTokenBtn").addEventListener("click",()=>{ clearToken(); showSetup(); });
+
+  function showAlert(type,msg) {
+    $("alertBox").innerHTML=`<div class="alert alert-${type}"><span class="alert-icon">${type==="error"?"✕":"⚠"}</span><span>${msg}</span></div>`;
+  }
+  function clearAlert() { $("alertBox").innerHTML=""; }
+
+  function setLoading(on) {
+    const btn=$("submitBtn"); btn.disabled=on;
+    if(on) {
+      const ic=btn.querySelector("#btnIcon"); if(ic) ic.outerHTML=`<span class="spinner" id="btnIcon"></span>`;
+      $("btnLabel").textContent="Submitting…";
+    } else {
+      const sp=btn.querySelector(".spinner"); if(sp) sp.outerHTML=`<span id="btnIcon">✦</span>`;
+      $("btnLabel").textContent="Submit EOD Report";
+    }
+  }
+
+  async function handleSubmit() {
+    clearAlert();
+    const member=$("memberSelect").value.trim(), report=$("eodText").value.trim(), date=todayISO();
+    if(!member){showAlert("error","Please select your name."); $("memberSelect").focus(); return;}
+    if(!report){showAlert("error","Report cannot be empty."); $("eodText").focus(); return;}
+    if(!getToken()){showSetup(); return;}
+    setLoading(true);
+    try {
+      const url=apiURL(member,date), existing=await getFile(url), isUpdate=existing!==null;
+      await putFile(url,{message:`EOD: ${member} - ${date}`,content:toBase64(report),branch:CONFIG.BRANCH,...(isUpdate&&existing.sha?{sha:existing.sha}:{})});
+      $("sName").textContent=member; $("sDate").textContent=date;
+      $("sAction").textContent=isUpdate?"Updated":"Created";
+      $("formView").style.display="none"; $("successView").classList.add("visible");
+      if (unlockedMembers[member]) loadMemberReports(member);
+    } catch(err) {
+      const msg=err.message.includes("401")?`Token expired. Click <strong>Update GitHub Token</strong> in the sidebar.`:`Submission failed: ${err.message}`;
+      showAlert("error",msg);
+    } finally { setLoading(false); }
+  }
+
+  function resetForm() {
+    $("memberSelect").value=""; $("eodText").value="";
+    $("charHint").textContent="0 characters · Ctrl+Enter to submit";
+    clearAlert(); $("successView").classList.remove("visible"); $("formView").style.display="";
+  }
+
+  $("submitBtn").addEventListener("click",handleSubmit);
+  $("submitAnotherBtn").addEventListener("click",resetForm);
+  $("eodText").addEventListener("input",()=>{
+    const n=$("eodText").value.length;
+    $("charHint").textContent=n===0?"0 characters · Ctrl+Enter to submit":`${n.toLocaleString()} character${n!==1?"s":""} · Ctrl+Enter to submit`;
+  });
+  $("eodText").addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="Enter") handleSubmit(); });
+
+  function showLeaveAlert(type,msg) {
+    const el=$("leaveAlert");
+    el.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(()=>{ el.innerHTML=""; },5000);
+  }
+
+  $("leaveBtn").addEventListener("click", async()=>{
+    const member=$("leaveMember").value.trim(), date=$("leaveDate").value;
+    if(!member){showLeaveAlert("error","Please select your name."); $("leaveMember").focus(); return;}
+    if(!date){showLeaveAlert("error","Please select a leave date."); return;}
+    if(!getToken()){showSetup(); return;}
+    const btn=$("leaveBtn");
+    btn.disabled=true; btn.innerHTML=`<span class="spinner" style="border-top-color:var(--blue);border-color:var(--blue-dim2)"></span> Saving…`;
+    try {
+      const url=apiURL(member,date), existing=await getFile(url);
+      const content=`# Leave\n\nMember: ${member}\nDate: ${date}\nStatus: On Leave`;
+      await putFile(url,{message:`Leave: ${member} - ${date}`,content:toBase64(content),branch:CONFIG.BRANCH,...(existing?.sha?{sha:existing.sha}:{})});
+      $("leaveDate").value=""; $("leaveMember").value="";
+      showLeaveAlert("success",` <strong>${member}</strong> leave on <strong>${date}</strong>`);
+    } catch(err) {
+      const msg=err.message.includes("401")?`Token expired. Click <strong>Update Token</strong>.`:`Failed: ${err.message}`;
+      showLeaveAlert("error",msg);
+    } finally { btn.disabled=false; btn.innerHTML=`📂 Mark as Leave`; }
+  });
+</script>
+
+<!-- ══════════════ EOD VIEWER OVERLAY ══════════════ -->
+<div class="setup-overlay" id="eodViewerOverlay" style="z-index:500;">
+  <div style="width:100%;max-width:860px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-md);animation:cardin .3s cubic-bezier(.34,1.2,.64,1);" class="viewer-card">
+    <div class="viewer-header">
+      <div>
+        <div class="viewer-header-title">View EOD Reports</div>
+        <div class="viewer-header-sub">Click a member to view their reports</div>
+      </div>
+      <button class="viewer-close-btn" onclick="closeViewer()">✕ Close</button>
+    </div>
+    <div class="viewer-body">
+      <div class="viewer-sidebar">
+        <div class="viewer-sidebar-label">TEAM MEMBERS</div>
+        <div id="viewerMemberList"></div>
+      </div>
+      <div id="viewerReportsPanel" class="viewer-panel">
+        <div id="viewerPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:0.75rem;color:var(--text3);font-size:0.875rem;padding:3rem 0;">
+          <div style="font-size:2.5rem;">👤</div>
+          <div>Select a team member to view their reports</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const VIEWER_MEMBERS = [
+  "Kuberan","Piranav","Mahima","Sonya","Kamsi","Hetheesha",
+  "Dilaksi","Sukirtha","Theekshy","Thivagini","Ripson",
+  "Jefri","Sajeepan","Jakshan","Thasitha","Thanishtika"
+];
+
+let MEMBER_PASSWORDS = null;
+
+let LAST_PASSWORD_LOAD_ERROR = "";
+
+async function loadPasswords() {
+  if (MEMBER_PASSWORDS) return true;
+  try {
+    const url = `https://api.github.com/repos/${CONFIG.REPO_OWNER}/eod-tool/contents/passwords.json`;
+    const r = await fetch(url, { headers: ghHeaders() });
+    if (!r.ok) throw new Error(`GitHub ${r.status} - ${r.statusText}`);
+    const data = await r.json();
+    const text = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+    MEMBER_PASSWORDS = JSON.parse(text);
+    return true;
+  } catch (err) {
+    LAST_PASSWORD_LOAD_ERROR = err.message || String(err);
+    console.error("loadPasswords failed:", err);
+    return false;
+  }
+}
+
+function closeViewer() {
+  document.getElementById('eodViewerOverlay').classList.remove('visible');
+}
+
+document.getElementById('eodViewerOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeViewer();
+});
+
+let viewerActiveBtn = null;
+let unlockedMembers = {};
+
+(function buildMemberList() {
+  const list = document.getElementById('viewerMemberList');
+  VIEWER_MEMBERS.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'viewer-member-btn';
+    btn.id = `vmBtn_${name}`;
+    btn.innerHTML = `
+      <span class="viewer-member-avatar">${name.slice(0,2).toUpperCase()}</span>
+      <span style="flex:1;color:var(--text2);">${name}</span>
+      <span id="lock_${name}" style="font-size:0.8rem;flex-shrink:0;opacity:0.6;">🔒</span>
+    `;
+    btn.addEventListener('click', () => {
+      if (unlockedMembers[name]) {
+        activateMember(name, btn);
+        loadMemberReports(name);
+      } else {
+        showPasswordPrompt(name, btn);
+      }
+    });
+    list.appendChild(btn);
+  });
+})();
+
+function activateMember(name, btn) {
+  if (viewerActiveBtn && viewerActiveBtn !== btn) {
+    viewerActiveBtn.classList.remove('active');
+  }
+  btn.classList.add('active');
+  viewerActiveBtn = btn;
+}
+
+function showPasswordPrompt(name, btn) {
+  const panel = document.getElementById('viewerReportsPanel');
+  const initials = name.slice(0,2).toUpperCase();
+  panel.innerHTML = `
+    <div style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:2rem;max-width:520px;margin:0 auto;width:100%;">
+      <div style="display:flex;align-items:center;gap:0.875rem;padding-bottom:1.375rem;margin-bottom:1.375rem;border-bottom:1px solid var(--border);">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--blue-bg);border:1.5px solid var(--blue-dim2);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--blue);flex-shrink:0;">${initials}</div>
+        <div style="flex:1;">
+          <div style="font-size:0.9375rem;font-weight:800;letter-spacing:-0.01em;color:var(--text);">${name}</div>
+          <div style="font-size:0.75rem;color:var(--text3);margin-top:0.1rem;">Restricted · Enter password to continue</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.35rem;background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:0.25rem 0.7rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span style="font-size:0.6875rem;font-weight:600;color:var(--text3);">Protected</span>
+        </div>
+      </div>
+      <div style="margin-bottom:0.5rem;">
+        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:0.4rem;">Password</label>
+        <div style="position:relative;">
+          <input
+            type="password"
+            id="pwInput_${name}"
+            placeholder="Enter your password…"
+            autocomplete="off"
+            style="width:100%;height:40px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:0 2.75rem 0 0.75rem;font-family:'Inter',sans-serif;font-size:0.8125rem;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;"
+            onkeydown="if(event.key==='Enter') checkPassword('${name}')"
+            onfocus="this.style.borderColor='var(--blue)';this.style.boxShadow='0 0 0 3px var(--blue-dim2)'"
+            onblur="this.style.borderColor='';this.style.boxShadow=''"
+          />
+          <button onclick="togglePwVis('${name}')" id="pwVis_${name}" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text4);display:flex;align-items:center;padding:0;" aria-label="Toggle visibility">
+            <svg id="pwVisIcon_${name}" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="pwError_${name}" style="display:none;align-items:center;gap:0.375rem;font-size:0.78rem;color:var(--red);margin-top:0.375rem;margin-bottom:0.25rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="pwErrorText_${name}"></span>
+      </div>
+      <div style="display:flex;gap:0.625rem;margin-top:1.25rem;">
+        <button
+          onclick="closeViewer()"
+          style="flex:1;height:40px;background:var(--white);color:var(--text2);border:1.5px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,background .15s;"
+          onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)';this.style.background='var(--blue-bg)'"
+          onmouseout="this.style.borderColor='';this.style.color='';this.style.background=''"
+        >Cancel</button>
+        <button
+          onclick="checkPassword('${name}')"
+          style="flex:2;height:40px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;transition:background .15s,transform .1s;"
+          onmouseover="this.style.background='var(--blue-hover)';this.style.transform='translateY(-1px)'"
+          onmouseout="this.style.background='var(--blue)';this.style.transform=''"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          Unlock reports
+        </button>
+      </div>
+    </div>
+  `;
+  activateMember(name, btn);
+  setTimeout(() => {
+    const inp = document.getElementById(`pwInput_${name}`);
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function togglePwVis(name) {
+  const inp = document.getElementById(`pwInput_${name}`);
+  const icon = document.getElementById(`pwVisIcon_${name}`);
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  icon.innerHTML = show
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+}
+
+async function checkPassword(name) {
+  const inp = document.getElementById(`pwInput_${name}`);
+  const errEl = document.getElementById(`pwError_${name}`);
+  if (!inp) return;
+  const entered = inp.value;
+  if (!entered) return;
+
+  inp.disabled = true;
+  errEl.style.display = 'none';
+
+  const ok = await loadPasswords();
+  inp.disabled = false;
+
+  if (!ok || !MEMBER_PASSWORDS) {
+    document.getElementById(`pwErrorText_${name}`).textContent =
+      `Could not load passwords (${LAST_PASSWORD_LOAD_ERROR || 'unknown error'}).`;
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  if (entered === MEMBER_PASSWORDS[name]) {
+    unlockedMembers[name] = true;
+    const lockIcon = document.getElementById(`lock_${name}`);
+    if (lockIcon) lockIcon.textContent = '🔓';
+    loadMemberReports(name);
+  } else {
+    document.getElementById(`pwErrorText_${name}`).textContent = 'Incorrect password. Please try again.';
+    errEl.style.display = 'flex';
+    inp.value = '';
+    inp.style.borderColor = 'var(--red)';
+    inp.focus();
+    setTimeout(() => {
+      inp.style.borderColor = '';
+      errEl.style.display = 'none';
+    }, 2500);
+  }
+}
+
+async function loadMemberReports(member) {
+  const panel = document.getElementById('viewerReportsPanel');
+  panel.innerHTML = `
+    <div style="font-size:1rem;font-weight:800;margin-bottom:0.25rem;color:var(--text);">${member}</div>
+    <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.8rem;color:var(--text3);margin-bottom:1.25rem;">
+      <span class="spinner" style="border-top-color:var(--blue);border-color:var(--blue-dim2);"></span> Fetching reports from GitHub…
+    </div>
+  `;
+
+  if (!getToken()) { showSetup(); return; }
+
+  try {
+    const url = `https://api.github.com/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/eods/${encodeURIComponent(member)}`;
+    const r = await fetch(url, { headers: ghHeaders(), cache: "no-store" });
+
+    if (r.status === 404) {
+      panel.innerHTML = `
+        <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
+        <div class="alert alert-warning"><span class="alert-icon">📭</span><span>No reports found for ${member} yet.</span></div>`;
+      return;
+    }
+    if (!r.ok) throw new Error(`GitHub error ${r.status}`);
+
+    const files = await r.json();
+    const mdFiles = files.filter(f => f.name.endsWith('.md')).sort((a,b) => b.name.localeCompare(a.name));
+
+    if (!mdFiles.length) {
+      panel.innerHTML = `
+        <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
+        <div class="alert alert-warning"><span class="alert-icon">📭</span><span>No reports found for ${member} yet.</span></div>`;
+      return;
+    }
+
+    panel.innerHTML = `
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.25rem;">
+        <div>
+          <div style="font-size:1rem;font-weight:800;color:var(--text);">${member} 🔓</div>
+          <div style="font-size:0.75rem;color:var(--text3);">${mdFiles.length} report${mdFiles.length!==1?'s':''} found</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="viewer-lock-btn" onclick="loadMemberReports('${member}')" title="Refresh reports">🔄 Refresh</button>
+          <button class="viewer-lock-btn" onclick="lockMember('${member}')" title="Lock this member">🔒 Lock</button>
+        </div>
+      </div>
+      <div id="viewerCards_${member}"></div>
+    `;
+
+    const cardsDiv = document.getElementById(`viewerCards_${member}`);
+
+    for (const file of mdFiles) {
+      const date = file.name.replace('.md','');
+      const card = document.createElement('div');
+      card.className = 'viewer-report-card';
+
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'viewer-report-header';
+      headerDiv.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <span style="font-size:0.875rem;">📅</span>
+          <span style="font-size:0.875rem;font-weight:600;color:var(--text);">${date}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span class="card-badge cb-blue" id="tag_${date}">EOD</span>
+          <span id="chev_${date}" style="color:var(--text3);transition:transform 0.2s;font-size:0.8rem;">▾</span>
+        </div>
+      `;
+
+      const bodyDiv = document.createElement('div');
+      bodyDiv.className = 'viewer-report-body';
+      bodyDiv.textContent = 'Loading…';
+
+      let expanded = false;
+      let loaded = false;
+
+      headerDiv.addEventListener('click', async () => {
+        expanded = !expanded;
+        bodyDiv.style.display = expanded ? 'block' : 'none';
+        const chev = document.getElementById(`chev_${date}`);
+        if (chev) chev.style.transform = expanded ? 'rotate(180deg)' : '';
+
+        if (expanded && !loaded) {
+          loaded = true;
+          try {
+            const fr = await fetch(file.url, { headers: ghHeaders(), cache: "no-store" });
+            const data = await fr.json();
+            const text = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+            bodyDiv.textContent = text;
+            const tag = document.getElementById(`tag_${date}`);
+            if (tag) {
+              const isLv = text.includes('Status: On Leave');
+              tag.textContent = isLv ? 'Leave' : 'EOD';
+              if (isLv) {
+                tag.className = 'card-badge';
+                tag.style.cssText = 'background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);';
+              }
+            }
+          } catch(e) {
+            bodyDiv.textContent = 'Failed to load content.';
+          }
+        }
+      });
+
+      card.appendChild(headerDiv);
+      card.appendChild(bodyDiv);
+      cardsDiv.appendChild(card);
+    }
+
+  } catch(err) {
+    panel.innerHTML = `
+      <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
+      <div class="alert alert-error"><span class="alert-icon">✕</span><span>Failed to load: ${err.message}</span></div>`;
+  }
+}
+
+function lockMember(name) {
+  delete unlockedMembers[name];
+  const lockIcon = document.getElementById(`lock_${name}`);
+  if (lockIcon) lockIcon.textContent = '🔒';
+  if (viewerActiveBtn) {
+    viewerActiveBtn.classList.remove('active');
+    viewerActiveBtn = null;
+  }
+  const panel = document.getElementById('viewerReportsPanel');
+  panel.innerHTML = `
+    <div id="viewerPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:0.75rem;color:var(--text3);font-size:0.875rem;padding:3rem 0;">
+      <div style="font-size:2.5rem;">🔒</div>
+      <div>${name}'s reports have been locked.</div>
+    </div>
+  `;
+}
+
+  // Auto-open EOD viewer when navigated from another page via #view-eods
+  if (window.location.hash === '#view-eods') {
+    document.getElementById('eodViewerOverlay').classList.add('visible');
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  // Block right-click
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Block F12, Ctrl+U, Ctrl+S, Ctrl+Shift+I/J/C
+  document.addEventListener('keydown', e => {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && ['u', 's'].includes(e.key.toLowerCase())) ||
+      (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+</script>
+</body>
+</html>

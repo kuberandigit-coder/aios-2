@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Status — Admin</title>
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f5f6fa;
+      --white: #ffffff;
+      --border: #e4e7ef;
+      --border2: #d0d5e8;
+      --text: #111827;
+      --text2: #374151;
+      --text3: #6b7280;
+      --text4: #9ca3af;
+      --blue: #3b5cf6;
+      --blue-bg: #eef1fe;
+      --green: #059669;
+      --green-bg: #ecfdf5;
+      --green-border: #a7f3d0;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --red-border: #fecaca;
+      --amber: #d97706;
+      --amber-bg: #fffbeb;
+      --amber-border: #fde68a;
+      --teal: #0d9488;
+      --teal-bg: #f0fdfa;
+      --sidebar-w: 220px;
+      --topbar-h: 60px;
+      --r: 10px;
+      --r-lg: 14px;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 8px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    }
+    [data-theme="dark"] {
+      --bg: #0d1117; --white: #161b22; --border: #21262d; --border2: #30363d;
+      --text: #e6edf3; --text2: #c9d1d9; --text3: #8b949e; --text4: #484f58;
+      --blue: #58a6ff; --blue-bg: #1a2332;
+      --green: #3fb950; --green-bg: #0d2818; --green-border: #1a4029;
+      --red: #f85149; --red-bg: #2a0f0f; --red-border: #4a1a1a;
+      --amber: #d29922; --amber-bg: #271c00; --amber-border: #4a3500;
+      --teal: #2dd4bf; --teal-bg: #0a2020;
+      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 1px 8px rgba(0,0,0,.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LAYOUT ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      position: fixed; top: 0; left: 0; height: 100vh;
+      display: flex; flex-direction: column;
+      z-index: 200; overflow-y: auto;
+    }
+    .sb-logo {
+      display: flex; align-items: center; gap: .625rem;
+      padding: 1.125rem 1rem; border-bottom: 1px solid var(--border);
+    }
+    .sb-logo img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; }
+    .sb-logo-name { font-size: .75rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .sb-logo-sub  { font-size: .6rem; color: var(--text4); margin-top: .1rem; }
+    .sb-nav { padding: .75rem .625rem; flex: 1; }
+    .sb-section {
+      font-size: .58rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text4);
+      padding: .625rem .5rem .25rem;
+    }
+    .sb-link {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .4375rem .625rem; border-radius: 7px;
+      font-size: .775rem; font-weight: 500; color: var(--text3);
+      text-decoration: none; transition: background .12s, color .12s;
+    }
+    .sb-link:hover  { background: var(--bg); color: var(--text2); }
+    .sb-link.active { background: var(--blue-bg); color: var(--blue); font-weight: 600; }
+    .sb-link .ico   { font-size: .875rem; width: 1rem; text-align: center; flex-shrink: 0; }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      height: var(--topbar-h);
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.75rem;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .tb-page { font-size: .9375rem; font-weight: 700; color: var(--text); }
+    .tb-right { display: flex; align-items: center; gap: .5rem; }
+    .btn-icon {
+      width: 32px; height: 32px; border-radius: 7px;
+      background: var(--bg); border: 1px solid var(--border);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: .8125rem; color: var(--text3);
+      transition: background .12s;
+    }
+    .btn-icon:hover { background: var(--border); }
+    .chip {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .3125rem .75rem; border-radius: 7px;
+      background: var(--bg); border: 1px solid var(--border);
+      font-size: .725rem; font-weight: 600; color: var(--text3);
+      text-decoration: none; transition: background .12s;
+    }
+    .chip:hover { background: var(--border); color: var(--text2); }
+
+    /* ── PAGE BODY ── */
+    .body { padding: 1.5rem 1.75rem 3rem; }
+
+    /* ── DATE CONTROL BAR ── */
+    .date-bar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1.25rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .date-display {}
+    .date-main {
+      font-size: 1.375rem; font-weight: 800; color: var(--text);
+      letter-spacing: -.02em; line-height: 1;
+    }
+    .date-note {
+      font-size: .75rem; color: var(--text3); margin-top: .375rem;
+    }
+    .date-note b { color: var(--text2); font-weight: 600; }
+    .date-controls { display: flex; align-items: center; gap: .5rem; }
+    .dBtn {
+      height: 34px; padding: 0 .875rem;
+      border-radius: 7px; border: 1.5px solid var(--border2);
+      background: var(--bg);
+      font-family: inherit; font-size: .775rem; font-weight: 600;
+      color: var(--text2); cursor: pointer;
+      transition: background .12s, border-color .12s, color .12s;
+      white-space: nowrap;
+    }
+    .dBtn:hover { background: var(--white); border-color: var(--blue); color: var(--blue); }
+    .dBtn.primary {
+      background: var(--blue); color: #fff; border-color: var(--blue);
+    }
+    .dBtn.primary:hover { background: #2f4de0; border-color: #2f4de0; }
+    .dArrow {
+      width: 34px; height: 34px;
+      border-radius: 50%; border: 1.5px solid var(--border2);
+      background: var(--bg);
+      font-size: 1rem; color: var(--text2);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .12s, border-color .12s, color .12s;
+      flex-shrink: 0;
+    }
+    .dArrow:hover { background: var(--white); border-color: var(--blue); color: var(--blue); }
+
+    /* ── STATS STRIP ── */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .875rem; margin-bottom: 1.25rem; }
+    .stat-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--r-lg); padding: 1rem 1.125rem;
+      box-shadow: var(--shadow);
+    }
+    .stat-label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text4); margin-bottom: .375rem; }
+    .stat-num   { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .stat-sub   { font-size: .68rem; color: var(--text4); margin-top: .25rem; }
+    .stat-card.s-green .stat-num { color: var(--green); }
+    .stat-card.s-red   .stat-num { color: var(--red); }
+    .stat-card.s-amber .stat-num { color: var(--amber); }
+
+    /* ── FILTER TABS ── */
+    .filter-row { display: flex; align-items: center; gap: .5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .filter-row span { font-size: .75rem; font-weight: 600; color: var(--text3); margin-right: .25rem; }
+    .fTab {
+      height: 30px; padding: 0 .875rem;
+      border-radius: 100px; border: 1.5px solid var(--border);
+      background: var(--white); font-family: inherit;
+      font-size: .725rem; font-weight: 600; color: var(--text3);
+      cursor: pointer; transition: all .12s;
+    }
+    .fTab:hover { border-color: var(--blue); color: var(--blue); }
+    .fTab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    /* ── CARDS GRID ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1rem; }
+
+    /* ── MEMBER CARD ── */
+    .mcard {
+      background: var(--white); border: 1.5px solid var(--border);
+      border-radius: var(--r-lg); overflow: hidden;
+      box-shadow: var(--shadow); transition: box-shadow .15s, transform .15s;
+    }
+    .mcard:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .mcard.done    { border-top: 3px solid var(--green); }
+    .mcard.missing { border-top: 3px solid var(--red); }
+    .mcard.partial { border-top: 3px solid var(--amber); }
+
+    .mc-header {
+      padding: 1rem 1.125rem .875rem;
+      display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+    }
+    .mc-left { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+    .mc-avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .875rem; font-weight: 800;
+    }
+    .mc-avatar.ads { background: var(--blue-bg); color: var(--blue); }
+    .mc-avatar.seo { background: var(--teal-bg); color: var(--teal); }
+    .mc-name { font-size: .9375rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mc-meta { font-size: .68rem; color: var(--text4); margin-top: .125rem; }
+
+    .mc-badge {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center;
+      padding: .25rem .625rem; border-radius: 100px;
+      font-size: .68rem; font-weight: 700; white-space: nowrap;
+    }
+    .mb-green  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+    .mb-red    { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
+    .mb-amber  { background: var(--amber-bg);  color: var(--amber);  border: 1px solid var(--amber-border); }
+
+    /* TASK LIST inside card */
+    .mc-tasks { border-top: 1px solid var(--border); }
+    .mc-task {
+      display: flex; align-items: flex-start; gap: .625rem;
+      padding: .625rem 1.125rem; border-bottom: 1px solid var(--border);
+    }
+    .mc-task:last-child { border-bottom: none; }
+    .task-indicator {
+      width: 7px; height: 7px; border-radius: 50%;
+      flex-shrink: 0; margin-top: .3125rem;
+    }
+    .ti-done    { background: var(--green); }
+    .ti-missing { background: var(--red); }
+    .task-content { flex: 1; min-width: 0; }
+    .task-id {
+      font-size: .675rem; font-weight: 700; color: var(--blue);
+      margin-bottom: .1rem;
+    }
+    .task-desc {
+      font-size: .75rem; color: var(--text2); line-height: 1.45;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .task-review-text {
+      font-size: .7rem; color: var(--green); font-weight: 500;
+      margin-top: .2rem; font-style: italic;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+    }
+    .task-missing-text {
+      font-size: .7rem; color: var(--red); font-weight: 500; margin-top: .2rem;
+    }
+
+    /* ── EMPTY / LOADING ── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center; padding: 4rem 2rem;
+      color: var(--text4);
+    }
+    .empty-icon { font-size: 2.25rem; margin-bottom: .75rem; }
+    .empty-title { font-size: .9375rem; font-weight: 700; color: var(--text3); margin-bottom: .375rem; }
+    .empty-sub   { font-size: .8rem; }
+
+    /* SPINNER */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2.5px solid var(--border2);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+      margin: 0 auto .875rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .fadein { animation: fadein .2s ease; }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .body { padding: 1rem 1rem 3rem; }
+      .date-bar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <img src="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" alt="" />
+      <div>
+        <div class="sb-logo-name">Digit Web Lanka</div>
+        <div class="sb-logo-sub">Digital Marketing</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Admin</div>
+      <a href="admin.html"         class="sb-link"><span class="ico">🛡</span> Admin Panel</a>
+      <a href="review-status.html" class="sb-link active"><span class="ico">📋</span> Review Status</a>
+      <div class="sb-section">Reports</div>
+      <a href="index.html"         class="sb-link"><span class="ico">📝</span> EOD Report</a>
+      <a href="review.html"        class="sb-link"><span class="ico">🔎</span> 14-Day Review</a>
+      <div class="sb-section">Dashboards</div>
+      <a href="https://kuberandigit-coder.github.io/blog-builder/" target="_blank" class="sb-link"><span class="ico">✍️</span> Blog Builder</a>
+      <a href="https://home-page-tracker.vercel.app/" target="_blank" class="sb-link"><span class="ico">🏠</span> Home Page Tracker</a>
+      <a href="https://sales-dashboard-tawny-one.vercel.app/" target="_blank" class="sb-link"><span class="ico">📈</span> Live Sales</a>
+      <a href="https://image-converter-phi-ruby.vercel.app/" target="_blank" class="sb-link"><span class="ico">🖼️</span> Image Converter</a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="tb-page">14-Day Review Status</div>
+      <div class="tb-right">
+        <button class="btn-icon" id="themeBtn" title="Toggle theme">🌙</button>
+        <a href="admin.html" class="chip">🛡 Admin</a>
+      </div>
+    </header>
+
+    <!-- BODY -->
+    <div class="body">
+
+      <!-- DATE CONTROL -->
+      <div class="date-bar">
+        <div class="date-display">
+          <div class="date-main" id="dateMain">—</div>
+          <div class="date-note" id="dateNote">—</div>
+        </div>
+        <div class="date-controls">
+          <button class="dArrow" id="prevBtn" title="Previous day">&#8592;</button>
+          <button class="dBtn primary" id="todayBtn">Today</button>
+          <button class="dArrow" id="nextBtn" title="Next day">&#8594;</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Members</div>
+          <div class="stat-num" id="sTotal">—</div>
+          <div class="stat-sub">had tasks this day</div>
+        </div>
+        <div class="stat-card s-green">
+          <div class="stat-label">All Reviewed</div>
+          <div class="stat-num" id="sDone">—</div>
+          <div class="stat-sub">fully submitted</div>
+        </div>
+        <div class="stat-card s-red">
+          <div class="stat-label">Missing</div>
+          <div class="stat-num" id="sMissing">—</div>
+          <div class="stat-sub">nothing submitted</div>
+        </div>
+        <div class="stat-card s-amber">
+          <div class="stat-label">Partial</div>
+          <div class="stat-num" id="sPartial">—</div>
+          <div class="stat-sub">some tasks missing</div>
+        </div>
+      </div>
+
+      <!-- FILTER TABS -->
+      <div class="filter-row">
+        <span>Filter:</span>
+        <button class="fTab active" data-filter="all">All</button>
+        <button class="fTab" data-filter="missing">Missing</button>
+        <button class="fTab" data-filter="partial">Partial</button>
+        <button class="fTab" data-filter="done">All Reviewed</button>
+      </div>
+
+      <!-- CARDS -->
+      <div class="cards" id="cardsGrid"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJHUSm1CkYN-WPB3Nb_u_c1bgRZRNI-FF4e4vTPBzQMnRPBJ-C0Fu25jVgTWWwkxqy2w/exec";
+  const SECRET = "dwl-review-2026";
+
+  /* ── THEME ── */
+  const themeBtn = document.getElementById("themeBtn");
+  function applyTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    localStorage.setItem("eod_theme", t);
+    themeBtn.textContent = t === "dark" ? "☀️" : "🌙";
+  }
+  applyTheme(localStorage.getItem("eod_theme") || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light"));
+  themeBtn.addEventListener("click", () =>
+    applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"));
+
+  /* ── DATE HELPERS ── */
+  function toDDMMYYYY(d) {
+    return String(d.getDate()).padStart(2,"0") + "/" +
+           String(d.getMonth()+1).padStart(2,"0") + "/" + d.getFullYear();
+  }
+  function parseDate(str) {   // DD/MM/YYYY → Date (midnight local)
+    const [dd, mm, yyyy] = str.split("/");
+    return new Date(+yyyy, +mm - 1, +dd);
+  }
+  function shiftDate(str, days) {
+    const d = parseDate(str);
+    d.setDate(d.getDate() + days);
+    return toDDMMYYYY(d);
+  }
+  function todayMinus14() {
+    const d = new Date();
+    d.setDate(d.getDate() - 14);
+    return toDDMMYYYY(d);
+  }
+  function fmtFull(str) {
+    return parseDate(str).toLocaleDateString("en-GB",
+      { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+  }
+
+  /* ── STATE ── */
+  let currentDate = "";   // updated immediately on each nav click so arrows always shift from latest
+  let reqId = 0;          // incremented on every new request; stale responses are discarded
+  let allMembers = [];
+  let activeFilter = "all";
+
+  /* ── HEADER LABEL ── */
+  function updateHeader(str) {
+    const today = toDDMMYYYY(new Date());
+    const due   = shiftDate(str, 14);
+    const daysAgo = Math.round((parseDate(today) - parseDate(str)) / 86400000);
+    document.getElementById("dateMain").textContent = "Tasks from  " + str;
+    let note = fmtFull(str) + "  ·  14-day review due: " + due;
+    if (due === today)      note += " (today)";
+    else if (daysAgo > 14)  note += "  — overdue " + (daysAgo - 14) + "d";
+    document.getElementById("dateNote").textContent = note;
+  }
+
+  /* ── LOAD ── */
+  async function loadDay(str) {
+    // Update currentDate IMMEDIATELY so next arrow click shifts from the new date
+    currentDate = str;
+    const myId = ++reqId;
+
+    updateHeader(str);
+    showLoading(str);
+
+    try {
+      const ctrl  = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 45000);
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST", redirect: "follow", signal: ctrl.signal,
+        body: JSON.stringify({ secret: SECRET, action: "getDayReview", date: str })
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error("Network error " + res.status);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      if (myId !== reqId) return;   // newer request already in flight — discard this response
+
+      allMembers = data.members || [];
+      renderStats(allMembers);
+      renderCards(allMembers, activeFilter);
+    } catch (err) {
+      if (myId !== reqId) return;
+      if (err.name === "AbortError") showError("Request timed out — try again");
+      else showError(err.message);
+    }
+  }
+
+  /* ── STATS ── */
+  function renderStats(members) {
+    let done = 0, missing = 0, partial = 0;
+    members.forEach(m => {
+      const r = m.tasks.filter(t => t.reviewed).length;
+      if (r === m.tasks.length) done++;
+      else if (r === 0) missing++;
+      else partial++;
+    });
+    document.getElementById("sTotal").textContent   = members.length;
+    document.getElementById("sDone").textContent    = done;
+    document.getElementById("sMissing").textContent = missing;
+    document.getElementById("sPartial").textContent = partial;
+  }
+
+  /* ── CARDS ── */
+  function renderCards(members, filter) {
+    const grid = document.getElementById("cardsGrid");
+
+    let list = members;
+    if (filter === "done")    list = members.filter(m => m.tasks.filter(t=>t.reviewed).length === m.tasks.length);
+    if (filter === "missing") list = members.filter(m => m.tasks.filter(t=>t.reviewed).length === 0);
+    if (filter === "partial") list = members.filter(m => {
+      const r = m.tasks.filter(t=>t.reviewed).length;
+      return r > 0 && r < m.tasks.length;
+    });
+
+    if (!list.length) {
+      grid.innerHTML = `<div class="empty-state fadein">
+        <div class="empty-icon">${members.length ? "🔍" : "🗓"}</div>
+        <div class="empty-title">${members.length ? "No members match this filter" : "No tasks found for " + currentDate}</div>
+        <div class="empty-sub">${members.length ? "Try a different filter above" : "No ADS or SEO tasks recorded on this date"}</div>
+      </div>`;
+      return;
+    }
+
+    // Sort: missing first, partial next, done last
+    const sorted = [...list].sort((a, b) => {
+      const rank = m => {
+        const r = m.tasks.filter(t=>t.reviewed).length;
+        if (r === 0) return 0;
+        if (r === m.tasks.length) return 2;
+        return 1;
+      };
+      return rank(a) - rank(b);
+    });
+
+    grid.innerHTML = sorted.map(m => {
+      const reviewed = m.tasks.filter(t => t.reviewed).length;
+      const total    = m.tasks.length;
+      const missing  = total - reviewed;
+      const initials = m.member.slice(0, 2).toUpperCase();
+      const deptCls  = (m.dept || "").toUpperCase() === "ADS" ? "ads" : "seo";
+
+      let cardCls, badgeCls, badgeText;
+      if (reviewed === total) {
+        cardCls="done";    badgeCls="mb-green"; badgeText="All Reviewed";
+      } else if (reviewed === 0) {
+        cardCls="missing"; badgeCls="mb-red";   badgeText="Not Submitted";
+      } else {
+        cardCls="partial"; badgeCls="mb-amber"; badgeText=`${reviewed}/${total} Submitted`;
+      }
+
+      const taskRows = m.tasks.map(t => `
+        <div class="mc-task">
+          <span class="task-indicator ${t.reviewed ? "ti-done" : "ti-missing"}"></span>
+          <div class="task-content">
+            <div class="task-id">${t.taskId || "—"}</div>
+            <div class="task-desc">${t.taskDesc || "(no description)"}</div>
+            ${t.reviewed
+              ? `<div class="task-review-text">"${t.reviewText}"</div>`
+              : `<div class="task-missing-text">No review submitted</div>`
+            }
+          </div>
+        </div>`).join("");
+
+      return `<div class="mcard ${cardCls} fadein">
+        <div class="mc-header">
+          <div class="mc-left">
+            <div class="mc-avatar ${deptCls}">${initials}</div>
+            <div>
+              <div class="mc-name">${m.member}</div>
+              <div class="mc-meta">${m.dept || "—"} &middot; ${total} task${total !== 1 ? "s" : ""} &middot; ${missing ? missing + " missing" : "all done"}</div>
+            </div>
+          </div>
+          <span class="mc-badge ${badgeCls}">${badgeText}</span>
+        </div>
+        <div class="mc-tasks">${taskRows}</div>
+      </div>`;
+    }).join("");
+  }
+
+  /* ── LOADING / ERROR ── */
+  function showLoading(str) {
+    document.getElementById("sTotal").textContent =
+    document.getElementById("sDone").textContent  =
+    document.getElementById("sMissing").textContent =
+    document.getElementById("sPartial").textContent = "—";
+    document.getElementById("cardsGrid").innerHTML =
+      `<div class="empty-state"><div class="spinner"></div>
+       <div class="empty-title">Loading…</div>
+       <div class="empty-sub">Fetching tasks for ${str}</div></div>`;
+  }
+  function showError(msg) {
+    document.getElementById("cardsGrid").innerHTML =
+      `<div class="empty-state fadein">
+       <div class="empty-icon">⚠️</div>
+       <div class="empty-title">Failed to load</div>
+       <div class="empty-sub">${msg}</div></div>`;
+  }
+
+  /* ── DATE NAV ── */
+  document.getElementById("prevBtn").addEventListener("click", () => loadDay(shiftDate(currentDate || todayMinus14(), -1)));
+  document.getElementById("nextBtn").addEventListener("click", () => loadDay(shiftDate(currentDate || todayMinus14(),  1)));
+  document.getElementById("todayBtn").addEventListener("click", () => loadDay(todayMinus14()));
+
+  /* ── FILTER ── */
+  document.querySelectorAll(".fTab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".fTab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeFilter = btn.dataset.filter;
+      renderCards(allMembers, activeFilter);
+    });
+  });
+
+  /* ── INIT ── */
+  currentDate = todayMinus14();
+  loadDay(currentDate);
+</script>
+</body>
+</html>
