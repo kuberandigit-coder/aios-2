@@ -50,7 +50,6 @@ const SNAPSHOT_NAME_BY_STAFF = {
   'mahima': 'mahima-de-organic',
   'mahima-ads': 'mahima-de-ads',
   'jeffri-ads': 'jeffri-de-ads',
-  'mahima-id-ads': 'mahima-de-id-ads',
   'mahima-total': 'mahima-de-total',
   'mahima-ads-term': 'mahima-de-ads-term',
   'hetheesha-organic': 'hetheesha-fr-organic',

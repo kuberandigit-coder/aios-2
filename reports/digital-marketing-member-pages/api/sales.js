@@ -3539,7 +3539,7 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
 
 async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   const staffParam = req.query && req.query.staff;
-  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'mahima-id-ads' ? 'mahima-id-ads' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : 'sukirtha';
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : 'sukirtha';
   const cacheKey = staff + ':' + monthConfig.month;
   const isFrStaff = staff === 'hetheesha-organic' || staff === 'thivagini-ads';
   const isUkStaff = staff === 'sajeepan-ads' || staff === 'theekshy-ads' || staff === 'sonya-ads';
@@ -3551,7 +3551,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (!forceRefresh) {
-    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'mahima-id-ads' ? 'mahima-de-id-ads' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : 'sukirtha-de-organic';
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : 'sukirtha-de-organic';
     const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -4101,89 +4101,6 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     };
     CACHE.set(cacheKey, { data: sonyaPayload, generatedAt: Date.now() });
     res.status(200).json(sonyaPayload);
-    return;
-  }
-
-  if (staff === 'mahima-id-ads') {
-    // Mahima "ID Sales" tab — added 2026-07-20, corrected same day per
-    // explicit user instruction: product-scoped to Mahima's owned product
-    // IDs, Google Ads channel only (Organic excluded — already covered by
-    // the Organic sub-tab). "Mahima has only her IDs in all her campaigns"
-    // means: no broad Google-Ads-platform test is needed or wanted — an
-    // order counts ONLY if its FIRST SESSION has "mahi" (→ Mahima) or
-    // "jeff" (→ Jeffri, a different DE staff member). There is no
-    // "Other/Unattributed" bucket anymore (the earlier broad
-    // isPaidSearch/isAdPlatformFamily test that produced one was wrong —
-    // reverted). If the first session is "mahi" but the SECOND session is
-    // "jeff", it still counts as Mahima (first-session-only rule,
-    // unchanged), but is flagged visibly (row.secondSessionOwner) so this
-    // crossover case is never hidden.
-    const idAdsRows = [];
-    for (const order of orders) {
-      const journey = classifyOrderJourneyOrganic(order);
-      const row = buildSukirthaOrderRow(order, journey, 'mahima');
-      if (!row) continue;
-      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
-      const utm = (fv && fv.utmParameters) || {};
-      const fieldsHave = (u, word) => ['source', 'medium', 'campaign', 'term', 'content'].some(k => (u[k] || '').toString().toLowerCase().includes(word));
-      const hasMahi = fieldsHave(utm, 'mahi');
-      const hasJeff = fieldsHave(utm, 'jeff');
-      const owner = hasMahi ? 'Mahima' : hasJeff ? 'Jeffri' : null;
-      if (!owner) continue;
-      row.owner = owner;
-      const secondSession = row.sessions && row.sessions[1];
-      row.secondSessionOwner = secondSession ? (fieldsHave(secondSession.utm || {}, 'mahi') ? 'Mahima' : fieldsHave(secondSession.utm || {}, 'jeff') ? 'Jeffri' : null) : null;
-      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
-      row.rawCampaign = utm.campaign || null;
-      row.firstVisitSource = utm.source || null;
-      row.firstVisitMedium = utm.medium || null;
-      row.firstVisitTerm = utm.term || null;
-      row.firstVisitContent = utm.content || null;
-      idAdsRows.push(row);
-    }
-
-    const OWNER_ORDER = ['Mahima', 'Jeffri'];
-    const byOwner = new Map();
-    for (const r of idAdsRows) {
-      if (!byOwner.has(r.owner)) byOwner.set(r.owner, []);
-      byOwner.get(r.owner).push(r);
-    }
-    const ownerSummary = OWNER_ORDER
-      .map(owner => ({ owner, ...summarizeRows(byOwner.get(owner) || []) }))
-      .filter(o => o.ordersCount > 0);
-
-    const crossoverRows = idAdsRows.filter(r => r.owner === 'Mahima' && r.secondSessionOwner === 'Jeffri');
-
-    const combinedSummary = summarizeRows(idAdsRows);
-
-    const idAdsPayload = {
-      success: true,
-      staff: { name: 'Mahima', department: 'Google Ads — Product ID Sales', store: 'ledsone.de' },
-      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
-      supportedMonths: SUPPORTED_MONTHS,
-      isLive: monthConfig.isLive,
-      source: {
-        scope: `product-scoped to Mahima's ${MAHIMA_EXCLUDED_PRODUCT_IDS.size} owned product IDs; an order counts ONLY if its first session has "mahi" (Mahima) or "jeff" (Jeffri) — no other/unattributed bucket. Crossover cases (first session mahi, second session jeff) still count as Mahima per the first-session-only rule, but are flagged separately for visibility (${crossoverRows.length} such orders this month)`,
-        orders: 'Shopify Admin GraphQL API',
-        journey: 'Shopify customerJourneySummary',
-      },
-      ownerList: OWNER_ORDER,
-      combinedSummary,
-      ownerSummary,
-      crossoverCount: crossoverRows.length,
-      allMahimaIdAdsOrders: idAdsRows,
-      meta: {
-        generatedAt: new Date().toISOString(),
-        cacheStatus: 'miss',
-        ordersFetched: orders.length,
-        matchedOrders: idAdsRows.length,
-        pagesFetched: pages,
-        throttleRetries: retryState.throttleRetries,
-        executionMs: Date.now() - startTime,
-      },
-    };
-    CACHE.set(cacheKey, { data: idAdsPayload, generatedAt: Date.now() });
-    res.status(200).json(idAdsPayload);
     return;
   }
 
