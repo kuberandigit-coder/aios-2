@@ -54,6 +54,7 @@ const SNAPSHOT_NAME_BY_STAFF = {
   'thasitha-ads': 'thasitha-de-ads',
   'sajeepan-ads': 'sajeepan-uk-ads',
   'theekshy-ads': 'theekshy-uk-ads',
+  'sonya-ads': 'sonya-uk-ads',
   'sukirtha': 'sukirtha-de-organic',
 };
 

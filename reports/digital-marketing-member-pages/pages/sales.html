@@ -90,6 +90,7 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" id="tabBtnThasitha" onclick="showStaffTab('thasitha')">Thasitha</div>
   <div class="reqtab" id="tabBtnSajeepan" onclick="showStaffTab('sajeepan')">Sajeepan</div>
   <div class="reqtab" id="tabBtnTheekshy" onclick="showStaffTab('theekshy')">Theekshy</div>
+  <div class="reqtab" id="tabBtnSonya" onclick="showStaffTab('sonya')">Sonya</div>
 </div>
 
 <div id="tabKamsi">
@@ -1255,6 +1256,95 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 </div>
 
+<div id="tabSonya" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sonya</div>
+  <h1>Google Ads Sales</h1>
+  <div class="sub" id="snPeriodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, Google Ads campaigns (not product-scoped) &nbsp;&middot;&nbsp; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="snLiveChip">Loading historical data from Shopify&hellip;</span>
+    <span class="chip" id="snLastRefresh" style="display:none;"></span>
+    <button id="snRefreshBtn" class="primary" style="display:none;" onclick="snLoad(true)">Refresh</button>
+  </div>
+</header>
+
+<div class="reqtabs" style="margin-bottom:14px;" id="snMonthTabs">
+  <div class="reqtab" data-month="2026-01" onclick="snSelectMonth('2026-01')">January</div>
+  <div class="reqtab" data-month="2026-02" onclick="snSelectMonth('2026-02')">February</div>
+  <div class="reqtab" data-month="2026-03" onclick="snSelectMonth('2026-03')">March</div>
+  <div class="reqtab" data-month="2026-04" onclick="snSelectMonth('2026-04')">April</div>
+  <div class="reqtab" data-month="2026-05" onclick="snSelectMonth('2026-05')">May</div>
+  <div class="reqtab" data-month="2026-06" onclick="snSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="snSelectMonth('2026-07')">July (live)</div>
+</div>
+
+<div class="exportbar" style="margin-bottom:14px;">
+  <button id="snGroupExportCsv" class="primary">Export CSV</button>
+</div>
+
+<div class="cards" id="snCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+  <div class="card"><div class="label">Total Sonya Orders</div><div class="value" id="snkOrders">&ndash;</div></div>
+  <div class="card"><div class="label">Total Units Sold</div><div class="value" id="snkUnits">&ndash;</div></div>
+  <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="snkGross">&ndash;</div></div>
+  <div class="card"><div class="label">Total Refunds</div><div class="value" id="snkRefunds">&ndash;</div></div>
+  <div class="card"><div class="label">Total Net Sales</div><div class="value" id="snkNet">&ndash;</div></div>
+  <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="snkProducts">&ndash;</div></div>
+  <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="sncLastOk" style="font-size:13px;">&ndash;</div></div>
+</div>
+
+<div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped) Google Ads sales, first-session orders attributed to Sonya by exact match on <code>utm_term</code> against her 5 confirmed terms. Click a row below to filter the table to just that term.</div>
+
+<div class="tablebox" style="margin-bottom:14px;">
+  <div class="scroll" style="max-height:none;overflow-y:visible;">
+    <table style="min-width:900px;">
+      <thead><tr>
+        <th>utm_term</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+      </tr></thead>
+      <tbody id="snChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="sncCnt">&ndash;</span>
+    <input type="text" id="sncq_order" placeholder="Search order name&hellip;">
+    <input type="text" id="sncq_product" placeholder="Search Product ID&hellip;">
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>utm_term <select id="sncf_channel">
+      <option value="">All Terms</option>
+    </select></label>
+    <button id="sncResetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th></th>
+        <th>utm_term</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Product</th><th>Product ID</th><th>SKU</th>
+        <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+        <th>Financial Status</th><th>Fulfilment Status</th>
+        <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Raw utm_campaign</th>
+      </tr></thead>
+      <tbody id="sncTbody"><tr><td colspan="19" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="sncEmpty" style="display:none;">No orders match the current filters.</div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales-sukirtha-de?staff=sonya-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Matching rule (confirmed 2026-07-22):</strong> an order belongs to Sonya if its <em>first session only</em> has <code>utm_term</code> exactly matching one of her 5 confirmed values (case-insensitive): <code>Sonya</code>, <code>ninc</code>, <code>glow_up</code>, <code>SonyaIreland</code>, <code>SonyaSpian</code>, <code>SonyTopEuropeEngEU{_adgroup}</code>. Sessions 2+ are never inspected.<br>
+  <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
+  <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
+  <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button.<br>
+  <strong>Live month (July onward):</strong> the current month is month-to-date &mdash; a <strong>Refresh</strong> button appears to re-fetch the latest data.<br>
+  <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+  <strong>Last refresh timestamp:</strong> <span id="snFootRefresh">&ndash;</span>
+</div>
+</div>
+
 <script>
 function esc(s){ if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function num(v){ return v === null || v === undefined ? '—' : Number(v).toLocaleString(); }
@@ -1294,6 +1384,9 @@ function showStaffTab(n){
   document.getElementById('tabBtnTheekshy').classList.toggle('active', n === 'theekshy');
   document.getElementById('tabTheekshy').style.display = n === 'theekshy' ? '' : 'none';
   if (n === 'theekshy' && !TK_DATA) tkLoad(false);
+  document.getElementById('tabBtnSonya').classList.toggle('active', n === 'sonya');
+  document.getElementById('tabSonya').style.display = n === 'sonya' ? '' : 'none';
+  if (n === 'sonya' && !SN_DATA) snLoad(false);
 }
 
 function showMahimaSub(sub){
@@ -3325,6 +3418,211 @@ function tkGroupExportCsv(){
   downloadCsv(lines.join('\r\n'), monthTag + '_theekshy-ads-sales-campaign-summary-ledsone-uk.csv');
 }
 document.getElementById('tkGroupExportCsv').addEventListener('click', tkGroupExportCsv);
+
+// ===== Sonya tab (Google Ads only, ledsone.co.uk, mirrors the Thasitha/Sajeepan/Theekshy tabs, distinct SN-prefixed globals/functions) =====
+let SN_CURRENT_MONTH = '2026-07';
+const SN_LIVE_MONTHS = ['2026-07'];
+function snSelectMonth(month){
+  SN_CURRENT_MONTH = month;
+  document.querySelectorAll('#snMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  snLoad(false);
+}
+
+let SN_DATA = null;
+let snOpenRows = new Set();
+let snLoading = false;
+let snAbortController = null;
+let snLastSuccessfulAt = null;
+const SN_MONTH_CACHE = {};
+let snLoadSeq = 0;
+
+async function snLoad(force){
+  const myMonth = SN_CURRENT_MONTH;
+  const seq = ++snLoadSeq;
+  snLoading = true;
+  const isLive = SN_LIVE_MONTHS.includes(myMonth);
+  const refreshBtn = document.getElementById('snRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('snLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  document.getElementById('snLiveChip').className = 'chip';
+  if (snAbortController) snAbortController.abort();
+  snAbortController = new AbortController();
+  try {
+    let data;
+    if (!force && SN_MONTH_CACHE[myMonth]) {
+      data = SN_MONTH_CACHE[myMonth];
+    } else {
+      const url = '/api/sales-sukirtha-de?staff=sonya-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const res = await fetch(url, { signal: snAbortController.signal });
+      data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+      SN_MONTH_CACHE[myMonth] = data;
+    }
+    if (seq !== snLoadSeq) return;
+    SN_DATA = data;
+    snLastSuccessfulAt = new Date();
+    document.getElementById('snLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('snLiveChip').className = 'chip';
+    document.getElementById('snLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('snLastRefresh').style.display = '';
+    document.getElementById('snFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('sncLastOk').textContent = snLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('snPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, Google Ads campaigns &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    snOpenRows = new Set();
+    snRenderAll();
+    snLoading = false;
+    refreshBtn.disabled = false;
+  } catch (e) {
+    if (seq !== snLoadSeq) return;
+    if (e.name === 'AbortError') { snLoading = false; refreshBtn.disabled = false; return; }
+    document.getElementById('snLiveChip').textContent = 'Failed to load: ' + e.message + (SN_DATA ? ' — showing last successful data' : '');
+    document.getElementById('snLiveChip').className = 'chip stale';
+    if (!SN_DATA) document.getElementById('sncTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    snLoading = false;
+    refreshBtn.disabled = false;
+  }
+}
+
+function snRenderAll(){
+  if (!SN_DATA) return;
+  const c = SN_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'GBP' };
+  document.getElementById('snkOrders').textContent = num(c.ordersCount);
+  document.getElementById('snkUnits').textContent = num(c.unitsSold);
+  document.getElementById('snkGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('snkRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('snkNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('snkProducts').textContent = num(c.uniqueProductsSold);
+  sncRenderAll();
+}
+
+function snFlatRows(){
+  const rows = [];
+  for (const o of (SN_DATA ? SN_DATA.allSonyaAdsOrders : []) || []) {
+    for (const item of o.matchedItems) rows.push({ order: o, item, group: o.campaign });
+  }
+  return rows;
+}
+
+function sncFilteredRows(){
+  const qOrder = document.getElementById('sncq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('sncq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('sncf_channel').value;
+  return snFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function sncRenderAll(){
+  if (!SN_DATA) return;
+  const cb = SN_DATA.campaignSummary || [];
+  document.getElementById('snChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="snChannelRow" data-channel="' + esc(c.campaign) + '" style="cursor:pointer;" title="Click to filter table below to this term">' +
+    '<td><strong>' + esc(c.campaign) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.snChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('sncf_channel').value = tr.getAttribute('data-channel');
+      sncRenderTable();
+      document.getElementById('sncTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('sncf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Terms</option>' + cb.map(c => '<option value="' + esc(c.campaign) + '">' + esc(c.campaign) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  sncRenderTable();
+}
+
+function sncRenderTable(){
+  const rows = sncFilteredRows();
+  document.getElementById('sncCnt').textContent = rows.length.toLocaleString() + ' of ' + snFlatRows().length.toLocaleString() + ' line items';
+  const tbody = document.getElementById('sncTbody');
+  const emptyEl = document.getElementById('sncEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (snOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.rawCampaign) + '</td>' +
+      '</tr>'
+    );
+    if (snOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="19"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (snOpenRows.has(id)) snOpenRows.delete(id); else snOpenRows.add(id);
+      sncRenderTable();
+    });
+  });
+}
+
+['sncq_order','sncq_product'].forEach(id => document.getElementById(id).addEventListener('input', sncRenderTable));
+document.getElementById('sncf_channel').addEventListener('change', sncRenderTable);
+document.getElementById('sncResetFilters').addEventListener('click', () => {
+  document.getElementById('sncq_order').value = '';
+  document.getElementById('sncq_product').value = '';
+  document.getElementById('sncf_channel').value = '';
+  sncRenderTable();
+});
+
+function snGroupExportCsv(){
+  const cb = SN_DATA ? (SN_DATA.campaignSummary || []) : [];
+  const header = ['utm_term','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = SN_DATA ? SN_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.campaign, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = SN_DATA ? SN_DATA.reportPeriod.month : SN_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_sonya-ads-sales-campaign-summary-ledsone-uk.csv');
+}
+document.getElementById('snGroupExportCsv').addEventListener('click', snGroupExportCsv);
 
 // ===== Dilaksi tab (mirrors Kamsi tab above, distinct D-prefixed globals/functions) =====
 let D_CURRENT_MONTH = '2026-07';
