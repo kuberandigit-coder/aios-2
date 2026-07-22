@@ -294,6 +294,7 @@ tbody tr:hover{background:var(--accent-soft);}
   <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
   <span class="chip" id="sLiveChip">Loading historical data from Shopify&hellip;</span>
   <span class="chip" id="sLastRefresh" style="display:none;"></span>
+  <button id="sRefreshBtn" class="primary" style="display:none;" onclick="sLoad(true)">Refresh</button>
 </div>
 
 <div class="reqtabs" style="margin-bottom:14px;" id="sMonthTabs">
@@ -302,7 +303,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" data-month="2026-03" onclick="sSelectMonth('2026-03')">March</div>
   <div class="reqtab" data-month="2026-04" onclick="sSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="sSelectMonth('2026-05')">May</div>
-  <div class="reqtab active" data-month="2026-06" onclick="sSelectMonth('2026-06')">June</div>
+  <div class="reqtab" data-month="2026-06" onclick="sSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="sSelectMonth('2026-07')">July (live)</div>
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
@@ -3908,7 +3910,8 @@ document.getElementById('dGroupExportCsv').addEventListener('click', dGroupExpor
 // Only two groups: Fully Email, First-Session Email. S-prefixed globals/
 // functions throughout, verified against K_/k- and D_/d- prefixed
 // identifiers above for zero collisions. =====
-let S_CURRENT_MONTH = '2026-06';
+let S_CURRENT_MONTH = '2026-07';
+const S_LIVE_MONTHS = ['2026-07'];
 function sSelectMonth(month){
   S_CURRENT_MONTH = month;
   document.querySelectorAll('#sMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -3927,7 +3930,11 @@ async function sLoad(force){
   const myMonth = S_CURRENT_MONTH;
   const seq = ++sLoadSeq;
   sLoading = true;
-  document.getElementById('sLiveChip').textContent = 'Loading historical data from Shopify…';
+  const isLive = S_LIVE_MONTHS.includes(myMonth);
+  const refreshBtn = document.getElementById('sRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('sLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('sLiveChip').className = 'chip';
   if (sAbortController) sAbortController.abort();
   sAbortController = new AbortController();
@@ -3945,23 +3952,25 @@ async function sLoad(force){
     if (seq !== sLoadSeq) return;
     S_DATA = data;
     sLastSuccessfulAt = new Date();
-    document.getElementById('sLiveChip').textContent = 'Historical data retrieved from Shopify';
+    document.getElementById('sLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
     document.getElementById('sLiveChip').className = 'chip';
     document.getElementById('sLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('sLastRefresh').style.display = '';
     document.getElementById('sFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('scLastOk').textContent = sLastSuccessfulAt.toLocaleTimeString();
-    document.getElementById('sPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Store-wide (all orders, no product filter) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period &mdash; not a live/updating view.';
+    document.getElementById('sPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; Store-wide (all orders, no product filter) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
     sOpenRows = new Set();
     sRenderAll();
     sLoading = false;
+    refreshBtn.disabled = false;
   } catch (e) {
     if (seq !== sLoadSeq) return;
-    if (e.name === 'AbortError') { sLoading = false; return; }
+    if (e.name === 'AbortError') { sLoading = false; refreshBtn.disabled = false; return; }
     document.getElementById('sLiveChip').textContent = 'Failed to load: ' + e.message + (S_DATA ? ' — showing last successful data' : '');
     document.getElementById('sLiveChip').className = 'chip stale';
     if (!S_DATA) document.getElementById('scTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     sLoading = false;
+    refreshBtn.disabled = false;
   }
 }
 

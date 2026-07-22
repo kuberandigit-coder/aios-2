@@ -2093,19 +2093,28 @@ function londonMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'];
+// Jan-Jun 2026 are closed/historical (static snapshot, numbers frozen). Jul
+// 2026 onward is the current open month — always fetched live, month-to-
+// date, with a manual Refresh button on the client. (Mirrors the Kamsi/
+// Dilaksi modules above — added 2026-07-22, this module never had July
+// wired in originally.)
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
+const CURRENT_LIVE_MONTHS = ['2026-07'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-06';
   const [y, m] = month.split('-').map(Number);
   const startMs = londonMidnightUTCMs(y, m, 1);
-  const endMs = m === 12 ? londonMidnightUTCMs(y + 1, 1, 1) : londonMidnightUTCMs(y, m + 1, 1);
+  const monthEndMs = m === 12 ? londonMidnightUTCMs(y + 1, 1, 1) : londonMidnightUTCMs(y, m + 1, 1);
+  const isLive = CURRENT_LIVE_MONTHS.includes(month);
+  const endMs = isLive ? Math.min(monthEndMs, Date.now()) : monthEndMs;
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const endDay = isLive ? Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric' }).format(new Date(endMs))) : daysInMonth;
   return {
-    month, startMs, endMs,
+    month, startMs, endMs, isLive,
     startISO: new Date(startMs).toISOString(),
     endISO: new Date(endMs).toISOString(),
-    label: `${MONTH_NAMES[m - 1]} 1–${daysInMonth}, ${y}`,
+    label: isLive ? `${MONTH_NAMES[m - 1]} 1–${endDay} (month to date), ${y}` : `${MONTH_NAMES[m - 1]} 1–${daysInMonth}, ${y}`,
     // Date-only broad net, padded a day each side — exact inclusion enforced
     // by startMs/endMs below (DST-aware). Same fix as sales-kamsi.js.
     queryStart: new Date(startMs - 24 * 3600 * 1000).toISOString().slice(0, 10),
@@ -2568,6 +2577,7 @@ async function sukirthaUkHandler(req, res) {
       staff: { name: 'Sukirtha', department: 'Email Marketing', store: 'ledsone.co.uk' },
       reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/London' },
       supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
       source: {
         scope: 'store-wide — every order counts, no product allocation / matching (unlike Kamsi and Dilaksi)',
         orders: 'Shopify Admin GraphQL API',
