@@ -89,6 +89,7 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" id="tabBtnThivagini" onclick="showStaffTab('thivagini')">Thivagini &middot; FR</div>
   <div class="reqtab" id="tabBtnThasitha" onclick="showStaffTab('thasitha')">Thasitha</div>
   <div class="reqtab" id="tabBtnSajeepan" onclick="showStaffTab('sajeepan')">Sajeepan</div>
+  <div class="reqtab" id="tabBtnTheekshy" onclick="showStaffTab('theekshy')">Theekshy</div>
 </div>
 
 <div id="tabKamsi">
@@ -1166,6 +1167,94 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 </div>
 
+<div id="tabTheekshy" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Theekshy</div>
+  <h1>Google Ads Sales</h1>
+  <div class="sub" id="tkPeriodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, Google Ads campaigns (not product-scoped) &nbsp;&middot;&nbsp; joined March 2026 &nbsp;&middot;&nbsp; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="tkLiveChip">Loading historical data from Shopify&hellip;</span>
+    <span class="chip" id="tkLastRefresh" style="display:none;"></span>
+    <button id="tkRefreshBtn" class="primary" style="display:none;" onclick="tkLoad(true)">Refresh</button>
+  </div>
+</header>
+
+<div class="reqtabs" style="margin-bottom:14px;" id="tkMonthTabs">
+  <div class="reqtab" data-month="2026-03" onclick="tkSelectMonth('2026-03')">March</div>
+  <div class="reqtab" data-month="2026-04" onclick="tkSelectMonth('2026-04')">April</div>
+  <div class="reqtab" data-month="2026-05" onclick="tkSelectMonth('2026-05')">May</div>
+  <div class="reqtab" data-month="2026-06" onclick="tkSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="tkSelectMonth('2026-07')">July (live)</div>
+</div>
+
+<div class="exportbar" style="margin-bottom:14px;">
+  <button id="tkGroupExportCsv" class="primary">Export CSV</button>
+</div>
+
+<div class="cards" id="tkCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+  <div class="card"><div class="label">Total Theekshy Orders</div><div class="value" id="tkkOrders">&ndash;</div></div>
+  <div class="card"><div class="label">Total Units Sold</div><div class="value" id="tkkUnits">&ndash;</div></div>
+  <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="tkkGross">&ndash;</div></div>
+  <div class="card"><div class="label">Total Refunds</div><div class="value" id="tkkRefunds">&ndash;</div></div>
+  <div class="card"><div class="label">Total Net Sales</div><div class="value" id="tkkNet">&ndash;</div></div>
+  <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="tkkProducts">&ndash;</div></div>
+  <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="tkcLastOk" style="font-size:13px;">&ndash;</div></div>
+</div>
+
+<div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped) Google Ads sales, first-session orders attributed to Theekshy by exact match on <code>utm_term</code> = <code>theekshy</code>. Click a row below to filter the table to just that term.</div>
+
+<div class="tablebox" style="margin-bottom:14px;">
+  <div class="scroll" style="max-height:none;overflow-y:visible;">
+    <table style="min-width:900px;">
+      <thead><tr>
+        <th>utm_term</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+      </tr></thead>
+      <tbody id="tkChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="tkcCnt">&ndash;</span>
+    <input type="text" id="tkcq_order" placeholder="Search order name&hellip;">
+    <input type="text" id="tkcq_product" placeholder="Search Product ID&hellip;">
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>utm_term <select id="tkcf_channel">
+      <option value="">All Terms</option>
+    </select></label>
+    <button id="tkcResetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th></th>
+        <th>utm_term</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Product</th><th>Product ID</th><th>SKU</th>
+        <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+        <th>Financial Status</th><th>Fulfilment Status</th>
+        <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Raw utm_campaign</th>
+      </tr></thead>
+      <tbody id="tkcTbody"><tr><td colspan="19" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="tkcEmpty" style="display:none;">No orders match the current filters.</div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales-sukirtha-de?staff=theekshy-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Matching rule (confirmed 2026-07-22):</strong> an order belongs to Theekshy if its <em>first session only</em> has <code>utm_term</code> exactly equal to <code>theekshy</code> (case-insensitive). Sessions 2+ are never inspected.<br>
+  <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
+  <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
+  <strong>Coverage:</strong> Theekshy joined the team in March 2026 &mdash; only March onward is shown; January/February are not applicable.<br>
+  <strong>Historical data:</strong> Mar&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button.<br>
+  <strong>Live month (July onward):</strong> the current month is month-to-date &mdash; a <strong>Refresh</strong> button appears to re-fetch the latest data.<br>
+  <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+  <strong>Last refresh timestamp:</strong> <span id="tkFootRefresh">&ndash;</span>
+</div>
+</div>
+
 <script>
 function esc(s){ if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function num(v){ return v === null || v === undefined ? '—' : Number(v).toLocaleString(); }
@@ -1202,6 +1291,9 @@ function showStaffTab(n){
   document.getElementById('tabBtnSajeepan').classList.toggle('active', n === 'sajeepan');
   document.getElementById('tabSajeepan').style.display = n === 'sajeepan' ? '' : 'none';
   if (n === 'sajeepan' && !SJ_DATA) sjLoad(false);
+  document.getElementById('tabBtnTheekshy').classList.toggle('active', n === 'theekshy');
+  document.getElementById('tabTheekshy').style.display = n === 'theekshy' ? '' : 'none';
+  if (n === 'theekshy' && !TK_DATA) tkLoad(false);
 }
 
 function showMahimaSub(sub){
@@ -3028,6 +3120,211 @@ function sjGroupExportCsv(){
   downloadCsv(lines.join('\r\n'), monthTag + '_sajeepan-ads-sales-campaign-summary-ledsone-uk.csv');
 }
 document.getElementById('sjGroupExportCsv').addEventListener('click', sjGroupExportCsv);
+
+// ===== Theekshy tab (Google Ads only, ledsone.co.uk, mirrors the Thasitha/Sajeepan tabs, distinct TK-prefixed globals/functions) =====
+let TK_CURRENT_MONTH = '2026-07';
+const TK_LIVE_MONTHS = ['2026-07'];
+function tkSelectMonth(month){
+  TK_CURRENT_MONTH = month;
+  document.querySelectorAll('#tkMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  tkLoad(false);
+}
+
+let TK_DATA = null;
+let tkOpenRows = new Set();
+let tkLoading = false;
+let tkAbortController = null;
+let tkLastSuccessfulAt = null;
+const TK_MONTH_CACHE = {};
+let tkLoadSeq = 0;
+
+async function tkLoad(force){
+  const myMonth = TK_CURRENT_MONTH;
+  const seq = ++tkLoadSeq;
+  tkLoading = true;
+  const isLive = TK_LIVE_MONTHS.includes(myMonth);
+  const refreshBtn = document.getElementById('tkRefreshBtn');
+  refreshBtn.style.display = isLive ? '' : 'none';
+  refreshBtn.disabled = true;
+  document.getElementById('tkLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  document.getElementById('tkLiveChip').className = 'chip';
+  if (tkAbortController) tkAbortController.abort();
+  tkAbortController = new AbortController();
+  try {
+    let data;
+    if (!force && TK_MONTH_CACHE[myMonth]) {
+      data = TK_MONTH_CACHE[myMonth];
+    } else {
+      const url = '/api/sales-sukirtha-de?staff=theekshy-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const res = await fetch(url, { signal: tkAbortController.signal });
+      data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+      TK_MONTH_CACHE[myMonth] = data;
+    }
+    if (seq !== tkLoadSeq) return;
+    TK_DATA = data;
+    tkLastSuccessfulAt = new Date();
+    document.getElementById('tkLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('tkLiveChip').className = 'chip';
+    document.getElementById('tkLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('tkLastRefresh').style.display = '';
+    document.getElementById('tkFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('tkcLastOk').textContent = tkLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('tkPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, Google Ads campaigns &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    tkOpenRows = new Set();
+    tkRenderAll();
+    tkLoading = false;
+    refreshBtn.disabled = false;
+  } catch (e) {
+    if (seq !== tkLoadSeq) return;
+    if (e.name === 'AbortError') { tkLoading = false; refreshBtn.disabled = false; return; }
+    document.getElementById('tkLiveChip').textContent = 'Failed to load: ' + e.message + (TK_DATA ? ' — showing last successful data' : '');
+    document.getElementById('tkLiveChip').className = 'chip stale';
+    if (!TK_DATA) document.getElementById('tkcTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    tkLoading = false;
+    refreshBtn.disabled = false;
+  }
+}
+
+function tkRenderAll(){
+  if (!TK_DATA) return;
+  const c = TK_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'GBP' };
+  document.getElementById('tkkOrders').textContent = num(c.ordersCount);
+  document.getElementById('tkkUnits').textContent = num(c.unitsSold);
+  document.getElementById('tkkGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('tkkRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('tkkNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('tkkProducts').textContent = num(c.uniqueProductsSold);
+  tkcRenderAll();
+}
+
+function tkFlatRows(){
+  const rows = [];
+  for (const o of (TK_DATA ? TK_DATA.allTheekshyAdsOrders : []) || []) {
+    for (const item of o.matchedItems) rows.push({ order: o, item, group: o.campaign });
+  }
+  return rows;
+}
+
+function tkcFilteredRows(){
+  const qOrder = document.getElementById('tkcq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('tkcq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('tkcf_channel').value;
+  return tkFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function tkcRenderAll(){
+  if (!TK_DATA) return;
+  const cb = TK_DATA.campaignSummary || [];
+  document.getElementById('tkChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="tkChannelRow" data-channel="' + esc(c.campaign) + '" style="cursor:pointer;" title="Click to filter table below to this term">' +
+    '<td><strong>' + esc(c.campaign) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.tkChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('tkcf_channel').value = tr.getAttribute('data-channel');
+      tkcRenderTable();
+      document.getElementById('tkcTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('tkcf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Terms</option>' + cb.map(c => '<option value="' + esc(c.campaign) + '">' + esc(c.campaign) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  tkcRenderTable();
+}
+
+function tkcRenderTable(){
+  const rows = tkcFilteredRows();
+  document.getElementById('tkcCnt').textContent = rows.length.toLocaleString() + ' of ' + tkFlatRows().length.toLocaleString() + ' line items';
+  const tbody = document.getElementById('tkcTbody');
+  const emptyEl = document.getElementById('tkcEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (tkOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.rawCampaign) + '</td>' +
+      '</tr>'
+    );
+    if (tkOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="19"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (tkOpenRows.has(id)) tkOpenRows.delete(id); else tkOpenRows.add(id);
+      tkcRenderTable();
+    });
+  });
+}
+
+['tkcq_order','tkcq_product'].forEach(id => document.getElementById(id).addEventListener('input', tkcRenderTable));
+document.getElementById('tkcf_channel').addEventListener('change', tkcRenderTable);
+document.getElementById('tkcResetFilters').addEventListener('click', () => {
+  document.getElementById('tkcq_order').value = '';
+  document.getElementById('tkcq_product').value = '';
+  document.getElementById('tkcf_channel').value = '';
+  tkcRenderTable();
+});
+
+function tkGroupExportCsv(){
+  const cb = TK_DATA ? (TK_DATA.campaignSummary || []) : [];
+  const header = ['utm_term','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = TK_DATA ? TK_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.campaign, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = TK_DATA ? TK_DATA.reportPeriod.month : TK_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_theekshy-ads-sales-campaign-summary-ledsone-uk.csv');
+}
+document.getElementById('tkGroupExportCsv').addEventListener('click', tkGroupExportCsv);
 
 // ===== Dilaksi tab (mirrors Kamsi tab above, distinct D-prefixed globals/functions) =====
 let D_CURRENT_MONTH = '2026-07';

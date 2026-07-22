@@ -939,10 +939,10 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
 
 async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   const staffParam = req.query && req.query.staff;
-  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'mahima-id-ads' ? 'mahima-id-ads' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : 'sukirtha';
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'mahima-id-ads' ? 'mahima-id-ads' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : 'sukirtha';
   const cacheKey = staff + ':' + monthConfig.month;
   const isFrStaff = staff === 'hetheesha-organic' || staff === 'thivagini-ads';
-  const isUkStaff = staff === 'sajeepan-ads';
+  const isUkStaff = staff === 'sajeepan-ads' || staff === 'theekshy-ads';
 
   const cached = CACHE.get(cacheKey);
   if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
@@ -951,7 +951,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (!forceRefresh) {
-    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'mahima-id-ads' ? 'mahima-de-id-ads' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : 'sukirtha-de-organic';
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'mahima-id-ads' ? 'mahima-de-id-ads' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : 'sukirtha-de-organic';
     const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -1341,6 +1341,75 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     };
     CACHE.set(cacheKey, { data: sajeepanPayload, generatedAt: Date.now() });
     res.status(200).json(sajeepanPayload);
+    return;
+  }
+
+  if (staff === 'theekshy-ads') {
+    // Theekshy Ads tab — added 2026-07-22, ledsone.co.uk (STORE_DOMAIN_UK),
+    // UK Google Ads team. Confirmed rule: an order belongs to Theekshy if
+    // its first-session utm_term exactly matches "theekshy" (case-
+    // insensitive). She joined in March 2026, so only March onward has
+    // her data — January/February are not applicable. Store-wide, NOT
+    // product-scoped, all months including live July.
+    const THEEKSHY_TERMS = new Set(['theekshy']);
+    const adsRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      if (!THEEKSHY_TERMS.has(term)) continue;
+      row.campaign = utm.term || null;
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      adsRows.push(row);
+    }
+
+    const byCampaign = new Map();
+    for (const r of adsRows) {
+      if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+      byCampaign.get(r.campaign).push(r);
+    }
+    const campaignSummary = [...byCampaign.keys()].sort()
+      .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(adsRows);
+
+    const theekshyPayload = {
+      success: true,
+      staff: { name: 'Theekshy', department: 'Google Ads (Paid Search)', store: 'ledsone.co.uk' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/London' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `store-wide (NOT product-scoped) — an order belongs to Theekshy if its first-session utm_term exactly matches "theekshy" (case-insensitive). Joined March 2026 (confirmed rule, 2026-07-22)`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: [...byCampaign.keys()].sort(),
+      combinedSummary,
+      campaignSummary,
+      allTheekshyAdsOrders: adsRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: adsRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: theekshyPayload, generatedAt: Date.now() });
+    res.status(200).json(theekshyPayload);
     return;
   }
 
