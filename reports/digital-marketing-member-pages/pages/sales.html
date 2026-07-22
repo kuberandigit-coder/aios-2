@@ -171,7 +171,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-kamsi</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales?entity=kamsi</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Product ownership source:</strong> <code>reports/Kamsi/data/2026-07-14_kamsi-product-allocation.csv</code> &mdash; read as-is, not rebuilt from Shopify collections in this dashboard.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware — Jan/Feb/most of Mar is GMT, late-Mar through Jun is BST; never hardcoded). Select a month tab above; each is a fixed historical period and will never pick up orders from another month.<br>
   <strong>Channel classification:</strong> derived from the customer's first session (<code>customerJourneySummary.firstVisit</code>) — Organic Search, Google Ads/Paid Search, Direct, Social, Email, Referral, or No Journey Data/Unknown when Shopify recorded no session at all.<br>
@@ -263,7 +263,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-dilaksi</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales?entity=dilaksi</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Product ownership source:</strong> <code>reports/dilaksi/data/2026-07-17_dilaksi-product-allocation.csv</code> &mdash; 1,615 unique products, built live from Shopify Admin GraphQL against Dilaksi's 24 designated SEO collections (pendant-lights, wall-light, plugin-lighting, table-lamps, spider-light, pipe-lighting, ceiling-lights-for-flash-lights, easy-fit-shades, led-panels, led-modules, pendant-holder, chandelier, hemp-collection, clocks, kitchen-items, fitting-items, handles, artificial-flower-pots, door-mat, foot-wear, storage-bags, belt, sports-accessories, office-items), unioned and de-duplicated by Product ID (165 products belong to more than one of these collections).<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware — Jan/Feb/most of Mar is GMT, late-Mar through Jun is BST; never hardcoded). Select a month tab above; each is a fixed historical period and will never pick up orders from another month.<br>
   <strong>Channel classification:</strong> derived from the customer's first session (<code>customerJourneySummary.firstVisit</code>) — Organic Search, Google Ads/Paid Search, Direct, Social, Email, Referral, or No Journey Data/Unknown when Shopify recorded no session at all.<br>
@@ -360,7 +360,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-sukirtha-uk</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales?entity=sukirtha-uk</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Store-wide scope:</strong> unlike Kamsi and Dilaksi's dashboards (product-scoped to a specific allocation CSV), Sukirtha is responsible for email marketing across the whole store &mdash; there is no product allocation file and no line-item matching step here. Every line item on every order that qualifies for one of the two groups below counts, regardless of which products are in it.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware — Jan/Feb/most of Mar is GMT, late-Mar through Jun is BST; never hardcoded). Select a month tab above; each is a fixed historical period and will never pick up orders from another month.<br>
   <strong>Group definitions:</strong> <em>Fully Email</em> = every touchpoint in the order's <code>customerJourneySummary</code> (first visit, last visit, and every visit in between) classifies as Email (Shopify <code>sourceType=NEWSLETTER</code>, or <code>medium=email</code>, or source/description containing "email"). <em>First-Session Email</em> = the order's first visit classifies as Email, but the journey is not fully email (at least one other touchpoint is a different channel). Orders that qualify for neither group are excluded from Sukirtha's totals entirely (no Direct, Referral, No Journey Data, AI Tools, Organic, Paid, or Social sections here &mdash; those belong to other staff members' dashboards).<br>
@@ -449,7 +449,7 @@ tbody tr:hover{background:var(--accent-soft);}
   </div>
 
   <div class="footnotes">
-    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-sukirtha-de</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
     <strong>Store-wide scope:</strong> like the Email section below and the UK Email tab, this is NOT product-scoped &mdash; there is no product allocation file and no line-item matching step. Every line item on every order that qualifies for one of the six groups below counts.<br>
     <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above.<br>
     <strong>Group definitions:</strong> <em>Fully Organic</em> = every touchpoint in the order's <code>customerJourneySummary</code> classifies as Organic Search. <em>First-Session Organic</em> = the order's first visit classifies as Organic Search, but the journey is not fully organic. <em>Direct</em>, <em>Referral</em>, and <em>No Journey Data</em> (incl. Unknown / Attribution Pending) are their own channel groups. <em>AI Tools</em> = orders whose first visit's source matches an AI tool (ChatGPT, Perplexity, Gemini, Copilot, Claude, Bing Chat, Meta AI, Grok), extracted from the "Other" channel bucket. Excludes Google Ads/Paid Search, Social, Email, Affiliate, and non-AI Other. Mirrors Kamsi's definition (<code>sales-kamsi.js</code>) exactly, minus product matching.<br>
@@ -536,7 +536,7 @@ tbody tr:hover{background:var(--accent-soft);}
   </div>
 
   <div class="footnotes">
-    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales-sukirtha-de?type=email</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sales?type=email</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
     <strong>Store-wide scope:</strong> same as the Organic section above and the UK Email tab &mdash; no product allocation file, no line-item matching. Every line item on every qualifying order counts.<br>
     <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above.<br>
     <strong>Group definitions:</strong> <em>Fully Email</em> = every touchpoint classifies as Email (Shopify <code>sourceType=NEWSLETTER</code>, or <code>medium=email</code>, or source/description containing "email"). <em>First-Session Email</em> = the order's first visit classifies as Email, but the journey is not fully email.<br>
@@ -632,7 +632,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as Sukirtha's DE Organic tab (<code>/api/sales-sukirtha-de?staff=mahima</code>, merged to stay under the Vercel Hobby plan's 12-function limit) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as Sukirtha's DE Organic tab (<code>/api/sales?staff=mahima</code>, merged to stay under the Vercel Hobby plan's 12-function limit) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Product ownership source:</strong> the same Shopify Product ID list that <code>sales-sukirtha-de.js</code> excludes from Sukirtha's organic sales &mdash; here it is the inclusion filter instead, so Mahima sees sales for exactly the products she owns.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above; each is a fixed historical period.<br>
   <strong>Channel classification:</strong> derived from the customer's first session (<code>customerJourneySummary.firstVisit</code>), identical logic to Kamsi/Dilaksi/Sukirtha's dashboards.<br>
@@ -713,7 +713,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as Mahima's other tabs (<code>/api/sales-sukirtha-de?staff=mahima-ads-term</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as Mahima's other tabs (<code>/api/sales?staff=mahima-ads-term</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Matching rule (fresh, 2026-07-21):</strong> unlike the earlier retired Ads tab (which matched "mahi" as a substring anywhere in source/medium/campaign/term/content), this tab matches the first session's <code>utm_term</code> field <strong>exactly</strong> against 8 confirmed values. Deep-searched against all distinct first-session utm_term values recorded in April 2026 to confirm no typo/casing variants of these 8 terms were missed.<br>
   <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every order with a matching utm_term counts regardless of which product(s) it contains.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above; Jan&ndash;Jun are closed historical months, July is the current live month-to-date &mdash; a <strong>Refresh</strong> button appears to re-fetch the latest data for July only.<br>
@@ -801,7 +801,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as Mahima's tabs (<code>/api/sales-sukirtha-de?staff=jeffri-ads</code>, merged to stay under the Vercel Hobby plan's 12-function limit) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as Mahima's tabs (<code>/api/sales?staff=jeffri-ads</code>, merged to stay under the Vercel Hobby plan's 12-function limit) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Matching rule (confirmed 2026-07-21):</strong> an order belongs to Jeffri if its <em>first session only</em> has <code>utm_term</code> exactly equal to <code>jeff</code> or <code>Jeichitom_Maara</code> (case-insensitive). If there's no <code>utm_term</code> at all, falls back to checking <code>utm_medium</code> === <code>SMARKETER_sale</code>. Sessions 2+ are never inspected.<br>
   <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above.<br>
@@ -892,7 +892,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.fr</code> (<code>jedsz8-km.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the DE tabs (<code>/api/sales-sukirtha-de?staff=hetheesha-organic</code>, merged to stay under the Vercel Hobby plan's 12-function limit) using a new <code>SHOPIFY_FR_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.fr</code> (<code>jedsz8-km.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the DE tabs (<code>/api/sales?staff=hetheesha-organic</code>, merged to stay under the Vercel Hobby plan's 12-function limit) using a new <code>SHOPIFY_FR_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Store-wide scope:</strong> like Sukirtha's DE Organic tab, this is NOT product-scoped &mdash; Hetheesha and Thivagini split responsibility for ledsone.fr by channel, not by product.<br>
   <strong>Group definitions:</strong> identical to Kamsi/Sukirtha's organic-sales definition &mdash; Fully Organic, First-Session Organic, Direct, Referral, No Journey Data, AI Tools.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/Paris timezone (DST-aware).<br>
@@ -980,7 +980,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.fr</code> (<code>jedsz8-km.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the DE tabs (<code>/api/sales-sukirtha-de?staff=thivagini-ads</code>) using the <code>SHOPIFY_FR_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.fr</code> (<code>jedsz8-km.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the DE tabs (<code>/api/sales?staff=thivagini-ads</code>) using the <code>SHOPIFY_FR_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Scope:</strong> store-wide, NOT product-scoped &mdash; counterpart to Hetheesha's Organic tab. An order counts if its first session is classified Paid Search by the same shared logic used everywhere else on this page.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/Paris timezone (DST-aware).<br>
   <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button.<br>
@@ -1068,7 +1068,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other DE tabs (<code>/api/sales-sukirtha-de?staff=thasitha-ads</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other DE tabs (<code>/api/sales?staff=thasitha-ads</code>) using the existing <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Matching rule (confirmed 2026-07-21):</strong> an order belongs to Thasitha if its <em>first session only</em> has <code>utm_term</code> exactly equal to <code>thasi</code> (case-insensitive). Sessions 2+ are never inspected.<br>
   <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above.<br>
@@ -1157,7 +1157,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the DE tabs (<code>/api/sales-sukirtha-de?staff=sajeepan-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the DE tabs (<code>/api/sales?staff=sajeepan-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Matching rule (corrected 2026-07-22):</strong> an order belongs to Sajeepan if its <em>first session only</em> has <code>utm_campaign</code> exactly matching (or prefixed by) one of her 11 confirmed campaign names: Klarna_P, SJ_TOP_20X, GCSS_ALL_ROAS_400_SAJEE_PMAX, Accessories_sj, SJ_PMAX_Scale_Heroes_25, KLARNA_CSS_SJ25_PMAX, SJ-WL-PMX, GCSS_ALL_ROAS_400_SAJEE, P_Max_Klarna_CSS_SJ_OLD, sajeepan_pmax_gcss_ceiling_rose_fitting, Klarna_G3 (case-insensitive). Sessions 2+ are never inspected. This supersedes the earlier utm_term-based rule, which a January audit found missed ~96% of her real orders.<br>
   <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
@@ -1244,7 +1244,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales-sukirtha-de?staff=theekshy-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales?staff=theekshy-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Matching rule (confirmed 2026-07-22):</strong> an order belongs to Theekshy if its <em>first session only</em> has <code>utm_term</code> exactly equal to <code>theekshy</code> (case-insensitive). Sessions 2+ are never inspected.<br>
   <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
@@ -1334,7 +1334,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales-sukirtha-de?staff=sonya-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales?staff=sonya-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Matching rule (confirmed 2026-07-22):</strong> an order belongs to Sonya if its <em>first session only</em> has <code>utm_term</code> exactly matching one of her 5 confirmed values (case-insensitive): <code>Sonya</code>, <code>ninc</code>, <code>glow_up</code>, <code>SonyaIreland</code>, <code>SonyaSpian</code>, <code>SonyTopEuropeEngEU{_adgroup}</code>. Sessions 2+ are never inspected.<br>
   <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
@@ -1437,7 +1437,7 @@ async function kLoad(force){
     if (!force && K_MONTH_CACHE[myMonth]) {
       data = K_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-kamsi?month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?entity=kamsi&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: kAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -1717,7 +1717,7 @@ async function mLoad(force){
     if (!force && M_MONTH_CACHE[myMonth]) {
       data = M_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=mahima&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=mahima&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: mAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -1984,7 +1984,7 @@ async function matLoad(force){
     if (!force && MAT_MONTH_CACHE[myMonth]) {
       data = MAT_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=mahima-ads-term&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=mahima-ads-term&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: matAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2176,7 +2176,7 @@ async function jaLoad(force){
     if (!force && JA_MONTH_CACHE[myMonth]) {
       data = JA_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=jeffri-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=jeffri-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: jaAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2396,7 +2396,7 @@ async function heLoad(force){
     if (!force && HE_MONTH_CACHE[myMonth]) {
       data = HE_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=hetheesha-organic&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=hetheesha-organic&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: heAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2636,7 +2636,7 @@ async function tvLoad(force){
     if (!force && TV_MONTH_CACHE[myMonth]) {
       data = TV_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=thivagini-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=thivagini-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: tvAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2838,7 +2838,7 @@ async function thLoad(force){
     if (!force && TH_MONTH_CACHE[myMonth]) {
       data = TH_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=thasitha-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=thasitha-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: thAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3043,7 +3043,7 @@ async function sjLoad(force){
     if (!force && SJ_MONTH_CACHE[myMonth]) {
       data = SJ_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=sajeepan-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=sajeepan-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: sjAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3248,7 +3248,7 @@ async function tkLoad(force){
     if (!force && TK_MONTH_CACHE[myMonth]) {
       data = TK_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=theekshy-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=theekshy-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: tkAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3453,7 +3453,7 @@ async function snLoad(force){
     if (!force && SN_MONTH_CACHE[myMonth]) {
       data = SN_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?staff=sonya-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=sonya-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: snAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3658,7 +3658,7 @@ async function dLoad(force){
     if (!force && D_MONTH_CACHE[myMonth]) {
       data = D_MONTH_CACHE[myMonth];
     } else {
-    const url = '/api/sales-dilaksi?month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+    const url = '/api/sales?entity=dilaksi&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
     const res = await fetch(url, { signal: dAbortController.signal });
     data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3936,7 +3936,7 @@ async function sLoad(force){
     if (!force && S_MONTH_CACHE[myMonth]) {
       data = S_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-uk?month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?entity=sukirtha-uk&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: sAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -4198,7 +4198,7 @@ async function sdoLoad(force){
     if (!force && SDO_MONTH_CACHE[myMonth]) {
       data = SDO_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: sdoAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -4459,7 +4459,7 @@ async function sdeLoad(force){
     if (!force && SDE_MONTH_CACHE[myMonth]) {
       data = SDE_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales-sukirtha-de?type=email&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?type=email&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: sdeAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));

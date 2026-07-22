@@ -143,7 +143,7 @@ tbody tr.totalrow{background:#eef2fb;font-weight:700;}
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> &middot; fetched via a server-side serverless function (<code>/api/sales-jackson</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> &middot; fetched via a server-side serverless function (<code>/api/sales?entity=jackson</code>) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Product scope:</strong> 50 explicit Shopify Product IDs supplied directly (not a collection or CSV allocation) &mdash; only line items matching one of these IDs count toward these figures.<br>
   <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
   <strong>Jackson attribution:</strong> Jackson is SEO, same as Kamsi &mdash; Google Ads / Paid Search, Email, and Social orders are excluded entirely from every figure on this page; every other channel counts. Click a row's <strong>Sessions</strong> button in the Order Detail table to see every recorded session for that order.<br>
@@ -214,7 +214,7 @@ async function jLoad(force, silent){
   jAbortController = new AbortController();
   const requestedMonth = J_CURRENT_MONTH;
   try {
-    const url = '/api/sales-jackson?month=' + encodeURIComponent(requestedMonth) + (force ? '&refresh=1' : '');
+    const url = '/api/sales?entity=jackson&month=' + encodeURIComponent(requestedMonth) + (force ? '&refresh=1' : '');
     const res = await fetch(url, { signal: jAbortController.signal });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));

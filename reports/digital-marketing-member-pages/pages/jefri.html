@@ -143,7 +143,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> two sources, both server-side only &mdash; PostgreSQL (read-only: <code>google_ads.product_performance</code>, <code>google_ads.campaigns</code>, <code>google_ads.ad_group_products</code>, <code>listings.shopify_listings</code> for SKU/URL/Image/Price) and the Shopify Admin GraphQL API (read-only, live Current Stock) &middot; fetched via a server-side serverless function (<code>/api/jefri/product-status</code>) using credentials stored only as Vercel server-side environment variables &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> two sources, both server-side only &mdash; PostgreSQL (read-only: <code>google_ads.product_performance</code>, <code>google_ads.campaigns</code>, <code>google_ads.ad_group_products</code>, <code>listings.shopify_listings</code> for SKU/URL/Image/Price) and the Shopify Admin GraphQL API (read-only, live Current Stock) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=jefri-product-status</code>) using credentials stored only as Vercel server-side environment variables &mdash; never present in this HTML or any client-side script.<br>
   <strong>ROAS:</strong> (Conv. Value &divide; Cost) &times; 100, calculated from aggregated 90-day totals per product (not averaged daily). Shown as &ldquo;&mdash;&rdquo; when Cost and Conv. Value are both zero.<br>
   <strong>Status:</strong> Merchant Center eligibility (Eligible / Disapproved / Limited) where available from Shopping/Search ad-group data. Performance Max campaigns do not expose per-product eligibility in this system, so those products show &ldquo;Unknown&rdquo; &mdash; this is a documented data gap, not a calculated guess.<br>
   <strong>Current Stock:</strong> fetched LIVE from the Shopify Admin GraphQL API on every load/refresh (not a database snapshot) &mdash; variant-level available inventory, summed across locations, for the advertised item (falls back to a representative child variant when the item ID is a parent-level product). Shows &ldquo;&mdash;&rdquo; when the item isn't inventory-tracked or has no resolvable Shopify listing.<br>
@@ -184,8 +184,8 @@ async function load(){
   document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
   try {
     const campaignSel = document.getElementById('f_campaign');
-    const campaignParam = campaignSel.value && campaignSel.value !== 'all' ? '?campaign=' + encodeURIComponent(campaignSel.value) : '';
-    const res = await fetch('/api/jefri/product-status' + campaignParam);
+    const campaignParam = campaignSel.value && campaignSel.value !== 'all' ? '&campaign=' + encodeURIComponent(campaignSel.value) : '';
+    const res = await fetch('/api/requirement?fn=jefri-product-status' + campaignParam);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     ALL = data.products;

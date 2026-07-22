@@ -263,7 +263,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only) &middot; store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sukirtha-req2-req3?req=2</code>, merged with the Req3 endpoint below to stay under the Vercel Hobby plan's 12-function limit) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only) &middot; store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=req2-req3&req=2</code>, merged with the Req3 endpoint below to stay under the Vercel Hobby plan's 12-function limit) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Update frequency:</strong> not a scheduled/cached snapshot &mdash; this page calls Shopify live every time it loads. "Last checked" below reflects the actual retrieval timestamp of that call.<br>
   <strong>SKU normalisation:</strong> SKUs are trimmed and compared case-insensitively for matching only; the original SKU is always displayed. Blank/missing SKUs are never grouped as duplicates &mdash; they show <span class="badge-missing">Missing SKU</span> and Duplicate/Price Mismatch = <span class="badge-na">Not Checked</span>.<br>
   <strong>Duplicate rule:</strong> Duplicate = Yes when the same normalised, non-empty SKU is assigned to more than one distinct Shopify variant. Product title is never used as the duplicate key.<br>
@@ -356,7 +356,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only) &middot; store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/sukirtha-req2-req3?req=3</code>, merged with the Req2 endpoint above to stay under the Vercel Hobby plan's 12-function limit) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only) &middot; store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=req2-req3&req=3</code>, merged with the Req2 endpoint above to stay under the Vercel Hobby plan's 12-function limit) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>Update frequency:</strong> not a scheduled/cached snapshot &mdash; this page calls Shopify live every time it loads. "Last checked" reflects the actual retrieval timestamp of that call; the 90-day window is calculated from the retrieval date, not a fixed historical date.<br>
   <strong>Data grain:</strong> one row per Shopify Variant ID. Units Sold is joined to orders via the line item's Variant ID, never SKU alone.<br>
   <strong>Units Sold (90d) rule:</strong> sum of each eligible line item's <code>refundableQuantity</code> (the quantity net of any already-refunded units for that line item) across all orders in the 90-day window, excluding cancelled orders (<code>cancelledAt</code> set), test orders (<code>test:true</code>), and voided orders (<code>displayFinancialStatus:VOIDED</code>).<br>
@@ -454,7 +454,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
 </div>
 
 <div class="footnotes">
-  <strong>Data source:</strong> Google Analytics 4 Data API (Organic Search channel, read-only) + Google Search Console API (read-only) &middot; store <code>ledsone.de</code> &middot; fetched via a server-side serverless function (<code>/api/sukirtha-req4-ga4-seo</code>) using a GA4 service-account key stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Data source:</strong> Google Analytics 4 Data API (Organic Search channel, read-only) + Google Search Console API (read-only) &middot; store <code>ledsone.de</code> &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=req4-ga4-seo</code>) using a GA4 service-account key stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
   <strong>GA4 Property:</strong> <span id="r4ga4Property">–</span> (ledsone.de) &middot; <strong>GSC Property:</strong> <span id="r4gscProperty">–</span><br>
   <strong>Update frequency:</strong> not a scheduled/cached snapshot on first load &mdash; this page calls GA4/GSC live once per tab visit, then caches locally; "Refresh" always re-fetches live. The 30-day window is calculated from the retrieval date, not a fixed historical date.<br>
   <strong>Data grain:</strong> one row per GA4 Landing Page path, filtered to Session Default Channel Group = Organic Search. Search Console rows are matched to the same landing-page path and aggregated (summed clicks/impressions, impression-weighted average position); Top Query is the Search Console query with the most clicks for that page.<br>
@@ -505,7 +505,7 @@ async function load(){
 
   const start = document.getElementById('rangeStart').value;
   const end = document.getElementById('rangeEnd').value;
-  let url = '/api/gsc-ctr?store=de';
+  let url = '/api/requirement?store=de';
   if (start && end) url += '&start=' + start + '&end=' + end;
 
   try {
@@ -651,7 +651,7 @@ function render(){
 async function checkVisibleLinksForBroken(urls){
   if (!urls.length) return;
   try {
-    const res = await fetch('/api/check-urls', {
+    const res = await fetch('/api/requirement?fn=check-urls', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ urls })
@@ -801,7 +801,7 @@ async function r2load(){
   document.getElementById('r2liveChip').className = 'chip';
   document.getElementById('r2tbody').innerHTML = '<tr><td colspan="14" class="loading">Loading live data from Shopify…</td></tr>';
   try {
-    const res = await fetch('/api/sukirtha-req2-req3?req=2');
+    const res = await fetch('/api/requirement?fn=req2-req3&req=2');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     R2_SUMMARY = data.summary;
@@ -1081,7 +1081,7 @@ async function r3load(){
   document.getElementById('r3liveChip').className = 'chip';
   document.getElementById('r3tbody').innerHTML = '<tr><td colspan="6" class="loading">Loading live data from Shopify…</td></tr>';
   try {
-    const res = await fetch('/api/sukirtha-req2-req3?req=3');
+    const res = await fetch('/api/requirement?fn=req2-req3&req=3');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     R3_SUMMARY = data.summary;
@@ -1330,7 +1330,7 @@ async function r4load(){
 
   const r4start = document.getElementById('r4rangeStart').value;
   const r4end = document.getElementById('r4rangeEnd').value;
-  let r4url = '/api/sukirtha-req4-ga4-seo';
+  let r4url = '/api/requirement?fn=req4-ga4-seo';
   if (r4start && r4end) r4url += '?start=' + r4start + '&end=' + r4end;
 
   try {
