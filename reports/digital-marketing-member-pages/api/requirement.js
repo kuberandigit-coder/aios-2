@@ -1828,6 +1828,204 @@ async function handleDilaksiReq1(req, res) {
   });
 }
 
+// ---------- Dilaksi Requirement 2 live refresh (cards only) ----------
+// Added 2026-07-23. Recomputes the 7 summary cards (Total Products/Variants,
+// Total Sales 30D, Total Demand, Total Organic Sessions, High/Medium/Low/
+// Low-flag counts) from live Shopify + GA4 data. Semrush Demand is NOT
+// fetched live (no Semrush access from this server) -- it's read from a
+// frozen snapshot (api/data/dilaksi-req2-demand-frozen.json, built
+// 2026-07-07 from reports/dilaksi/data/2026-07-07_req2-allcol-seo-priority-log.csv)
+// and joined by product_id. SEO Priority rule replicated exactly from
+// reports/dilaksi/data/2026-07-07_req2-allcol-page-builder.py (seo_priority()):
+// rules 2 and 4 (profit margin) are permanently unreachable -- PM isn't in
+// Postgres and the max 30-day product sales (~£1.7K) never clears their
+// £4K/£10K thresholds -- so only rules 1/3/5/6 are implemented.
+const DILAKSI_UK_STORE_DOMAIN = 'ledsone.myshopify.com';
+const DILAKSI_UK_API_VERSION = '2024-10';
+
+async function dilaksiUkShopifyGraphQL(query, variables) {
+  const token = process.env.SHOPIFY_UK_ADMIN_TOKEN;
+  if (!token) throw new Error('Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing');
+  const res = await fetch(`https://${DILAKSI_UK_STORE_DOMAIN}/admin/api/${DILAKSI_UK_API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (!res.ok || json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors || json));
+  return json.data;
+}
+
+const DILAKSI_R2_PRODUCTS_QUERY = `
+query($after: String) {
+  products(first: 100, after: $after) {
+    edges { node { legacyResourceId handle variantsCount { count } } }
+    pageInfo { hasNextPage endCursor }
+  }
+}`;
+
+async function fetchDilaksiCatalogLive() {
+  const products = [];
+  let after = null, hasNext = true;
+  while (hasNext) {
+    const data = await dilaksiUkShopifyGraphQL(DILAKSI_R2_PRODUCTS_QUERY, { after });
+    for (const edge of data.products.edges) {
+      products.push({ productId: String(edge.node.legacyResourceId), handle: edge.node.handle, variantsCount: edge.node.variantsCount.count });
+    }
+    hasNext = data.products.pageInfo.hasNextPage;
+    after = data.products.pageInfo.endCursor;
+  }
+  return products;
+}
+
+// ShopifyQL (shopifyqlQuery) requires a `read_reports` scope this app's
+// token doesn't have (ACCESS_DENIED, confirmed live 2026-07-23) -- granting
+// it requires the store owner adding that scope to the custom app in
+// Shopify Admin, which is outside what this server can do on its own. Sales
+// are computed the same way the member-sales tabs already do it instead:
+// paginate real orders for the last 30 days and sum line items per product
+// (only needs read_orders, which this token already has).
+const DILAKSI_R2_ORDERS_QUERY = `
+query($cursor: String, $query: String!) {
+  orders(first: 100, after: $cursor, sortKey: CREATED_AT, query: $query) {
+    edges {
+      node {
+        id
+        lineItems(first: 100) {
+          edges {
+            node {
+              quantity
+              originalUnitPriceSet { shopMoney { amount } }
+              discountedTotalSet { shopMoney { amount } }
+              taxLines { priceSet { shopMoney { amount } } }
+              variant { product { legacyResourceId } }
+            }
+          }
+        }
+      }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}`;
+
+async function fetchDilaksiSalesLive() {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const q = `created_at:>=${since}`;
+  const salesByProduct = new Map();
+  let cursor = null, hasNext = true;
+  while (hasNext) {
+    const data = await dilaksiUkShopifyGraphQL(DILAKSI_R2_ORDERS_QUERY, { cursor, query: q });
+    for (const edge of data.orders.edges) {
+      for (const liEdge of edge.node.lineItems.edges) {
+        const li = liEdge.node;
+        const pid = li.variant && li.variant.product ? String(li.variant.product.legacyResourceId) : null;
+        if (!pid) continue;
+        const grossIncl = Number(li.originalUnitPriceSet.shopMoney.amount) * li.quantity;
+        const tax = (li.taxLines || []).reduce((s, t) => s + Number(t.priceSet.shopMoney.amount), 0);
+        const discounted = Number(li.discountedTotalSet.shopMoney.amount);
+        const netSales = Math.max(0, discounted - tax);
+        if (!salesByProduct.has(pid)) salesByProduct.set(pid, { sales: 0, units: 0 });
+        const agg = salesByProduct.get(pid);
+        agg.sales += netSales;
+        agg.units += li.quantity;
+      }
+    }
+    hasNext = data.orders.pageInfo.hasNextPage;
+    cursor = data.orders.pageInfo.endCursor;
+  }
+  return salesByProduct;
+}
+
+function dilaksiSeoPriority(demand, sales, organic) {
+  if (demand === null || demand === undefined) return 'Low — flag for review';
+  if (demand < 100 && sales < 2000) return 'Low — flag for review';
+  if (demand >= 2000 && organic < demand * 0.5) return 'High';
+  if (demand >= 500 && organic >= demand * 0.5) return 'Medium';
+  return 'Low';
+}
+
+let dilaksiR2DemandCache = null;
+function loadDilaksiR2FrozenDemand() {
+  if (dilaksiR2DemandCache) return dilaksiR2DemandCache;
+  const fs = require('fs');
+  const path = require('path');
+  const raw = fs.readFileSync(path.join(__dirname, 'data', 'dilaksi-req2-demand-frozen.json'), 'utf8');
+  dilaksiR2DemandCache = JSON.parse(raw);
+  return dilaksiR2DemandCache;
+}
+
+async function handleDilaksiReq2Live(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  try {
+    if (!process.env.SHOPIFY_UK_ADMIN_TOKEN) {
+      res.status(500).json({ error: 'Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing' });
+      return;
+    }
+    if (!process.env.GA4_SERVICE_ACCOUNT_JSON) {
+      res.status(500).json({ error: 'Server not configured: GA4_SERVICE_ACCOUNT_JSON missing' });
+      return;
+    }
+    if (req.query && req.query.debugSales === '1') {
+      const data = await fetchDilaksiSalesLive();
+      res.status(200).json({ success: true, entries: [...data.entries()].slice(0, 10), total: data.size });
+      return;
+    }
+    const demandMap = loadDilaksiR2FrozenDemand();
+    const accessToken = await getAccessToken();
+    const [catalog, salesByProduct, ga4Rows] = await Promise.all([
+      fetchDilaksiCatalogLive(),
+      fetchDilaksiSalesLive(),
+      fetchDilaksiGA4(accessToken, 30),
+    ]);
+
+    const organicByHandle = new Map();
+    for (const r of ga4Rows) {
+      const path = dilaksiPathFromUrl(r.dimensionValues[0].value);
+      const m = /\/products\/([^/]+)$/.exec(path);
+      if (!m) continue;
+      const handle = m[1];
+      const sessions = Number(r.metricValues[0].value) || 0;
+      organicByHandle.set(handle, (organicByHandle.get(handle) || 0) + sessions);
+    }
+
+    let totalVariants = 0, totalSales = 0, totalDemand = 0, totalOrganic = 0;
+    let high = 0, medium = 0, low = 0, lowFlag = 0;
+    for (const p of catalog) {
+      totalVariants += p.variantsCount;
+      const s = salesByProduct.get(p.productId) || { sales: 0, units: 0 };
+      const organic = organicByHandle.get(p.handle) || 0;
+      const demand = Object.prototype.hasOwnProperty.call(demandMap, p.productId) ? demandMap[p.productId] : null;
+      totalSales += s.sales;
+      totalOrganic += organic;
+      if (demand !== null && demand !== undefined) totalDemand += demand;
+      const priority = dilaksiSeoPriority(demand, s.sales, organic);
+      if (priority === 'High') high++;
+      else if (priority === 'Medium') medium++;
+      else if (priority === 'Low — flag for review') lowFlag++;
+      else low++;
+    }
+
+    res.status(200).json({
+      success: true,
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalProducts: catalog.length,
+        totalVariants,
+        totalSales30d: Math.round(totalSales * 100) / 100,
+        totalDemand,
+        totalOrganicSessions: totalOrganic,
+        highPriority: high,
+        mediumPriority: medium,
+        lowPriority: low,
+        lowFlagPriority: lowFlag,
+      },
+      note: 'Demand is a frozen snapshot (Semrush not fetched live) from 2026-07-07; all other fields are live.',
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+  }
+}
+
 async function req4Handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   try {
@@ -1940,6 +2138,7 @@ async function req4Handler(req, res) {
   }
 }
 
+  req4Handler.handleDilaksiReq2Live = handleDilaksiReq2Live;
   return req4Handler;
 })();
 
@@ -2063,6 +2262,7 @@ module.exports = async (req, res) => {
   if (fn === 'kamsi-live') return kamsiLiveHandlerModule(req, res);
   if (fn === 'req2-req3') return req2Req3HandlerModule(req, res);
   if (fn === 'req4-ga4-seo') return req4HandlerModule(req, res);
+  if (fn === 'dilaksi-req2-live') return req4HandlerModule.handleDilaksiReq2Live(req, res);
 
   try {
     const store = (req.query.store === 'de') ? 'de' : 'uk';
