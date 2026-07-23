@@ -738,6 +738,11 @@ tbody tr:hover{background:var(--accent-soft);}
   </div>
 </header>
 
+<div class="reqtabs" style="margin-bottom:10px;" id="jaChannelTabs">
+  <div class="reqtab active" data-channel="ads" onclick="jaSelectChannel('ads')">Google Ads</div>
+  <div class="reqtab" data-channel="meta" onclick="jaSelectChannel('meta')">Meta</div>
+</div>
+
 <div class="reqtabs" style="margin-bottom:14px;" id="jaMonthTabs">
   <div class="reqtab" data-month="2026-01" onclick="jaSelectMonth('2026-01')">January</div>
   <div class="reqtab" data-month="2026-02" onclick="jaSelectMonth('2026-02')">February</div>
@@ -753,7 +758,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <div class="cards" id="jaCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
-  <div class="card"><div class="label">Total Jeffri Ads Orders</div><div class="value" id="jakOrders">&ndash;</div></div>
+  <div class="card"><div class="label" id="jakOrdersLabel">Total Jeffri Ads Orders</div><div class="value" id="jakOrders">&ndash;</div></div>
   <div class="card"><div class="label">Total Units Sold</div><div class="value" id="jakUnits">&ndash;</div></div>
   <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="jakGross">&ndash;</div></div>
   <div class="card"><div class="label">Total Refunds</div><div class="value" id="jakRefunds">&ndash;</div></div>
@@ -2147,6 +2152,17 @@ document.getElementById('matcResetFilters').addEventListener('click', () => {
 // ===== Jeffri tab (Google Ads only, mirrors the Mahima Ads pattern, distinct JA-prefixed globals/functions) =====
 let JA_CURRENT_MONTH = '2026-07';
 const JA_LIVE_MONTHS = ['2026-07'];
+let JA_CHANNEL = 'ads';
+const JA_CHANNEL_STAFF = { ads: 'jeffri-ads', meta: 'jeffri-meta' };
+const JA_CHANNEL_LABEL = { ads: 'Google Ads Sales', meta: 'Meta Ads Sales' };
+function jaSelectChannel(channel){
+  JA_CHANNEL = channel;
+  document.querySelectorAll('#jaChannelTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-channel') === channel));
+  document.querySelector('#tabJeffri h1').textContent = JA_CHANNEL_LABEL[channel];
+  document.getElementById('jakOrdersLabel').textContent = channel === 'meta' ? 'Total Jeffri Meta Orders' : 'Total Jeffri Ads Orders';
+  JA_DATA = null;
+  jaLoad(false);
+}
 function jaSelectMonth(month){
   JA_CURRENT_MONTH = month;
   document.querySelectorAll('#jaMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -2163,6 +2179,8 @@ let jaLoadSeq = 0;
 
 async function jaLoad(force){
   const myMonth = JA_CURRENT_MONTH;
+  const myChannel = JA_CHANNEL;
+  const cacheKey = myChannel + ':' + myMonth;
   const seq = ++jaLoadSeq;
   jaLoading = true;
   const isLive = JA_LIVE_MONTHS.includes(myMonth);
@@ -2175,14 +2193,14 @@ async function jaLoad(force){
   jaAbortController = new AbortController();
   try {
     let data;
-    if (!force && JA_MONTH_CACHE[myMonth]) {
-      data = JA_MONTH_CACHE[myMonth];
+    if (!force && JA_MONTH_CACHE[cacheKey]) {
+      data = JA_MONTH_CACHE[cacheKey];
     } else {
-      const url = '/api/sales?staff=jeffri-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=' + JA_CHANNEL_STAFF[myChannel] + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url, { signal: jaAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-      JA_MONTH_CACHE[myMonth] = data;
+      JA_MONTH_CACHE[cacheKey] = data;
     }
     if (seq !== jaLoadSeq) return;
     JA_DATA = data;
@@ -2223,8 +2241,9 @@ function jaRenderAll(){
 
 function jaFlatRows(){
   const rows = [];
-  for (const o of (JA_DATA ? JA_DATA.allJeffriAdsOrders : []) || []) {
-    for (const item of o.matchedItems) rows.push({ order: o, item, group: o.campaign });
+  const orders = JA_DATA ? (JA_DATA.allJeffriAdsOrders || JA_DATA.allJeffriMetaOrders) : [];
+  for (const o of orders || []) {
+    for (const item of o.matchedItems) rows.push({ order: o, item, group: o.campaign || o.matchedTerm || '(no campaign)' });
   }
   return rows;
 }

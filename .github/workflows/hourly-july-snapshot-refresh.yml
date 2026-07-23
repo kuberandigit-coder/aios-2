@@ -1,0 +1,50 @@
+name: Hourly July sales snapshot refresh
+
+# Keeps digital-marketing-member-pages' live-month (2026-07) sales tabs fast.
+# Without this, every visitor to a July tab triggers a 30-50s live Shopify
+# fetch (see api/scripts/generate-july-snapshots.js for details). This job
+# runs that fetch once per hour on a schedule instead, commits the refreshed
+# snapshot JSON files, and redeploys -- so visitors get an instant cached
+# response the rest of the time. The on-page Refresh button still does a
+# real live fetch on demand, unaffected by this.
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: reports/digital-marketing-member-pages
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate July snapshots
+        run: node api/scripts/generate-july-snapshots.js
+
+      - name: Commit refreshed snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add api/data/*-sales-2026-07.json
+          git diff --cached --quiet && echo "No changes, skipping commit" || git commit -m "chore: hourly July sales snapshot refresh [skip ci]"
+          git push
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          mkdir -p .vercel
+          cat > .vercel/project.json <<'EOF'
+          {"projectId":"prj_ziowoLxTbIReqBYx1zVweZZBaBDg","orgId":"team_3yn5bmAF7peUPYM7LJcj07PF","projectName":"digital-marketing-member-pages"}
+          EOF
+          npx vercel --prod --yes --token "$VERCEL_TOKEN"

@@ -3539,7 +3539,7 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
 
 async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   const staffParam = req.query && req.query.staff;
-  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : 'sukirtha';
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'jeffri-meta' ? 'jeffri-meta' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : 'sukirtha';
   const cacheKey = staff + ':' + monthConfig.month;
   const isFrStaff = staff === 'hetheesha-organic' || staff === 'thivagini-ads';
   const isUkStaff = staff === 'sajeepan-ads' || staff === 'theekshy-ads' || staff === 'sonya-ads';
@@ -3551,7 +3551,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (!forceRefresh) {
-    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : 'sukirtha-de-organic';
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'jeffri-meta' ? 'jeffri-meta' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : 'sukirtha-de-organic';
     const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -3560,6 +3560,30 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       res.status(200).json(payload);
       return;
     }
+  }
+
+  // jeffri-meta: added 2026-07-23, Jan-June backfilled as static snapshots
+  // above; July onward is live (Jeffri also runs Meta/social campaigns --
+  // previously-unattributed Social-channel orders reassigned here). Any
+  // OTHER month with neither a snapshot nor being the current live month
+  // (shouldn't normally happen) returns a well-formed empty payload instead
+  // of falling through to the unrelated organic-search computation below.
+  if (staff === 'jeffri-meta' && !monthConfig.isLive) {
+    const emptySummary = { ordersCount: 0, unitsSold: 0, grossSales: 0, discounts: 0, refunds: 0, netSales: 0, orderTotalSum: 0, averageRevenuePerOrder: 0, uniqueProductsSold: 0, currency: 'EUR', multiCurrencyWarning: null };
+    res.status(200).json({
+      success: true,
+      staff: { name: 'Jeffri', department: 'Meta Ads (Facebook/Instagram)', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'],
+      isLive: false,
+      source: { scope: 'Not yet backfilled for this month.', orders: 'Shopify Admin GraphQL API', journey: 'Shopify customerJourneySummary' },
+      termList: [],
+      combinedSummary: emptySummary,
+      campaignSummary: [],
+      allJeffriMetaOrders: [],
+      meta: { generatedAt: new Date().toISOString(), cacheStatus: 'not-available', matchedOrders: 0, note: 'This month has not been backfilled yet.' },
+    });
+    return;
   }
 
   if (isFrStaff && !TOKEN_FR) {
@@ -3612,6 +3636,115 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   if (req.query && req.query.debugOrderRaw) {
     const target = orders.find(o => o.name === req.query.debugOrderRaw);
     res.status(200).json({ success: true, found: !!target, order: target || null });
+    return;
+  }
+
+  // debugFindMeta=1: temporary diagnostic, added 2026-07-23 for Jeffri Meta
+  // tab backfill (Feb-June). Finds every order whose first-session channel
+  // is Social (Facebook/Instagram/TikTok campaign-ID utm_term) AND that
+  // doesn't already match Jeffri's Google Ads utm_term rule or Mahima's
+  // Ads-Term rule -- i.e. genuinely unclaimed social-ad orders, safe to
+  // hand to Jeffri's Meta tab. Read-only, off by default.
+  if (req.query && req.query.debugFindMeta === '1') {
+    const JEFFRI_TERMS = new Set(['jeff', 'jeichitom_maara']);
+    const MAHIMA_AD_TERMS = new Set(['mahi', 'bestselling', 'march_15', 'sep_25', '{searchterm}', 'april_01', 'april_15', 'dec_30']);
+    const rows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const channel = deriveChannel(journey);
+      if (channel !== 'Social') continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      const medium = (utm.medium || '').toString().toLowerCase();
+      const matchesJeffri = JEFFRI_TERMS.has(term) || (!term && medium === 'smarketer_sale');
+      const matchesMahimaAdsTerm = MAHIMA_AD_TERMS.has(term);
+      if (matchesJeffri || matchesMahimaAdsTerm) continue;
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      row.group = 'Meta';
+      row.matchedTerm = utm.term || null;
+      row.firstSessionChannel = 'SOCIAL';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.campaign = utm.term || '(no campaign)';
+      rows.push(row);
+    }
+    res.status(200).json({ success: true, month: monthConfig.month, matchedOrders: rows.length, rows });
+    return;
+  }
+
+  if (staff === 'jeffri-meta') {
+    // Live path (July onward) -- same detection rule as the Jan-June static
+    // snapshots (backfilled 2026-07-23): first-session channel is Social
+    // (Facebook/Instagram/TikTok campaign-ID utm_term), and the order does
+    // NOT already match Jeffri's Google Ads utm_term rule or Mahima's
+    // Ads-Term rule (those take priority; a Social-classified order with a
+    // matching ad term stays with its ad owner, not Meta).
+    const JEFFRI_TERMS = new Set(['jeff', 'jeichitom_maara']);
+    const MAHIMA_AD_TERMS = new Set(['mahi', 'bestselling', 'march_15', 'sep_25', '{searchterm}', 'april_01', 'april_15', 'dec_30']);
+    const metaRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const channel = deriveChannel(journey);
+      if (channel !== 'Social') continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      const medium = (utm.medium || '').toString().toLowerCase();
+      if (JEFFRI_TERMS.has(term) || (!term && medium === 'smarketer_sale')) continue;
+      if (MAHIMA_AD_TERMS.has(term)) continue;
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      row.group = 'Meta';
+      row.matchedTerm = utm.term || null;
+      row.firstSessionChannel = 'SOCIAL';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.campaign = utm.term || '(no campaign)';
+      metaRows.push(row);
+    }
+
+    const byTerm = new Map();
+    metaRows.forEach((r) => {
+      const k = r.matchedTerm || '(no term)';
+      if (!byTerm.has(k)) byTerm.set(k, []);
+      byTerm.get(k).push(r);
+    });
+    const campaignSummary = [...byTerm.keys()].map((term) => ({ campaign: term, term, ...summarizeRows(byTerm.get(term)) })).sort((a, b) => b.ordersCount - a.ordersCount);
+    const combinedSummary = summarizeRows(metaRows);
+
+    const metaPayload = {
+      success: true,
+      staff: { name: 'Jeffri', department: 'Meta Ads (Facebook/Instagram)', store: 'ledsone.de' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'],
+      isLive: monthConfig.isLive,
+      source: {
+        scope: 'store-wide (NOT product-scoped) — orders whose first session is classified as Social (Facebook/Instagram/TikTok campaign-ID utm_term) and don\'t already match Jeffri\'s Google Ads or Mahima\'s Ads-Term utm rules. Live for the current month.',
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      termList: [...byTerm.keys()],
+      combinedSummary,
+      campaignSummary,
+      allJeffriMetaOrders: metaRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: metaRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: metaPayload, generatedAt: Date.now() });
+    res.status(200).json(metaPayload);
     return;
   }
 
