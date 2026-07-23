@@ -267,7 +267,7 @@ function statusClass(s){
   return 'unknown';
 }
 
-async function load(){
+async function load(force){
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true; btn.textContent = 'Refreshing…';
   document.getElementById('liveChip').textContent = 'Fetching live from PostgreSQL…';
@@ -276,7 +276,7 @@ async function load(){
   try {
     const campaignSel = document.getElementById('f_campaign');
     const campaignParam = campaignSel.value && campaignSel.value !== 'all' ? '&campaign=' + encodeURIComponent(campaignSel.value) : '';
-    const res = await fetch('/api/requirement?fn=jefri-product-status' + campaignParam);
+    const res = await fetch('/api/requirement?fn=jefri-product-status' + campaignParam + (force ? '&refresh=1' : ''));
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     ALL = data.products;
@@ -377,7 +377,7 @@ function render(){
   document.getElementById('pinfo').textContent = 'Rows ' + (from+1) + '-' + Math.min(from+size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + pg + ' of ' + mp + ')';
 }
 
-document.getElementById('refreshBtn').addEventListener('click', load);
+document.getElementById('refreshBtn').addEventListener('click', () => load(true));
 document.getElementById('q').addEventListener('input', () => { pg=1; render(); });
 document.getElementById('f_tag').addEventListener('change', () => { pg=1; render(); });
 document.getElementById('f_status').addEventListener('change', () => { pg=1; render(); });
@@ -414,14 +414,14 @@ function r2TagBadge(tag){
 }
 function r2Pct(v){ return v == null ? '—' : Number(v).toLocaleString() + '%'; }
 
-async function r2Load(){
+async function r2Load(force){
   const btn = document.getElementById('r2RefreshBtn');
   btn.disabled = true; btn.textContent = 'Refreshing…';
   document.getElementById('r2LiveChip').textContent = 'Fetching live from PostgreSQL…';
   document.getElementById('r2LiveChip').className = 'chip';
   document.getElementById('r2tbody').innerHTML = '<tr><td colspan="12" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
   try {
-    const res = await fetch('/api/requirement?fn=jefri-search-terms');
+    const res = await fetch('/api/requirement?fn=jefri-search-terms' + (force ? '&refresh=1' : ''));
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
     R2_ALL = data.rows;
@@ -530,7 +530,7 @@ function r2ExportCsv(){
   URL.revokeObjectURL(url);
 }
 
-document.getElementById('r2RefreshBtn').addEventListener('click', r2Load);
+document.getElementById('r2RefreshBtn').addEventListener('click', () => r2Load(true));
 document.getElementById('r2q').addEventListener('input', () => { r2pg=1; r2Render(); });
 document.getElementById('r2f_tag').addEventListener('change', () => { r2pg=1; r2Render(); });
 document.getElementById('r2psize').addEventListener('change', () => { r2pg=1; r2Render(); });
