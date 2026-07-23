@@ -102,7 +102,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="kLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="kLastRefresh" style="display:none;"></span>
-    <button id="kRefreshBtn" class="primary" style="display:none;" onclick="kLoad(true)">Refresh</button>
+    <button id="kNewOrdersBtn" style="display:none;" onclick="kLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="kRefreshBtn" class="primary" style="display:none;" onclick="kLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -194,7 +195,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="dLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="dLastRefresh" style="display:none;"></span>
-    <button id="dRefreshBtn" class="primary" style="display:none;" onclick="dLoad(true)">Refresh</button>
+    <button id="dNewOrdersBtn" style="display:none;" onclick="dLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="dRefreshBtn" class="primary" style="display:none;" onclick="dLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -294,7 +296,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
   <span class="chip" id="sLiveChip">Loading historical data from Shopify&hellip;</span>
   <span class="chip" id="sLastRefresh" style="display:none;"></span>
-  <button id="sRefreshBtn" class="primary" style="display:none;" onclick="sLoad(true)">Refresh</button>
+  <button id="sNewOrdersBtn" style="display:none;" onclick="sLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+  <button id="sRefreshBtn" class="primary" style="display:none;" onclick="sLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
 </div>
 
 <div class="reqtabs" style="margin-bottom:14px;" id="sMonthTabs">
@@ -383,7 +386,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="sdoLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="sdoLastRefresh" style="display:none;"></span>
-    <button id="sdoRefreshBtn" class="primary" style="display:none;" onclick="sdoLoad(true)">Refresh</button>
+    <button id="sdoNewOrdersBtn" style="display:none;" onclick="sdoLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="sdoRefreshBtn" class="primary" style="display:none;" onclick="sdoLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 
   <div class="reqtabs" style="margin-bottom:14px;" id="sdoMonthTabs">
@@ -470,7 +474,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="sdeLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="sdeLastRefresh" style="display:none;"></span>
-    <button id="sdeRefreshBtn" class="primary" style="display:none;" onclick="sdeLoad(true)">Refresh</button>
+    <button id="sdeNewOrdersBtn" style="display:none;" onclick="sdeLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="sdeRefreshBtn" class="primary" style="display:none;" onclick="sdeLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 
   <div class="reqtabs" style="margin-bottom:14px;" id="sdeMonthTabs">
@@ -555,7 +560,6 @@ tbody tr:hover{background:var(--accent-soft);}
 <div class="reqtabs" style="margin-bottom:16px;">
   <div class="reqtab active" id="mSubBtnOrganic" onclick="showMahimaSub('organic')">Organic</div>
   <div class="reqtab" id="mSubBtnAdsTerm" onclick="showMahimaSub('adsterm')">Google Ads</div>
-  <div class="reqtab" id="mSubBtnSearchTerms" onclick="showMahimaSub('searchterms')">Search Terms</div>
 </div>
 <div id="mSubOrganic">
 <header>
@@ -727,81 +731,6 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 </div>
 
-<div id="mSubSearchTerms" style="display:none;">
-<div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped), rolling last 30 days &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; every campaign under the account (Shopping/Search + Performance Max) &mdash; live, updates on Refresh.</div>
-<div class="filters" style="margin-bottom:14px;">
-  <span class="chip">Source: PostgreSQL (read-only)</span>
-  <span class="chip" id="mstLiveChip">Loading&hellip;</span>
-  <button id="mstRefreshBtn" class="primary" onclick="mstLoad(true)">Refresh</button>
-</div>
-
-<div class="cards" id="mstCards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px;">
-  <div class="card"><div class="label">Total Terms</div><div class="value" id="mstcTotal">&ndash;</div></div>
-  <div class="card"><div class="label">Total Cost</div><div class="value" id="mstcCost">&ndash;</div></div>
-  <div class="card"><div class="label">Total Conv. Value</div><div class="value" id="mstcConvValue">&ndash;</div></div>
-  <div class="card"><div class="label">Overall ROAS</div><div class="value" id="mstcRoas">&ndash;</div></div>
-  <div class="card"><div class="label">Keep</div><div class="value" id="mstcKeep">&ndash;</div></div>
-  <div class="card"><div class="label">Exclude</div><div class="value" id="mstcExclude">&ndash;</div></div>
-</div>
-
-<div class="tablebox">
-  <div class="tbar">
-    <input type="text" id="mstq" placeholder="Search term, campaign or match type&hellip;">
-    <label>Action <select id="mstf_action">
-      <option value="">All actions</option>
-      <option value="Keep">Keep</option>
-      <option value="Exclude">Exclude</option>
-    </select></label>
-    <button id="mstExportCsv">Export CSV</button>
-    <span id="mstcnt" style="margin-left:auto;">&ndash;</span>
-  </div>
-  <div class="scroll" style="max-height:640px;overflow-y:auto;">
-    <table>
-      <thead style="position:sticky;top:0;z-index:5;"><tr>
-        <th data-k="searchTerm">Search Term</th>
-        <th data-k="campaign">Campaign</th>
-        <th data-k="matchType">Match Type</th>
-        <th class="num" data-k="impressions">Impressions</th>
-        <th class="num" data-k="clicks">Clicks</th>
-        <th class="num" data-k="ctr">CTR</th>
-        <th class="num" data-k="avgCpc">Avg CPC</th>
-        <th class="num" data-k="cost">Cost</th>
-        <th class="num" data-k="conversions">Conversions</th>
-        <th class="num" data-k="convValue">Conv. Value</th>
-        <th class="num" data-k="roas">ROAS</th>
-        <th class="num" data-k="costPerConv">Cost / Conv</th>
-        <th data-k="queryIntent">Query Intent</th>
-        <th data-k="trend">Trend</th>
-        <th data-k="priority">Priority</th>
-        <th data-k="action">Recommended Action</th>
-      </tr></thead>
-      <tbody id="msttbody"><tr><td colspan="16" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
-    </table>
-  </div>
-  <div class="empty" id="mstempty" style="display:none;">No search terms match the current filters.</div>
-  <div class="tbar" style="border-top:1px solid var(--line);justify-content:space-between;">
-    <span id="mstpinfo"></span>
-    <span style="display:flex;gap:8px;align-items:center;">
-      <label>Rows <select id="mstpsize">
-        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
-      <button id="mstpgFirst" style="background:#fff;color:var(--ink);border-color:var(--line);">&laquo;</button>
-      <button id="mstpgPrev" style="background:#fff;color:var(--ink);border-color:var(--line);">&lsaquo; Prev</button>
-      <button id="mstpgNext" style="background:#fff;color:var(--ink);border-color:var(--line);">Next &rsaquo;</button>
-      <button id="mstpgLast" style="background:#fff;color:var(--ink);border-color:var(--line);">&raquo;</button>
-    </span>
-  </div>
-</div>
-
-<div class="footnotes">
-  <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.campaign_search_term_data</code>, <code>google_ads.pmax_campaign_search_term_data</code>, joined to <code>google_ads.campaigns</code>) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=mahima-search-terms</code>) using <code>DATABASE_URL</code> stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
-  <strong>Scope:</strong> account-wide &mdash; every campaign under ledsone.de (account 9031058245), not limited to a named campaign list &mdash; rolling last 30 days, with a trailing 7-day window used for the Trend column. Search terms from both Shopping/Search and Performance Max campaign types (a term in both types is shown as separate rows by Match Type).<br>
-  <strong>ROAS:</strong> Conversion Value &divide; Cost, shown as 0 when Cost is 0.<br>
-  <strong>Recommended Action rules (ported unchanged from the original 2026-07-09 static report):</strong> any term with Conversions &gt; 0 &rarr; <strong>Keep</strong>. Otherwise Excluded, reason depends on Query Intent: Competitor brand &rarr; add as negative phrase; Non-DE/mixed language &rarr; low volume/non-native phrasing; anything else &rarr; add as negative exact match.<br>
-  <strong>Query Intent:</strong> rule-based classifier over the search term text (Competitor brand / Non-DE &amp; mixed language / Low-intent &amp; bargain / Generic &ndash; high / Generic &ndash; medium), identical word lists to the original static report.<br>
-  <strong>Priority:</strong> Exclude rows are High/Medium/Low by Cost (&ge;&euro;5 / &gt;&euro;0 / &euro;0); Keep rows are High when ROAS &ge; 2, else Medium.<br>
-  <strong>Live:</strong> this tab has no historical month tabs &mdash; it is always the rolling last-30-days view, refreshed on demand via the Refresh button (60s server-side cache).
-</div>
-</div>
 </div>
 
 <div id="tabJeffri" style="display:none;">
@@ -813,7 +742,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="jaLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="jaLastRefresh" style="display:none;"></span>
-    <button id="jaRefreshBtn" class="primary" style="display:none;" onclick="jaLoad(true)">Refresh</button>
+    <button id="jaNewOrdersBtn" style="display:none;" onclick="jaLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="jaRefreshBtn" class="primary" style="display:none;" onclick="jaLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -907,7 +837,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="heLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="heLastRefresh" style="display:none;"></span>
-    <button id="heRefreshBtn" class="primary" style="display:none;" onclick="heLoad(true)">Refresh</button>
+    <button id="heNewOrdersBtn" style="display:none;" onclick="heLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="heRefreshBtn" class="primary" style="display:none;" onclick="heLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -998,7 +929,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="tvLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="tvLastRefresh" style="display:none;"></span>
-    <button id="tvRefreshBtn" class="primary" style="display:none;" onclick="tvLoad(true)">Refresh</button>
+    <button id="tvNewOrdersBtn" style="display:none;" onclick="tvLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="tvRefreshBtn" class="primary" style="display:none;" onclick="tvLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -1085,7 +1017,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="thLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="thLastRefresh" style="display:none;"></span>
-    <button id="thRefreshBtn" class="primary" style="display:none;" onclick="thLoad(true)">Refresh</button>
+    <button id="thNewOrdersBtn" style="display:none;" onclick="thLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="thRefreshBtn" class="primary" style="display:none;" onclick="thLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -1174,7 +1107,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="sjLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="sjLastRefresh" style="display:none;"></span>
-    <button id="sjRefreshBtn" class="primary" style="display:none;" onclick="sjLoad(true)">Refresh</button>
+    <button id="sjNewOrdersBtn" style="display:none;" onclick="sjLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="sjRefreshBtn" class="primary" style="display:none;" onclick="sjLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -1263,7 +1197,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="tkLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="tkLastRefresh" style="display:none;"></span>
-    <button id="tkRefreshBtn" class="primary" style="display:none;" onclick="tkLoad(true)">Refresh</button>
+    <button id="tkNewOrdersBtn" style="display:none;" onclick="tkLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="tkRefreshBtn" class="primary" style="display:none;" onclick="tkLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -1351,7 +1286,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="snLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="snLastRefresh" style="display:none;"></span>
-    <button id="snRefreshBtn" class="primary" style="display:none;" onclick="snLoad(true)">Refresh</button>
+    <button id="snNewOrdersBtn" style="display:none;" onclick="snLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="snRefreshBtn" class="primary" style="display:none;" onclick="snLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -1481,9 +1417,6 @@ function showMahimaSub(sub){
   document.getElementById('mSubBtnAdsTerm').classList.toggle('active', sub === 'adsterm');
   document.getElementById('mSubAdsTerm').style.display = sub === 'adsterm' ? '' : 'none';
   if (sub === 'adsterm' && !MAT_DATA) matLoad(false);
-  document.getElementById('mSubBtnSearchTerms').classList.toggle('active', sub === 'searchterms');
-  document.getElementById('mSubSearchTerms').style.display = sub === 'searchterms' ? '' : 'none';
-  if (sub === 'searchterms' && !MST_ALL.length) mstLoad(false);
 }
 
 function showSukirthaRegion(r){
@@ -1509,14 +1442,17 @@ let kLastSuccessfulAt = null;
 const K_MONTH_CACHE = {};
 let kLoadSeq = 0;
 
-async function kLoad(force){
+async function kLoad(force, fullResync){
   const myMonth = K_CURRENT_MONTH;
   const seq = ++kLoadSeq;
   kLoading = true;
   const isLive = K_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('kRefreshBtn');
+  const newOrdersBtn = document.getElementById('kNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('kLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('kLiveChip').className = 'chip';
   if (kAbortController) kAbortController.abort();
@@ -1526,7 +1462,7 @@ async function kLoad(force){
     if (!force && K_MONTH_CACHE[myMonth]) {
       data = K_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?entity=kamsi&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?entity=kamsi&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: kAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -1546,14 +1482,16 @@ async function kLoad(force){
     kRenderAll();
     kLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== kLoadSeq) return; // stale, a newer call owns loading state now
-    if (e.name === 'AbortError') { kLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { kLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('kLiveChip').textContent = 'Failed to load: ' + e.message + (K_DATA ? ' — showing last successful data' : '');
     document.getElementById('kLiveChip').className = 'chip stale';
     if (!K_DATA) document.getElementById('kcTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     kLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -2243,157 +2181,6 @@ document.getElementById('matcResetFilters').addEventListener('click', () => {
   matcRenderTable();
 });
 
-// ===== Mahima Search Terms sub-tab (Req3, live PostgreSQL, distinct MST-prefixed globals/functions) =====
-let MST_ALL = [];
-let mstpg = 1;
-let mstSortKey = 'cost';
-let mstSortDir = -1;
-function eur(v){ return v === null || v === undefined ? '—' : '€' + Number(v).toFixed(2); }
-function mstPct(v){ return v === null || v === undefined ? '—' : Number(v).toLocaleString() + '%'; }
-
-const MST_PRIORITY_COLORS = { High: '#c62828', Medium: '#b8860b', Low: '#9aa3b2' };
-function mstPriorityBadge(p){
-  if (!p) return '—';
-  const color = MST_PRIORITY_COLORS[p] || 'var(--muted)';
-  return '<span class="tag-badge" style="color:' + color + ';">' + esc(p) + '</span>';
-}
-function mstActionBadge(a){
-  if (!a) return '—';
-  const color = a === 'Keep' ? '#0a7d4f' : '#c62828';
-  return '<span class="tag-badge" style="color:' + color + ';">' + esc(a) + '</span>';
-}
-
-async function mstLoad(force){
-  const btn = document.getElementById('mstRefreshBtn');
-  btn.disabled = true; btn.textContent = 'Refreshing…';
-  document.getElementById('mstLiveChip').textContent = 'Fetching live from PostgreSQL…';
-  document.getElementById('mstLiveChip').className = 'chip';
-  document.getElementById('msttbody').innerHTML = '<tr><td colspan="16" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
-  try {
-    const res = await fetch('/api/requirement?fn=mahima-search-terms' + (force ? '&refresh=1' : ''));
-    const data = await res.json();
-    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-    MST_ALL = data.rows;
-    document.getElementById('mstLiveChip').textContent = 'Live — fetched ' + new Date(data.meta.generatedAt).toLocaleString();
-    document.getElementById('mstLiveChip').className = 'chip live';
-    document.getElementById('mstcTotal').textContent = num(data.summary.totalTerms);
-    document.getElementById('mstcCost').textContent = eur(data.summary.totalCost);
-    document.getElementById('mstcConvValue').textContent = eur(data.summary.totalConvValue);
-    document.getElementById('mstcRoas').textContent = num(data.summary.overallRoas);
-    document.getElementById('mstcKeep').textContent = num(data.summary.keepCount);
-    document.getElementById('mstcExclude').textContent = num(data.summary.excludeCount);
-    mstpg = 1;
-    mstRender();
-  } catch (e) {
-    document.getElementById('mstLiveChip').textContent = 'Failed to load: ' + e.message;
-    document.getElementById('mstLiveChip').className = 'chip stale';
-    document.getElementById('msttbody').innerHTML = '';
-    document.getElementById('mstempty').style.display = 'none';
-  } finally {
-    btn.disabled = false; btn.textContent = 'Refresh';
-  }
-}
-
-function mstFilteredRows(){
-  const q = document.getElementById('mstq').value.trim().toLowerCase();
-  const actionF = document.getElementById('mstf_action').value;
-  let rows = MST_ALL.filter(r => {
-    const textHit = !q || (r.searchTerm||'').toLowerCase().includes(q) || (r.campaign||'').toLowerCase().includes(q) || (r.matchType||'').toLowerCase().includes(q);
-    const actionHit = !actionF || (r.action || '').startsWith(actionF);
-    return textHit && actionHit;
-  });
-  rows.sort((a,b) => {
-    let av = a[mstSortKey], bv = b[mstSortKey];
-    if (av == null) av = mstSortDir === 1 ? Infinity : -Infinity;
-    if (bv == null) bv = mstSortDir === 1 ? Infinity : -Infinity;
-    if (typeof av === 'string') { av = av.toLowerCase(); bv = (bv||'').toLowerCase(); }
-    if (av < bv) return -1*mstSortDir;
-    if (av > bv) return 1*mstSortDir;
-    return 0;
-  });
-  return rows;
-}
-
-function mstMaxpg(rows){
-  const size = parseInt(document.getElementById('mstpsize').value, 10);
-  return Math.max(1, Math.ceil(rows.length / size));
-}
-
-function mstRender(){
-  const rows = mstFilteredRows();
-  const size = parseInt(document.getElementById('mstpsize').value, 10);
-  const mp = mstMaxpg(rows);
-  if (mstpg > mp) mstpg = mp;
-  if (mstpg < 1) mstpg = 1;
-  document.getElementById('mstcnt').textContent = 'Showing ' + rows.length.toLocaleString() + ' of ' + MST_ALL.length.toLocaleString() + ' terms';
-  const tbody = document.getElementById('msttbody');
-  const emptyEl = document.getElementById('mstempty');
-  if (rows.length === 0) {
-    tbody.innerHTML = '';
-    emptyEl.style.display = 'block';
-    document.getElementById('mstpinfo').textContent = '';
-    return;
-  }
-  emptyEl.style.display = 'none';
-  const from = (mstpg-1)*size;
-  const pageRows = rows.slice(from, from+size);
-  tbody.innerHTML = pageRows.map(r => (
-    '<tr>' +
-    '<td>'+esc(r.searchTerm)+'</td>' +
-    '<td>'+esc(r.campaign)+'</td>' +
-    '<td>'+esc(r.matchType)+'</td>' +
-    '<td class="num">'+num(r.impressions)+'</td>' +
-    '<td class="num">'+num(r.clicks)+'</td>' +
-    '<td class="num">'+mstPct(r.ctr)+'</td>' +
-    '<td class="num">'+(r.avgCpc==null?'—':eur(r.avgCpc))+'</td>' +
-    '<td class="num">'+eur(r.cost)+'</td>' +
-    '<td class="num">'+num(r.conversions)+'</td>' +
-    '<td class="num">'+eur(r.convValue)+'</td>' +
-    '<td class="num">'+num(r.roas)+'</td>' +
-    '<td class="num">'+(r.costPerConv==null?'—':eur(r.costPerConv))+'</td>' +
-    '<td>'+esc(r.queryIntent)+'</td>' +
-    '<td>'+esc(r.trend)+'</td>' +
-    '<td>'+mstPriorityBadge(r.priority)+'</td>' +
-    '<td>'+mstActionBadge(r.action)+'</td>' +
-    '</tr>'
-  )).join('');
-  document.getElementById('mstpinfo').textContent = 'Rows ' + (from+1) + '-' + Math.min(from+size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + mstpg + ' of ' + mp + ')';
-}
-
-function mstExportCsv(){
-  const rows = mstFilteredRows();
-  const header = ['Search Term','Campaign','Match Type','Impressions','Clicks','CTR','Avg CPC','Cost','Conversions','Conv. Value','ROAS','Cost / Conv','Query Intent','Trend','Priority','Recommended Action'];
-  const lines = [header.join(',')];
-  rows.forEach(r => {
-    lines.push([r.searchTerm, r.campaign, r.matchType, r.impressions, r.clicks, r.ctr, r.avgCpc, r.cost, r.conversions, r.convValue, r.roas, r.costPerConv, r.queryIntent, r.trend, r.priority, r.action].map(csvSafe).join(','));
-  });
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'mahima-search-terms-' + new Date().toISOString().slice(0,10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-document.getElementById('mstq').addEventListener('input', () => { mstpg=1; mstRender(); });
-document.getElementById('mstf_action').addEventListener('change', () => { mstpg=1; mstRender(); });
-document.getElementById('mstpsize').addEventListener('change', () => { mstpg=1; mstRender(); });
-document.getElementById('mstExportCsv').addEventListener('click', mstExportCsv);
-document.getElementById('mstpgFirst').addEventListener('click', () => { mstpg=1; mstRender(); });
-document.getElementById('mstpgPrev').addEventListener('click', () => { if(mstpg>1){mstpg--;mstRender();} });
-document.getElementById('mstpgNext').addEventListener('click', () => { if(mstpg<mstMaxpg(mstFilteredRows())){mstpg++;mstRender();} });
-document.getElementById('mstpgLast').addEventListener('click', () => { mstpg=mstMaxpg(mstFilteredRows()); mstRender(); });
-document.querySelectorAll('#mSubSearchTerms thead th[data-k]').forEach(th => {
-  th.addEventListener('click', () => {
-    const k = th.getAttribute('data-k');
-    if (mstSortKey === k) mstSortDir = -mstSortDir; else { mstSortKey = k; mstSortDir = 1; }
-    mstRender();
-  });
-});
-
 // ===== Jeffri tab (Google Ads only, mirrors the Mahima Ads pattern, distinct JA-prefixed globals/functions) =====
 let JA_CURRENT_MONTH = '2026-07';
 const JA_LIVE_MONTHS = ['2026-07'];
@@ -2422,7 +2209,7 @@ let jaLastSuccessfulAt = null;
 const JA_MONTH_CACHE = {};
 let jaLoadSeq = 0;
 
-async function jaLoad(force){
+async function jaLoad(force, fullResync){
   const myMonth = JA_CURRENT_MONTH;
   const myChannel = JA_CHANNEL;
   const cacheKey = myChannel + ':' + myMonth;
@@ -2430,8 +2217,11 @@ async function jaLoad(force){
   jaLoading = true;
   const isLive = JA_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('jaRefreshBtn');
+  const newOrdersBtn = document.getElementById('jaNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('jaLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('jaLiveChip').className = 'chip';
   if (jaAbortController) jaAbortController.abort();
@@ -2441,7 +2231,7 @@ async function jaLoad(force){
     if (!force && JA_MONTH_CACHE[cacheKey]) {
       data = JA_MONTH_CACHE[cacheKey];
     } else {
-      const url = '/api/sales?staff=' + JA_CHANNEL_STAFF[myChannel] + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=' + JA_CHANNEL_STAFF[myChannel] + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: jaAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2461,14 +2251,16 @@ async function jaLoad(force){
     jaRenderAll();
     jaLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== jaLoadSeq) return;
-    if (e.name === 'AbortError') { jaLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { jaLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('jaLiveChip').textContent = 'Failed to load: ' + e.message + (JA_DATA ? ' — showing last successful data' : '');
     document.getElementById('jaLiveChip').className = 'chip stale';
     if (!JA_DATA) document.getElementById('jacTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     jaLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -2645,14 +2437,17 @@ let heLastSuccessfulAt = null;
 const HE_MONTH_CACHE = {};
 let heLoadSeq = 0;
 
-async function heLoad(force){
+async function heLoad(force, fullResync){
   const myMonth = HE_CURRENT_MONTH;
   const seq = ++heLoadSeq;
   heLoading = true;
   const isLive = HE_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('heRefreshBtn');
+  const newOrdersBtn = document.getElementById('heNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('heLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('heLiveChip').className = 'chip';
   if (heAbortController) heAbortController.abort();
@@ -2662,7 +2457,7 @@ async function heLoad(force){
     if (!force && HE_MONTH_CACHE[myMonth]) {
       data = HE_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=hetheesha-organic&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=hetheesha-organic&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: heAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2682,14 +2477,16 @@ async function heLoad(force){
     heRenderAll();
     heLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== heLoadSeq) return;
-    if (e.name === 'AbortError') { heLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { heLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('heLiveChip').textContent = 'Failed to load: ' + e.message + (HE_DATA ? ' — showing last successful data' : '');
     document.getElementById('heLiveChip').className = 'chip stale';
     if (!HE_DATA) document.getElementById('hecTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     heLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -2885,14 +2682,17 @@ let tvLastSuccessfulAt = null;
 const TV_MONTH_CACHE = {};
 let tvLoadSeq = 0;
 
-async function tvLoad(force){
+async function tvLoad(force, fullResync){
   const myMonth = TV_CURRENT_MONTH;
   const seq = ++tvLoadSeq;
   tvLoading = true;
   const isLive = TV_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('tvRefreshBtn');
+  const newOrdersBtn = document.getElementById('tvNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('tvLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('tvLiveChip').className = 'chip';
   if (tvAbortController) tvAbortController.abort();
@@ -2902,7 +2702,7 @@ async function tvLoad(force){
     if (!force && TV_MONTH_CACHE[myMonth]) {
       data = TV_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=thivagini-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=thivagini-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: tvAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2922,14 +2722,16 @@ async function tvLoad(force){
     tvRenderAll();
     tvLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== tvLoadSeq) return;
-    if (e.name === 'AbortError') { tvLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { tvLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('tvLiveChip').textContent = 'Failed to load: ' + e.message + (TV_DATA ? ' — showing last successful data' : '');
     document.getElementById('tvLiveChip').className = 'chip stale';
     if (!TV_DATA) document.getElementById('tvcTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     tvLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -3087,14 +2889,17 @@ let thLastSuccessfulAt = null;
 const TH_MONTH_CACHE = {};
 let thLoadSeq = 0;
 
-async function thLoad(force){
+async function thLoad(force, fullResync){
   const myMonth = TH_CURRENT_MONTH;
   const seq = ++thLoadSeq;
   thLoading = true;
   const isLive = TH_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('thRefreshBtn');
+  const newOrdersBtn = document.getElementById('thNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('thLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('thLiveChip').className = 'chip';
   if (thAbortController) thAbortController.abort();
@@ -3104,7 +2909,7 @@ async function thLoad(force){
     if (!force && TH_MONTH_CACHE[myMonth]) {
       data = TH_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=thasitha-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=thasitha-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: thAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3124,14 +2929,16 @@ async function thLoad(force){
     thRenderAll();
     thLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== thLoadSeq) return;
-    if (e.name === 'AbortError') { thLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { thLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('thLiveChip').textContent = 'Failed to load: ' + e.message + (TH_DATA ? ' — showing last successful data' : '');
     document.getElementById('thLiveChip').className = 'chip stale';
     if (!TH_DATA) document.getElementById('thcTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     thLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -3292,14 +3099,17 @@ let sjLastSuccessfulAt = null;
 const SJ_MONTH_CACHE = {};
 let sjLoadSeq = 0;
 
-async function sjLoad(force){
+async function sjLoad(force, fullResync){
   const myMonth = SJ_CURRENT_MONTH;
   const seq = ++sjLoadSeq;
   sjLoading = true;
   const isLive = SJ_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('sjRefreshBtn');
+  const newOrdersBtn = document.getElementById('sjNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('sjLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('sjLiveChip').className = 'chip';
   if (sjAbortController) sjAbortController.abort();
@@ -3309,7 +3119,7 @@ async function sjLoad(force){
     if (!force && SJ_MONTH_CACHE[myMonth]) {
       data = SJ_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=sajeepan-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=sajeepan-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: sjAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3329,14 +3139,16 @@ async function sjLoad(force){
     sjRenderAll();
     sjLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== sjLoadSeq) return;
-    if (e.name === 'AbortError') { sjLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { sjLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('sjLiveChip').textContent = 'Failed to load: ' + e.message + (SJ_DATA ? ' — showing last successful data' : '');
     document.getElementById('sjLiveChip').className = 'chip stale';
     if (!SJ_DATA) document.getElementById('sjcTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     sjLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -3497,14 +3309,17 @@ let tkLastSuccessfulAt = null;
 const TK_MONTH_CACHE = {};
 let tkLoadSeq = 0;
 
-async function tkLoad(force){
+async function tkLoad(force, fullResync){
   const myMonth = TK_CURRENT_MONTH;
   const seq = ++tkLoadSeq;
   tkLoading = true;
   const isLive = TK_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('tkRefreshBtn');
+  const newOrdersBtn = document.getElementById('tkNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('tkLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('tkLiveChip').className = 'chip';
   if (tkAbortController) tkAbortController.abort();
@@ -3514,7 +3329,7 @@ async function tkLoad(force){
     if (!force && TK_MONTH_CACHE[myMonth]) {
       data = TK_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=theekshy-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=theekshy-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: tkAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3534,14 +3349,16 @@ async function tkLoad(force){
     tkRenderAll();
     tkLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== tkLoadSeq) return;
-    if (e.name === 'AbortError') { tkLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { tkLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('tkLiveChip').textContent = 'Failed to load: ' + e.message + (TK_DATA ? ' — showing last successful data' : '');
     document.getElementById('tkLiveChip').className = 'chip stale';
     if (!TK_DATA) document.getElementById('tkcTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     tkLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -3702,14 +3519,17 @@ let snLastSuccessfulAt = null;
 const SN_MONTH_CACHE = {};
 let snLoadSeq = 0;
 
-async function snLoad(force){
+async function snLoad(force, fullResync){
   const myMonth = SN_CURRENT_MONTH;
   const seq = ++snLoadSeq;
   snLoading = true;
   const isLive = SN_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('snRefreshBtn');
+  const newOrdersBtn = document.getElementById('snNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('snLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('snLiveChip').className = 'chip';
   if (snAbortController) snAbortController.abort();
@@ -3719,7 +3539,7 @@ async function snLoad(force){
     if (!force && SN_MONTH_CACHE[myMonth]) {
       data = SN_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=sonya-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=sonya-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: snAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3739,14 +3559,16 @@ async function snLoad(force){
     snRenderAll();
     snLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== snLoadSeq) return;
-    if (e.name === 'AbortError') { snLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { snLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('snLiveChip').textContent = 'Failed to load: ' + e.message + (SN_DATA ? ' — showing last successful data' : '');
     document.getElementById('snLiveChip').className = 'chip stale';
     if (!SN_DATA) document.getElementById('sncTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     snLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -3907,14 +3729,17 @@ let dLastSuccessfulAt = null;
 const D_MONTH_CACHE = {};
 let dLoadSeq = 0;
 
-async function dLoad(force){
+async function dLoad(force, fullResync){
   const myMonth = D_CURRENT_MONTH;
   const seq = ++dLoadSeq;
   dLoading = true;
   const isLive = D_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('dRefreshBtn');
+  const newOrdersBtn = document.getElementById('dNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('dLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('dLiveChip').className = 'chip';
   if (dAbortController) dAbortController.abort();
@@ -3924,7 +3749,7 @@ async function dLoad(force){
     if (!force && D_MONTH_CACHE[myMonth]) {
       data = D_MONTH_CACHE[myMonth];
     } else {
-    const url = '/api/sales?entity=dilaksi&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+    const url = '/api/sales?entity=dilaksi&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
     const res = await fetch(url, { signal: dAbortController.signal });
     data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -3944,14 +3769,16 @@ async function dLoad(force){
     dRenderAll();
     dLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== dLoadSeq) return;
-    if (e.name === 'AbortError') { dLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { dLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('dLiveChip').textContent = 'Failed to load: ' + e.message + (D_DATA ? ' — showing last successful data' : '');
     document.getElementById('dLiveChip').className = 'chip stale';
     if (!D_DATA) document.getElementById('dcTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     dLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -4190,14 +4017,17 @@ let sLastSuccessfulAt = null;
 const S_MONTH_CACHE = {};
 let sLoadSeq = 0;
 
-async function sLoad(force){
+async function sLoad(force, fullResync){
   const myMonth = S_CURRENT_MONTH;
   const seq = ++sLoadSeq;
   sLoading = true;
   const isLive = S_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('sRefreshBtn');
+  const newOrdersBtn = document.getElementById('sNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('sLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('sLiveChip').className = 'chip';
   if (sAbortController) sAbortController.abort();
@@ -4207,7 +4037,7 @@ async function sLoad(force){
     if (!force && S_MONTH_CACHE[myMonth]) {
       data = S_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?entity=sukirtha-uk&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?entity=sukirtha-uk&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: sAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -4227,14 +4057,16 @@ async function sLoad(force){
     sRenderAll();
     sLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== sLoadSeq) return;
-    if (e.name === 'AbortError') { sLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { sLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('sLiveChip').textContent = 'Failed to load: ' + e.message + (S_DATA ? ' — showing last successful data' : '');
     document.getElementById('sLiveChip').className = 'chip stale';
     if (!S_DATA) document.getElementById('scTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     sLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -4454,14 +4286,17 @@ let sdoLastSuccessfulAt = null;
 const SDO_MONTH_CACHE = {};
 let sdoLoadSeq = 0;
 
-async function sdoLoad(force){
+async function sdoLoad(force, fullResync){
   const myMonth = SDO_CURRENT_MONTH;
   const seq = ++sdoLoadSeq;
   sdoLoading = true;
   const isLive = SDO_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('sdoRefreshBtn');
+  const newOrdersBtn = document.getElementById('sdoNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('sdoLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('sdoLiveChip').className = 'chip';
   if (sdoAbortController) sdoAbortController.abort();
@@ -4471,7 +4306,7 @@ async function sdoLoad(force){
     if (!force && SDO_MONTH_CACHE[myMonth]) {
       data = SDO_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: sdoAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -4491,14 +4326,16 @@ async function sdoLoad(force){
     sdoRenderAll();
     sdoLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== sdoLoadSeq) return;
-    if (e.name === 'AbortError') { sdoLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { sdoLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('sdoLiveChip').textContent = 'Failed to load: ' + e.message + (SDO_DATA ? ' — showing last successful data' : '');
     document.getElementById('sdoLiveChip').className = 'chip stale';
     if (!SDO_DATA) document.getElementById('sdocTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     sdoLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -4715,14 +4552,17 @@ let sdeLastSuccessfulAt = null;
 const SDE_MONTH_CACHE = {};
 let sdeLoadSeq = 0;
 
-async function sdeLoad(force){
+async function sdeLoad(force, fullResync){
   const myMonth = SDE_CURRENT_MONTH;
   const seq = ++sdeLoadSeq;
   sdeLoading = true;
   const isLive = SDE_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('sdeRefreshBtn');
+  const newOrdersBtn = document.getElementById('sdeNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
+  newOrdersBtn.disabled = true;
   document.getElementById('sdeLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
   document.getElementById('sdeLiveChip').className = 'chip';
   if (sdeAbortController) sdeAbortController.abort();
@@ -4732,7 +4572,7 @@ async function sdeLoad(force){
     if (!force && SDE_MONTH_CACHE[myMonth]) {
       data = SDE_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?type=email&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?type=email&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: sdeAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -4752,14 +4592,16 @@ async function sdeLoad(force){
     sdeRenderAll();
     sdeLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== sdeLoadSeq) return;
-    if (e.name === 'AbortError') { sdeLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { sdeLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('sdeLiveChip').textContent = 'Failed to load: ' + e.message + (SDE_DATA ? ' — showing last successful data' : '');
     document.getElementById('sdeLiveChip').className = 'chip stale';
     if (!SDE_DATA) document.getElementById('sdecTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     sdeLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 

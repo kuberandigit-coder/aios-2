@@ -459,6 +459,52 @@ async function fetchOrdersForMonth(monthConfig, retryState) {
   return { orders, pages };
 }
 
+// Incremental refresh for the live month (2026-07-23) — same pattern as the
+// Mahima/Sukirtha-DE module below: cache raw order nodes per month, only ask
+// Shopify for orders created/updated since the last fetch on repeat clicks
+// ("Check New Orders"). A full month re-fetch ("Refresh") always runs when
+// forceFullResync is set, or automatically once per hour as a safety net.
+const RAW_ORDERS_CACHE_DILAKSI = new Map();
+const RAW_FULL_REFETCH_INTERVAL_MS_DILAKSI = 60 * 60 * 1000;
+const RAW_INCREMENTAL_BUFFER_MS_DILAKSI = 15 * 60 * 1000;
+
+async function fetchOrdersUpdatedSinceDilaksi(monthConfig, sinceISO, retryState) {
+  const q = `updated_at:>=${sinceISO} AND created_at:<${monthConfig.queryEnd}`;
+  const orders = [];
+  let after = null;
+  let hasNext = true;
+  let pages = 0;
+  while (hasNext) {
+    const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState);
+    for (const edge of data.orders.edges) {
+      const t = new Date(edge.node.createdAt).getTime();
+      if (t >= monthConfig.startMs && t < monthConfig.endMs) orders.push(edge.node);
+    }
+    hasNext = data.orders.pageInfo.hasNextPage;
+    after = data.orders.pageInfo.endCursor;
+    pages++;
+  }
+  return { orders, pages };
+}
+
+async function fetchOrdersForMonthIncremental(monthConfig, retryState, forceFullResync) {
+  if (!monthConfig.isLive) return fetchOrdersForMonth(monthConfig, retryState);
+  const rawKey = monthConfig.month;
+  const cached = RAW_ORDERS_CACHE_DILAKSI.get(rawKey);
+  const now = Date.now();
+  if (forceFullResync || !cached || (now - cached.lastFullFetchAt) >= RAW_FULL_REFETCH_INTERVAL_MS_DILAKSI) {
+    const result = await fetchOrdersForMonth(monthConfig, retryState);
+    const map = new Map(result.orders.map((o) => [o.id, o]));
+    RAW_ORDERS_CACHE_DILAKSI.set(rawKey, { orders: map, cutoffISO: new Date(now).toISOString(), lastFullFetchAt: now });
+    return { orders: [...map.values()], pages: result.pages, incremental: false };
+  }
+  const sinceMs = Math.max(monthConfig.startMs, new Date(cached.cutoffISO).getTime() - RAW_INCREMENTAL_BUFFER_MS_DILAKSI);
+  const delta = await fetchOrdersUpdatedSinceDilaksi(monthConfig, new Date(sinceMs).toISOString(), retryState);
+  for (const o of delta.orders) cached.orders.set(o.id, o);
+  cached.cutoffISO = new Date(now).toISOString();
+  return { orders: [...cached.orders.values()], pages: delta.pages, incremental: true };
+}
+
 // Product IDs permanently excluded from Dilaksi's sales, across every month
 // (historical and live) — added 2026-07-20 per explicit user instruction
 // (these belong to Kamsi, not Dilaksi). Checked before allocation matching
@@ -617,7 +663,7 @@ async function dilaksiHandler(req, res) {
 
     const allocation = loadDilaksiAllocation();
     const retryState = { throttleRetries: 0 };
-    const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
+    const { orders, pages, incremental } = await fetchOrdersForMonthIncremental(monthConfig, retryState, req.query && req.query.fullResync === '1');
 
     const classificationCounts = {
       fullyOrganic: 0, mixedJourney: 0, nonOrganic: 0, attributionPending: 0,
@@ -803,6 +849,7 @@ async function dilaksiHandler(req, res) {
         pagesFetched: pages,
         throttleRetries: retryState.throttleRetries,
         executionMs: Date.now() - startTime,
+        incrementalFetch: incremental,
       },
     };
 
@@ -1709,6 +1756,52 @@ async function fetchOrdersForMonth(monthConfig, retryState) {
   return { orders, pages };
 }
 
+// Incremental refresh for the live month (2026-07-23) — same pattern as the
+// Mahima/Sukirtha-DE and Dilaksi modules: cache raw order nodes per month,
+// only ask Shopify for orders created/updated since the last fetch on repeat
+// clicks ("Check New Orders"). "Refresh" always forces a full month
+// re-fetch; a full re-fetch also runs automatically once per hour regardless.
+const RAW_ORDERS_CACHE_KAMSI = new Map();
+const RAW_FULL_REFETCH_INTERVAL_MS_KAMSI = 60 * 60 * 1000;
+const RAW_INCREMENTAL_BUFFER_MS_KAMSI = 15 * 60 * 1000;
+
+async function fetchOrdersUpdatedSinceKamsi(monthConfig, sinceISO, retryState) {
+  const q = `updated_at:>=${sinceISO} AND created_at:<${monthConfig.queryEnd}`;
+  const orders = [];
+  let after = null;
+  let hasNext = true;
+  let pages = 0;
+  while (hasNext) {
+    const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState);
+    for (const edge of data.orders.edges) {
+      const t = new Date(edge.node.createdAt).getTime();
+      if (t >= monthConfig.startMs && t < monthConfig.endMs) orders.push(edge.node);
+    }
+    hasNext = data.orders.pageInfo.hasNextPage;
+    after = data.orders.pageInfo.endCursor;
+    pages++;
+  }
+  return { orders, pages };
+}
+
+async function fetchOrdersForMonthIncremental(monthConfig, retryState, forceFullResync) {
+  if (!monthConfig.isLive) return fetchOrdersForMonth(monthConfig, retryState);
+  const rawKey = monthConfig.month;
+  const cached = RAW_ORDERS_CACHE_KAMSI.get(rawKey);
+  const now = Date.now();
+  if (forceFullResync || !cached || (now - cached.lastFullFetchAt) >= RAW_FULL_REFETCH_INTERVAL_MS_KAMSI) {
+    const result = await fetchOrdersForMonth(monthConfig, retryState);
+    const map = new Map(result.orders.map((o) => [o.id, o]));
+    RAW_ORDERS_CACHE_KAMSI.set(rawKey, { orders: map, cutoffISO: new Date(now).toISOString(), lastFullFetchAt: now });
+    return { orders: [...map.values()], pages: result.pages, incremental: false };
+  }
+  const sinceMs = Math.max(monthConfig.startMs, new Date(cached.cutoffISO).getTime() - RAW_INCREMENTAL_BUFFER_MS_KAMSI);
+  const delta = await fetchOrdersUpdatedSinceKamsi(monthConfig, new Date(sinceMs).toISOString(), retryState);
+  for (const o of delta.orders) cached.orders.set(o.id, o);
+  cached.cutoffISO = new Date(now).toISOString();
+  return { orders: [...cached.orders.values()], pages: delta.pages, incremental: true };
+}
+
 // Product IDs permanently excluded from Kamsi's sales, across every month
 // (historical and live) — added 2026-07-20 per explicit user instruction.
 // Checked before allocation matching so these never appear regardless of
@@ -1856,7 +1949,7 @@ async function kamsiHandler(req, res) {
 
     const allocation = loadKamsiAllocation();
     const retryState = { throttleRetries: 0 };
-    const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
+    const { orders, pages, incremental } = await fetchOrdersForMonthIncremental(monthConfig, retryState, req.query && req.query.fullResync === '1');
 
     const classificationCounts = {
       fullyOrganic: 0, mixedJourney: 0, nonOrganic: 0, attributionPending: 0,
@@ -2041,6 +2134,7 @@ async function kamsiHandler(req, res) {
         pagesFetched: pages,
         throttleRetries: retryState.throttleRetries,
         executionMs: Date.now() - startTime,
+        incrementalFetch: incremental,
       },
     };
 
@@ -2383,6 +2477,52 @@ async function fetchOrdersForMonth(monthConfig, retryState) {
   return { orders, pages };
 }
 
+// Incremental refresh for the live month (2026-07-23) — same pattern as the
+// other modules: cache raw order nodes per month, only ask Shopify for
+// orders created/updated since the last fetch on repeat clicks ("Check New
+// Orders"). "Refresh" always forces a full month re-fetch; a full re-fetch
+// also runs automatically once per hour regardless.
+const RAW_ORDERS_CACHE_SUKIRTHA_UK = new Map();
+const RAW_FULL_REFETCH_INTERVAL_MS_SUKIRTHA_UK = 60 * 60 * 1000;
+const RAW_INCREMENTAL_BUFFER_MS_SUKIRTHA_UK = 15 * 60 * 1000;
+
+async function fetchOrdersUpdatedSinceSukirthaUk(monthConfig, sinceISO, retryState) {
+  const q = `updated_at:>=${sinceISO} AND created_at:<${monthConfig.queryEnd}`;
+  const orders = [];
+  let after = null;
+  let hasNext = true;
+  let pages = 0;
+  while (hasNext) {
+    const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState);
+    for (const edge of data.orders.edges) {
+      const t = new Date(edge.node.createdAt).getTime();
+      if (t >= monthConfig.startMs && t < monthConfig.endMs) orders.push(edge.node);
+    }
+    hasNext = data.orders.pageInfo.hasNextPage;
+    after = data.orders.pageInfo.endCursor;
+    pages++;
+  }
+  return { orders, pages };
+}
+
+async function fetchOrdersForMonthIncremental(monthConfig, retryState, forceFullResync) {
+  if (!monthConfig.isLive) return fetchOrdersForMonth(monthConfig, retryState);
+  const rawKey = monthConfig.month;
+  const cached = RAW_ORDERS_CACHE_SUKIRTHA_UK.get(rawKey);
+  const now = Date.now();
+  if (forceFullResync || !cached || (now - cached.lastFullFetchAt) >= RAW_FULL_REFETCH_INTERVAL_MS_SUKIRTHA_UK) {
+    const result = await fetchOrdersForMonth(monthConfig, retryState);
+    const map = new Map(result.orders.map((o) => [o.id, o]));
+    RAW_ORDERS_CACHE_SUKIRTHA_UK.set(rawKey, { orders: map, cutoffISO: new Date(now).toISOString(), lastFullFetchAt: now });
+    return { orders: [...map.values()], pages: result.pages, incremental: false };
+  }
+  const sinceMs = Math.max(monthConfig.startMs, new Date(cached.cutoffISO).getTime() - RAW_INCREMENTAL_BUFFER_MS_SUKIRTHA_UK);
+  const delta = await fetchOrdersUpdatedSinceSukirthaUk(monthConfig, new Date(sinceMs).toISOString(), retryState);
+  for (const o of delta.orders) cached.orders.set(o.id, o);
+  cached.cutoffISO = new Date(now).toISOString();
+  return { orders: [...cached.orders.values()], pages: delta.pages, incremental: true };
+}
+
 // ---------- Financials (store-wide, no product filter — every line item counts) ----------
 function amt(moneySet) { return moneySet ? round2(Number(moneySet.shopMoney.amount)) : 0; }
 function ccy(moneySet) { return moneySet ? moneySet.shopMoney.currencyCode : null; }
@@ -2521,7 +2661,7 @@ async function sukirthaUkHandler(req, res) {
     }
 
     const retryState = { throttleRetries: 0 };
-    const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
+    const { orders, pages, incremental } = await fetchOrdersForMonthIncremental(monthConfig, retryState, req.query && req.query.fullResync === '1');
 
     const classificationCounts = {
       fullyEmail: 0, mixedJourney: 0, nonEmail: 0, attributionPending: 0,
@@ -2603,6 +2743,7 @@ async function sukirthaUkHandler(req, res) {
         pagesFetched: pages,
         throttleRetries: retryState.throttleRetries,
         executionMs: Date.now() - startTime,
+        incrementalFetch: incremental,
       },
     };
 
@@ -3513,7 +3654,10 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   const retryState = { throttleRetries: 0 };
-  const { orders, pages } = await fetchOrdersForMonth(monthConfig, retryState);
+  const { orders, pages, incremental } = await fetchOrdersForMonthIncremental(
+    monthConfig, retryState, STORE_DOMAIN, TOKEN, API_VERSION,
+    req.query && req.query.fullResync === '1'
+  );
 
   const classificationCounts = {
     fullyEmail: 0, mixedJourney: 0, nonEmail: 0, attributionPending: 0,
@@ -3593,6 +3737,7 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
       pagesFetched: pages,
       throttleRetries: retryState.throttleRetries,
       executionMs: Date.now() - startTime,
+      incrementalFetch: incremental,
     },
   };
 
