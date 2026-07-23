@@ -525,8 +525,26 @@ function classifyTag(clicks, impressions, cost, conversions, roas) {
   return '';
 }
 
+// Same short-TTL cache pattern as Req1's JEFRI_CACHE, kept in its own Map
+// (never shared with Req1) -- this query returns 50k+ rows and was taking
+// ~10s on every single request with no caching at all. 60s is short
+// enough to stay reasonably live, long enough to absorb repeat hits from
+// the UI (tab switches, filter changes, accidental double-refresh).
+const JEFRI_CACHE2 = new Map();
+const JEFRI_CACHE2_TTL_MS = 60 * 1000;
+const JEFRI_CACHE2_KEY = 'jefri-search-terms';
+
 async function jefriSearchTermsHandler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  if (req.query.refresh !== '1') {
+    const cached = JEFRI_CACHE2.get(JEFRI_CACHE2_KEY);
+    if (cached && (Date.now() - cached.at) < JEFRI_CACHE2_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+  }
+
   let client;
   try {
     client = await getPool2().connect();
@@ -561,7 +579,7 @@ async function jefriSearchTermsHandler(req, res) {
       };
     });
 
-    res.status(200).json({
+    const payload = {
       success: true,
       staff: { name: 'Jefri', department: 'Google Ads', store: 'ledsone.de' },
       reportPeriod: { label: 'Last 90 Days', days: 90 },
@@ -578,7 +596,9 @@ async function jefriSearchTermsHandler(req, res) {
       },
       rows,
       meta: { generatedAt: new Date().toISOString() },
-    });
+    };
+    JEFRI_CACHE2.set(JEFRI_CACHE2_KEY, { data: payload, at: Date.now() });
+    res.status(200).json(payload);
   } catch (err) {
     console.error('[jefri/search-terms] Query failed:', err && err.message);
     res.status(500).json({ error: 'Could not load search term data. Please try again shortly.' });
