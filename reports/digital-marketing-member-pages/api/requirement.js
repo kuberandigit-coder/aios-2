@@ -1814,7 +1814,12 @@ async function handleDilaksiReq1(req, res) {
   const totalRevenue = Math.round(allRows.reduce((s, r) => s + r.purchaseRevenue, 0) * 100) / 100;
   const avgEngagementRate = totalSessions > 0 ? allRows.reduce((s, r) => s + r.engagementRate * r.sessions, 0) / totalSessions : 0;
 
-  res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
+  // refresh=1 (added 2026-07-23): the CDN cache below is keyed by the full
+  // request URL, so appending ?refresh=1 already gets a fresh cache-miss
+  // response on its own -- explicitly marking it no-store too so this
+  // particular fresh fetch doesn't itself get cached for the next 120s.
+  const isForceRefresh = req.query && req.query.refresh === '1';
+  res.setHeader('Cache-Control', isForceRefresh ? 'no-store' : 's-maxage=120, stale-while-revalidate=300');
   res.status(200).json({
     generatedAt: new Date().toISOString(),
     days,
