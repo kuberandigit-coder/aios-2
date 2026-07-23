@@ -3176,6 +3176,69 @@ async function fetchOrdersForMonth(monthConfig, retryState, storeDomain, token, 
   return { orders, pages, rawEdgesSeen };
 }
 
+// Incremental refresh for the live month (2026-07-23, requested by user —
+// the "Refresh" button was re-scanning the WHOLE month from Shopify on
+// every click, which got slower as July progressed). Instead of re-querying
+// created_at:>=monthStart every time, we keep an in-memory Map of the raw
+// order nodes already fetched for this store+month and only ask Shopify for
+// orders CREATED OR UPDATED since the last fetch — updated_at also covers
+// refunds/edits applied to an already-cached older order, so this doesn't
+// go stale the way a created_at-only delta would. As a safety net (in case
+// a webhook/index delay ever causes updated_at to miss something), a full
+// month re-fetch still runs automatically at least once per hour, resetting
+// the incremental baseline. Historical (non-live) months are unaffected —
+// they're always served from the static snapshot/cache above this point.
+const RAW_ORDERS_CACHE = new Map(); // key: `${storeDomain}:${month}` -> { orders: Map(id->node), cutoffISO, lastFullFetchAt }
+const RAW_FULL_REFETCH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour hard safety-net resync
+const RAW_INCREMENTAL_BUFFER_MS = 15 * 60 * 1000; // overlap to absorb Shopify search-index lag
+
+async function fetchOrdersUpdatedSince(monthConfig, sinceISO, retryState, storeDomain, token, apiVersion) {
+  const q = `updated_at:>=${sinceISO} AND created_at:<${monthConfig.queryEnd}`;
+  const orders = [];
+  let after = null;
+  let hasNext = true;
+  let pages = 0;
+  let rawEdgesSeen = 0;
+  while (hasNext) {
+    const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState, storeDomain, token, apiVersion);
+    rawEdgesSeen += data.orders.edges.length;
+    for (const edge of data.orders.edges) {
+      const t = new Date(edge.node.createdAt).getTime();
+      if (t >= monthConfig.startMs && t < monthConfig.endMs) orders.push(edge.node);
+    }
+    hasNext = data.orders.pageInfo.hasNextPage;
+    after = data.orders.pageInfo.endCursor;
+    pages++;
+    if (pages > 200) break;
+  }
+  return { orders, pages, rawEdgesSeen };
+}
+
+async function fetchOrdersForMonthIncremental(monthConfig, retryState, storeDomain, token, apiVersion) {
+  if (!monthConfig.isLive) {
+    // Historical months are closed/static — no benefit to incremental logic.
+    return fetchOrdersForMonth(monthConfig, retryState, storeDomain, token, apiVersion);
+  }
+
+  const rawKey = (storeDomain || 'default') + ':' + monthConfig.month;
+  const cached = RAW_ORDERS_CACHE.get(rawKey);
+  const now = Date.now();
+
+  if (!cached || (now - cached.lastFullFetchAt) >= RAW_FULL_REFETCH_INTERVAL_MS) {
+    const result = await fetchOrdersForMonth(monthConfig, retryState, storeDomain, token, apiVersion);
+    const map = new Map(result.orders.map((o) => [o.id, o]));
+    RAW_ORDERS_CACHE.set(rawKey, { orders: map, cutoffISO: new Date(now).toISOString(), lastFullFetchAt: now });
+    return { orders: [...map.values()], pages: result.pages, rawEdgesSeen: result.rawEdgesSeen, incremental: false };
+  }
+
+  const sinceMs = Math.max(monthConfig.startMs, new Date(cached.cutoffISO).getTime() - RAW_INCREMENTAL_BUFFER_MS);
+  const sinceISO = new Date(sinceMs).toISOString();
+  const delta = await fetchOrdersUpdatedSince(monthConfig, sinceISO, retryState, storeDomain, token, apiVersion);
+  for (const o of delta.orders) cached.orders.set(o.id, o);
+  cached.cutoffISO = new Date(now).toISOString();
+  return { orders: [...cached.orders.values()], pages: delta.pages, rawEdgesSeen: delta.rawEdgesSeen, incremental: true };
+}
+
 // ---------- Financials (store-wide, no product filter unless noted) ----------
 function amt(moneySet) { return moneySet ? round2(Number(moneySet.shopMoney.amount)) : 0; }
 function ccy(moneySet) { return moneySet ? moneySet.shopMoney.currencyCode : null; }
@@ -3608,11 +3671,11 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   const retryState = { throttleRetries: 0 };
-  const { orders, pages, rawEdgesSeen } = await fetchOrdersForMonth(
+  const { orders, pages, rawEdgesSeen, incremental } = await fetchOrdersForMonthIncremental(
     monthConfig, retryState,
-    isFrStaff ? STORE_DOMAIN_FR : isUkStaff ? STORE_DOMAIN_UK : undefined,
-    isFrStaff ? TOKEN_FR : isUkStaff ? TOKEN_UK : undefined,
-    isUkStaff ? API_VERSION_UK : undefined
+    isFrStaff ? STORE_DOMAIN_FR : isUkStaff ? STORE_DOMAIN_UK : STORE_DOMAIN,
+    isFrStaff ? TOKEN_FR : isUkStaff ? TOKEN_UK : TOKEN,
+    isUkStaff ? API_VERSION_UK : API_VERSION
   );
 
   if (req.query && req.query.debugFetch === '1') {
@@ -4665,6 +4728,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       pagesFetched: pages,
       throttleRetries: retryState.throttleRetries,
       executionMs: Date.now() - startTime,
+      incrementalFetch: incremental,
     },
   };
 
