@@ -2063,120 +2063,6 @@ async function handleDilaksiReq2Live(req, res) {
   }
 }
 
-// ---------- Dilaksi Requirement 3 live refresh (cards only) ----------
-// Added 2026-07-23. Recomputes the 4 summary cards (Live Collections,
-// Organic Sessions 12m, GSC Impressions 12m, Zero-Signal Collections) from
-// live Shopify + GA4 + GSC + live HTTP checks. Referring Backlinks (Semrush)
-// is NOT fetched live -- read from a frozen snapshot (2026-07-03 build,
-// api/data/dilaksi-req3-backlinks-frozen.json) and joined by handle.
-// Recommended Action rule (not surfaced in these 4 cards, but computed for
-// the Zero-Signal count) replicated exactly from
-// reports/dilaksi/data/2026-07-03_req3-allcol-page-builder.py.
-const DILAKSI_R3_COLLECTIONS_QUERY = `
-query($after: String) {
-  collections(first: 100, after: $after) {
-    edges { node { handle } }
-    pageInfo { hasNextPage endCursor }
-  }
-}`;
-
-async function fetchDilaksiCollectionsLive() {
-  const handles = [];
-  let after = null, hasNext = true;
-  while (hasNext) {
-    const data = await dilaksiUkShopifyGraphQL(DILAKSI_R3_COLLECTIONS_QUERY, { after });
-    for (const edge of data.collections.edges) handles.push(edge.node.handle);
-    hasNext = data.collections.pageInfo.hasNextPage;
-    after = data.collections.pageInfo.endCursor;
-  }
-  return handles;
-}
-
-async function fetchDilaksiGSC12m(accessToken) {
-  const res = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(DILAKSI_GSC_SITE_URL)}/searchAnalytics/query`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken },
-    body: JSON.stringify({ startDate: dateNDaysAgo(365), endDate: dateNDaysAgo(0), dimensions: ['page'], rowLimit: 25000 }),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error('Search Console API error: ' + JSON.stringify(json));
-  return json.rows || [];
-}
-
-const dilaksiSleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function fetchDilaksiCollectionStatuses(handles) {
-  // Fully sequential with retry-on-429, confirmed necessary 2026-07-23:
-  // even 4-wide concurrent batches got rate-limited by the live storefront
-  // (415/482 came back 429 Too Many Requests) -- a single request in
-  // isolation correctly returns 200. This is real live-server rate
-  // limiting, not bot detection, so it needs pacing + backoff, not just
-  // lower concurrency.
-  const results = new Map();
-  for (const h of handles) {
-    let status = 0;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const r = await fetch(`${DILAKSI_STORE_HOST}/collections/${h}`);
-        status = r.status;
-        if (status === 429) { await dilaksiSleep(1500 * (attempt + 1)); continue; }
-        break;
-      } catch (e) {
-        status = 0;
-        break;
-      }
-    }
-    results.set(h, status);
-    await dilaksiSleep(120);
-  }
-  return results;
-}
-
-async function fetchDilaksiNavLinks() {
-  const res = await fetch(DILAKSI_STORE_HOST);
-  const html = await res.text();
-  const headerMatch = /<header[\s\S]*?<\/header>/i.exec(html);
-  const footerMatch = /<footer[\s\S]*?<\/footer>/i.exec(html);
-  return { headerHtml: headerMatch ? headerMatch[0] : '', footerHtml: footerMatch ? footerMatch[0] : '' };
-}
-
-let dilaksiR3BacklinksCache = null;
-function loadDilaksiR3FrozenBacklinks() {
-  if (dilaksiR3BacklinksCache) return dilaksiR3BacklinksCache;
-  const fs = require('fs');
-  const path = require('path');
-  const raw = fs.readFileSync(path.join(__dirname, 'data', 'dilaksi-req3-backlinks-frozen.json'), 'utf8');
-  dilaksiR3BacklinksCache = JSON.parse(raw);
-  return dilaksiR3BacklinksCache;
-}
-
-// Note: the full live computation (Shopify collections + GA4 + GSC + a
-// paced 482-URL HTTP-liveness check) used to run in this handler directly,
-// but confirmed 2026-07-23 that it structurally cannot finish inside a
-// Vercel function -- the check alone takes 5-7 minutes and this project's
-// functions have a hard 300s execution limit (vercel.json). It now runs
-// instead from api/scripts/generate-dilaksi-req3-snapshot.js on a schedule
-// (GitHub Actions, no such time limit), and this handler just serves
-// whatever that job last wrote. There is no live/refresh=1 path here --
-// unlike the other "live" report tabs, this one can only ever be as fresh
-// as the last scheduled run.
-async function handleDilaksiReq3Live(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const snapshotPath = path.join(__dirname, 'data', 'dilaksi-req3-live-snapshot.json');
-    if (!fs.existsSync(snapshotPath)) {
-      res.status(503).json({ success: false, error: 'Snapshot not generated yet. Run api/scripts/generate-dilaksi-req3-snapshot.js.' });
-      return;
-    }
-    const data = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
-    res.status(200).json(data);
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message || 'Unknown error' });
-  }
-}
-
 async function req4Handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   try {
@@ -2290,7 +2176,6 @@ async function req4Handler(req, res) {
 }
 
   req4Handler.handleDilaksiReq2Live = handleDilaksiReq2Live;
-  req4Handler.handleDilaksiReq3Live = handleDilaksiReq3Live;
   return req4Handler;
 })();
 
@@ -2415,7 +2300,6 @@ module.exports = async (req, res) => {
   if (fn === 'req2-req3') return req2Req3HandlerModule(req, res);
   if (fn === 'req4-ga4-seo') return req4HandlerModule(req, res);
   if (fn === 'dilaksi-req2-live') return req4HandlerModule.handleDilaksiReq2Live(req, res);
-  if (fn === 'dilaksi-req3-live') return req4HandlerModule.handleDilaksiReq3Live(req, res);
 
   try {
     const store = (req.query.store === 'de') ? 'de' : 'uk';
