@@ -3214,7 +3214,7 @@ async function fetchOrdersUpdatedSince(monthConfig, sinceISO, retryState, storeD
   return { orders, pages, rawEdgesSeen };
 }
 
-async function fetchOrdersForMonthIncremental(monthConfig, retryState, storeDomain, token, apiVersion) {
+async function fetchOrdersForMonthIncremental(monthConfig, retryState, storeDomain, token, apiVersion, forceFullResync) {
   if (!monthConfig.isLive) {
     // Historical months are closed/static — no benefit to incremental logic.
     return fetchOrdersForMonth(monthConfig, retryState, storeDomain, token, apiVersion);
@@ -3224,7 +3224,7 @@ async function fetchOrdersForMonthIncremental(monthConfig, retryState, storeDoma
   const cached = RAW_ORDERS_CACHE.get(rawKey);
   const now = Date.now();
 
-  if (!cached || (now - cached.lastFullFetchAt) >= RAW_FULL_REFETCH_INTERVAL_MS) {
+  if (forceFullResync || !cached || (now - cached.lastFullFetchAt) >= RAW_FULL_REFETCH_INTERVAL_MS) {
     const result = await fetchOrdersForMonth(monthConfig, retryState, storeDomain, token, apiVersion);
     const map = new Map(result.orders.map((o) => [o.id, o]));
     RAW_ORDERS_CACHE.set(rawKey, { orders: map, cutoffISO: new Date(now).toISOString(), lastFullFetchAt: now });
@@ -3675,7 +3675,8 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     monthConfig, retryState,
     isFrStaff ? STORE_DOMAIN_FR : isUkStaff ? STORE_DOMAIN_UK : STORE_DOMAIN,
     isFrStaff ? TOKEN_FR : isUkStaff ? TOKEN_UK : TOKEN,
-    isUkStaff ? API_VERSION_UK : API_VERSION
+    isUkStaff ? API_VERSION_UK : API_VERSION,
+    req.query && req.query.fullResync === '1'
   );
 
   if (req.query && req.query.debugFetch === '1') {

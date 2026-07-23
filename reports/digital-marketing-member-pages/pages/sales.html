@@ -566,7 +566,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
     <span class="chip" id="mLiveChip">Loading historical data from Shopify&hellip;</span>
     <span class="chip" id="mLastRefresh" style="display:none;"></span>
-    <button id="mRefreshBtn" class="primary" style="display:none;" onclick="mLoad(true)">Refresh</button>
+    <button id="mNewOrdersBtn" style="display:none;" onclick="mLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+    <button id="mRefreshBtn" class="primary" style="display:none;" onclick="mLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
   </div>
 </header>
 
@@ -652,7 +653,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
   <span class="chip" id="matLiveChip">Loading historical data from Shopify&hellip;</span>
   <span class="chip" id="matLastRefresh" style="display:none;"></span>
-  <button id="matRefreshBtn" class="primary" style="display:none;" onclick="matLoad(true)">Refresh</button>
+  <button id="matNewOrdersBtn" style="display:none;" onclick="matLoad(true, false)" title="Fast: only checks for orders created or updated since the last fetch">Check New Orders</button>
+  <button id="matRefreshBtn" class="primary" style="display:none;" onclick="matLoad(true, true)" title="Full re-fetch of the whole month from Shopify">Refresh</button>
 </div>
 
 <div class="reqtabs" style="margin-bottom:14px;" id="matMonthTabs">
@@ -1787,15 +1789,18 @@ let mLastSuccessfulAt = null;
 const M_MONTH_CACHE = {};
 let mLoadSeq = 0;
 
-async function mLoad(force){
+async function mLoad(force, fullResync){
   const myMonth = M_CURRENT_MONTH;
   const seq = ++mLoadSeq;
   mLoading = true;
   const isLive = M_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('mRefreshBtn');
+  const newOrdersBtn = document.getElementById('mNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
-  document.getElementById('mLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  newOrdersBtn.disabled = true;
+  document.getElementById('mLiveChip').textContent = isLive ? (fullResync ? 'Loading live data from Shopify (full refresh)…' : 'Checking for new orders…') : 'Loading historical data from Shopify…';
   document.getElementById('mLiveChip').className = 'chip';
   if (mAbortController) mAbortController.abort();
   mAbortController = new AbortController();
@@ -1804,7 +1809,7 @@ async function mLoad(force){
     if (!force && M_MONTH_CACHE[myMonth]) {
       data = M_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=mahima&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=mahima&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: mAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -1813,25 +1818,28 @@ async function mLoad(force){
     if (seq !== mLoadSeq) return;
     M_DATA = data;
     mLastSuccessfulAt = new Date();
-    document.getElementById('mLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+    const wasIncremental = data.meta && data.meta.incrementalFetch;
+    document.getElementById('mLiveChip').textContent = isLive ? ('Live data retrieved from Shopify' + (wasIncremental ? ' (checked new orders only)' : '') + ' — click Refresh or Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('mLiveChip').className = 'chip';
     document.getElementById('mLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('mLastRefresh').style.display = '';
     document.getElementById('mFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('mcLastOk').textContent = mLastSuccessfulAt.toLocaleTimeString();
-    document.getElementById('mPeriodSub').innerHTML = 'Store: <strong>ledsone.de</strong> &middot; Mahima-owned products only &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/Berlin) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    document.getElementById('mPeriodSub').innerHTML = 'Store: <strong>ledsone.de</strong> &middot; Mahima-owned products only &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/Berlin) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh / Check New Orders &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
     mOpenRows = new Set();
     mRenderAll();
     mLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== mLoadSeq) return;
-    if (e.name === 'AbortError') { mLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { mLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('mLiveChip').textContent = 'Failed to load: ' + e.message + (M_DATA ? ' — showing last successful data' : '');
     document.getElementById('mLiveChip').className = 'chip stale';
     if (!M_DATA) document.getElementById('mcTbody').innerHTML = '<tr><td colspan="20" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     mLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
@@ -2054,15 +2062,18 @@ let matLastSuccessfulAt = null;
 const MAT_MONTH_CACHE = {};
 let matLoadSeq = 0;
 
-async function matLoad(force){
+async function matLoad(force, fullResync){
   const myMonth = MAT_CURRENT_MONTH;
   const seq = ++matLoadSeq;
   matLoading = true;
   const isLive = MAT_LIVE_MONTHS.includes(myMonth);
   const refreshBtn = document.getElementById('matRefreshBtn');
+  const newOrdersBtn = document.getElementById('matNewOrdersBtn');
   refreshBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.style.display = isLive ? '' : 'none';
   refreshBtn.disabled = true;
-  document.getElementById('matLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  newOrdersBtn.disabled = true;
+  document.getElementById('matLiveChip').textContent = isLive ? (fullResync ? 'Loading live data from Shopify (full refresh)…' : 'Checking for new orders…') : 'Loading historical data from Shopify…';
   document.getElementById('matLiveChip').className = 'chip';
   if (matAbortController) matAbortController.abort();
   matAbortController = new AbortController();
@@ -2071,7 +2082,7 @@ async function matLoad(force){
     if (!force && MAT_MONTH_CACHE[myMonth]) {
       data = MAT_MONTH_CACHE[myMonth];
     } else {
-      const url = '/api/sales?staff=mahima-ads-term&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/sales?staff=mahima-ads-term&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '') + (fullResync ? '&fullResync=1' : '');
       const res = await fetch(url, { signal: matAbortController.signal });
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2080,25 +2091,28 @@ async function matLoad(force){
     if (seq !== matLoadSeq) return;
     MAT_DATA = data;
     matLastSuccessfulAt = new Date();
-    document.getElementById('matLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Refresh for the latest' : 'Historical data retrieved from Shopify';
+    const wasIncremental = data.meta && data.meta.incrementalFetch;
+    document.getElementById('matLiveChip').textContent = isLive ? ('Live data retrieved from Shopify' + (wasIncremental ? ' (checked new orders only)' : '') + ' — click Refresh or Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('matLiveChip').className = 'chip';
     document.getElementById('matLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('matLastRefresh').style.display = '';
     document.getElementById('matFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('matcLastOk').textContent = matLastSuccessfulAt.toLocaleTimeString();
-    document.getElementById('matPeriodSub').innerHTML = 'Store: <strong>ledsone.de</strong> &middot; store-wide (not product-scoped) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/Berlin) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    document.getElementById('matPeriodSub').innerHTML = 'Store: <strong>ledsone.de</strong> &middot; store-wide (not product-scoped) &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/Berlin) &middot; ' + (isLive ? 'the current month, updated only when you click Refresh / Check New Orders &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
     matOpenRows = new Set();
     matRenderAll();
     matLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   } catch (e) {
     if (seq !== matLoadSeq) return;
-    if (e.name === 'AbortError') { matLoading = false; refreshBtn.disabled = false; return; }
+    if (e.name === 'AbortError') { matLoading = false; refreshBtn.disabled = false; newOrdersBtn.disabled = false; return; }
     document.getElementById('matLiveChip').textContent = 'Failed to load: ' + e.message + (MAT_DATA ? ' — showing last successful data' : '');
     document.getElementById('matLiveChip').className = 'chip stale';
     if (!MAT_DATA) document.getElementById('matcTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
     matLoading = false;
     refreshBtn.disabled = false;
+    newOrdersBtn.disabled = false;
   }
 }
 
