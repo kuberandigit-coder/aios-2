@@ -2150,88 +2150,28 @@ function loadDilaksiR3FrozenBacklinks() {
   return dilaksiR3BacklinksCache;
 }
 
+// Note: the full live computation (Shopify collections + GA4 + GSC + a
+// paced 482-URL HTTP-liveness check) used to run in this handler directly,
+// but confirmed 2026-07-23 that it structurally cannot finish inside a
+// Vercel function -- the check alone takes 5-7 minutes and this project's
+// functions have a hard 300s execution limit (vercel.json). It now runs
+// instead from api/scripts/generate-dilaksi-req3-snapshot.js on a schedule
+// (GitHub Actions, no such time limit), and this handler just serves
+// whatever that job last wrote. There is no live/refresh=1 path here --
+// unlike the other "live" report tabs, this one can only ever be as fresh
+// as the last scheduled run.
 async function handleDilaksiReq3Live(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   try {
-    if (!process.env.SHOPIFY_UK_ADMIN_TOKEN) {
-      res.status(500).json({ error: 'Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing' });
+    const fs = require('fs');
+    const path = require('path');
+    const snapshotPath = path.join(__dirname, 'data', 'dilaksi-req3-live-snapshot.json');
+    if (!fs.existsSync(snapshotPath)) {
+      res.status(503).json({ success: false, error: 'Snapshot not generated yet. Run api/scripts/generate-dilaksi-req3-snapshot.js.' });
       return;
     }
-    if (!process.env.GA4_SERVICE_ACCOUNT_JSON) {
-      res.status(500).json({ error: 'Server not configured: GA4_SERVICE_ACCOUNT_JSON missing' });
-      return;
-    }
-    if (req.query && req.query.debugHttpCheck === '1') {
-      const testHandle = req.query.handle || 'pendant-lights';
-      const r = await fetch(`${DILAKSI_STORE_HOST}/collections/${testHandle}`);
-      const bodySnippet = (await r.text()).slice(0, 300);
-      res.status(200).json({ url: `${DILAKSI_STORE_HOST}/collections/${testHandle}`, status: r.status, redirected: r.redirected, finalUrl: r.url, headers: Object.fromEntries(r.headers.entries()), bodySnippet });
-      return;
-    }
-    if (req.query && req.query.debugStatusDist === '1') {
-      const handles = await fetchDilaksiCollectionsLive();
-      const statusByHandle = await fetchDilaksiCollectionStatuses(handles);
-      const dist = {};
-      const nonLiveSample = [];
-      for (const [h, s] of statusByHandle.entries()) {
-        dist[s] = (dist[s] || 0) + 1;
-        if (s !== 200 && nonLiveSample.length < 10) nonLiveSample.push({ handle: h, status: s });
-      }
-      res.status(200).json({ totalHandles: handles.length, dist, nonLiveSample });
-      return;
-    }
-    const backlinksMap = loadDilaksiR3FrozenBacklinks();
-    const accessToken = await getAccessToken();
-    const handles = await fetchDilaksiCollectionsLive();
-    const [ga4Rows, gscRows, statusByHandle, navLinks] = await Promise.all([
-      fetchDilaksiGA4(accessToken, 365),
-      fetchDilaksiGSC12m(accessToken),
-      fetchDilaksiCollectionStatuses(handles),
-      fetchDilaksiNavLinks(),
-    ]);
-
-    const ga4ByHandle = new Map();
-    for (const r of ga4Rows) {
-      const path = dilaksiPathFromUrl(r.dimensionValues[0].value);
-      const m = /\/collections\/([^/]+)$/.exec(path);
-      if (!m) continue;
-      const sessions = Number(r.metricValues[0].value) || 0;
-      ga4ByHandle.set(m[1], (ga4ByHandle.get(m[1]) || 0) + sessions);
-    }
-    const gscByHandle = new Map();
-    for (const r of gscRows) {
-      const path = dilaksiPathFromUrl(r.keys[0]);
-      const m = /\/collections\/([^/]+)$/.exec(path);
-      if (!m) continue;
-      const impressions = Number(r.impressions) || 0;
-      gscByHandle.set(m[1], (gscByHandle.get(m[1]) || 0) + impressions);
-    }
-
-    let liveCount = 0, totalSessions = 0, totalImpressions = 0, zeroSignal = 0;
-    for (const h of handles) {
-      const status = statusByHandle.get(h) || 0;
-      if (status === 200) liveCount++;
-      const sessions = ga4ByHandle.get(h) || 0;
-      const impressions = gscByHandle.get(h) || 0;
-      const backlinks = backlinksMap[h] || 0;
-      const linked = navLinks.headerHtml.includes('/collections/' + h) || navLinks.footerHtml.includes('/collections/' + h);
-      totalSessions += sessions;
-      totalImpressions += impressions;
-      if (sessions === 0 && impressions === 0 && backlinks === 0) zeroSignal++;
-    }
-
-    res.status(200).json({
-      success: true,
-      generatedAt: new Date().toISOString(),
-      summary: {
-        liveCollections: liveCount,
-        totalCollections: handles.length,
-        organicSessions12m: totalSessions,
-        gscImpressions12m: totalImpressions,
-        zeroSignalCollections: zeroSignal,
-      },
-      note: 'Referring Backlinks is a frozen snapshot (Semrush not fetched live) from 2026-07-03; all other fields are live.',
-    });
+    const data = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+    res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
   }
