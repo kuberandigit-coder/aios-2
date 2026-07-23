@@ -1087,6 +1087,255 @@ return jefriSearchTermsHandler;
 })();
 
 
+// ===== Mahima Requirement 3 — Search Terms Report (Keep / Exclude), live version (2026-07-23) =====
+// Server-side only: reads DATABASE_URL from env, never exposed to the client.
+// Read-only queries only -- no writes, no schema changes. Own isolated pg Pool.
+//
+// Replaces the earlier one-off, manually-exported static report at
+// reports/mahima/mahima-requirement-3-search-terms-report.html (built from
+// hand-pulled 30d/7d PostgreSQL JSON exports on 2026-07-09/10). Unlike Jefri's
+// Req2 (scoped to 5 named campaigns), Mahima's Req3 is account-wide — every
+// campaign under ledsone.de (account_id 9031058245), Shopping/Search + PMax,
+// matching the original static report's scope.
+//
+// Classification logic (Keep/Exclude + intent/priority/trend) ported 1:1 from
+// reports/mahima/data/2026-07-09_mahima_req3_search_terms_builder.py — see
+// that file for the original Python and its rationale/word lists.
+const mahimaSearchTermsHandlerModule = (function() {
+const { Pool } = require('pg');
+
+let pool3;
+function getPool3() {
+  if (!pool3) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString && !process.env.PGHOST) {
+      throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+    }
+    pool3 = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+    });
+  }
+  return pool3;
+}
+
+const MAHIMA_ACCOUNT_ID = '9031058245'; // ledsone.de
+
+const QUERY_MAHIMA_R3 = `
+  WITH combined AS (
+    SELECT c.search_term, c.match_type, c.campaign_id, cam.campaign_name, c.date,
+           c.clicks, c.impressions, c.cost, c.conversions, c.conversions_value
+    FROM google_ads.campaign_search_term_data c
+    JOIN google_ads.campaigns cam ON cam.campaign_id = c.campaign_id
+    WHERE cam.account_id = $1::bigint AND c.date >= CURRENT_DATE - INTERVAL '30 days'
+    UNION ALL
+    SELECT p.search_term, p.match_type, p.campaign_id, cam.campaign_name, p.date,
+           p.clicks, p.impressions, p.cost, p.conversions, p.conversions_value
+    FROM google_ads.pmax_campaign_search_term_data p
+    JOIN google_ads.campaigns cam ON cam.campaign_id = p.campaign_id
+    WHERE cam.account_id = $1::bigint AND p.date >= CURRENT_DATE - INTERVAL '30 days'
+  )
+  SELECT search_term, match_type, campaign_id,
+         MAX(campaign_name) AS campaign_name,
+         SUM(clicks)::bigint AS clicks,
+         SUM(impressions)::bigint AS impressions,
+         SUM(cost)::numeric AS cost,
+         SUM(conversions)::numeric AS conversions,
+         SUM(conversions_value)::numeric AS conv_value,
+         SUM(CASE WHEN date >= CURRENT_DATE - INTERVAL '7 days' THEN cost ELSE 0 END)::numeric AS cost_7d,
+         SUM(CASE WHEN date >= CURRENT_DATE - INTERVAL '7 days' THEN conversions_value ELSE 0 END)::numeric AS conv_value_7d
+  FROM combined
+  WHERE search_term IS NOT NULL
+  GROUP BY search_term, match_type, campaign_id
+`;
+
+// ---- Intent classifier (verbatim port of classify_intent() from the Python builder) ----
+const COMPETITOR_TERMS = [
+  'amazon', 'ebay', 'ikea', 'obi', 'hornbach', 'bauhaus', 'wayfair',
+  'lampenwelt', 'westwing', 'otto.de', ' otto ', 'conrad', 'segmuller',
+  'segmüller', 'poco', 'moebel', 'möbel', 'hagebau', 'toom', 'globus baumarkt',
+  'leroy merlin', 'casa', 'made.com',
+];
+const NONDE_MARKERS = [
+  ' the ', ' and ', ' for ', ' with ', ' cheap ', ' best ', ' buy ',
+  'light fixture', 'ceiling light', 'pendant light', 'wall light',
+  'chandelier', 'led strip light', 'light bulb', 'lamp shade',
+];
+const LOW_INTENT_TERMS = [
+  'gunstig', 'günstig', 'billig', 'gebraucht', 'kostenlos', 'free',
+  'cheap', 'cheapest', 'discount', 'rabatt', 'sale', 'sonderangebot',
+  'second hand', 'gebrauchte',
+];
+const HIGH_INTENT_PRODUCT_WORDS = [
+  'lampe', 'leuchte', 'leuchten', 'beleuchtung', 'led', 'pendelleuchte',
+  'deckenlampe', 'wandlampe', 'stehlampe', 'tischlampe', 'lampenschirm',
+  'kronleuchter', 'strahler', 'spot', 'trafo', 'led-streifen', 'lichterkette',
+  'hangeleuchte', 'hängeleuchte', 'kabel', 'fassung', 'e27', 'gu10',
+];
+const GERMAN_MARKERS = [
+  'ü', 'ö', 'ä', 'ß', 'für', 'mit', 'und', 'aus', 'an ', 'decke', 'wand',
+  'netzteil', 'abzweigdose', 'leitung', 'kabel', 'stecker', 'dimmbar',
+  'schalter', 'halterung', 'birne', 'flach', 'volt', 'watt', 'warmweiss',
+  'kaltweiss', 'dimmer', 'wasserdicht', 'aussen', 'innen', 'steckdose',
+  'verlaengerung', 'verlängerung', 'adapter', 'anschluss', 'buchse',
+];
+
+function classifyIntent(term) {
+  const t = ' ' + String(term || '').toLowerCase().trim() + ' ';
+  if (COMPETITOR_TERMS.some((c) => t.includes(c))) return 'Competitor brand';
+
+  const hasDeMarker = GERMAN_MARKERS.some((m) => t.includes(m)) || HIGH_INTENT_PRODUCT_WORDS.some((w) => t.includes(w));
+  const nonAscii = /[^\x00-\x7F]/.test(term || '');
+  const looksEnglishPhrase = NONDE_MARKERS.some((m) => t.includes(m));
+  if (looksEnglishPhrase && !hasDeMarker && !nonAscii) return 'Non-DE / mixed language';
+
+  if (LOW_INTENT_TERMS.some((w) => t.includes(w))) return 'Low-intent / bargain';
+  if (HIGH_INTENT_PRODUCT_WORDS.some((w) => t.includes(w))) return 'Generic - high';
+  return 'Generic - medium';
+}
+
+function recommendedAction(conversions, intent) {
+  if (conversions > 0) return 'Keep';
+  if (intent === 'Competitor brand') return 'Exclude - competitor term, add as negative phrase';
+  if (intent === 'Non-DE / mixed language') return 'Exclude - low volume, non-native phrasing';
+  return 'Exclude - add as negative exact match';
+}
+
+function trendOf(roas7, roas30, conversions) {
+  if (conversions === 0 && roas7 === roas30) return 'Flat, no conv.';
+  if (roas7 > roas30) return 'Rising';
+  if (roas7 < roas30) return 'Slight dip';
+  return 'Flat';
+}
+
+function priorityOf(action, roas, cost) {
+  if (action.startsWith('Exclude')) return cost >= 5 ? 'High' : (cost > 0 ? 'Medium' : 'Low');
+  if (action === 'Keep') return roas >= 2 ? 'High' : 'Medium';
+  return 'Low';
+}
+
+function r3round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+const MAHIMA_R3_CACHE = new Map();
+const MAHIMA_R3_CACHE_TTL_MS = 60 * 1000;
+const MAHIMA_R3_CACHE_KEY = 'mahima-search-terms';
+
+async function mahimaSearchTermsHandler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  if (req.query.refresh !== '1') {
+    const cached = MAHIMA_R3_CACHE.get(MAHIMA_R3_CACHE_KEY);
+    if (cached && (Date.now() - cached.at) < MAHIMA_R3_CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+    const fs = require('fs');
+    const path = require('path');
+    const staticPath = path.join(__dirname, 'data', 'mahima-search-terms-snapshot.json');
+    if (fs.existsSync(staticPath)) {
+      const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+      const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+      MAHIMA_R3_CACHE.set(MAHIMA_R3_CACHE_KEY, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+      return;
+    }
+  }
+
+  let client;
+  try {
+    client = await getPool3().connect();
+  } catch (err) {
+    console.error('[mahima/search-terms] DB connect failed:', err && err.message);
+    res.status(500).json({ error: 'Server not configured or database unreachable. Contact the site administrator.' });
+    return;
+  }
+
+  try {
+    const result = await client.query(QUERY_MAHIMA_R3, [MAHIMA_ACCOUNT_ID]);
+    const rows = result.rows.map((r) => {
+      const clicks = Number(r.clicks) || 0;
+      const impressions = Number(r.impressions) || 0;
+      const cost = Number(r.cost) || 0;
+      const conversions = Number(r.conversions) || 0;
+      const convValue = Number(r.conv_value) || 0;
+      const cost7d = Number(r.cost_7d) || 0;
+      const convValue7d = Number(r.conv_value_7d) || 0;
+
+      const ctr = impressions > 0 ? r3round2((clicks / impressions) * 100) : 0;
+      const avgCpc = clicks > 0 ? r3round2(cost / clicks) : null;
+      const convRate = clicks > 0 ? r3round2((conversions / clicks) * 100) : 0;
+      const roas30 = cost > 0 ? r3round2(convValue / cost) : 0; // ratio, e.g. 2.5 = 250%
+      const roas7 = cost7d > 0 ? r3round2(convValue7d / cost7d) : 0;
+      const costPerConv = conversions > 0 ? r3round2(cost / conversions) : null;
+
+      const matchTypeRaw = r.match_type;
+      const matchType = matchTypeRaw === 'Performance Max' ? 'Performance Max (category)' : matchTypeRaw;
+
+      const intent = classifyIntent(r.search_term);
+      const action = recommendedAction(conversions, intent);
+      const trend = trendOf(roas7, roas30, conversions);
+      const priority = priorityOf(action, roas30, cost);
+
+      return {
+        searchTerm: r.search_term,
+        campaign: r.campaign_name,
+        matchType,
+        impressions, clicks, ctr, avgCpc, cost,
+        conversions: r3round2(conversions),
+        convRate,
+        convValue: r3round2(convValue),
+        roas: roas30,
+        roas7d: roas7,
+        roas30d: roas30,
+        costPerConv,
+        queryIntent: intent,
+        trend,
+        priority,
+        action,
+      };
+    });
+
+    rows.sort((a, b) => (b.cost || 0) - (a.cost || 0));
+
+    const totalCost = rows.reduce((s, r) => s + (r.cost || 0), 0);
+    const totalConvValue = rows.reduce((s, r) => s + (r.convValue || 0), 0);
+    const payload = {
+      success: true,
+      staff: { name: 'Mahima', department: 'Google Ads', store: 'ledsone.de' },
+      reportPeriod: { label: 'Last 30 Days', days: 30 },
+      source: {
+        scope: `Account-wide (ledsone.de, account ${MAHIMA_ACCOUNT_ID}), search terms from both Shopping/Search and Performance Max campaigns, rolling last 30 days (7-day trend window)`,
+        tables: ['google_ads.campaign_search_term_data', 'google_ads.pmax_campaign_search_term_data'],
+      },
+      summary: {
+        totalTerms: rows.length,
+        totalCost: r3round2(totalCost),
+        totalConvValue: r3round2(totalConvValue),
+        overallRoas: totalCost > 0 ? r3round2(totalConvValue / totalCost) : 0,
+        keepCount: rows.filter((r) => r.action === 'Keep').length,
+        excludeCount: rows.filter((r) => r.action.startsWith('Exclude')).length,
+      },
+      rows,
+      meta: { generatedAt: new Date().toISOString() },
+    };
+    MAHIMA_R3_CACHE.set(MAHIMA_R3_CACHE_KEY, { data: payload, at: Date.now() });
+    res.status(200).json(payload);
+  } catch (err) {
+    console.error('[mahima/search-terms] Query failed:', err && err.message);
+    res.status(500).json({ error: 'Could not load search term data. Please try again shortly.' });
+  } finally {
+    if (client) client.release();
+  }
+}
+
+return mahimaSearchTermsHandler;
+})();
+
+
 // ===== Merged from check-urls.js, kamsi-live.js, sukirtha-req2-req3.js, sukirtha-req4-ga4-seo.js =====
 // (2026-07-22, consolidated into requirement.js to further reduce Vercel Hobby-plan serverless
 // function count. Each wrapped in its own IIFE closure to avoid top-level identifier collisions
@@ -2739,6 +2988,7 @@ module.exports = async (req, res) => {
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
+  if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);
   if (fn === 'check-urls') return checkUrlsHandlerModule(req, res);
   if (fn === 'kamsi-live') return kamsiLiveHandlerModule(req, res);
   if (fn === 'req2-req3') return req2Req3HandlerModule(req, res);

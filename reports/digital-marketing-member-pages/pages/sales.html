@@ -555,6 +555,7 @@ tbody tr:hover{background:var(--accent-soft);}
 <div class="reqtabs" style="margin-bottom:16px;">
   <div class="reqtab active" id="mSubBtnOrganic" onclick="showMahimaSub('organic')">Organic</div>
   <div class="reqtab" id="mSubBtnAdsTerm" onclick="showMahimaSub('adsterm')">Google Ads</div>
+  <div class="reqtab" id="mSubBtnSearchTerms" onclick="showMahimaSub('searchterms')">Search Terms</div>
 </div>
 <div id="mSubOrganic">
 <header>
@@ -721,6 +722,82 @@ tbody tr:hover{background:var(--accent-soft);}
   <strong>Report period:</strong> fixed calendar month, Europe/Berlin timezone (DST-aware). Select a month tab above; Jan&ndash;Jun are closed historical months, July is the current live month-to-date &mdash; a <strong>Refresh</strong> button appears to re-fetch the latest data for July only.<br>
   <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
   <strong>Last refresh timestamp:</strong> <span id="matFootRefresh">&ndash;</span>
+</div>
+</div>
+
+<div id="mSubSearchTerms" style="display:none;">
+<div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped), rolling last 30 days &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; every campaign under the account (Shopping/Search + Performance Max) &mdash; live, updates on Refresh.</div>
+<div class="filters" style="margin-bottom:14px;">
+  <span class="chip">Source: PostgreSQL (read-only)</span>
+  <span class="chip" id="mstLiveChip">Loading&hellip;</span>
+  <button id="mstRefreshBtn" class="primary" onclick="mstLoad(true)">Refresh</button>
+</div>
+
+<div class="cards" id="mstCards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px;">
+  <div class="card"><div class="label">Total Terms</div><div class="value" id="mstcTotal">&ndash;</div></div>
+  <div class="card"><div class="label">Total Cost</div><div class="value" id="mstcCost">&ndash;</div></div>
+  <div class="card"><div class="label">Total Conv. Value</div><div class="value" id="mstcConvValue">&ndash;</div></div>
+  <div class="card"><div class="label">Overall ROAS</div><div class="value" id="mstcRoas">&ndash;</div></div>
+  <div class="card"><div class="label">Keep</div><div class="value" id="mstcKeep">&ndash;</div></div>
+  <div class="card"><div class="label">Exclude</div><div class="value" id="mstcExclude">&ndash;</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="mstq" placeholder="Search term, campaign or match type&hellip;">
+    <label>Action <select id="mstf_action">
+      <option value="">All actions</option>
+      <option value="Keep">Keep</option>
+      <option value="Exclude">Exclude</option>
+    </select></label>
+    <button id="mstExportCsv">Export CSV</button>
+    <span id="mstcnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table>
+      <thead style="position:sticky;top:0;z-index:5;"><tr>
+        <th data-k="searchTerm">Search Term</th>
+        <th data-k="campaign">Campaign</th>
+        <th data-k="matchType">Match Type</th>
+        <th class="num" data-k="impressions">Impressions</th>
+        <th class="num" data-k="clicks">Clicks</th>
+        <th class="num" data-k="ctr">CTR</th>
+        <th class="num" data-k="avgCpc">Avg CPC</th>
+        <th class="num" data-k="cost">Cost</th>
+        <th class="num" data-k="conversions">Conversions</th>
+        <th class="num" data-k="convValue">Conv. Value</th>
+        <th class="num" data-k="roas">ROAS</th>
+        <th class="num" data-k="costPerConv">Cost / Conv</th>
+        <th data-k="queryIntent">Query Intent</th>
+        <th data-k="trend">Trend</th>
+        <th data-k="priority">Priority</th>
+        <th data-k="action">Recommended Action</th>
+      </tr></thead>
+      <tbody id="msttbody"><tr><td colspan="16" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="mstempty" style="display:none;">No search terms match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);justify-content:space-between;">
+    <span id="mstpinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="mstpsize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="mstpgFirst" style="background:#fff;color:var(--ink);border-color:var(--line);">&laquo;</button>
+      <button id="mstpgPrev" style="background:#fff;color:var(--ink);border-color:var(--line);">&lsaquo; Prev</button>
+      <button id="mstpgNext" style="background:#fff;color:var(--ink);border-color:var(--line);">Next &rsaquo;</button>
+      <button id="mstpgLast" style="background:#fff;color:var(--ink);border-color:var(--line);">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.campaign_search_term_data</code>, <code>google_ads.pmax_campaign_search_term_data</code>, joined to <code>google_ads.campaigns</code>) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=mahima-search-terms</code>) using <code>DATABASE_URL</code> stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Scope:</strong> account-wide &mdash; every campaign under ledsone.de (account 9031058245), not limited to a named campaign list &mdash; rolling last 30 days, with a trailing 7-day window used for the Trend column. Search terms from both Shopping/Search and Performance Max campaign types (a term in both types is shown as separate rows by Match Type).<br>
+  <strong>ROAS:</strong> Conversion Value &divide; Cost, shown as 0 when Cost is 0.<br>
+  <strong>Recommended Action rules (ported unchanged from the original 2026-07-09 static report):</strong> any term with Conversions &gt; 0 &rarr; <strong>Keep</strong>. Otherwise Excluded, reason depends on Query Intent: Competitor brand &rarr; add as negative phrase; Non-DE/mixed language &rarr; low volume/non-native phrasing; anything else &rarr; add as negative exact match.<br>
+  <strong>Query Intent:</strong> rule-based classifier over the search term text (Competitor brand / Non-DE &amp; mixed language / Low-intent &amp; bargain / Generic &ndash; high / Generic &ndash; medium), identical word lists to the original static report.<br>
+  <strong>Priority:</strong> Exclude rows are High/Medium/Low by Cost (&ge;&euro;5 / &gt;&euro;0 / &euro;0); Keep rows are High when ROAS &ge; 2, else Medium.<br>
+  <strong>Live:</strong> this tab has no historical month tabs &mdash; it is always the rolling last-30-days view, refreshed on demand via the Refresh button (60s server-side cache).
 </div>
 </div>
 </div>
@@ -1402,6 +1479,9 @@ function showMahimaSub(sub){
   document.getElementById('mSubBtnAdsTerm').classList.toggle('active', sub === 'adsterm');
   document.getElementById('mSubAdsTerm').style.display = sub === 'adsterm' ? '' : 'none';
   if (sub === 'adsterm' && !MAT_DATA) matLoad(false);
+  document.getElementById('mSubBtnSearchTerms').classList.toggle('active', sub === 'searchterms');
+  document.getElementById('mSubSearchTerms').style.display = sub === 'searchterms' ? '' : 'none';
+  if (sub === 'searchterms' && !MST_ALL.length) mstLoad(false);
 }
 
 function showSukirthaRegion(r){
@@ -2147,6 +2227,157 @@ document.getElementById('matcResetFilters').addEventListener('click', () => {
   document.getElementById('matcq_product').value = '';
   document.getElementById('matcf_channel').value = '';
   matcRenderTable();
+});
+
+// ===== Mahima Search Terms sub-tab (Req3, live PostgreSQL, distinct MST-prefixed globals/functions) =====
+let MST_ALL = [];
+let mstpg = 1;
+let mstSortKey = 'cost';
+let mstSortDir = -1;
+function eur(v){ return v === null || v === undefined ? '—' : '€' + Number(v).toFixed(2); }
+function mstPct(v){ return v === null || v === undefined ? '—' : Number(v).toLocaleString() + '%'; }
+
+const MST_PRIORITY_COLORS = { High: '#c62828', Medium: '#b8860b', Low: '#9aa3b2' };
+function mstPriorityBadge(p){
+  if (!p) return '—';
+  const color = MST_PRIORITY_COLORS[p] || 'var(--muted)';
+  return '<span class="tag-badge" style="color:' + color + ';">' + esc(p) + '</span>';
+}
+function mstActionBadge(a){
+  if (!a) return '—';
+  const color = a === 'Keep' ? '#0a7d4f' : '#c62828';
+  return '<span class="tag-badge" style="color:' + color + ';">' + esc(a) + '</span>';
+}
+
+async function mstLoad(force){
+  const btn = document.getElementById('mstRefreshBtn');
+  btn.disabled = true; btn.textContent = 'Refreshing…';
+  document.getElementById('mstLiveChip').textContent = 'Fetching live from PostgreSQL…';
+  document.getElementById('mstLiveChip').className = 'chip';
+  document.getElementById('msttbody').innerHTML = '<tr><td colspan="16" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  try {
+    const res = await fetch('/api/requirement?fn=mahima-search-terms' + (force ? '&refresh=1' : ''));
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    MST_ALL = data.rows;
+    document.getElementById('mstLiveChip').textContent = 'Live — fetched ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('mstLiveChip').className = 'chip live';
+    document.getElementById('mstcTotal').textContent = num(data.summary.totalTerms);
+    document.getElementById('mstcCost').textContent = eur(data.summary.totalCost);
+    document.getElementById('mstcConvValue').textContent = eur(data.summary.totalConvValue);
+    document.getElementById('mstcRoas').textContent = num(data.summary.overallRoas);
+    document.getElementById('mstcKeep').textContent = num(data.summary.keepCount);
+    document.getElementById('mstcExclude').textContent = num(data.summary.excludeCount);
+    mstpg = 1;
+    mstRender();
+  } catch (e) {
+    document.getElementById('mstLiveChip').textContent = 'Failed to load: ' + e.message;
+    document.getElementById('mstLiveChip').className = 'chip stale';
+    document.getElementById('msttbody').innerHTML = '';
+    document.getElementById('mstempty').style.display = 'none';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Refresh';
+  }
+}
+
+function mstFilteredRows(){
+  const q = document.getElementById('mstq').value.trim().toLowerCase();
+  const actionF = document.getElementById('mstf_action').value;
+  let rows = MST_ALL.filter(r => {
+    const textHit = !q || (r.searchTerm||'').toLowerCase().includes(q) || (r.campaign||'').toLowerCase().includes(q) || (r.matchType||'').toLowerCase().includes(q);
+    const actionHit = !actionF || (r.action || '').startsWith(actionF);
+    return textHit && actionHit;
+  });
+  rows.sort((a,b) => {
+    let av = a[mstSortKey], bv = b[mstSortKey];
+    if (av == null) av = mstSortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = mstSortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = (bv||'').toLowerCase(); }
+    if (av < bv) return -1*mstSortDir;
+    if (av > bv) return 1*mstSortDir;
+    return 0;
+  });
+  return rows;
+}
+
+function mstMaxpg(rows){
+  const size = parseInt(document.getElementById('mstpsize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function mstRender(){
+  const rows = mstFilteredRows();
+  const size = parseInt(document.getElementById('mstpsize').value, 10);
+  const mp = mstMaxpg(rows);
+  if (mstpg > mp) mstpg = mp;
+  if (mstpg < 1) mstpg = 1;
+  document.getElementById('mstcnt').textContent = 'Showing ' + rows.length.toLocaleString() + ' of ' + MST_ALL.length.toLocaleString() + ' terms';
+  const tbody = document.getElementById('msttbody');
+  const emptyEl = document.getElementById('mstempty');
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('mstpinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (mstpg-1)*size;
+  const pageRows = rows.slice(from, from+size);
+  tbody.innerHTML = pageRows.map(r => (
+    '<tr>' +
+    '<td>'+esc(r.searchTerm)+'</td>' +
+    '<td>'+esc(r.campaign)+'</td>' +
+    '<td>'+esc(r.matchType)+'</td>' +
+    '<td class="num">'+num(r.impressions)+'</td>' +
+    '<td class="num">'+num(r.clicks)+'</td>' +
+    '<td class="num">'+mstPct(r.ctr)+'</td>' +
+    '<td class="num">'+(r.avgCpc==null?'—':eur(r.avgCpc))+'</td>' +
+    '<td class="num">'+eur(r.cost)+'</td>' +
+    '<td class="num">'+num(r.conversions)+'</td>' +
+    '<td class="num">'+eur(r.convValue)+'</td>' +
+    '<td class="num">'+num(r.roas)+'</td>' +
+    '<td class="num">'+(r.costPerConv==null?'—':eur(r.costPerConv))+'</td>' +
+    '<td>'+esc(r.queryIntent)+'</td>' +
+    '<td>'+esc(r.trend)+'</td>' +
+    '<td>'+mstPriorityBadge(r.priority)+'</td>' +
+    '<td>'+mstActionBadge(r.action)+'</td>' +
+    '</tr>'
+  )).join('');
+  document.getElementById('mstpinfo').textContent = 'Rows ' + (from+1) + '-' + Math.min(from+size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + mstpg + ' of ' + mp + ')';
+}
+
+function mstExportCsv(){
+  const rows = mstFilteredRows();
+  const header = ['Search Term','Campaign','Match Type','Impressions','Clicks','CTR','Avg CPC','Cost','Conversions','Conv. Value','ROAS','Cost / Conv','Query Intent','Trend','Priority','Recommended Action'];
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    lines.push([r.searchTerm, r.campaign, r.matchType, r.impressions, r.clicks, r.ctr, r.avgCpc, r.cost, r.conversions, r.convValue, r.roas, r.costPerConv, r.queryIntent, r.trend, r.priority, r.action].map(csvSafe).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mahima-search-terms-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('mstq').addEventListener('input', () => { mstpg=1; mstRender(); });
+document.getElementById('mstf_action').addEventListener('change', () => { mstpg=1; mstRender(); });
+document.getElementById('mstpsize').addEventListener('change', () => { mstpg=1; mstRender(); });
+document.getElementById('mstExportCsv').addEventListener('click', mstExportCsv);
+document.getElementById('mstpgFirst').addEventListener('click', () => { mstpg=1; mstRender(); });
+document.getElementById('mstpgPrev').addEventListener('click', () => { if(mstpg>1){mstpg--;mstRender();} });
+document.getElementById('mstpgNext').addEventListener('click', () => { if(mstpg<mstMaxpg(mstFilteredRows())){mstpg++;mstRender();} });
+document.getElementById('mstpgLast').addEventListener('click', () => { mstpg=mstMaxpg(mstFilteredRows()); mstRender(); });
+document.querySelectorAll('#mSubSearchTerms thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.getAttribute('data-k');
+    if (mstSortKey === k) mstSortDir = -mstSortDir; else { mstSortKey = k; mstSortDir = 1; }
+    mstRender();
+  });
 });
 
 // ===== Jeffri tab (Google Ads only, mirrors the Mahima Ads pattern, distinct JA-prefixed globals/functions) =====
