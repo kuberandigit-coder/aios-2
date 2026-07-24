@@ -1486,7 +1486,6 @@ query($after: String) {
                 inventoryLevels(first: 5) {
                   edges {
                     node {
-                      location { id name }
                       quantities(names: ["available"]) { name quantity }
                     }
                   }
