@@ -4233,8 +4233,20 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       if (!row) continue;
       const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
       const utm = (fv && fv.utmParameters) || {};
-      if (!isSajeepanCampaign(utm.campaign)) continue;
+      // Added 2026-07-24: a deep utm_term audit across every January order
+      // (not just ones already classified Google Ads) confirmed 4 real,
+      // recurring utm_term values as Sajeepan's own (GENAI, Top_SELL,
+      // unnai_nampu, Wall_Light — user-confirmed) appearing under campaign
+      // names NOT in the original 11-campaign whitelist (Shop_DM_PMax-25,
+      // Shop_SJ_PMax-25). Rather than replace the campaign rule (which the
+      // 2026-07-22 fix already proved is the reliable primary signal), the
+      // term match is layered on TOP of it — an order counts if EITHER
+      // matches, so nothing already working is lost.
+      const campaignMatch = isSajeepanCampaign(utm.campaign);
+      const termMatch = SAJEEPAN_TERM_TOKENS.includes((utm.term || '').toString().toLowerCase());
+      if (!campaignMatch && !termMatch) continue;
       row.campaign = utm.campaign || null;
+      row.matchedOn = campaignMatch ? 'campaign' : 'utm_term';
       row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
       row.rawCampaign = utm.campaign || null;
       row.firstVisitSource = utm.source || null;
@@ -4263,7 +4275,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       supportedMonths: SUPPORTED_MONTHS,
       isLive: monthConfig.isLive,
       source: {
-        scope: `store-wide (NOT product-scoped) — an order belongs to Sajeepan if its first-session utm_campaign exactly matches (or is a prefixed variant of) one of her 11 confirmed campaign names: Klarna_P, SJ_TOP_20X, GCSS_ALL_ROAS_400_SAJEE_PMAX, Accessories_sj, SJ_PMAX_Scale_Heroes_25, KLARNA_CSS_SJ25_PMAX, SJ-WL-PMX, GCSS_ALL_ROAS_400_SAJEE, P_Max_Klarna_CSS_SJ_OLD, sajeepan_pmax_gcss_ceiling_rose_fitting, Klarna_G3 (corrected rule, 2026-07-22 — supersedes the earlier utm_term-based rule, which a January audit showed missed ~96% of her real orders)`,
+        scope: `store-wide (NOT product-scoped) — an order belongs to Sajeepan if EITHER: its first-session utm_campaign exactly matches (or is a prefixed variant of) one of her 11 confirmed campaign names (Klarna_P, SJ_TOP_20X, GCSS_ALL_ROAS_400_SAJEE_PMAX, Accessories_sj, SJ_PMAX_Scale_Heroes_25, KLARNA_CSS_SJ25_PMAX, SJ-WL-PMX, GCSS_ALL_ROAS_400_SAJEE, P_Max_Klarna_CSS_SJ_OLD, sajeepan_pmax_gcss_ceiling_rose_fitting, Klarna_G3 — corrected 2026-07-22), OR its utm_term exactly matches one of 7 confirmed values (GENAI, {keyword}, Top_SELL, LIGHTING_SJ, Wall_Light, Shopping_SJ, unnai_nampu — added 2026-07-24 after a deep audit of every real utm_term recorded across all January orders found GENAI/Shop_DM_PMax-25 and Wall_Light/Shop_SJ_PMax-25 under campaign names not yet in the whitelist).`,
         orders: 'Shopify Admin GraphQL API',
         journey: 'Shopify customerJourneySummary',
       },
@@ -4882,12 +4894,301 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   res.status(200).json(responsePayload);
 }
 
+// ===== Temporary debug endpoint: true UK store-wide total, no filters =====
+// Added 2026-07-24, user request: reconcile the sum of Kamsi/Dilaksi/
+// Sukirtha-Email/Sajeepan/Theekshy/Sonya's January dashboard tabs (which are
+// overlapping product/channel-attribution SLICES, not a partition of the
+// store) against Shopify's real store-wide total. Reuses the existing
+// SHOPIFY_UK_ADMIN_TOKEN already configured for those same tabs -- no new
+// credential. Every order counts once, no product/channel filter at all.
+// Self-contained copy of the same first-session channel classification used
+// throughout this file (kamsiHandlerModule etc.) — duplicated rather than
+// shared across module scopes, matching this codebase's own established
+// convention (each IIFE keeps its own copy to avoid cross-module coupling).
+const UK_DEBUG_SEARCH_ENGINES = ['google', 'bing', 'yahoo', 'duckduckgo', 'ecosia', 'yandex', 'baidu', 'aol', 'ask'];
+const UK_DEBUG_PAID_UTM_MEDIUMS = ['cpc', 'ppc', 'paid', 'paid_search', 'paidsearch', 'display', 'shopping', 'paid_social', 'cpv', 'cpm', 'cpa', 'pmax', 'performance_max', 'demandgen', 'demand_gen', 'discovery'];
+const UK_DEBUG_PAID_CLICK_IDS = ['gclid', 'gbraid', 'wbraid', 'msclkid', 'dclid'];
+const UK_DEBUG_PAID_UTM_SOURCES = ['google_ads', 'googleads', 'google ads', 'bing_ads', 'bingads', 'facebook_ads', 'meta_ads'];
+const UK_DEBUG_PAID_SOURCE_TYPES = ['ad'];
+function ukDebugLower(s) { return (s || '').toString().toLowerCase(); }
+function ukDebugHasPaidEvidence(visit) {
+  const utm = visit.utmParameters || {};
+  const medium = ukDebugLower(utm.medium);
+  if (UK_DEBUG_PAID_UTM_MEDIUMS.includes(medium)) return true;
+  const utmSource = ukDebugLower(utm.source);
+  if (UK_DEBUG_PAID_UTM_SOURCES.some((s) => utmSource.includes(s))) return true;
+  const urlFields = [visit.referrerUrl, visit.landingPage].filter(Boolean).join(' ').toLowerCase();
+  if (UK_DEBUG_PAID_CLICK_IDS.some((id) => urlFields.includes(id + '='))) return true;
+  if (UK_DEBUG_PAID_SOURCE_TYPES.includes(ukDebugLower(visit.sourceType))) return true;
+  return false;
+}
+function ukDebugClassifyChannel(order) {
+  const cjs = order.customerJourneySummary;
+  if (!cjs) return 'No Journey Data';
+  if (!cjs.ready) return 'Attribution Pending';
+  const visit = cjs.firstVisit;
+  if (!visit) return 'No Journey Data';
+  if (ukDebugHasPaidEvidence(visit)) return 'Google Ads / Paid Search';
+  const source = ukDebugLower(visit.source);
+  const sourceDesc = ukDebugLower(visit.sourceDescription);
+  const sourceType = ukDebugLower(visit.sourceType);
+  const utm = visit.utmParameters || {};
+  const medium = ukDebugLower(utm.medium);
+  let referrerHost = '';
+  try { referrerHost = visit.referrerUrl ? new URL(visit.referrerUrl).hostname.toLowerCase() : ''; } catch (e) { referrerHost = ''; }
+  const looksLikeSearchEngine = UK_DEBUG_SEARCH_ENGINES.some((eng) => source.includes(eng) || sourceDesc.includes(eng) || referrerHost.includes(eng));
+  const organicSignal = medium === 'organic' || sourceType.includes('organic') || sourceType.includes('seo') || (looksLikeSearchEngine && !medium);
+  if (looksLikeSearchEngine && (organicSignal || (!medium && !sourceType))) return 'Organic Search';
+  if (source === 'direct' || (!visit.referrerUrl && !visit.source && !medium)) return 'Direct';
+  if (['facebook', 'instagram', 'tiktok', 'twitter', 'x.com', 'pinterest', 'linkedin', 'snapchat'].some((s) => source.includes(s) || referrerHost.includes(s)) || medium === 'social') return 'Social';
+  if (sourceType === 'newsletter' || medium === 'email' || source.includes('email') || sourceDesc.includes('email')) return 'Email';
+  if (medium === 'affiliate' || sourceType.includes('affiliate')) return 'Affiliate';
+  if (visit.referrerUrl && !looksLikeSearchEngine) return 'Referral';
+  if (source || sourceDesc || medium) return 'Other';
+  return 'Unknown';
+}
+
+// Confirmed by user 2026-07-24 as Sajeepan's real utm_term values (the
+// literal "{keyword}" is included deliberately -- it's a raw, unsubstituted
+// Google Ads ValueTrack placeholder that can come through as-is on some
+// click paths, not a typo).
+const SAJEEPAN_TERM_TOKENS = ['genai', '{keyword}', 'top_sell', 'lighting_sj', 'wall_light', 'shopping_sj', 'unnai_nampu'];
+
+async function ukTotalDebugHandler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const STORE_DOMAIN_UK = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
+  const API_VERSION_UK = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
+  const TOKEN_UK = process.env.SHOPIFY_UK_ADMIN_TOKEN;
+  if (!TOKEN_UK) {
+    res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing' });
+    return;
+  }
+  const month = /^\d{4}-\d{2}$/.test(req.query.month || '') ? req.query.month : '2026-01';
+  const [y, m] = month.split('-').map(Number);
+  const startISO = `${month}-01`;
+  const endDate = new Date(Date.UTC(y, m, 1));
+  const endISO = endDate.toISOString().slice(0, 10);
+
+  // Rebuilt 2026-07-24 to match Shopify's OWN official "Total Sales" report
+  // formula exactly, reverse-engineered from the numbers the user pasted
+  // from Shopify's admin (Jan 2026: Gross 62,292.43 - Discounts 604.57 +
+  // Shipping 3,803.49 + Taxes 12,009.07 - Reversals(product) 1,574.33 =
+  // 75,926.09 -- verified this exact arithmetic reproduces their number).
+  // The earlier version of this endpoint used order-level totals
+  // (currentTotalPriceSet etc.) which conflates several of these into one
+  // number -- this version computes each component at LINE-ITEM level, the
+  // same basis Shopify's own report uses.
+  const query = `
+query($cursor: String, $q: String!) {
+  orders(first: 100, after: $cursor, sortKey: CREATED_AT, query: $q) {
+    edges {
+      node {
+        id
+        name
+        createdAt
+        cancelledAt
+        test
+        sourceName
+        displayFinancialStatus
+        currentTotalTaxSet { shopMoney { amount currencyCode } }
+        currentTotalDiscountsSet { shopMoney { amount } }
+        totalShippingPriceSet { shopMoney { amount } }
+        lineItems(first: 100) {
+          edges {
+            node {
+              quantity
+              originalUnitPriceSet { shopMoney { amount } }
+              discountedTotalSet { shopMoney { amount } }
+              taxLines { priceSet { shopMoney { amount } } }
+            }
+          }
+        }
+        refunds {
+          refundLineItems(first: 100) {
+            edges { node { subtotalSet { shopMoney { amount } } } }
+          }
+        }
+        customerJourneySummary {
+          ready
+          firstVisit {
+            source sourceDescription sourceType referrerUrl landingPage
+            utmParameters { source medium campaign term content }
+          }
+        }
+      }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}`;
+
+  try {
+    const q = `created_at:>=${startISO} AND created_at:<${endISO}`;
+    let after = null, hasNext = true, pages = 0;
+    let ordersCount = 0, cancelledCount = 0, testCount = 0;
+    let grossSales = 0, discounts = 0, shippingExTax = 0, taxes = 0, reversalsProduct = 0;
+    let currency = null;
+    const byChannel = new Map();
+    const byFinancialStatus = new Map();
+    const bySourceName = new Map();
+    const sajeepanTermTally = new Map();
+    while (hasNext) {
+      const r = await fetch(`https://${STORE_DOMAIN_UK}/admin/api/${API_VERSION_UK}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': TOKEN_UK },
+        body: JSON.stringify({ query, variables: { cursor: after, q } }),
+      });
+      const json = await r.json();
+      if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+      for (const edge of json.data.orders.edges) {
+        const o = edge.node;
+        if (o.test) { testCount++; continue; }
+        if (o.cancelledAt) { cancelledCount++; continue; }
+        ordersCount++;
+        currency = currency || (o.currentTotalTaxSet && o.currentTotalTaxSet.shopMoney.currencyCode);
+
+        // Same tax-inclusive-price fix already proven for the DE/FR stores
+        // (see buildSukirthaOrderRow, "Fix added 2026-07-21"): this store's
+        // originalUnitPriceSet/discountedTotalSet are ALSO tax-inclusive
+        // (confirmed empirically here -- without this, Gross Sales came out
+        // £76,156.65 vs Shopify's real £62,292.43, off by almost exactly the
+        // total tax amount). Subtract each line's own taxLines to get the
+        // ex-tax basis Shopify's own Gross/Net Sales report uses, and
+        // convert the tax-inclusive discount amount to ex-tax via the
+        // line's own blended tax rate.
+        let orderGross = 0, orderDiscount = 0, lineItemTax = 0;
+        for (const liEdge of o.lineItems.edges) {
+          const li = liEdge.node;
+          const unitPrice = Number(li.originalUnitPriceSet.shopMoney.amount) || 0;
+          const grossInclTax = unitPrice * li.quantity;
+          const tax = (li.taxLines || []).reduce((s, t) => s + (Number(t.priceSet.shopMoney.amount) || 0), 0);
+          const gross = grossInclTax - tax;
+          const discountedInclTax = Number(li.discountedTotalSet.shopMoney.amount) || 0;
+          const discountInclTax = Math.max(0, grossInclTax - discountedInclTax);
+          const itemTaxRate = grossInclTax > 0 ? tax / (grossInclTax - tax || 1) : 0;
+          const discount = discountInclTax / (1 + itemTaxRate);
+          orderGross += gross;
+          orderDiscount += discount;
+          lineItemTax += tax;
+        }
+        // Same reconciliation as reconcileOrderDiscounts() elsewhere in this
+        // file: discountedTotalSet frequently comes back equal to the
+        // undiscounted price even when a real discount code was applied —
+        // the order's own currentTotalDiscountsSet is the reliable source,
+        // so use whichever is larger (never double-count, but never miss a
+        // discount currentTotalDiscountsSet knows about that line items don't).
+        const orderLevelDiscountInclTax = Number(o.currentTotalDiscountsSet && o.currentTotalDiscountsSet.shopMoney.amount) || 0;
+        if (orderLevelDiscountInclTax > 0 && orderGross > 0) {
+          const blendedRate = lineItemTax / orderGross;
+          const orderLevelDiscountExTax = orderLevelDiscountInclTax / (1 + blendedRate);
+          orderDiscount = Math.max(orderDiscount, orderLevelDiscountExTax);
+        }
+        let orderReversalProduct = 0;
+        for (const rEdge of (o.refunds || [])) {
+          for (const rliEdge of (rEdge.refundLineItems && rEdge.refundLineItems.edges || [])) {
+            orderReversalProduct += Number(rliEdge.node.subtotalSet.shopMoney.amount) || 0;
+          }
+        }
+        const orderTax = Number(o.currentTotalTaxSet && o.currentTotalTaxSet.shopMoney.amount) || 0;
+        const shippingInclTax = Number(o.totalShippingPriceSet && o.totalShippingPriceSet.shopMoney.amount) || 0;
+        const shippingTax = Math.max(0, orderTax - lineItemTax); // remainder of order tax not on product lines = shipping tax
+        const orderShippingExTax = Math.max(0, shippingInclTax - shippingTax);
+
+        grossSales += orderGross;
+        discounts += orderDiscount;
+        shippingExTax += orderShippingExTax;
+        taxes += orderTax;
+        reversalsProduct += orderReversalProduct;
+
+        // Net Sales per order (matches the same Gross - Discounts - Refunds
+        // convention every staff dashboard tab already uses), grouped by
+        // first-session channel so it's directly comparable to the
+        // channel/product-scoped staff tabs.
+        const orderNet = orderGross - orderDiscount - orderReversalProduct;
+        const channel = ukDebugClassifyChannel(o);
+        if (!byChannel.has(channel)) byChannel.set(channel, { orders: 0, netSales: 0 });
+        const chEntry = byChannel.get(channel);
+        chEntry.orders += 1;
+        chEntry.netSales += orderNet;
+
+        // Sajeepan utm_term audit (added 2026-07-24, user-provided term list):
+        // deep search EVERY order in the month -- not just ones already
+        // classified as "Google Ads / Paid Search" -- for an exact-match
+        // utm_term against her confirmed list, in case the channel
+        // classifier miscategorized any of them (e.g. incomplete journey
+        // data). SAJEEPAN_TERM_TOKENS confirmed by user 2026-07-24.
+        {
+          const fv = o.customerJourneySummary && o.customerJourneySummary.firstVisit;
+          const utm = (fv && fv.utmParameters) || {};
+          const term = (utm.term || '').toString();
+          const termLower = term.toLowerCase();
+          if (SAJEEPAN_TERM_TOKENS.includes(termLower)) {
+            const key = term || '(empty utm_term)';
+            if (!sajeepanTermTally.has(key)) sajeepanTermTally.set(key, { orders: 0, netSales: 0, byChannel: {}, campaigns: new Set() });
+            const t = sajeepanTermTally.get(key);
+            t.orders += 1;
+            t.netSales += orderNet;
+            t.byChannel[channel] = (t.byChannel[channel] || 0) + 1;
+            if (utm.campaign) t.campaigns.add(utm.campaign);
+          }
+        }
+
+        const fs = o.displayFinancialStatus || 'UNKNOWN';
+        if (!byFinancialStatus.has(fs)) byFinancialStatus.set(fs, { orders: 0 });
+        byFinancialStatus.get(fs).orders += 1;
+
+        const src = o.sourceName || 'unknown';
+        if (!bySourceName.has(src)) bySourceName.set(src, { orders: 0 });
+        bySourceName.get(src).orders += 1;
+      }
+      hasNext = json.data.orders.pageInfo.hasNextPage;
+      after = json.data.orders.pageInfo.endCursor;
+      pages++;
+      if (pages > 400) break;
+    }
+
+    const r2 = (n) => Math.round(n * 100) / 100;
+    const totalSales = r2(grossSales - discounts + shippingExTax + taxes - reversalsProduct);
+
+    res.status(200).json({
+      success: true,
+      store: STORE_DOMAIN_UK,
+      month,
+      note: 'Rebuilt to match Shopify\'s own official Total Sales report formula exactly: Gross Sales - Discounts + Shipping + Taxes - Reversals(product). All figures computed at line-item level (ex-tax), same basis as Shopify\'s report.',
+      summary: {
+        ordersCount, cancelledCount, testCount,
+        grossSales: r2(grossSales),
+        discounts: r2(discounts),
+        netSales: r2(grossSales - discounts),
+        shippingCharges: r2(shippingExTax),
+        taxes: r2(taxes),
+        salesReversalsProduct: r2(reversalsProduct),
+        totalSales,
+        currency,
+      },
+      byFinancialStatus: [...byFinancialStatus.entries()].map(([status, v]) => ({ status, orders: v.orders })).sort((a, b) => b.orders - a.orders),
+      bySourceName: [...bySourceName.entries()].map(([source, v]) => ({ source, orders: v.orders })).sort((a, b) => b.orders - a.orders),
+      channelBreakdown: [...byChannel.entries()].map(([channel, v]) => ({ channel, orders: v.orders, netSales: r2(v.netSales) })).sort((a, b) => b.netSales - a.netSales),
+      sajeepanUtmTermAudit: [...sajeepanTermTally.entries()].map(([term, v]) => ({
+        term, orders: v.orders, netSales: r2(v.netSales), byChannel: v.byChannel, campaigns: [...v.campaigns],
+      })).sort((a, b) => b.orders - a.orders),
+      sajeepanTermTotal: {
+        orders: [...sajeepanTermTally.values()].reduce((s, v) => s + v.orders, 0),
+        netSales: r2([...sajeepanTermTally.values()].reduce((s, v) => s + v.netSales, 0)),
+      },
+      pagesFetched: pages,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+  }
+}
+
 module.exports = async function handler(req, res) {
   const entity = ((req.query && req.query.entity) || '').toString().toLowerCase();
   if (entity === 'dilaksi') return dilaksiHandlerModule(req, res);
   if (entity === 'jackson') return jacksonHandlerModule(req, res);
   if (entity === 'kamsi') return kamsiHandlerModule(req, res);
   if (entity === 'sukirtha-uk') return sukirthaUkHandlerModule(req, res);
+  if (entity === 'uk-total-debug') return ukTotalDebugHandler(req, res);
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   const startTime = Date.now();
