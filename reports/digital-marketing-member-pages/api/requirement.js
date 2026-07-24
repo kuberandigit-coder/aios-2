@@ -1593,7 +1593,23 @@ async function fetchUnitsSoldByVariantR1(startISO, endISO) {
   return { soldByVariant, lastOrderDateByVariant };
 }
 
+// Req1 has no caching at all and re-scans the FULL catalog (13,866 SKUs,
+// ~278 pages at 50/page) plus a full 90-day storewide order history on
+// EVERY click of Refresh -- with Shopify's per-page GraphQL cost throttling
+// on top (exponential backoff, up to 6 retries/page), this reliably exceeds
+// this function's execution budget and the request never returns. Added
+// 2026-07-24: a 10-minute in-memory cache (bypassed with ?refresh=1, though
+// the frontend doesn't currently send it) so repeat loads within the
+// window are instant, and larger page sizes below to cut total round trips.
+const R1_CACHE_TTL_MS = 10 * 60 * 1000;
+let r1Cache = null; // { payload, at }
+
 async function handleReq1(req, res) {
+  if (req.query.refresh !== '1' && r1Cache && (Date.now() - r1Cache.at) < R1_CACHE_TTL_MS) {
+    res.status(200).json(r1Cache.payload);
+    return;
+  }
+
   const now = new Date();
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const start = new Date(end.getTime() - DAYS_R1 * 24 * 60 * 60 * 1000);
@@ -1630,7 +1646,9 @@ async function handleReq1(req, res) {
     stockInSlowMoving,
   };
 
-  res.status(200).json({ summary, rows });
+  const payload = { summary, rows };
+  r1Cache = { payload, at: Date.now() };
+  res.status(200).json(payload);
 }
 
 // ============================== Requirement 5 ==============================
