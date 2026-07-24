@@ -4952,7 +4952,9 @@ function ukDebugClassifyChannel(order) {
 // literal "{keyword}" is included deliberately -- it's a raw, unsubstituted
 // Google Ads ValueTrack placeholder that can come through as-is on some
 // click paths, not a typo).
-const SAJEEPAN_TERM_TOKENS = ['genai', '{keyword}', 'top_sell', 'lighting_sj', 'wall_light', 'shopping_sj', 'unnai_nampu'];
+// "{keyword}" removed 2026-07-24 -- user confirmed it was never a real
+// utm_term value (0 real orders had it; it was a template artifact).
+const SAJEEPAN_TERM_TOKENS = ['genai', 'top_sell', 'lighting_sj', 'wall_light', 'shopping_sj', 'unnai_nampu'];
 
 async function ukTotalDebugHandler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -5031,6 +5033,8 @@ query($cursor: String, $q: String!) {
     const byFinancialStatus = new Map();
     const bySourceName = new Map();
     const sajeepanTermTally = new Map();
+    const sajeepanEmptyTermContentTally = new Map();
+    const paidGapTally = new Map();
     while (hasNext) {
       const r = await fetch(`https://${STORE_DOMAIN_UK}/admin/api/${API_VERSION_UK}/graphql.json`, {
         method: 'POST',
@@ -5130,6 +5134,44 @@ query($cursor: String, $q: String!) {
             t.byChannel[channel] = (t.byChannel[channel] || 0) + 1;
             if (utm.campaign) t.campaigns.add(utm.campaign);
           }
+          // For orders with NO utm_term at all (some campaigns don't set
+          // one), tally utm_content instead — user confirmed 2026-07-24
+          // that 3 of her campaigns rely on utm_content instead of
+          // utm_term. Scoped to orders that at least have a utm_campaign
+          // (i.e. genuinely ad-driven) to avoid noise from truly organic/
+          // direct orders that also happen to lack a utm_term.
+          if (!term && utm.campaign) {
+            const content = (utm.content || '').toString();
+            const key = content || '(empty utm_content)';
+            if (!sajeepanEmptyTermContentTally.has(key)) sajeepanEmptyTermContentTally.set(key, { orders: 0, netSales: 0, byChannel: {}, campaigns: new Set() });
+            const ct = sajeepanEmptyTermContentTally.get(key);
+            ct.orders += 1;
+            ct.netSales += orderNet;
+            ct.byChannel[channel] = (ct.byChannel[channel] || 0) + 1;
+            if (utm.campaign) ct.campaigns.add(utm.campaign);
+          }
+
+          // Paid-search "unclaimed gap" audit (added 2026-07-24): the
+          // channel-vs-dashboard comparison the user pulled up shows Google
+          // Ads / Paid Search has 1,347 real Shopify orders in Jan but only
+          // 314 are claimed across Sajeepan+Theekshy+Sonya's tabs combined —
+          // a 79% gap. This tallies utm_term/utm_campaign for every order
+          // classified "Google Ads / Paid Search" that ISN'T matched by any
+          // of the three staff's current rules, so real missing term/campaign
+          // values can be identified (same method that found Sajeepan's
+          // GENAI/Wall_Light gap).
+          if (channel === 'Google Ads / Paid Search') {
+            const sajeepanMatch = isSajeepanCampaign(utm.campaign) || SAJEEPAN_TERM_TOKENS.includes(termLower);
+            const theekshyMatch = termLower === 'theekshy';
+            const sonyaMatch = ['sonya', 'ninc', 'glow_up', 'sonyaireland', 'sonyaspian', 'sonytopeuropeengeu{_adgroup}'].includes(termLower);
+            if (!sajeepanMatch && !theekshyMatch && !sonyaMatch) {
+              const key = `${term || '(empty term)'} | ${utm.campaign || '(empty campaign)'}`;
+              if (!paidGapTally.has(key)) paidGapTally.set(key, { orders: 0, netSales: 0, term: term || null, campaign: utm.campaign || null, content: utm.content || null });
+              const g = paidGapTally.get(key);
+              g.orders += 1;
+              g.netSales += orderNet;
+            }
+          }
         }
 
         const fs = o.displayFinancialStatus || 'UNKNOWN';
@@ -5175,6 +5217,14 @@ query($cursor: String, $q: String!) {
         orders: [...sajeepanTermTally.values()].reduce((s, v) => s + v.orders, 0),
         netSales: r2([...sajeepanTermTally.values()].reduce((s, v) => s + v.netSales, 0)),
       },
+      paidSearchGapAudit: [...paidGapTally.values()].sort((a, b) => b.orders - a.orders),
+      paidSearchGapTotal: {
+        orders: [...paidGapTally.values()].reduce((s, v) => s + v.orders, 0),
+        netSales: r2([...paidGapTally.values()].reduce((s, v) => s + v.netSales, 0)),
+      },
+      sajeepanEmptyTermContentAudit: [...sajeepanEmptyTermContentTally.entries()].map(([content, v]) => ({
+        content, orders: v.orders, netSales: r2(v.netSales), byChannel: v.byChannel, campaigns: [...v.campaigns],
+      })).sort((a, b) => b.orders - a.orders),
       pagesFetched: pages,
     });
   } catch (err) {
