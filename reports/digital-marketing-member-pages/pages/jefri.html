@@ -239,17 +239,62 @@ function showReqTab(which){
   document.getElementById('req2Tab').style.display = which === 'req2' ? '' : 'none';
   document.getElementById('tabBtnReq1').classList.toggle('active', which === 'req1');
   document.getElementById('tabBtnReq2').classList.toggle('active', which === 'req2');
-  if (which === 'req2' && !R2_LOADED) { R2_LOADED = true; r2Load(); }
+  if (which === 'req2' && !R2_LOADED) {
+    R2_LOADED = true;
+    (async function(){
+      try {
+        const saved = await idbGet('jefri_r2_live');
+        if (saved) applyReq2Data(saved, true);
+      } catch (e) { /* no cache yet — fall through to a normal load */ }
+      r2Load();
+    })();
+  }
 }
 showReqTab('req1');
 </script>
 
 <script>
+// IndexedDB cache (added 2026-07-24, same fix already applied to Kamsi/
+// Dilaksi/Sukirtha): without this, navigating away and back to the page
+// shows the last HOURLY STATIC SNAPSHOT again (the server-side fallback
+// used for a fast/uncached page load), not the truly-live result the user
+// just got from clicking Refresh — the live result only ever lived in a JS
+// variable, reset by any full page reload. sessionStorage/localStorage
+// were skipped directly since Sukirtha already hit QuotaExceededError at
+// this kind of payload size; IndexedDB is the fix that actually stuck.
+function idbOpen(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('jefri_cache_db', 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readonly');
+    const req = tx.objectStore('kv').get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, value){
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 let ALL = [];
 let SUMMARY = null;
 let pg = 1;
 let sortKey = 'cost';
 let sortDir = -1;
+let r1RestoredTs = 0;
 
 function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function num(v){return v==null?'—':Number(v).toLocaleString();}
@@ -267,6 +312,32 @@ function statusClass(s){
   return 'unknown';
 }
 
+function applyReq1Data(data, isRestored){
+  const campaignSel = document.getElementById('f_campaign');
+  ALL = data.products;
+  SUMMARY = data.summary;
+  if (data.campaignList && campaignSel.options.length <= 1) {
+    data.campaignList.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      campaignSel.appendChild(opt);
+    });
+  }
+  const fmtDate = (s) => s ? String(s).slice(0, 10) : '—';
+  document.getElementById('rangeChip').textContent = 'Date range: ' + fmtDate(data.dateRange.start) + ' to ' + fmtDate(data.dateRange.end) + ' (last 90 days)';
+  document.getElementById('liveChip').textContent = 'Live — fetched ' + new Date(data.generatedAt).toLocaleString() + (isRestored ? ' (restored)' : '');
+  document.getElementById('liveChip').className = 'chip live';
+  document.getElementById('cTotal').textContent = num(SUMMARY.totalProducts);
+  document.getElementById('cHero').textContent = num(SUMMARY.heroes);
+  document.getElementById('cVillain').textContent = num(SUMMARY.villains);
+  document.getElementById('cZombie').textContent = num(SUMMARY.zombies);
+  document.getElementById('cSidekick').textContent = num(SUMMARY.sidekicks);
+  pg = 1;
+  render();
+  r1RestoredTs = new Date(data.generatedAt).getTime();
+}
+
 async function load(force){
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true; btn.textContent = 'Refreshing…';
@@ -279,27 +350,19 @@ async function load(force){
     const res = await fetch('/api/requirement?fn=jefri-product-status' + campaignParam + (force ? '&refresh=1' : ''));
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
-    ALL = data.products;
-    SUMMARY = data.summary;
-    if (data.campaignList && campaignSel.options.length <= 1) {
-      data.campaignList.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = c.name;
-        campaignSel.appendChild(opt);
-      });
+
+    // A forced (manual Refresh) fetch is always genuinely live and always
+    // wins. An unforced fetch (e.g. on page load) may come back from the
+    // server's hourly static snapshot fallback — if that's OLDER than what
+    // we already restored from IndexedDB (the user's own last live Refresh),
+    // keep showing the restored result instead of regressing to stale data.
+    const fetchedTs = new Date(data.generatedAt).getTime();
+    if (!force && r1RestoredTs && fetchedTs < r1RestoredTs) {
+      return;
     }
-    const fmtDate = (s) => s ? String(s).slice(0, 10) : '—';
-    document.getElementById('rangeChip').textContent = 'Date range: ' + fmtDate(data.dateRange.start) + ' to ' + fmtDate(data.dateRange.end) + ' (last 90 days)';
-    document.getElementById('liveChip').textContent = 'Live — fetched ' + new Date(data.generatedAt).toLocaleString();
-    document.getElementById('liveChip').className = 'chip live';
-    document.getElementById('cTotal').textContent = num(SUMMARY.totalProducts);
-    document.getElementById('cHero').textContent = num(SUMMARY.heroes);
-    document.getElementById('cVillain').textContent = num(SUMMARY.villains);
-    document.getElementById('cZombie').textContent = num(SUMMARY.zombies);
-    document.getElementById('cSidekick').textContent = num(SUMMARY.sidekicks);
-    pg = 1;
-    render();
+
+    applyReq1Data(data, false);
+    try { await idbSet('jefri_r1_live', data); } catch (e) {}
   } catch (e) {
     document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message;
     document.getElementById('liveChip').className = 'chip stale';
@@ -395,7 +458,13 @@ document.querySelectorAll('thead th[data-k]').forEach(th => {
   });
 });
 
-load();
+(async function(){
+  try {
+    const saved = await idbGet('jefri_r1_live');
+    if (saved) applyReq1Data(saved, true);
+  } catch (e) { /* no cache yet — fall through to a normal load */ }
+  load();
+})();
 </script>
 
 <script>
@@ -404,6 +473,7 @@ let R2_ALL = [];
 let r2pg = 1;
 let r2SortKey = 'cost';
 let r2SortDir = -1;
+let r2RestoredTs = 0;
 
 const TAG_COLORS = { Hero: '#0a7d4f', Villain: '#c62828', Zombie: '#9aa3b2', Sidekick: '#1f5eff' };
 function r2TagBadge(tag){
@@ -413,6 +483,20 @@ function r2TagBadge(tag){
   return '<span class="tag-badge" style="color:' + color + ';">' + icon + ' ' + esc(tag) + '</span>';
 }
 function r2Pct(v){ return v == null ? '—' : Number(v).toLocaleString() + '%'; }
+
+function applyReq2Data(data, isRestored){
+  R2_ALL = data.rows;
+  document.getElementById('r2LiveChip').textContent = 'Live — fetched ' + new Date(data.meta.generatedAt).toLocaleString() + (isRestored ? ' (restored)' : '');
+  document.getElementById('r2LiveChip').className = 'chip live';
+  document.getElementById('r2cTotal').textContent = num(data.summary.totalTerms);
+  document.getElementById('r2cHero').textContent = num(data.summary.hero);
+  document.getElementById('r2cVillain').textContent = num(data.summary.villain);
+  document.getElementById('r2cZombie').textContent = num(data.summary.zombie);
+  document.getElementById('r2cSidekick').textContent = num(data.summary.sidekick);
+  r2pg = 1;
+  r2Render();
+  r2RestoredTs = new Date(data.meta.generatedAt).getTime();
+}
 
 async function r2Load(force){
   const btn = document.getElementById('r2RefreshBtn');
@@ -424,16 +508,10 @@ async function r2Load(force){
     const res = await fetch('/api/requirement?fn=jefri-search-terms' + (force ? '&refresh=1' : ''));
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-    R2_ALL = data.rows;
-    document.getElementById('r2LiveChip').textContent = 'Live — fetched ' + new Date(data.meta.generatedAt).toLocaleString();
-    document.getElementById('r2LiveChip').className = 'chip live';
-    document.getElementById('r2cTotal').textContent = num(data.summary.totalTerms);
-    document.getElementById('r2cHero').textContent = num(data.summary.hero);
-    document.getElementById('r2cVillain').textContent = num(data.summary.villain);
-    document.getElementById('r2cZombie').textContent = num(data.summary.zombie);
-    document.getElementById('r2cSidekick').textContent = num(data.summary.sidekick);
-    r2pg = 1;
-    r2Render();
+    const fetchedTs = new Date(data.meta.generatedAt).getTime();
+    if (!force && r2RestoredTs && fetchedTs < r2RestoredTs) return;
+    applyReq2Data(data, false);
+    try { await idbSet('jefri_r2_live', data); } catch (e) {}
   } catch (e) {
     document.getElementById('r2LiveChip').textContent = 'Failed to load: ' + e.message;
     document.getElementById('r2LiveChip').className = 'chip stale';
