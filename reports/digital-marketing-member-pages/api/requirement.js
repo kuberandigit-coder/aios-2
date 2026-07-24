@@ -898,8 +898,222 @@ query($after: String, $q: String) {
     }
   }
 
+  // ===== Jefri Requirement 3 — 3-Period Product Comparison (T-03, added 2026-07-24) =====
+  // Business requirement: compare each product's Conv. Value / ROAS across
+  // three FIXED calendar-quarter windows (not rolling) to flag Improved /
+  // Same / Drop, and classify into Performance Tiers by revenue
+  // contribution rank + ROAS. Source: google_ads.product_performance (same
+  // table/campaign scope as Req1), SKU resolved via the same
+  // listings.shopify_listings(_parent_child_mapping) join as Req1 — no new
+  // tables, no invented columns.
+  //
+  // Known data gap (disclosed, not fabricated): product_performance for
+  // Jefri's 5 campaigns only starts 2025-05-12 — the "Next 3 Months in
+  // Previous Year" window (Apr 1 - Jun 30 2025) has zero rows for
+  // 2025-04-01 through 2025-05-11 (campaigns didn't exist/weren't tracked
+  // yet). Those rows are genuinely absent from Postgres, not zeroed out or
+  // guessed — a product with no py_conv_value/py_cost simply shows "N/A"
+  // for that block, same convention as Req1's "Data Missing".
+  const JEFRI_R3_CACHE = new Map();
+  const JEFRI_R3_CACHE_TTL_MS = 60 * 1000;
+  const JEFRI_R3_STATIC_KEY = 'default';
+
+  const JEFRI_R3_QUERY = `
+WITH period_bounds AS (
+  SELECT
+    '2025-10-01'::date AS prev_start, '2025-12-31'::date AS prev_end,
+    '2026-01-01'::date AS last_start, '2026-03-31'::date AS last_end,
+    '2025-04-01'::date AS py_start,   '2025-06-30'::date AS py_end
+),
+prev AS (
+  SELECT pp.product_item_id, SUM(pp.conversion_value) AS conv_value, SUM(pp.cost) AS cost
+  FROM google_ads.product_performance pp CROSS JOIN period_bounds b
+  WHERE pp.campaign_id = ANY($1::bigint[]) AND pp.date BETWEEN b.prev_start AND b.prev_end
+  GROUP BY pp.product_item_id
+),
+last3 AS (
+  SELECT pp.product_item_id, SUM(pp.conversion_value) AS conv_value, SUM(pp.cost) AS cost
+  FROM google_ads.product_performance pp CROSS JOIN period_bounds b
+  WHERE pp.campaign_id = ANY($1::bigint[]) AND pp.date BETWEEN b.last_start AND b.last_end
+  GROUP BY pp.product_item_id
+),
+py AS (
+  SELECT pp.product_item_id, SUM(pp.conversion_value) AS conv_value, SUM(pp.cost) AS cost
+  FROM google_ads.product_performance pp CROSS JOIN period_bounds b
+  WHERE pp.campaign_id = ANY($1::bigint[]) AND pp.date BETWEEN b.py_start AND b.py_end
+  GROUP BY pp.product_item_id
+),
+all_ids AS (
+  SELECT product_item_id FROM prev
+  UNION
+  SELECT product_item_id FROM last3
+  UNION
+  SELECT product_item_id FROM py
+),
+ranked AS (
+  SELECT product_item_id,
+    ROW_NUMBER() OVER (ORDER BY COALESCE(conv_value,0) DESC) AS rn,
+    COUNT(*) OVER () AS total_n
+  FROM last3
+),
+resolved_ids AS (
+  SELECT ai.product_item_id,
+    CASE WHEN ai.product_item_id LIKE 'shopify\\_%'
+         THEN split_part(ai.product_item_id, '_', array_length(string_to_array(ai.product_item_id, '_'), 1))
+         ELSE ai.product_item_id
+    END AS shopify_id
+  FROM all_ids ai
+),
+child_fallback AS (
+  SELECT m.parent_id AS parent_listing_id, MIN(child.id) AS child_listing_id
+  FROM listings.shopify_listings_parent_child_mapping m
+  JOIN listings.shopify_listings child ON child.id = m.child_id AND child.all_list = 1
+  GROUP BY m.parent_id
+),
+resolved_listing AS (
+  SELECT sl.item_id,
+    COALESCE(NULLIF(sl.sku, ''), child_sl.sku) AS sku
+  FROM listings.shopify_listings sl
+  LEFT JOIN child_fallback cf ON cf.parent_listing_id = sl.id
+  LEFT JOIN listings.shopify_listings child_sl ON child_sl.id = cf.child_listing_id
+  WHERE sl.channel = $2
+)
+SELECT
+  ai.product_item_id,
+  rl.sku,
+  prev.conv_value AS prev_conv_value, prev.cost AS prev_cost,
+  last3.conv_value AS last_conv_value, last3.cost AS last_cost,
+  py.conv_value AS py_conv_value, py.cost AS py_cost,
+  r.rn, r.total_n
+FROM all_ids ai
+JOIN resolved_ids ri ON ri.product_item_id = ai.product_item_id
+LEFT JOIN resolved_listing rl ON rl.item_id = ri.shopify_id
+LEFT JOIN prev ON prev.product_item_id = ai.product_item_id
+LEFT JOIN last3 ON last3.product_item_id = ai.product_item_id
+LEFT JOIN py ON py.product_item_id = ai.product_item_id
+LEFT JOIN ranked r ON r.product_item_id = ai.product_item_id
+ORDER BY last3.conv_value DESC NULLS LAST;
+`;
+
+  function jefriR3Roas(convValue, cost) {
+    const cv = Number(convValue) || 0;
+    const c = Number(cost) || 0;
+    if (c > 0) return (cv / c) * 100;
+    return null; // no spend in this period — ROAS not meaningful, not zero
+  }
+
+  function jefriR3PctChange(lastVal, prevVal) {
+    const l = Number(lastVal), p = Number(prevVal);
+    if (!isFinite(p) || p === 0) return null; // no baseline to compare against
+    if (!isFinite(l)) return null;
+    return ((l - p) / p) * 100;
+  }
+
+  // Status: "using Conv. Value OR ROAS" — if EITHER metric's % change hits a
+  // threshold, that status applies. Evaluated Improved -> Drop -> Same so a
+  // clear improvement signal from either metric always wins first. Changes
+  // that fall in neither range (roughly -11% to -29%, and the sliver between
+  // the Same/Improved boundaries) are genuinely undefined by the spec as
+  // given — left as "—" rather than guessing which bucket they belong in.
+  function jefriR3Status(lastCV, prevCV, lastRoas, prevRoas) {
+    const cvChange = jefriR3PctChange(lastCV, prevCV);
+    const roasChange = jefriR3PctChange(lastRoas, prevRoas);
+    const changes = [cvChange, roasChange].filter((v) => v !== null);
+    if (!changes.length) return null;
+    if (changes.some((v) => v >= 15)) return 'Improved';
+    if (changes.some((v) => v <= -30)) return 'Drop';
+    if (changes.some((v) => v >= -10 && v <= 14)) return 'Same';
+    return null;
+  }
+
+  function jefriR3Tier(rn, totalN, lastRoas) {
+    if (!rn || !totalN || lastRoas === null) return null;
+    const pct = rn / totalN; // 1/total_n .. 1.0, i.e. 0.01 = top 1%
+    if (lastRoas >= 400 && pct <= 0.20) return 'High';
+    if (lastRoas >= 200 && lastRoas <= 399 && pct > 0.30 && pct <= 0.50) return 'Mid';
+    return null;
+  }
+
+  async function jefriReq3Handler(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    if (req.query.refresh !== '1') {
+      const cached = JEFRI_R3_CACHE.get(JEFRI_R3_STATIC_KEY);
+      if (cached && (Date.now() - cached.at) < JEFRI_R3_CACHE_TTL_MS) {
+        res.status(200).json(cached.data);
+        return;
+      }
+      const fs = require('fs');
+      const path = require('path');
+      const staticPath = path.join(__dirname, 'data', 'jefri-req3-snapshot.json');
+      if (fs.existsSync(staticPath)) {
+        const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+        const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+        JEFRI_R3_CACHE.set(JEFRI_R3_STATIC_KEY, { data: payload, at: Date.now() });
+        res.status(200).json(payload);
+        return;
+      }
+    }
+
+    const client = await (async () => getPool().connect())().catch((err) => {
+      console.error('[jefri/req3] DB connect failed:', err && err.message);
+      res.status(500).json({ success: false, error: 'Server not configured or database unreachable. Contact the site administrator.' });
+      return null;
+    });
+    if (!client) return;
+
+    try {
+      const result = await client.query(JEFRI_R3_QUERY, [JEFRI_CAMPAIGN_IDS, CHANNEL]);
+      const rows = result.rows.map((r) => {
+        const prevRoas = jefriR3Roas(r.prev_conv_value, r.prev_cost);
+        const lastRoas = jefriR3Roas(r.last_conv_value, r.last_cost);
+        const pyRoas = jefriR3Roas(r.py_conv_value, r.py_cost);
+        const status = jefriR3Status(r.last_conv_value, r.prev_conv_value, lastRoas, prevRoas);
+        const tier = jefriR3Tier(r.rn ? Number(r.rn) : null, r.total_n ? Number(r.total_n) : null, lastRoas);
+        return {
+          productId: r.product_item_id,
+          sku: r.sku || null,
+          tier,
+          prev: { convValue: r.prev_conv_value === null ? null : Number(r.prev_conv_value), roas: prevRoas === null ? null : Math.round(prevRoas) },
+          last: { convValue: r.last_conv_value === null ? null : Number(r.last_conv_value), roas: lastRoas === null ? null : Math.round(lastRoas), status },
+          py: { convValue: r.py_conv_value === null ? null : Number(r.py_conv_value), roas: pyRoas === null ? null : Math.round(pyRoas) },
+        };
+      });
+
+      const summary = {
+        totalProducts: rows.length,
+        high: rows.filter((r) => r.tier === 'High').length,
+        mid: rows.filter((r) => r.tier === 'Mid').length,
+        improved: rows.filter((r) => r.last.status === 'Improved').length,
+        same: rows.filter((r) => r.last.status === 'Same').length,
+        drop: rows.filter((r) => r.last.status === 'Drop').length,
+      };
+
+      const payload = {
+        success: true,
+        generatedAt: new Date().toISOString(),
+        periods: {
+          prev: { label: 'Previous 3 Months (Oct-Dec 2025)', start: '2025-10-01', end: '2025-12-31' },
+          last: { label: 'Last 3 Months (Jan-Mar 2026)', start: '2026-01-01', end: '2026-03-31' },
+          py: { label: 'Next 3 Months in Previous Year (Apr-Jun 2025)', start: '2025-04-01', end: '2025-06-30' },
+        },
+        dataNote: 'google_ads.product_performance for Jefri\'s 5 campaigns begins 2025-05-12 — Apr 1-May 11 2025 has no rows (pre-dates campaign tracking), so py figures for that sub-range are genuinely absent, not zero.',
+        summary,
+        rows,
+      };
+      JEFRI_R3_CACHE.set(JEFRI_R3_STATIC_KEY, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[jefri/req3] Query failed:', err && err.message);
+      res.status(500).json({ success: false, error: 'Could not load comparison data. Please try again shortly.' });
+    } finally {
+      client.release();
+    }
+  }
+
   jefriProductStatusHandler.mahimaReq1Handler = mahimaReq1Handler;
   jefriProductStatusHandler.mahimaReq2Handler = mahimaReq2Handler;
+  jefriProductStatusHandler.jefriReq3Handler = jefriReq3Handler;
   return jefriProductStatusHandler;
 })();
 
@@ -3004,6 +3218,7 @@ module.exports = async (req, res) => {
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
+  if (fn === 'jefri-req3') return jefriProductStatusHandlerModule.jefriReq3Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);
   if (fn === 'check-urls') return checkUrlsHandlerModule(req, res);

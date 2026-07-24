@@ -68,6 +68,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 <div class="reqtabs" style="display:flex;gap:8px;margin-bottom:14px;">
   <div class="reqtab" id="tabBtnReq1" onclick="showReqTab('req1')" style="cursor:pointer;padding:9px 18px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:700;color:var(--ink);">Requirement 1</div>
   <div class="reqtab" id="tabBtnReq2" onclick="showReqTab('req2')" style="cursor:pointer;padding:9px 18px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:700;color:var(--ink);">Requirement 2</div>
+  <div class="reqtab" id="tabBtnReq3" onclick="showReqTab('req3')" style="cursor:pointer;padding:9px 18px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:700;color:var(--ink);">Requirement 3</div>
 </div>
 <style>.reqtab.active{background:var(--accent) !important;color:#fff !important;border-color:var(--accent) !important;}</style>
 
@@ -232,13 +233,107 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 </div>
 </div>
 
+<div id="req3Tab" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 3 (Live) — T-03</div>
+  <h1>3-Period Product Comparison</h1>
+  <div class="sub">Which products improved, stayed the same, or dropped across three fixed calendar-quarter windows &mdash; and which deserve more Google Ads budget vs. investigation? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads) &nbsp;&middot;&nbsp; Scope: Jefri's 5 named campaigns (same as Requirement 1)</div>
+  <div class="filters">
+    <span class="chip">Previous 3M: Oct&ndash;Dec 2025</span>
+    <span class="chip">Last 3M: Jan&ndash;Mar 2026</span>
+    <span class="chip">Prior-Year 3M: Apr&ndash;Jun 2025</span>
+    <span class="chip" id="r3LiveChip">Loading…</span>
+    <button id="r3RefreshBtn" type="button">Refresh</button>
+  </div>
+</header>
+
+<div class="cards" id="r3Cards">
+  <div class="card"><div class="label">Total Products</div><div class="value" id="r3cTotal">&ndash;</div></div>
+  <div class="card"><div class="label">High Tier</div><div class="value" id="r3cHigh" style="color:#0a7d4f;">&ndash;</div></div>
+  <div class="card"><div class="label">Mid Tier</div><div class="value" id="r3cMid" style="color:#1f5eff;">&ndash;</div></div>
+  <div class="card"><div class="label">Improved</div><div class="value" id="r3cImproved" style="color:#0a7d4f;">&ndash;</div></div>
+  <div class="card"><div class="label">Same</div><div class="value" id="r3cSame" style="color:#1f5eff;">&ndash;</div></div>
+  <div class="card"><div class="label">Drop</div><div class="value" id="r3cDrop" style="color:#c62828;">&ndash;</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="r3q" placeholder="Search Product ID or SKU…">
+    <label>Tier <select id="r3f_tier">
+      <option value="">All tiers</option>
+      <option value="High">High</option>
+      <option value="Mid">Mid</option>
+    </select></label>
+    <label>Status <select id="r3f_status">
+      <option value="">All statuses</option>
+      <option value="Improved">Improved</option>
+      <option value="Same">Same</option>
+      <option value="Drop">Drop</option>
+    </select></label>
+    <button id="r3ExportCsv" type="button">Export CSV</button>
+    <button id="r3ExportExcel" type="button">Export Excel</button>
+    <span id="r3cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table style="min-width:1600px;">
+      <thead style="position:sticky;top:0;z-index:5;">
+        <tr>
+          <th rowspan="2" data-k="tier">Tier</th>
+          <th rowspan="2" data-k="productId">Product ID</th>
+          <th rowspan="2" data-k="sku">SKU</th>
+          <th colspan="2" style="text-align:center;border-left:2px solid var(--line);">Previous 3M (Oct&ndash;Dec 2025)</th>
+          <th colspan="3" style="text-align:center;border-left:2px solid var(--line);">Last 3M (Jan&ndash;Mar 2026)</th>
+          <th colspan="2" style="text-align:center;border-left:2px solid var(--line);">Prior-Year 3M (Apr&ndash;Jun 2025)</th>
+        </tr>
+        <tr>
+          <th class="num" data-k="prevConvValue" style="border-left:2px solid var(--line);">Conv. Value</th>
+          <th class="num" data-k="prevRoas">ROAS</th>
+          <th class="num" data-k="lastConvValue" style="border-left:2px solid var(--line);">Conv. Value</th>
+          <th class="num" data-k="lastRoas">ROAS</th>
+          <th data-k="status">Status</th>
+          <th class="num" data-k="pyConvValue" style="border-left:2px solid var(--line);">Conv. Value</th>
+          <th class="num" data-k="pyRoas">ROAS</th>
+        </tr>
+      </thead>
+      <tbody id="r3tbody"><tr><td colspan="10" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r3empty" style="display:none;">No products match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);justify-content:space-between;">
+    <span id="r3pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="r3psize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="r3pgFirst" style="background:#fff;color:var(--ink);border-color:var(--line);">&laquo;</button>
+      <button id="r3pgPrev" style="background:#fff;color:var(--ink);border-color:var(--line);">&lsaquo; Prev</button>
+      <button id="r3pgNext" style="background:#fff;color:var(--ink);border-color:var(--line);">Next &rsaquo;</button>
+      <button id="r3pgLast" style="background:#fff;color:var(--ink);border-color:var(--line);">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.product_performance</code>, SKU resolved via <code>listings.shopify_listings</code>/<code>listings.shopify_listings_parent_child_mapping</code> &mdash; same tables as Requirement 1) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=jefri-req3</code>) using <code>DATABASE_URL</code> stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Scope:</strong> Jefri's 5 named campaigns (same as Requirement 1), all products with any activity in at least one of the three fixed windows below (not scoped to currently-active products only, since this report is explicitly about period-over-period comparison, including products that may have dropped out).<br>
+  <strong>Periods (fixed calendar quarters, not rolling):</strong> Previous 3M = Oct 1 &ndash; Dec 31 2025. Last 3M = Jan 1 &ndash; Mar 31 2026. Prior-Year 3M = Apr 1 &ndash; Jun 30 2025.<br>
+  <strong>ROAS:</strong> (Conversion Value &divide; Cost) &times; 100 for that period; shown as N/A when Cost is 0 for that period (not zero &mdash; no spend means ROAS isn't meaningful).<br>
+  <strong>Performance Tier (based on Last 3M only):</strong> <strong>High</strong> = Last 3M ROAS &ge; 400% AND product ranks in the top 20% by Last 3M Conv. Value among all products with Last-3M activity. <strong>Mid</strong> = Last 3M ROAS 200&ndash;399% AND product ranks in the 30th&ndash;50th percentile by Last 3M Conv. Value. Products matching neither rule show no tier.<br>
+  <strong>Status (Last 3M vs. Previous 3M, using Conv. Value OR ROAS &mdash; either metric can trigger it):</strong> <strong>Improved</strong> if either metric's change &ge; +15%. <strong>Drop</strong> if either metric's change &le; -30%. <strong>Same</strong> if either metric's change is between -10% and +14%. A change that falls in none of these bands (or has no Previous-3M baseline to compare against) shows no status &mdash; left undefined rather than guessing, since the specification doesn't define that gap.<br>
+  <strong>Known data gap (disclosed, not fabricated):</strong> <code>google_ads.product_performance</code> for these 5 campaigns only begins 2025-05-12 &mdash; Apr 1&ndash;May 11 2025 has zero rows (pre-dates campaign tracking). Prior-Year 3M figures reflect only the real data that exists (May 12 &ndash; Jun 30 2025) for products with no earlier April data; this is a genuine source gap, not zeroed-out or estimated figures.<br>
+  <strong>Privacy:</strong> no customer data of any kind is used in this report &mdash; product-level Google Ads performance only.
+</div>
+</div>
+
 <script>
 let R2_LOADED = false;
+let R3_LOADED = false;
 function showReqTab(which){
   document.getElementById('req1Tab').style.display = which === 'req1' ? '' : 'none';
   document.getElementById('req2Tab').style.display = which === 'req2' ? '' : 'none';
+  document.getElementById('req3Tab').style.display = which === 'req3' ? '' : 'none';
   document.getElementById('tabBtnReq1').classList.toggle('active', which === 'req1');
   document.getElementById('tabBtnReq2').classList.toggle('active', which === 'req2');
+  document.getElementById('tabBtnReq3').classList.toggle('active', which === 'req3');
   if (which === 'req2' && !R2_LOADED) {
     R2_LOADED = true;
     (async function(){
@@ -247,6 +342,16 @@ function showReqTab(which){
         if (saved) applyReq2Data(saved, true);
       } catch (e) { /* no cache yet — fall through to a normal load */ }
       r2Load();
+    })();
+  }
+  if (which === 'req3' && !R3_LOADED) {
+    R3_LOADED = true;
+    (async function(){
+      try {
+        const saved = await idbGet('jefri_r3_live');
+        if (saved) applyReq3Data(saved, true);
+      } catch (e) { /* no cache yet — fall through to a normal load */ }
+      r3Load();
     })();
   }
 }
@@ -646,6 +751,208 @@ document.querySelectorAll('#req2Tab thead th[data-k]').forEach(th => {
     const k = th.getAttribute('data-k');
     if (r2SortKey === k) r2SortDir = -r2SortDir; else { r2SortKey = k; r2SortDir = 1; }
     r2Render();
+  });
+});
+</script>
+
+<script>
+// ===== Requirement 3 — 3-Period Product Comparison (T-03, distinct r3-prefixed identifiers, zero collisions with Req1/Req2's scripts above) =====
+let R3_ALL = [];
+let r3pg = 1;
+let r3SortKey = 'lastConvValue';
+let r3SortDir = -1;
+let r3RestoredTs = 0;
+
+function r3TierBadge(tier){
+  if (!tier) return '<span style="color:var(--muted);">&mdash;</span>';
+  const color = tier === 'High' ? '#0a7d4f' : '#1f5eff';
+  return '<span class="tag-badge" style="color:' + color + ';">' + esc(tier) + '</span>';
+}
+const STATUS_COLORS = { Improved: '#0a7d4f', Same: '#1f5eff', Drop: '#c62828' };
+function r3StatusBadge(status){
+  if (!status) return '<span style="color:var(--muted);">&mdash;</span>';
+  return '<span class="tag-badge" style="color:' + (STATUS_COLORS[status] || 'var(--muted)') + ';">' + esc(status) + '</span>';
+}
+function r3Money(v){ return v == null ? '—' : '€' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function r3Roas(v){ return v == null ? 'N/A' : Number(v).toLocaleString() + '%'; }
+
+// Flattens the nested {prev,last,py} row shape from the API into flat keys
+// for sorting/filtering/rendering — done once per fetch, not per render.
+function r3Flatten(rows){
+  return rows.map(r => ({
+    productId: r.productId,
+    sku: r.sku,
+    tier: r.tier,
+    prevConvValue: r.prev.convValue, prevRoas: r.prev.roas,
+    lastConvValue: r.last.convValue, lastRoas: r.last.roas, status: r.last.status,
+    pyConvValue: r.py.convValue, pyRoas: r.py.roas,
+    _productId: (r.productId||'').toLowerCase(), _sku: (r.sku||'').toLowerCase(),
+  }));
+}
+
+function applyReq3Data(data, isRestored){
+  R3_ALL = r3Flatten(data.rows);
+  document.getElementById('r3LiveChip').textContent = 'Live — fetched ' + new Date(data.generatedAt).toLocaleString() + (isRestored ? ' (restored)' : '');
+  document.getElementById('r3LiveChip').className = 'chip live';
+  document.getElementById('r3cTotal').textContent = num(data.summary.totalProducts);
+  document.getElementById('r3cHigh').textContent = num(data.summary.high);
+  document.getElementById('r3cMid').textContent = num(data.summary.mid);
+  document.getElementById('r3cImproved').textContent = num(data.summary.improved);
+  document.getElementById('r3cSame').textContent = num(data.summary.same);
+  document.getElementById('r3cDrop').textContent = num(data.summary.drop);
+  r3pg = 1;
+  r3Render();
+  r3RestoredTs = new Date(data.generatedAt).getTime();
+}
+
+async function r3Load(force){
+  const btn = document.getElementById('r3RefreshBtn');
+  btn.disabled = true; btn.textContent = 'Refreshing…';
+  if (force || !R3_ALL.length) {
+    document.getElementById('r3LiveChip').textContent = 'Fetching live from PostgreSQL…';
+    document.getElementById('r3LiveChip').className = 'chip';
+    document.getElementById('r3tbody').innerHTML = '<tr><td colspan="10" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  }
+  try {
+    const res = await fetch('/api/requirement?fn=jefri-req3' + (force ? '&refresh=1' : ''));
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    const fetchedTs = new Date(data.generatedAt).getTime();
+    if (!force && r3RestoredTs && fetchedTs < r3RestoredTs) return;
+    applyReq3Data(data, false);
+    try { await idbSet('jefri_r3_live', data); } catch (e) {}
+  } catch (e) {
+    if (force || !R3_ALL.length) {
+      document.getElementById('r3LiveChip').textContent = 'Failed to load: ' + e.message;
+      document.getElementById('r3LiveChip').className = 'chip stale';
+      document.getElementById('r3tbody').innerHTML = '';
+      document.getElementById('r3empty').style.display = 'none';
+    } else {
+      console.error('[jefri/req3] background refresh failed:', e.message);
+    }
+  } finally {
+    btn.disabled = false; btn.textContent = 'Refresh';
+  }
+}
+
+function r3FilteredRows(){
+  const q = document.getElementById('r3q').value.trim().toLowerCase();
+  const tierF = document.getElementById('r3f_tier').value;
+  const statusF = document.getElementById('r3f_status').value;
+  let rows = R3_ALL.filter(r => {
+    const textHit = !q || r._productId.includes(q) || r._sku.includes(q);
+    const tierHit = !tierF || r.tier === tierF;
+    const statusHit = !statusF || r.status === statusF;
+    return textHit && tierHit && statusHit;
+  });
+  rows.sort((a,b) => {
+    let av = a[r3SortKey], bv = b[r3SortKey];
+    if (av == null) av = r3SortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = r3SortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = (bv||'').toLowerCase(); }
+    if (av < bv) return -1*r3SortDir;
+    if (av > bv) return 1*r3SortDir;
+    return 0;
+  });
+  return rows;
+}
+
+function r3Maxpg(rows){
+  const size = parseInt(document.getElementById('r3psize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function r3Render(){
+  const rows = r3FilteredRows();
+  const size = parseInt(document.getElementById('r3psize').value, 10);
+  const mp = r3Maxpg(rows);
+  if (r3pg > mp) r3pg = mp;
+  if (r3pg < 1) r3pg = 1;
+  document.getElementById('r3cnt').textContent = 'Showing ' + rows.length.toLocaleString() + ' of ' + R3_ALL.length.toLocaleString() + ' products';
+  const tbody = document.getElementById('r3tbody');
+  const emptyEl = document.getElementById('r3empty');
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('r3pinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (r3pg-1)*size;
+  const pageRows = rows.slice(from, from+size);
+  tbody.innerHTML = pageRows.map(r => (
+    '<tr>' +
+    '<td>'+r3TierBadge(r.tier)+'</td>' +
+    '<td>'+esc(r.productId)+'</td>' +
+    '<td>'+esc(r.sku||'—')+'</td>' +
+    '<td class="num">'+r3Money(r.prevConvValue)+'</td>' +
+    '<td class="num">'+r3Roas(r.prevRoas)+'</td>' +
+    '<td class="num">'+r3Money(r.lastConvValue)+'</td>' +
+    '<td class="num">'+r3Roas(r.lastRoas)+'</td>' +
+    '<td>'+r3StatusBadge(r.status)+'</td>' +
+    '<td class="num">'+r3Money(r.pyConvValue)+'</td>' +
+    '<td class="num">'+r3Roas(r.pyRoas)+'</td>' +
+    '</tr>'
+  )).join('');
+  document.getElementById('r3pinfo').textContent = 'Rows ' + (from+1) + '-' + Math.min(from+size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + r3pg + ' of ' + mp + ')';
+}
+
+const R3_EXPORT_HEADER = ['Tier','Product ID','SKU','Prev 3M Conv. Value','Prev 3M ROAS','Last 3M Conv. Value','Last 3M ROAS','Status','Prior-Year 3M Conv. Value','Prior-Year 3M ROAS'];
+function r3ExportRows(){
+  return r3FilteredRows().map(r => [
+    r.tier || '', r.productId, r.sku || '',
+    r.prevConvValue == null ? '' : r.prevConvValue, r.prevRoas == null ? 'N/A' : r.prevRoas,
+    r.lastConvValue == null ? '' : r.lastConvValue, r.lastRoas == null ? 'N/A' : r.lastRoas, r.status || '',
+    r.pyConvValue == null ? '' : r.pyConvValue, r.pyRoas == null ? 'N/A' : r.pyRoas,
+  ]);
+}
+function r3ExportCsv(){
+  const lines = [R3_EXPORT_HEADER.join(',')];
+  r3ExportRows().forEach(vals => {
+    lines.push(vals.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jefri-req3-product-comparison-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+// Lightweight "Export Excel": an HTML table served with the legacy Excel
+// MIME type/.xls extension. Excel opens this natively (no xlsx library
+// dependency needed) -- same technique commonly used for simple tabular
+// exports where a real .xlsx binary isn't required.
+function r3ExportExcel(){
+  const rows = r3ExportRows();
+  let html = '<table><thead><tr>' + R3_EXPORT_HEADER.map(h => '<th>'+esc(h)+'</th>').join('') + '</tr></thead><tbody>';
+  rows.forEach(vals => {
+    html += '<tr>' + vals.map(v => '<td>'+esc(String(v))+'</td>').join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  const blob = new Blob(['﻿' + html], { type: 'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jefri-req3-product-comparison-' + new Date().toISOString().slice(0,10) + '.xls';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('r3RefreshBtn').addEventListener('click', () => r3Load(true));
+document.getElementById('r3q').addEventListener('input', () => { r3pg=1; r3Render(); });
+document.getElementById('r3f_tier').addEventListener('change', () => { r3pg=1; r3Render(); });
+document.getElementById('r3f_status').addEventListener('change', () => { r3pg=1; r3Render(); });
+document.getElementById('r3psize').addEventListener('change', () => { r3pg=1; r3Render(); });
+document.getElementById('r3ExportCsv').addEventListener('click', r3ExportCsv);
+document.getElementById('r3ExportExcel').addEventListener('click', r3ExportExcel);
+document.getElementById('r3pgFirst').addEventListener('click', () => { r3pg=1; r3Render(); });
+document.getElementById('r3pgPrev').addEventListener('click', () => { if(r3pg>1){r3pg--;r3Render();} });
+document.getElementById('r3pgNext').addEventListener('click', () => { if(r3pg<r3Maxpg(r3FilteredRows())){r3pg++;r3Render();} });
+document.getElementById('r3pgLast').addEventListener('click', () => { r3pg=r3Maxpg(r3FilteredRows()); r3Render(); });
+document.querySelectorAll('#req3Tab thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.getAttribute('data-k');
+    if (r3SortKey === k) r3SortDir = -r3SortDir; else { r3SortKey = k; r3SortDir = 1; }
+    r3Render();
   });
 });
 </script>
