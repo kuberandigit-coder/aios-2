@@ -3747,10 +3747,10 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
 
 async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   const staffParam = req.query && req.query.staff;
-  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'jeffri-meta' ? 'jeffri-meta' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : 'sukirtha';
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'jeffri-meta' ? 'jeffri-meta' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : staffParam === 'dm-ads' ? 'dm-ads' : 'sukirtha';
   const cacheKey = staff + ':' + monthConfig.month;
   const isFrStaff = staff === 'hetheesha-organic' || staff === 'thivagini-ads';
-  const isUkStaff = staff === 'sajeepan-ads' || staff === 'theekshy-ads' || staff === 'sonya-ads';
+  const isUkStaff = staff === 'sajeepan-ads' || staff === 'theekshy-ads' || staff === 'sonya-ads' || staff === 'dm-ads';
 
   const cached = CACHE.get(cacheKey);
   if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
@@ -3759,7 +3759,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (!forceRefresh) {
-    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'jeffri-meta' ? 'jeffri-meta' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : 'sukirtha-de-organic';
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'jeffri-meta' ? 'jeffri-meta' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : staff === 'dm-ads' ? 'dm-uk-ads' : 'sukirtha-de-organic';
     const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -4364,6 +4364,83 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     };
     CACHE.set(cacheKey, { data: theekshyPayload, generatedAt: Date.now() });
     res.status(200).json(theekshyPayload);
+    return;
+  }
+
+  if (staff === 'dm-ads') {
+    // DM Ads tab — added 2026-07-24, ledsone.co.uk (STORE_DOMAIN_UK), found
+    // via the paid-search unclaimed-gap audit: 856 Jan orders (£19,378.72)
+    // under campaign "Shop_DM_PMax-46_AguAsset" / utm_term "Our_Hreo" were
+    // not covered by any existing staff rule — the single largest unclaimed
+    // chunk of Google Ads / Paid Search traffic. An order belongs to DM if
+    // EITHER its first-session utm_term exactly matches "our_hreo" OR its
+    // utm_campaign exactly matches (or is a prefixed variant of)
+    // "shop_dm_pmax-46_aguasset" (case-insensitive). Store-wide, NOT
+    // product-scoped, all months including live July.
+    const DM_TERMS = new Set(['our_hreo']);
+    const DM_CAMPAIGN_BASE = 'shop_dm_pmax-46_aguasset';
+    const adsRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      const campaign = (utm.campaign || '').toString().toLowerCase();
+      const termMatch = DM_TERMS.has(term);
+      const campaignMatch = !!campaign && (campaign === DM_CAMPAIGN_BASE || campaign.startsWith(DM_CAMPAIGN_BASE));
+      if (!termMatch && !campaignMatch) continue;
+      row.campaign = utm.campaign || utm.term || null;
+      row.matchedOn = campaignMatch ? 'campaign' : 'utm_term';
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      adsRows.push(row);
+    }
+
+    const byCampaign = new Map();
+    for (const r of adsRows) {
+      if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+      byCampaign.get(r.campaign).push(r);
+    }
+    const campaignSummary = [...byCampaign.keys()].sort()
+      .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(adsRows);
+
+    const dmPayload = {
+      success: true,
+      staff: { name: 'DM', department: 'Google Ads (Paid Search)', store: 'ledsone.co.uk' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/London' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `store-wide (NOT product-scoped) — an order belongs to DM if EITHER its first-session utm_term exactly matches "our_hreo" OR its utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" (case-insensitive). Found via paid-search unclaimed-gap audit, 2026-07-24.`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: [...byCampaign.keys()].sort(),
+      combinedSummary,
+      campaignSummary,
+      allDmAdsOrders: adsRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: adsRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: dmPayload, generatedAt: Date.now() });
+    res.status(200).json(dmPayload);
     return;
   }
 

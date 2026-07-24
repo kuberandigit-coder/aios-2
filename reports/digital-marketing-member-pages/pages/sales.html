@@ -91,6 +91,7 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" id="tabBtnSajeepan" onclick="showStaffTab('sajeepan')">Sajeepan</div>
   <div class="reqtab" id="tabBtnTheekshy" onclick="showStaffTab('theekshy')">Theekshy</div>
   <div class="reqtab" id="tabBtnSonya" onclick="showStaffTab('sonya')">Sonya</div>
+  <div class="reqtab" id="tabBtnDM" onclick="showStaffTab('dm')">DM</div>
 </div>
 
 <div id="tabKamsi">
@@ -1353,6 +1354,95 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 </div>
 
+<div id="tabDM" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">DM</div>
+  <h1>Google Ads Sales</h1>
+  <div class="sub" id="dmPeriodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, Google Ads campaigns (not product-scoped) &nbsp;&middot;&nbsp; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="dmLiveChip">Loading historical data from Shopify&hellip;</span>
+    <span class="chip" id="dmLastRefresh" style="display:none;"></span>
+    <button id="dmNewOrdersBtn" class="primary" style="display:none;" onclick="dmLoad(true)" title="Checks for orders created or updated since the last fetch">Check New Orders</button>
+  </div>
+</header>
+
+<div class="reqtabs" style="margin-bottom:14px;" id="dmMonthTabs">
+  <div class="reqtab" data-month="2026-01" onclick="dmSelectMonth('2026-01')">January</div>
+  <div class="reqtab" data-month="2026-02" onclick="dmSelectMonth('2026-02')">February</div>
+  <div class="reqtab" data-month="2026-03" onclick="dmSelectMonth('2026-03')">March</div>
+  <div class="reqtab" data-month="2026-04" onclick="dmSelectMonth('2026-04')">April</div>
+  <div class="reqtab" data-month="2026-05" onclick="dmSelectMonth('2026-05')">May</div>
+  <div class="reqtab" data-month="2026-06" onclick="dmSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="dmSelectMonth('2026-07')">July (live)</div>
+</div>
+
+<div class="exportbar" style="margin-bottom:14px;">
+  <button id="dmGroupExportCsv" class="primary">Export CSV</button>
+</div>
+
+<div class="cards" id="dmCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+  <div class="card"><div class="label">Total DM Orders</div><div class="value" id="dmkOrders">&ndash;</div></div>
+  <div class="card"><div class="label">Total Units Sold</div><div class="value" id="dmkUnits">&ndash;</div></div>
+  <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="dmkGross">&ndash;</div></div>
+  <div class="card"><div class="label">Total Refunds</div><div class="value" id="dmkRefunds">&ndash;</div></div>
+  <div class="card"><div class="label">Total Net Sales</div><div class="value" id="dmkNet">&ndash;</div></div>
+  <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="dmkProducts">&ndash;</div></div>
+  <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="dmcLastOk" style="font-size:13px;">&ndash;</div></div>
+</div>
+
+<div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped) Google Ads sales, first-session orders attributed to the DM campaign by exact match on <code>utm_term</code> OR <code>utm_campaign</code>. Found via a paid-search unclaimed-gap audit (2026-07-24) — the single largest chunk of previously-unattributed Google Ads traffic. Click a row below to filter the table to just that campaign.</div>
+
+<div class="tablebox" style="margin-bottom:14px;">
+  <div class="scroll" style="max-height:none;overflow-y:visible;">
+    <table style="min-width:900px;">
+      <thead><tr>
+        <th>Campaign</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+      </tr></thead>
+      <tbody id="dmChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="dmcCnt">&ndash;</span>
+    <input type="text" id="dmcq_order" placeholder="Search order name&hellip;">
+    <input type="text" id="dmcq_product" placeholder="Search Product ID&hellip;">
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Campaign <select id="dmcf_channel">
+      <option value="">All Campaigns</option>
+    </select></label>
+    <button id="dmcResetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th></th>
+        <th>Campaign</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Product</th><th>Product ID</th><th>SKU</th>
+        <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+        <th>Financial Status</th><th>Fulfilment Status</th>
+        <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Raw utm_campaign</th>
+      </tr></thead>
+      <tbody id="dmcTbody"><tr><td colspan="19" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="dmcEmpty" style="display:none;">No orders match the current filters.</div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales?staff=dm-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Matching rule (confirmed 2026-07-24):</strong> an order belongs to DM if its <em>first session only</em> has EITHER <code>utm_term</code> exactly matching <code>our_hreo</code> (case-insensitive) OR <code>utm_campaign</code> exactly matching (or a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code>. Sessions 2+ are never inspected.<br>
+  <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
+  <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
+  <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button.<br>
+  <strong>Live month (July onward):</strong> the current month is month-to-date &mdash; a <strong>Check New Orders</strong> button appears to check for new/updated orders since the last fetch.<br>
+  <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+  <strong>Last refresh timestamp:</strong> <span id="dmFootRefresh">&ndash;</span>
+</div>
+</div>
+
 <script>
 // IndexedDB cache for the live-month (July) tabs (added 2026-07-24, same
 // pattern already proven on Kamsi/Dilaksi/Sukirtha/Jefri/Mahima's own pages)
@@ -1431,6 +1521,9 @@ function showStaffTab(n){
   document.getElementById('tabBtnSonya').classList.toggle('active', n === 'sonya');
   document.getElementById('tabSonya').style.display = n === 'sonya' ? '' : 'none';
   if (n === 'sonya' && !SN_DATA) snLoad(false);
+  document.getElementById('tabBtnDM').classList.toggle('active', n === 'dm');
+  document.getElementById('tabDM').style.display = n === 'dm' ? '' : 'none';
+  if (n === 'dm' && !DM_DATA) dmLoad(false);
 }
 
 function showMahimaSub(sub){
@@ -3733,6 +3826,216 @@ function snGroupExportCsv(){
   downloadCsv(lines.join('\r\n'), monthTag + '_sonya-ads-sales-campaign-summary-ledsone-uk.csv');
 }
 document.getElementById('snGroupExportCsv').addEventListener('click', snGroupExportCsv);
+
+// ===== DM tab (Google Ads only, ledsone.co.uk, mirrors the Sonya tab, distinct DM-prefixed globals/functions) =====
+let DM_CURRENT_MONTH = '2026-07';
+const DM_LIVE_MONTHS = ['2026-07'];
+function dmSelectMonth(month){
+  DM_CURRENT_MONTH = month;
+  document.querySelectorAll('#dmMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  dmLoad(false);
+}
+
+let DM_DATA = null;
+let dmOpenRows = new Set();
+let dmLoading = false;
+let dmAbortController = null;
+let dmLastSuccessfulAt = null;
+const DM_MONTH_CACHE = {};
+let dmLoadSeq = 0;
+
+async function dmLoad(force){
+  const myMonth = DM_CURRENT_MONTH;
+  const seq = ++dmLoadSeq;
+  dmLoading = true;
+  const isLive = DM_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !DM_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_dm_live'); if (saved) DM_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
+  const newOrdersBtn = document.getElementById('dmNewOrdersBtn');
+  newOrdersBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.disabled = true;
+  newOrdersBtn.textContent = 'Refreshing…';
+  document.getElementById('dmLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  document.getElementById('dmLiveChip').className = 'chip';
+  if (dmAbortController) dmAbortController.abort();
+  dmAbortController = new AbortController();
+  try {
+    let data;
+    if (!force && DM_MONTH_CACHE[myMonth]) {
+      data = DM_MONTH_CACHE[myMonth];
+    } else {
+      const url = '/api/sales?staff=dm-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const res = await fetch(url, { signal: dmAbortController.signal });
+      data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+      DM_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_dm_live', data); } catch (e) {} }
+    }
+    if (seq !== dmLoadSeq) return;
+    DM_DATA = data;
+    dmLastSuccessfulAt = new Date();
+    document.getElementById('dmLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
+    document.getElementById('dmLiveChip').className = 'chip';
+    document.getElementById('dmLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('dmLastRefresh').style.display = '';
+    document.getElementById('dmFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('dmcLastOk').textContent = dmLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('dmPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, Google Ads campaigns &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Check New Orders &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    dmOpenRows = new Set();
+    dmRenderAll();
+    dmLoading = false;
+    newOrdersBtn.disabled = false;
+    newOrdersBtn.textContent = 'Check New Orders';
+  } catch (e) {
+    if (seq !== dmLoadSeq) return;
+    if (e.name === 'AbortError') { dmLoading = false; newOrdersBtn.disabled = false; newOrdersBtn.textContent = 'Check New Orders'; return; }
+    document.getElementById('dmLiveChip').textContent = 'Failed to load: ' + e.message + (DM_DATA ? ' — showing last successful data' : '');
+    document.getElementById('dmLiveChip').className = 'chip stale';
+    if (!DM_DATA) document.getElementById('dmcTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    dmLoading = false;
+    newOrdersBtn.disabled = false;
+    newOrdersBtn.textContent = 'Check New Orders';
+  }
+}
+
+function dmRenderAll(){
+  if (!DM_DATA) return;
+  const c = DM_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'GBP' };
+  document.getElementById('dmkOrders').textContent = num(c.ordersCount);
+  document.getElementById('dmkUnits').textContent = num(c.unitsSold);
+  document.getElementById('dmkGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('dmkRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('dmkNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('dmkProducts').textContent = num(c.uniqueProductsSold);
+  dmcRenderAll();
+}
+
+function dmFlatRows(){
+  const rows = [];
+  for (const o of (DM_DATA ? DM_DATA.allDmAdsOrders : []) || []) {
+    for (const item of o.matchedItems) rows.push({ order: o, item, group: o.campaign });
+  }
+  return rows;
+}
+
+function dmcFilteredRows(){
+  const qOrder = document.getElementById('dmcq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('dmcq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('dmcf_channel').value;
+  return dmFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function dmcRenderAll(){
+  if (!DM_DATA) return;
+  const cb = DM_DATA.campaignSummary || [];
+  document.getElementById('dmChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="dmChannelRow" data-channel="' + esc(c.campaign) + '" style="cursor:pointer;" title="Click to filter table below to this campaign">' +
+    '<td><strong>' + esc(c.campaign) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.dmChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('dmcf_channel').value = tr.getAttribute('data-channel');
+      dmcRenderTable();
+      document.getElementById('dmcTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('dmcf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Campaigns</option>' + cb.map(c => '<option value="' + esc(c.campaign) + '">' + esc(c.campaign) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  dmcRenderTable();
+}
+
+function dmcRenderTable(){
+  const rows = dmcFilteredRows();
+  document.getElementById('dmcCnt').textContent = rows.length.toLocaleString() + ' of ' + dmFlatRows().length.toLocaleString() + ' line items';
+  const tbody = document.getElementById('dmcTbody');
+  const emptyEl = document.getElementById('dmcEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (dmOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.rawCampaign) + '</td>' +
+      '</tr>'
+    );
+    if (dmOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="19"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (dmOpenRows.has(id)) dmOpenRows.delete(id); else dmOpenRows.add(id);
+      dmcRenderTable();
+    });
+  });
+}
+
+['dmcq_order','dmcq_product'].forEach(id => document.getElementById(id).addEventListener('input', dmcRenderTable));
+document.getElementById('dmcf_channel').addEventListener('change', dmcRenderTable);
+document.getElementById('dmcResetFilters').addEventListener('click', () => {
+  document.getElementById('dmcq_order').value = '';
+  document.getElementById('dmcq_product').value = '';
+  document.getElementById('dmcf_channel').value = '';
+  dmcRenderTable();
+});
+
+function dmGroupExportCsv(){
+  const cb = DM_DATA ? (DM_DATA.campaignSummary || []) : [];
+  const header = ['Campaign','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = DM_DATA ? DM_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.campaign, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = DM_DATA ? DM_DATA.reportPeriod.month : DM_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_dm-ads-sales-campaign-summary-ledsone-uk.csv');
+}
+document.getElementById('dmGroupExportCsv').addEventListener('click', dmGroupExportCsv);
 
 // ===== Dilaksi tab (mirrors Kamsi tab above, distinct D-prefixed globals/functions) =====
 let D_CURRENT_MONTH = '2026-07';
