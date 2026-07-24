@@ -341,9 +341,19 @@ function applyReq1Data(data, isRestored){
 async function load(force){
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true; btn.textContent = 'Refreshing…';
-  document.getElementById('liveChip').textContent = 'Fetching live from PostgreSQL…';
-  document.getElementById('liveChip').className = 'chip';
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  // Only show the "Fetching/Loading…" placeholder when there's nothing
+  // decent on screen yet (force=true, i.e. a manual Refresh click, or no
+  // restored/prior data at all). Added 2026-07-24: this function also runs
+  // automatically right after a restore from IndexedDB, and unconditionally
+  // wiping the table to a loading spinner every time defeated the whole
+  // point of restoring — the user would see the real restored numbers for
+  // an instant, then watch them vanish behind "Loading…" for as long as
+  // this endpoint's live Shopify stock lookup takes.
+  if (force || !ALL.length) {
+    document.getElementById('liveChip').textContent = 'Fetching live from PostgreSQL…';
+    document.getElementById('liveChip').className = 'chip';
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  }
   try {
     const campaignSel = document.getElementById('f_campaign');
     const campaignParam = campaignSel.value && campaignSel.value !== 'all' ? '&campaign=' + encodeURIComponent(campaignSel.value) : '';
@@ -364,12 +374,18 @@ async function load(force){
     applyReq1Data(data, false);
     try { await idbSet('jefri_r1_live', data); } catch (e) {}
   } catch (e) {
-    document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message;
-    document.getElementById('liveChip').className = 'chip stale';
-    document.getElementById('tbody').innerHTML = '';
-    document.getElementById('empty').style.display = 'none';
-    const tablebox = document.querySelector('.scroll');
-    tablebox.innerHTML = '<div class="error-box">Could not load live product status data. ' + esc(e.message) + '<br>Please try Refresh, or contact the site administrator if this continues.</div>';
+    if (force || !ALL.length) {
+      document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message;
+      document.getElementById('liveChip').className = 'chip stale';
+      document.getElementById('tbody').innerHTML = '';
+      document.getElementById('empty').style.display = 'none';
+      const tablebox = document.querySelector('.scroll');
+      tablebox.innerHTML = '<div class="error-box">Could not load live product status data. ' + esc(e.message) + '<br>Please try Refresh, or contact the site administrator if this continues.</div>';
+    } else {
+      // We already have restored data showing — a failed background
+      // freshness check shouldn't destroy a perfectly good view.
+      console.error('[jefri/req1] background refresh failed:', e.message);
+    }
   } finally {
     btn.disabled = false; btn.textContent = 'Refresh';
   }
@@ -501,9 +517,13 @@ function applyReq2Data(data, isRestored){
 async function r2Load(force){
   const btn = document.getElementById('r2RefreshBtn');
   btn.disabled = true; btn.textContent = 'Refreshing…';
-  document.getElementById('r2LiveChip').textContent = 'Fetching live from PostgreSQL…';
-  document.getElementById('r2LiveChip').className = 'chip';
-  document.getElementById('r2tbody').innerHTML = '<tr><td colspan="12" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  // Same fix as Req1 (2026-07-24): don't wipe an already-restored table to
+  // a loading spinner for a silent background freshness check.
+  if (force || !R2_ALL.length) {
+    document.getElementById('r2LiveChip').textContent = 'Fetching live from PostgreSQL…';
+    document.getElementById('r2LiveChip').className = 'chip';
+    document.getElementById('r2tbody').innerHTML = '<tr><td colspan="12" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+  }
   try {
     const res = await fetch('/api/requirement?fn=jefri-search-terms' + (force ? '&refresh=1' : ''));
     const data = await res.json();
@@ -513,10 +533,14 @@ async function r2Load(force){
     applyReq2Data(data, false);
     try { await idbSet('jefri_r2_live', data); } catch (e) {}
   } catch (e) {
-    document.getElementById('r2LiveChip').textContent = 'Failed to load: ' + e.message;
-    document.getElementById('r2LiveChip').className = 'chip stale';
-    document.getElementById('r2tbody').innerHTML = '';
-    document.getElementById('r2empty').style.display = 'none';
+    if (force || !R2_ALL.length) {
+      document.getElementById('r2LiveChip').textContent = 'Failed to load: ' + e.message;
+      document.getElementById('r2LiveChip').className = 'chip stale';
+      document.getElementById('r2tbody').innerHTML = '';
+      document.getElementById('r2empty').style.display = 'none';
+    } else {
+      console.error('[jefri/req2] background refresh failed:', e.message);
+    }
   } finally {
     btn.disabled = false; btn.textContent = 'Refresh';
   }
