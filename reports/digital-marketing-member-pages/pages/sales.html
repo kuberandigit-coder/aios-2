@@ -1354,6 +1354,42 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 
 <script>
+// IndexedDB cache for the live-month (July) tabs (added 2026-07-24, same
+// pattern already proven on Kamsi/Dilaksi/Sukirtha/Jefri/Mahima's own pages)
+// so a live/incremental fetch survives navigating away and back instead of
+// resetting to nothing — the fetched data only ever lived in the in-memory
+// *_MONTH_CACHE objects, reset by any full page reload. Also feeds the
+// hourly snapshot-refresh workflow: when the static snapshot is used (a
+// non-forced load with no warm cache), this doesn't apply, but a live
+// fetch or an incremental "Check New Orders" result now sticks around
+// client-side for the rest of the browser session/until closed.
+function idbOpen(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('sales_cache_db', 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readonly');
+    const req = tx.objectStore('kv').get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, value){
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 function esc(s){ if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function num(v){ return v === null || v === undefined ? '—' : Number(v).toLocaleString(); }
 function money(v, ccy){ if (v === null || v === undefined) return '—'; const sym = ccy === 'GBP' ? '£' : (ccy ? ccy + ' ' : '£'); return sym + Number(v).toFixed(2); }
@@ -1433,6 +1469,7 @@ async function kLoad(force){
   const seq = ++kLoadSeq;
   kLoading = true;
   const isLive = K_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !K_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_k_live'); if (saved) K_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('kNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -1451,11 +1488,12 @@ async function kLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       K_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_k_live', data); } catch (e) {} }
     }
     if (seq !== kLoadSeq) return; // a newer month selection has since started; discard this stale result
     K_DATA = data;
     kLastSuccessfulAt = new Date();
-    document.getElementById('kLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('kLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('kLiveChip').className = 'chip';
     document.getElementById('kLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('kLastRefresh').style.display = '';
@@ -1716,6 +1754,7 @@ async function mLoad(force){
   const seq = ++mLoadSeq;
   mLoading = true;
   const isLive = M_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !M_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_m_live'); if (saved) M_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('mNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -1734,12 +1773,13 @@ async function mLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       M_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_m_live', data); } catch (e) {} }
     }
     if (seq !== mLoadSeq) return;
     M_DATA = data;
     mLastSuccessfulAt = new Date();
     const wasIncremental = data.meta && data.meta.incrementalFetch;
-    document.getElementById('mLiveChip').textContent = isLive ? ('Live data retrieved from Shopify' + (wasIncremental ? ' (checked new orders only)' : '') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
+    document.getElementById('mLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + (wasIncremental ? ' (checked new orders only)' : '') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('mLiveChip').className = 'chip';
     document.getElementById('mLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('mLastRefresh').style.display = '';
@@ -1987,6 +2027,7 @@ async function matLoad(force){
   const seq = ++matLoadSeq;
   matLoading = true;
   const isLive = MAT_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !MAT_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_mat_live'); if (saved) MAT_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('matNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -2005,12 +2046,13 @@ async function matLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       MAT_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_mat_live', data); } catch (e) {} }
     }
     if (seq !== matLoadSeq) return;
     MAT_DATA = data;
     matLastSuccessfulAt = new Date();
     const wasIncremental = data.meta && data.meta.incrementalFetch;
-    document.getElementById('matLiveChip').textContent = isLive ? ('Live data retrieved from Shopify' + (wasIncremental ? ' (checked new orders only)' : '') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
+    document.getElementById('matLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + (wasIncremental ? ' (checked new orders only)' : '') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('matLiveChip').className = 'chip';
     document.getElementById('matLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('matLastRefresh').style.display = '';
@@ -2196,6 +2238,7 @@ async function jaLoad(force){
   const seq = ++jaLoadSeq;
   jaLoading = true;
   const isLive = JA_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !JA_MONTH_CACHE[cacheKey]) { try { const saved = await idbGet('sales_ja_live_' + cacheKey); if (saved) JA_MONTH_CACHE[cacheKey] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('jaNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -2214,11 +2257,12 @@ async function jaLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       JA_MONTH_CACHE[cacheKey] = data;
+      if (isLive) { try { await idbSet('sales_ja_live_' + cacheKey, data); } catch (e) {} }
     }
     if (seq !== jaLoadSeq) return;
     JA_DATA = data;
     jaLastSuccessfulAt = new Date();
-    document.getElementById('jaLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('jaLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('jaLiveChip').className = 'chip';
     document.getElementById('jaLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('jaLastRefresh').style.display = '';
@@ -2420,6 +2464,7 @@ async function heLoad(force){
   const seq = ++heLoadSeq;
   heLoading = true;
   const isLive = HE_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !HE_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_he_live'); if (saved) HE_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('heNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -2438,11 +2483,12 @@ async function heLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       HE_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_he_live', data); } catch (e) {} }
     }
     if (seq !== heLoadSeq) return;
     HE_DATA = data;
     heLastSuccessfulAt = new Date();
-    document.getElementById('heLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('heLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('heLiveChip').className = 'chip';
     document.getElementById('heLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('heLastRefresh').style.display = '';
@@ -2663,6 +2709,7 @@ async function tvLoad(force){
   const seq = ++tvLoadSeq;
   tvLoading = true;
   const isLive = TV_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !TV_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_tv_live'); if (saved) TV_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('tvNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -2681,11 +2728,12 @@ async function tvLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       TV_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_tv_live', data); } catch (e) {} }
     }
     if (seq !== tvLoadSeq) return;
     TV_DATA = data;
     tvLastSuccessfulAt = new Date();
-    document.getElementById('tvLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('tvLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('tvLiveChip').className = 'chip';
     document.getElementById('tvLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('tvLastRefresh').style.display = '';
@@ -2868,6 +2916,7 @@ async function thLoad(force){
   const seq = ++thLoadSeq;
   thLoading = true;
   const isLive = TH_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !TH_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_th_live'); if (saved) TH_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('thNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -2886,11 +2935,12 @@ async function thLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       TH_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_th_live', data); } catch (e) {} }
     }
     if (seq !== thLoadSeq) return;
     TH_DATA = data;
     thLastSuccessfulAt = new Date();
-    document.getElementById('thLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('thLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('thLiveChip').className = 'chip';
     document.getElementById('thLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('thLastRefresh').style.display = '';
@@ -3076,6 +3126,7 @@ async function sjLoad(force){
   const seq = ++sjLoadSeq;
   sjLoading = true;
   const isLive = SJ_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !SJ_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_sj_live'); if (saved) SJ_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('sjNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -3094,11 +3145,12 @@ async function sjLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       SJ_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_sj_live', data); } catch (e) {} }
     }
     if (seq !== sjLoadSeq) return;
     SJ_DATA = data;
     sjLastSuccessfulAt = new Date();
-    document.getElementById('sjLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('sjLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('sjLiveChip').className = 'chip';
     document.getElementById('sjLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('sjLastRefresh').style.display = '';
@@ -3284,6 +3336,7 @@ async function tkLoad(force){
   const seq = ++tkLoadSeq;
   tkLoading = true;
   const isLive = TK_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !TK_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_tk_live'); if (saved) TK_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('tkNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -3302,11 +3355,12 @@ async function tkLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       TK_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_tk_live', data); } catch (e) {} }
     }
     if (seq !== tkLoadSeq) return;
     TK_DATA = data;
     tkLastSuccessfulAt = new Date();
-    document.getElementById('tkLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('tkLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('tkLiveChip').className = 'chip';
     document.getElementById('tkLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('tkLastRefresh').style.display = '';
@@ -3492,6 +3546,7 @@ async function snLoad(force){
   const seq = ++snLoadSeq;
   snLoading = true;
   const isLive = SN_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !SN_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_sn_live'); if (saved) SN_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('snNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -3510,11 +3565,12 @@ async function snLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       SN_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_sn_live', data); } catch (e) {} }
     }
     if (seq !== snLoadSeq) return;
     SN_DATA = data;
     snLastSuccessfulAt = new Date();
-    document.getElementById('snLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('snLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('snLiveChip').className = 'chip';
     document.getElementById('snLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('snLastRefresh').style.display = '';
@@ -3700,6 +3756,7 @@ async function dLoad(force){
   const seq = ++dLoadSeq;
   dLoading = true;
   const isLive = D_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !D_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_d_live'); if (saved) D_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('dNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -3718,11 +3775,12 @@ async function dLoad(force){
     data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
     D_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_d_live', data); } catch (e) {} }
     }
     if (seq !== dLoadSeq) return;
     D_DATA = data;
     dLastSuccessfulAt = new Date();
-    document.getElementById('dLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('dLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('dLiveChip').className = 'chip';
     document.getElementById('dLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('dLastRefresh').style.display = '';
@@ -3986,6 +4044,7 @@ async function sLoad(force){
   const seq = ++sLoadSeq;
   sLoading = true;
   const isLive = S_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !S_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_s_live'); if (saved) S_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('sNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -4004,11 +4063,12 @@ async function sLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       S_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_s_live', data); } catch (e) {} }
     }
     if (seq !== sLoadSeq) return;
     S_DATA = data;
     sLastSuccessfulAt = new Date();
-    document.getElementById('sLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('sLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('sLiveChip').className = 'chip';
     document.getElementById('sLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('sLastRefresh').style.display = '';
@@ -4253,6 +4313,7 @@ async function sdoLoad(force){
   const seq = ++sdoLoadSeq;
   sdoLoading = true;
   const isLive = SDO_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !SDO_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_sdo_live'); if (saved) SDO_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('sdoNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -4271,11 +4332,12 @@ async function sdoLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       SDO_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_sdo_live', data); } catch (e) {} }
     }
     if (seq !== sdoLoadSeq) return;
     SDO_DATA = data;
     sdoLastSuccessfulAt = new Date();
-    document.getElementById('sdoLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('sdoLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('sdoLiveChip').className = 'chip';
     document.getElementById('sdoLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('sdoLastRefresh').style.display = '';
@@ -4517,6 +4579,7 @@ async function sdeLoad(force){
   const seq = ++sdeLoadSeq;
   sdeLoading = true;
   const isLive = SDE_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !SDE_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_sde_live'); if (saved) SDE_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
   const newOrdersBtn = document.getElementById('sdeNewOrdersBtn');
   newOrdersBtn.style.display = isLive ? '' : 'none';
   newOrdersBtn.disabled = true;
@@ -4535,11 +4598,12 @@ async function sdeLoad(force){
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
       SDE_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_sde_live', data); } catch (e) {} }
     }
     if (seq !== sdeLoadSeq) return;
     SDE_DATA = data;
     sdeLastSuccessfulAt = new Date();
-    document.getElementById('sdeLiveChip').textContent = isLive ? 'Live data retrieved from Shopify — click Check New Orders for the latest' : 'Historical data retrieved from Shopify';
+    document.getElementById('sdeLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
     document.getElementById('sdeLiveChip').className = 'chip';
     document.getElementById('sdeLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
     document.getElementById('sdeLastRefresh').style.display = '';
