@@ -494,13 +494,13 @@ const GROUPS = [
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for Google-Ads-clicks where Shopify only tagged the campaign on a later visit), OR (month is exactly February 2026 AND channel is "Other" with source/campaign "Google" and no campaign — confirmed by the user, 2026-07-27, scoped to February only). Checked only after DM-Ad and Meta.',
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for Google-Ads-clicks where Shopify only tagged the campaign on a later visit), OR (month is February or March 2026 AND no campaign anywhere AND utm_medium is "google_ads" — confirmed by the user, 2026-07-27, scoped to those two months only). Checked only after DM-Ad and Meta.',
     match: (utm, fv, journey, month) => {
       if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
       if (!utm.campaign && !utm.term && (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' || lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all')) return true;
-      if (month === '2026-02' && deriveChannelLabel(journey) === 'Other' && !utm.campaign) {
-        const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString().toLowerCase();
-        if (src === 'google') return true;
+      if ((month === '2026-02' || month === '2026-03') && !utm.campaign && !utm.term) {
+        const medium = (utm.medium || '').toString().toLowerCase();
+        if (medium === 'google_ads') return true;
       }
       return false;
     },
@@ -509,7 +509,7 @@ const GROUPS = [
       if (utm.term) return utm.term;
       if (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (2nd session)';
       if (lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (last session)';
-      if (month === '2026-02') return 'Google (Feb, untraceable campaign)';
+      if (month === '2026-02' || month === '2026-03') return 'google_ads (untraceable campaign, ' + month + ')';
       return null;
     },
   },
