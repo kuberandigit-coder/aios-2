@@ -386,6 +386,20 @@ function isMetaMatch(utm, fv) {
   return false;
 }
 
+// Sonya group campaigns, given directly by the user, 2026-07-27.
+const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight']);
+function isSonyaCampaign(campaign) {
+  const c = (campaign || '').toString().toLowerCase();
+  return !!c && SONYA_CAMPAIGNS.has(c);
+}
+
+// Sajeepan group campaigns, given directly by the user, 2026-07-27.
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25']);
+function isSajeepanCampaignUk(campaign) {
+  const c = (campaign || '').toString().toLowerCase();
+  return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
+}
+
 const GROUPS = [
   {
     key: 'dm-ad',
@@ -402,6 +416,22 @@ const GROUPS = [
     scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
     match: (utm, fv) => isMetaMatch(utm, fv),
     matchValue: (utm, fv) => utm.campaign || utm.source || (fv && fv.source) || null,
+  },
+  {
+    key: 'sonya',
+    name: 'Sonya',
+    department: 'Google Ads (Paid Search)',
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all" or "Sonya_PendantLight" (case-insensitive). Checked only after DM-Ad and Meta.',
+    match: (utm) => isSonyaCampaign(utm.campaign),
+    matchValue: (utm) => utm.campaign,
+  },
+  {
+    key: 'sajeepan',
+    name: 'Sajeepan',
+    department: 'Google Ads (Paid Search)',
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
+    match: (utm) => isSajeepanCampaignUk(utm.campaign),
+    matchValue: (utm) => utm.campaign,
   },
 ];
 
