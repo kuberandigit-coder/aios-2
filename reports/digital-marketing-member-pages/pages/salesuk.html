@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEDSone UK — Order-Level Sales Review</title>
+<style>
+:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;}
+.wrap{max-width:1500px;margin:0 auto;}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+h1{font-size:22px;letter-spacing:.2px;}
+.sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
+.chip.live{background:#eef7ee;color:var(--good);}
+.chip.stale{background:#fdecea;color:var(--bad);}
+.chip.warn{background:#fff6e0;color:#8a5a00;}
+.filters button{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;transition:all .15s;}
+.filters button.primary,button.primary{background:var(--accent);color:#fff;border-color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;}
+.filters button.primary:hover,button.primary:hover{background:#1749cc;}
+.exportbar{display:flex;justify-content:flex-end;}
+.filters button:disabled{opacity:.6;cursor:wait;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.card .value{font-size:22px;font-weight:700;margin-top:6px;}
+.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.tbar{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.tbar input{flex:1;min-width:160px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;}
+.tbar select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;}
+.tbar button{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;}
+.scroll{overflow-x:auto;max-height:70vh;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1600px;}
+thead th{background:#f0f3f8;text-align:left;padding:11px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:2;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4;white-space:nowrap;}
+tbody tr:nth-child(even){background:#fafbfd;}
+tbody tr:hover{background:var(--accent-soft);}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+.footnotes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:12.5px;color:var(--muted);line-height:1.65;}
+.footnotes strong{color:var(--ink);}
+.loading{padding:60px 20px;text-align:center;color:var(--muted);}
+.reqtabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.reqtab{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
+.reqtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.sessBtn{background:var(--accent-soft);border:1px solid #cddcfb;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--accent);white-space:nowrap;}
+.sessBtn:hover{background:var(--accent);color:#fff;}
+.sessBtn .car{display:inline-block;transition:transform .15s;margin-left:2px;}
+.sessBtn.open .car{transform:rotate(180deg);}
+.detailwrap{background:#f7f9fc;padding:14px 18px 16px 18px;}
+.detailtbl{width:100%;font-size:11.5px;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.detailtbl th{text-align:left;background:#f0f3f8;color:#42506a;font-weight:700;padding:8px 10px;text-transform:uppercase;font-size:10px;letter-spacing:.3px;border-bottom:2px solid var(--line);white-space:nowrap;}
+.detailtbl td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top;white-space:nowrap;}
+.classpill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:700;color:#fff;}
+.classpill.ORGANIC_SEARCH{background:#2e7d32;}
+.classpill.PAID_SEARCH{background:#c62828;}
+.classpill.DIRECT{background:#616e85;}
+.classpill.SOCIAL{background:#8a3ffc;}
+.classpill.EMAIL{background:#0e7490;}
+.classpill.AFFILIATE{background:#b9770e;}
+.classpill.REFERRAL{background:#0f766e;}
+.classpill.OTHER,.classpill.UNKNOWN{background:#9aa3b2;}
+@media(max-width:700px){h1{font-size:18px;}.card .value{font-size:18px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../home.html">&larr; Back to Dashboard</a>
+
+  <div class="reqtabs" id="monthTabs">
+    <div class="reqtab active" data-month="2026-01" onclick="selectMonth('2026-01')">January</div>
+  </div>
+
+  <div id="tabJanuary">
+    <div class="reqtabs" id="groupTabs" style="margin-bottom:14px;">
+      <div class="reqtab active" data-group="dm-ad" onclick="selectGroup('dm-ad')">DM-Ad</div>
+    </div>
+
+    <div id="groupDmAd">
+      <header>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">DM-Ad</div>
+        <h1>Order-Level Sales — Shop_DM_PMax-46_AguAsset + Shop_DM_PMax-25</h1>
+        <div class="sub" id="periodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, order-level (not product-scoped) &nbsp;&middot;&nbsp; January 2026, closed reporting month.</div>
+        <div class="filters">
+          <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+          <span class="chip" id="liveChip">Loading&hellip;</span>
+          <span class="chip" id="lastRefresh" style="display:none;"></span>
+          <button id="refreshBtn" class="primary" onclick="load(true)">Refresh</button>
+        </div>
+      </header>
+
+      <div class="exportbar" style="margin:14px 0;">
+        <button id="exportCsv" class="primary">Export CSV</button>
+      </div>
+
+      <div class="cards" id="cardsCombined">
+        <div class="card"><div class="label">Total Orders</div><div class="value" id="kOrders">&ndash;</div></div>
+        <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="kGross">&ndash;</div></div>
+        <div class="card"><div class="label">Total Discounts</div><div class="value" id="kDiscounts">&ndash;</div></div>
+        <div class="card"><div class="label">Total Refunds</div><div class="value" id="kRefunds">&ndash;</div></div>
+        <div class="card"><div class="label">Total Net Sales</div><div class="value" id="kNet">&ndash;</div></div>
+        <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="kLastOk" style="font-size:13px;">&ndash;</div></div>
+      </div>
+
+      <div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped) order-level sales — every order whose first-session <code>utm_campaign</code> exactly matches (or is a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code> or <code>Shop_DM_PMax-25</code>. One row per order (no per-product breakdown) — click Sessions to see every session Shopify recorded for that order.</div>
+
+      <div class="tablebox" style="margin-bottom:14px;">
+        <div class="scroll" style="max-height:none;overflow-y:visible;">
+          <table style="min-width:900px;">
+            <thead><tr>
+              <th>Campaign</th><th class="num">Orders</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Avg / Order</th>
+            </tr></thead>
+            <tbody id="campaignCardsBody"><tr><td colspan="7" class="loading">Loading&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tablebox">
+        <div class="tbar">
+          <span id="rowCnt">&ndash;</span>
+          <input type="text" id="q_order" placeholder="Search order name&hellip;">
+        </div>
+        <div class="tbar" style="border-top:0;">
+          <label>Campaign <select id="f_campaign">
+            <option value="">All Campaigns</option>
+          </select></label>
+          <button id="resetFilters">Clear Filters</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr>
+              <th></th>
+              <th>Campaign</th><th>Order Name</th><th>Order ID</th><th>Created At</th>
+              <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th class="num">Order Total</th><th>Currency</th>
+              <th>Financial Status</th><th>Fulfilment Status</th>
+              <th>First Session Source</th><th>First Session Medium</th><th>First Session Term</th><th>First Session Content</th>
+              <th>All Sessions</th>
+            </tr></thead>
+            <tbody id="tbody"><tr><td colspan="17" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+          </table>
+        </div>
+        <div class="empty" id="emptyMsg" style="display:none;">No orders match the current filters.</div>
+      </div>
+
+      <div class="footnotes">
+        <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via <code>/api/salesuk?group=dm-ad</code> (a dedicated backend, separate from the main <code>api/sales.js</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+        <strong>Why this page exists:</strong> the main sales dashboard's per-staff tabs (Kamsi/Dilaksi/DM/Sonya/Sajeepan) can double-count the same order under different definitions (product-scope vs ad-click attribution). This standalone page shows every order once, at order level, so it can be reviewed and assigned by hand.<br>
+        <strong>Matching rule:</strong> first-session <code>utm_campaign</code> exactly matches (or is a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code> or <code>Shop_DM_PMax-25</code> (case-insensitive). Sessions 2+ are never used for matching, only shown for context.<br>
+        <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; order-level rows only, no per-product/SKU breakdown.<br>
+        <strong>Report period:</strong> January 1&ndash;31, 2026, Europe/London timezone.<br>
+        <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+        <strong>Last refresh timestamp:</strong> <span id="footRefresh">&ndash;</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function esc(s){ return (s===null||s===undefined) ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function num(n){ return (n===null||n===undefined) ? '0' : Number(n).toLocaleString(); }
+function money(n, ccy){ return (n===null||n===undefined) ? '-' : (ccy==='GBP'?'£':(ccy||'')+' ') + Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function csvSafe(v){ const s = (v===null||v===undefined)?'':String(v); return '"' + s.replace(/"/g,'""') + '"'; }
+function downloadCsv(content, filename){
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+let CURRENT_MONTH = '2026-01';
+let CURRENT_GROUP = 'dm-ad';
+function selectMonth(m){ CURRENT_MONTH = m; document.querySelectorAll('#monthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === m)); }
+function selectGroup(g){ CURRENT_GROUP = g; document.querySelectorAll('#groupTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-group') === g)); if (!DATA) load(false); }
+
+let DATA = null;
+let openRows = new Set();
+let loading = false;
+
+async function load(force){
+  loading = true;
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = 'Refreshing…';
+  document.getElementById('liveChip').textContent = 'Loading historical data from Shopify…';
+  document.getElementById('liveChip').className = 'chip';
+  try {
+    const url = '/api/salesuk?group=' + encodeURIComponent(CURRENT_GROUP) + '&month=' + encodeURIComponent(CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    DATA = data;
+    document.getElementById('liveChip').textContent = 'Data retrieved from Shopify';
+    document.getElementById('liveChip').className = 'chip live';
+    document.getElementById('lastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('lastRefresh').style.display = '';
+    document.getElementById('footRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('kLastOk').textContent = new Date().toLocaleTimeString();
+    document.getElementById('periodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, order-level &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period.';
+    openRows = new Set();
+    renderAll();
+  } catch (e) {
+    document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message + (DATA ? ' — showing last successful data' : '');
+    document.getElementById('liveChip').className = 'chip stale';
+    if (!DATA) document.getElementById('tbody').innerHTML = '<tr><td colspan="17" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+  }
+  loading = false;
+  btn.disabled = false; btn.textContent = 'Refresh';
+}
+
+function renderAll(){
+  if (!DATA) return;
+  const c = DATA.combinedSummary || { ordersCount: 0, grossSales: 0, discounts: 0, refunds: 0, netSales: 0, currency: 'GBP' };
+  document.getElementById('kOrders').textContent = num(c.ordersCount);
+  document.getElementById('kGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('kDiscounts').textContent = money(c.discounts, c.currency);
+  document.getElementById('kRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('kNet').textContent = money(c.netSales, c.currency);
+  renderCampaigns();
+}
+
+function filteredRows(){
+  const qOrder = document.getElementById('q_order').value.trim().toLowerCase();
+  const campaignF = document.getElementById('f_campaign').value;
+  return (DATA ? DATA.orders : []).filter(o => {
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (campaignF && o.matchedCampaign !== campaignF) return false;
+    return true;
+  });
+}
+
+function renderCampaigns(){
+  if (!DATA) return;
+  const cb = DATA.campaignSummary || [];
+  document.getElementById('campaignCardsBody').innerHTML = cb.map(c =>
+    '<tr class="campaignRow" data-campaign="' + esc(c.campaign) + '" style="cursor:pointer;" title="Click to filter table below to this campaign">' +
+    '<td><strong>' + esc(c.campaign) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="7" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.campaignRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('f_campaign').value = tr.getAttribute('data-campaign');
+      renderTable();
+      document.getElementById('tbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('f_campaign');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Campaigns</option>' + cb.map(c => '<option value="' + esc(c.campaign) + '">' + esc(c.campaign) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  renderTable();
+}
+
+function renderTable(){
+  const rows = filteredRows();
+  document.getElementById('rowCnt').textContent = rows.length.toLocaleString() + ' of ' + (DATA ? DATA.orders.length : 0).toLocaleString() + ' orders';
+  const tbody = document.getElementById('tbody');
+  const emptyEl = document.getElementById('emptyMsg');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(o => {
+    const rowId = o.orderId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (openRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(o.matchedCampaign) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td class="num">' + money(o.grossSales, o.currency) + '</td>' +
+      '<td class="num">' + money(o.discounts, o.currency) + '</td>' + '<td class="num">' + money(o.refunds, o.currency) + '</td>' + '<td class="num">' + money(o.netSales, o.currency) + '</td>' +
+      '<td class="num">' + money(o.orderTotal, o.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(o.firstVisitSource) + '</td>' + '<td>' + esc(o.firstVisitMedium) + '</td>' + '<td>' + esc(o.firstVisitTerm) + '</td>' + '<td>' + esc(o.firstVisitContent) + '</td>' +
+      '<td>' + esc((o.sessions||[]).map(s=>s.classification).join(' → ') || '—') + '</td>' +
+      '</tr>'
+    );
+    if (openRows.has(rowId)) {
+      html.push('<tr><td colspan="17"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (openRows.has(id)) openRows.delete(id); else openRows.add(id);
+      renderTable();
+    });
+  });
+}
+
+['q_order'].forEach(id => document.getElementById(id).addEventListener('input', renderTable));
+document.getElementById('f_campaign').addEventListener('change', renderTable);
+document.getElementById('resetFilters').addEventListener('click', () => {
+  document.getElementById('q_order').value = '';
+  document.getElementById('f_campaign').value = '';
+  renderTable();
+});
+
+function exportCsv(){
+  const rows = DATA ? DATA.orders : [];
+  const header = ['Campaign','Order Name','Order ID','Created At','Gross','Discounts','Refunds','Net','Order Total','Currency','Financial Status','Fulfilment Status','First Session Source','First Session Medium','First Session Term','First Session Content','All Sessions'];
+  const lines = [header.join(',')];
+  rows.forEach(o => {
+    lines.push([o.matchedCampaign, o.orderName, o.orderLegacyId, o.createdAt, o.grossSales, o.discounts, o.refunds, o.netSales, o.orderTotal, o.currency, o.financialStatus, o.fulfillmentStatus, o.firstVisitSource, o.firstVisitMedium, o.firstVisitTerm, o.firstVisitContent, (o.sessions||[]).map(s=>s.classification).join(' -> ')].map(csvSafe).join(','));
+  });
+  const monthTag = DATA ? DATA.reportPeriod.month : CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_dm-ad-order-level-ledsone-uk.csv');
+}
+document.getElementById('exportCsv').addEventListener('click', exportCsv);
+
+load(false);
+</script>
+</body>
+</html>
