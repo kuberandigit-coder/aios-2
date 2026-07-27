@@ -430,6 +430,15 @@ function isSonyaCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SONYA_CAMPAIGNS.has(c);
 }
+// Sonya's 6 confirmed utm_term values (same rule already used on the main
+// sales.html Sonya tab, added 2026-07-22) — layered on top of the campaign
+// match, added 2026-07-27 after finding 26 remaining orders under
+// campaigns not in SONYA_CAMPAIGNS but carrying one of these terms.
+const SONYA_TERMS = new Set(['sonya', 'ninc', 'glow_up', 'sonyaireland', 'sonyaspian', 'sonytopeuropeengeu{_adgroup}']);
+function isSonyaTerm(term) {
+  const t = (term || '').toString().toLowerCase();
+  return !!t && SONYA_TERMS.has(t);
+}
 
 // Sajeepan group campaigns, given directly by the user, 2026-07-27.
 const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25']);
@@ -459,9 +468,9 @@ const GROUPS = [
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all" or "Sonya_PendantLight" (case-insensitive). Checked only after DM-Ad and Meta.',
-    match: (utm) => isSonyaCampaign(utm.campaign),
-    matchValue: (utm) => utm.campaign,
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all" or "Sonya_PendantLight", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}") — same rule as the main dashboard\'s Sonya tab. Checked only after DM-Ad and Meta.',
+    match: (utm) => isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term),
+    matchValue: (utm) => utm.campaign || utm.term,
   },
   {
     key: 'sajeepan',
