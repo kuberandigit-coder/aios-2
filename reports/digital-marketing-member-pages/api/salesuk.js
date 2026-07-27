@@ -365,7 +365,7 @@ function summarizeOrderRows(rows) {
 // found on the main sales.html dashboard. Add new groups by appending here;
 // never move an existing group earlier without checking what it would now
 // steal from groups after it.
-const DM_AD_CAMPAIGNS = ['shop_dm_pmax-46_aguasset'];
+const DM_AD_CAMPAIGNS = ['shop_dm_pmax-46_aguasset', 'shop_dm_pmax-46'];
 function isDmAdCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   if (!c) return false;
@@ -441,7 +441,7 @@ function isSonyaTerm(term) {
 }
 
 // Sajeepan group campaigns, given directly by the user, 2026-07-27.
-const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p']);
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p', 'sj_pmax_scale_heroes_25', 'klarna_css_sj25_pmax']);
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
@@ -452,7 +452,7 @@ const GROUPS = [
     key: 'dm-ad',
     name: 'DM-Ad',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" (case-insensitive). ("Shop_DM_PMax-25" moved to Sajeepan, 2026-07-27.)',
+    scope: 'first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-46" (case-insensitive). ("Shop_DM_PMax-25" moved to Sajeepan, 2026-07-27.)',
     match: (utm) => isDmAdCampaign(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
@@ -476,7 +476,7 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Klarna_P" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
     match: (utm) => isSajeepanCampaignUk(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
@@ -512,6 +512,18 @@ const GROUPS = [
       return val === 'Shopping';
     },
     matchValue: (utm, fv) => utm.campaign || (fv && (fv.source || fv.sourceDescription)) || utm.source || 'Shopping',
+  },
+  {
+    key: 'thishoban',
+    name: 'Thishoban',
+    department: 'Google Ads (Paid Search)',
+    scope: 'first-session utm_campaign contains "THISOBAN" (e.g. "THISOBAN-pmac", "TH_NOC-Shopping") OR utm_term exactly matches "THISOBAN" (case-insensitive). Found in February data, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
+    match: (utm) => {
+      const campaign = (utm.campaign || '').toString().toLowerCase();
+      const term = (utm.term || '').toString().toLowerCase();
+      return campaign.includes('thisoban') || term === 'thisoban';
+    },
+    matchValue: (utm) => utm.campaign || utm.term,
   },
 ];
 
