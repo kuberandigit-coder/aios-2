@@ -397,13 +397,13 @@ function isOrganicMatch(utm, fv, journey) {
   const channel = deriveChannelLabel(journey);
   if (channel === 'Direct' || channel === 'Referral' || channel === 'No Journey Data') return true;
   if (channel === 'Organic Search') {
+    // Match on the actual traffic SOURCE, not utm_campaign — Shopify tags
+    // some genuine Google-organic clicks (via the free Google Shopping
+    // listings surface) with utm_campaign="Multifeeds" even though
+    // utm_source/source is still "google". Root-caused 2026-07-27: an
+    // earlier version of this check let utm.campaign shadow the real
+    // source in the display label (not the match itself).
     const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString().toLowerCase();
-    // Explicit exclusion (2026-07-27): "Multifeeds" was observed leaking
-    // into this whitelist-based match once in live data even though it's
-    // not in ORGANIC_SEARCH_SOURCES — root cause not fully isolated, but
-    // "Multifeeds" was explicitly NOT on the user's confirmed list, so it
-    // is force-excluded here regardless of which field it surfaces from.
-    if (src === 'multifeeds') return false;
     return ORGANIC_SEARCH_SOURCES.has(src);
   }
   if (channel === 'Other') {
@@ -474,7 +474,11 @@ const GROUPS = [
     department: 'Organic / Direct / Referral',
     scope: 'first-session channel is Direct, Referral (any), "No Journey Data", OR Organic Search from one of Google / Google app (Android) / Bing / DuckDuckGo / Gmail app / Ecosia / Yahoo, OR "Other" with source exactly "ChatGPT" (case-sensitive, distinct from the chatgpt.com Referral entries). Confirmed by the user, 2026-07-27, after verifying none of these carry any paid-ad signal (no gclid/paid utm_medium/paid utm_source/Shopify ad sourceType). Checked last — an order already claimed by any earlier group never lands here.',
     match: (utm, fv, journey) => isOrganicMatch(utm, fv, journey),
-    matchValue: (utm, fv, journey) => deriveChannelLabel(journey) + ' - ' + (utm.campaign || (fv && fv.source) || (fv && fv.sourceDescription) || (journey && journey.status === 'NO_JOURNEY_DATA' ? '(no journey data)' : 'direct')),
+    // Source/sourceDescription take priority over utm.campaign for display
+    // — a genuine Google-organic click can carry utm_campaign="Multifeeds"
+    // (Shopify's free Google Shopping listing tag), which would otherwise
+    // shadow the real source in the label.
+    matchValue: (utm, fv, journey) => deriveChannelLabel(journey) + ' - ' + ((fv && fv.source) || (fv && fv.sourceDescription) || utm.campaign || (journey && journey.status === 'NO_JOURNEY_DATA' ? '(no journey data)' : 'direct')),
   },
 ];
 
