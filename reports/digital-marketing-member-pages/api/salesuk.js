@@ -504,14 +504,14 @@ const GROUPS = [
     key: 'cppc',
     name: 'CPPC',
     department: 'Google Shopping (Free/Comparison Listings)',
-    scope: 'first-session channel is "Other" with source/sourceDescription exactly "Shopping" (Google\'s free Shopping tab listings, not a paid campaign). Confirmed by the user, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
+    scope: 'first-session channel is "Other" with utm_campaign (or source/sourceDescription) exactly "Shopping" (Google\'s free Shopping tab listings, not a paid campaign). Confirmed by the user, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
     match: (utm, fv, journey) => {
       const channel = deriveChannelLabel(journey);
       if (channel !== 'Other') return false;
-      const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString();
-      return src === 'Shopping';
+      const val = (utm.campaign || (fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString();
+      return val === 'Shopping';
     },
-    matchValue: (utm, fv) => (fv && (fv.source || fv.sourceDescription)) || utm.source || 'Shopping',
+    matchValue: (utm, fv) => utm.campaign || (fv && (fv.source || fv.sourceDescription)) || utm.source || 'Shopping',
   },
 ];
 
