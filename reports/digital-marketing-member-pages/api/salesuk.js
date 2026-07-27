@@ -398,6 +398,12 @@ function isOrganicMatch(utm, fv, journey) {
   if (channel === 'Direct' || channel === 'Referral' || channel === 'No Journey Data') return true;
   if (channel === 'Organic Search') {
     const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString().toLowerCase();
+    // Explicit exclusion (2026-07-27): "Multifeeds" was observed leaking
+    // into this whitelist-based match once in live data even though it's
+    // not in ORGANIC_SEARCH_SOURCES — root cause not fully isolated, but
+    // "Multifeeds" was explicitly NOT on the user's confirmed list, so it
+    // is force-excluded here regardless of which field it surfaces from.
+    if (src === 'multifeeds') return false;
     return ORGANIC_SEARCH_SOURCES.has(src);
   }
   if (channel === 'Other') {
