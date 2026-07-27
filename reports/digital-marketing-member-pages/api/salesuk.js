@@ -376,7 +376,7 @@ function isDmAdCampaign(campaign) {
 // campaigns "Sales Ads – Copy" (en dash), "Sales Ads", "Sales Ads |
 // Retargeting | Add to Cart"; sources "Facebook", "Instagram",
 // "android-app://m.facebook.com/".
-const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart']);
+const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart', 'new sales ad set']);
 const META_SOURCES = new Set(['facebook', 'instagram', 'android-app://m.facebook.com/']);
 function isMetaMatch(utm, fv) {
   const campaign = (utm.campaign || '').toString().toLowerCase();
@@ -403,12 +403,23 @@ function isOrganicMatch(utm, fv, journey) {
     // utm_source/source is still "google". Root-caused 2026-07-27: an
     // earlier version of this check let utm.campaign shadow the real
     // source in the display label (not the match itself).
+    // Substring match (not exact-equals), added 2026-07-27: Shopify
+    // sometimes records the source as a full URL ("https://www.ecosia.org/")
+    // instead of the plain engine name ("ecosia") — an exact-match Set
+    // lookup missed those. Every whitelisted name below is still a safe
+    // substring check (none collide with each other).
     const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString().toLowerCase();
-    return ORGANIC_SEARCH_SOURCES.has(src);
+    return [...ORGANIC_SEARCH_SOURCES].some(known => src.includes(known));
+  }
+  if (channel === 'Social') {
+    // Pinterest confirmed by the user, 2026-07-27, as organic (not paid) —
+    // distinct from Meta's Facebook/Instagram paid-social campaigns.
+    const src = ((fv && fv.source) || utm.source || '').toString().toLowerCase();
+    return src === 'pinterest';
   }
   if (channel === 'Other') {
     const src = ((fv && fv.source) || utm.source || '').toString();
-    return src === 'ChatGPT';
+    return src === 'ChatGPT' || src.toLowerCase() === 'an unknown source';
   }
   return false;
 }
@@ -421,7 +432,7 @@ function isSonyaCampaign(campaign) {
 }
 
 // Sajeepan group campaigns, given directly by the user, 2026-07-27.
-const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25']);
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax']);
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
@@ -440,7 +451,7 @@ const GROUPS = [
     key: 'meta',
     name: 'Meta',
     department: 'Meta Ads (Facebook/Instagram)',
-    scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
+    scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart" / "New Sales ad set", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
     match: (utm, fv) => isMetaMatch(utm, fv),
     matchValue: (utm, fv) => utm.campaign || utm.source || (fv && fv.source) || null,
   },
@@ -456,7 +467,7 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
     match: (utm) => isSajeepanCampaignUk(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
@@ -472,7 +483,7 @@ const GROUPS = [
     key: 'organic',
     name: 'Organic',
     department: 'Organic / Direct / Referral',
-    scope: 'first-session channel is Direct, Referral (any), "No Journey Data", OR Organic Search from one of Google / Google app (Android) / Bing / DuckDuckGo / Gmail app / Ecosia / Yahoo, OR "Other" with source exactly "ChatGPT" (case-sensitive, distinct from the chatgpt.com Referral entries). Confirmed by the user, 2026-07-27, after verifying none of these carry any paid-ad signal (no gclid/paid utm_medium/paid utm_source/Shopify ad sourceType). Checked last — an order already claimed by any earlier group never lands here.',
+    scope: 'first-session channel is Direct, Referral (any), "No Journey Data", Organic Search from one of Google / Google app (Android) / Bing / DuckDuckGo / Gmail app / Ecosia / Yahoo, Social from Pinterest, OR "Other" with source "ChatGPT" or "an unknown source". Confirmed by the user, 2026-07-27, after verifying none of these carry any paid-ad signal (no gclid/paid utm_medium/paid utm_source/Shopify ad sourceType). Checked last — an order already claimed by any earlier group never lands here.',
     match: (utm, fv, journey) => isOrganicMatch(utm, fv, journey),
     // Source/sourceDescription take priority over utm.campaign for display
     // — a genuine Google-organic click can carry utm_campaign="Multifeeds"
