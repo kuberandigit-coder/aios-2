@@ -40,7 +40,7 @@
   .tbar button.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
   .scroll{overflow-x:auto;}
   table{width:100%; border-collapse:collapse; font-size:13px; min-width:1100px; table-layout:fixed;}
-  col.c-sku{width:12%;} col.c-url{width:31%;} col.c-cat{width:13%;} col.c-units{width:9%;} col.c-stock{width:9%;} col.c-last{width:11%;} col.c-status{width:11%;}
+  col.c-sku{width:11%;} col.c-pid{width:10%;} col.c-url{width:26%;} col.c-cat{width:12%;} col.c-units{width:8%;} col.c-stock{width:8%;} col.c-last{width:10%;} col.c-status{width:10%;}
   thead th{background:#f0f3f8; text-align:left; padding:12px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#42506a; border-bottom:2px solid var(--line); cursor:pointer; user-select:none;}
   thead th.num, td.num{text-align:right;}
   tbody td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45; overflow-wrap:break-word;}
@@ -402,7 +402,7 @@ table.r6t td.num{text-align:right;}
 
   <div class="tablebox">
     <div class="tbar"><span id="cnt">All 13,866 products</span>
-      <input type="text" id="q" placeholder="Search SKU, URL or title…" oninput="flt1()" style="flex:1;min-width:180px;">
+      <input type="text" id="q" placeholder="Search SKU, Product ID, URL or title…" oninput="flt1()" style="flex:1;min-width:180px;">
       <label>Status <select id="f_status" onchange="flt1()">
         <option value="">All</option><option value="Slow-Moving">Slow-Moving</option><option value="Active">Active</option></select></label>
       <label>Category <select id="f_cat" onchange="flt1()">
@@ -664,10 +664,11 @@ table.r6t td.num{text-align:right;}
           </div>
     <div class="scroll">
     <table id="t">
-      <colgroup><col class="c-sku"><col class="c-url"><col class="c-cat"><col class="c-units"><col class="c-stock"><col class="c-last"><col class="c-status"></colgroup>
+      <colgroup><col class="c-sku"><col class="c-pid"><col class="c-url"><col class="c-cat"><col class="c-units"><col class="c-stock"><col class="c-last"><col class="c-status"></colgroup>
       <thead>
         <tr>
           <th onclick="srt1(0,false)">SKU</th>
+          <th>Product ID</th>
           <th onclick="srt1(1,false)">Page URL</th>
           <th onclick="srt1(2,false)">Category</th>
           <th class="num" onclick="srt1(3,true)">Units Sold (90d)</th>
@@ -1076,7 +1077,7 @@ function flt(){
   var q=document.getElementById('q').value.toLowerCase();
   var fs=document.getElementById('f_status').value, fc=document.getElementById('f_cat').value;
   F=D.filter(function(r){
-    if(q && r[0].toLowerCase().indexOf(q)<0 && r[1].toLowerCase().indexOf(q)<0 && r[2].toLowerCase().indexOf(q)<0) return false;
+    if(q && r[0].toLowerCase().indexOf(q)<0 && r[1].toLowerCase().indexOf(q)<0 && r[2].toLowerCase().indexOf(q)<0 && String(r[8]||'').toLowerCase().indexOf(q)<0) return false;
     if(fs && (r[7]===1?'Slow-Moving':'Active')!==fs) return false;
     if(fc && r[3]!==fc) return false;
     return true;
@@ -1112,7 +1113,8 @@ function render(){
     var url = r[1] ? '<a class="path" href="https://ledsone.co.uk/products/'+esc(r[1])+'" target="_blank" rel="noopener">/products/'+esc(r[1])+'</a>' : '<span class="na">&#8212;</span>';
     var stock = r[5]<0 ? '<span class="sess">&#8212;</span><div class="why">SKU not found in inventory system</div>' : '<span class="sess">'+nfmt(r[5])+'</span>';
     var pill = r[7]===1 ? '<span class="pill slow">Slow-Moving</span>' : '<span class="pill act">Active</span>';
-    out.push('<tr><td class="skucell">'+esc(r[0])+'</td><td class="lp">'+url+'<div class="why">'+esc(r[2])+'</div></td><td>'+esc(r[3])+'</td>'+
+    var pid = r[8] ? esc(r[8]) : '<span class="na">&#8212;</span>';
+    out.push('<tr><td class="skucell">'+esc(r[0])+'</td><td>'+pid+'</td><td class="lp">'+url+'<div class="why">'+esc(r[2])+'</div></td><td>'+esc(r[3])+'</td>'+
       '<td class="num"><span class="sess'+(r[4]===0?' zero':'')+'">'+nfmt(r[4])+'</span></td><td class="num">'+stock+'</td><td>'+esc(r[6])+'</td>'+
       '<td>'+pill+'</td></tr>');
   }
@@ -1121,10 +1123,10 @@ function render(){
   document.getElementById('pinfo').textContent = F.length ? ('Rows '+nfmt(s+1)+'-'+nfmt(Math.min(s+ps,F.length))+' of '+nfmt(F.length)+' | page '+pg+' / '+maxpg()) : 'No rows match';
 }
 function exp(){
-  var hdr=['SKU','Page URL','Category','Units Sold (90d)','Current Stock','Last Order Date','Status'];
+  var hdr=['SKU','Product ID','Page URL','Category','Units Sold (90d)','Current Stock','Last Order Date','Status'];
   var lines=[hdr.join(',')];
   F.forEach(function(r){
-    var vals=[r[0], r[1]?'https://ledsone.co.uk/products/'+r[1]:'', r[3], r[4], (r[5]<0?'':r[5]), r[6], (r[7]===1?'Slow-Moving':'Active')];
+    var vals=[r[0], (r[8]||''), r[1]?'https://ledsone.co.uk/products/'+r[1]:'', r[3], r[4], (r[5]<0?'':r[5]), r[6], (r[7]===1?'Slow-Moving':'Active')];
     lines.push(vals.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(','));
   });
   var blob=new Blob([lines.join(String.fromCharCode(10))],{type:'text/csv'});

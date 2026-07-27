@@ -1841,7 +1841,8 @@ async function handleReq1(req, res) {
     const lastOrderIso = lastOrderDateByVariant.get(v.variantId) || null;
     const stock = v.inventoryTracked && v.currentStock !== null ? v.currentStock : -1;
     const slow = (unitsSold < 10 && stock > 100) ? 1 : 0;
-    return [v.sku, v.handle, v.title, v.category, unitsSold, stock, lastOrderIso ? lastOrderIso.slice(0, 10) : '—', slow];
+    const productIdNum = (v.productId || '').toString().split('/').pop();
+    return [v.sku, v.handle, v.title, v.category, unitsSold, stock, lastOrderIso ? lastOrderIso.slice(0, 10) : '—', slow, productIdNum];
   });
 
   const totalProducts = new Set(variants.map(v => v.productId)).size;
