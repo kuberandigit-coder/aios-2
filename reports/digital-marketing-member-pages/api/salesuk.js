@@ -365,7 +365,7 @@ function summarizeOrderRows(rows) {
 // found on the main sales.html dashboard. Add new groups by appending here;
 // never move an existing group earlier without checking what it would now
 // steal from groups after it.
-const DM_AD_CAMPAIGNS = ['shop_dm_pmax-46_aguasset', 'shop_dm_pmax-25'];
+const DM_AD_CAMPAIGNS = ['shop_dm_pmax-46_aguasset'];
 function isDmAdCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   if (!c) return false;
@@ -432,7 +432,7 @@ function isSonyaCampaign(campaign) {
 }
 
 // Sajeepan group campaigns, given directly by the user, 2026-07-27.
-const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax']);
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25']);
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
@@ -443,7 +443,7 @@ const GROUPS = [
     key: 'dm-ad',
     name: 'DM-Ad',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-25" (case-insensitive)',
+    scope: 'first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" (case-insensitive). ("Shop_DM_PMax-25" moved to Sajeepan, 2026-07-27.)',
     match: (utm) => isDmAdCampaign(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
@@ -467,7 +467,7 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
     match: (utm) => isSajeepanCampaignUk(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
