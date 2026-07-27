@@ -376,7 +376,7 @@ function isDmAdCampaign(campaign) {
 // campaigns "Sales Ads – Copy" (en dash), "Sales Ads", "Sales Ads |
 // Retargeting | Add to Cart"; sources "Facebook", "Instagram",
 // "android-app://m.facebook.com/".
-const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart', 'new sales ad set']);
+const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart', 'new sales ad set', 'abo sales ads - retarget - catalog ads', 'abo sales ads - lookalike - catalog ads']);
 const META_SOURCES = new Set(['facebook', 'instagram', 'android-app://m.facebook.com/']);
 function isMetaMatch(utm, fv) {
   const campaign = (utm.campaign || '').toString().toLowerCase();
@@ -441,7 +441,7 @@ function isSonyaTerm(term) {
 }
 
 // Sajeepan group campaigns, given directly by the user, 2026-07-27.
-const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25']);
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p']);
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
@@ -460,7 +460,7 @@ const GROUPS = [
     key: 'meta',
     name: 'Meta',
     department: 'Meta Ads (Facebook/Instagram)',
-    scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart" / "New Sales ad set", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
+    scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart" / "New Sales ad set" / "ABO Sales Ads - Retarget - Catalog Ads" / "ABO Sales Ads - Lookalike - Catalog Ads", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
     match: (utm, fv) => isMetaMatch(utm, fv),
     matchValue: (utm, fv) => utm.campaign || utm.source || (fv && fv.source) || null,
   },
@@ -476,7 +476,7 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Klarna_P" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
     match: (utm) => isSajeepanCampaignUk(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
@@ -499,6 +499,19 @@ const GROUPS = [
     // (Shopify's free Google Shopping listing tag), which would otherwise
     // shadow the real source in the label.
     matchValue: (utm, fv, journey) => deriveChannelLabel(journey) + ' - ' + ((fv && fv.source) || (fv && fv.sourceDescription) || utm.campaign || (journey && journey.status === 'NO_JOURNEY_DATA' ? '(no journey data)' : 'direct')),
+  },
+  {
+    key: 'cppc',
+    name: 'CPPC',
+    department: 'Google Shopping (Free/Comparison Listings)',
+    scope: 'first-session channel is "Other" with source/sourceDescription exactly "Shopping" (Google\'s free Shopping tab listings, not a paid campaign). Confirmed by the user, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
+    match: (utm, fv, journey) => {
+      const channel = deriveChannelLabel(journey);
+      if (channel !== 'Other') return false;
+      const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString();
+      return src === 'Shopping';
+    },
+    matchValue: (utm, fv) => (fv && (fv.source || fv.sourceDescription)) || utm.source || 'Shopping',
   },
 ];
 
