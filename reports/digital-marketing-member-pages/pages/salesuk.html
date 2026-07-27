@@ -78,12 +78,13 @@ tbody tr:hover{background:var(--accent-soft);}
   <div id="tabJanuary">
     <div class="reqtabs" id="groupTabs" style="margin-bottom:14px;">
       <div class="reqtab active" data-group="dm-ad" onclick="selectGroup('dm-ad')">DM-Ad</div>
+      <div class="reqtab" data-group="meta" onclick="selectGroup('meta')">Meta</div>
     </div>
 
     <div id="groupDmAd">
       <header>
-        <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">DM-Ad</div>
-        <h1>Order-Level Sales — Shop_DM_PMax-46_AguAsset + Shop_DM_PMax-25</h1>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;" id="groupLabel">DM-Ad</div>
+        <h1 id="groupTitle">Order-Level Sales — Shop_DM_PMax-46_AguAsset + Shop_DM_PMax-25</h1>
         <div class="sub" id="periodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, order-level (not product-scoped) &nbsp;&middot;&nbsp; January 2026, closed reporting month.</div>
         <div class="filters">
           <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
@@ -106,7 +107,7 @@ tbody tr:hover{background:var(--accent-soft);}
         <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="kLastOk" style="font-size:13px;">&ndash;</div></div>
       </div>
 
-      <div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped) order-level sales — every order whose first-session <code>utm_campaign</code> exactly matches (or is a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code> or <code>Shop_DM_PMax-25</code>. One row per order (no per-product breakdown) — click Sessions to see every session Shopify recorded for that order.</div>
+      <div class="sub" id="groupDesc" style="margin-bottom:14px;">Store-wide (not product-scoped) order-level sales. One row per order (no per-product breakdown) — click Sessions to see every session Shopify recorded for that order.</div>
 
       <div class="tablebox" style="margin-bottom:14px;">
         <div class="scroll" style="max-height:none;overflow-y:visible;">
@@ -147,9 +148,9 @@ tbody tr:hover{background:var(--accent-soft);}
       </div>
 
       <div class="footnotes">
-        <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via <code>/api/salesuk?group=dm-ad</code> (a dedicated backend, separate from the main <code>api/sales.js</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
-        <strong>Why this page exists:</strong> the main sales dashboard's per-staff tabs (Kamsi/Dilaksi/DM/Sonya/Sajeepan) can double-count the same order under different definitions (product-scope vs ad-click attribution). This standalone page shows every order once, at order level, so it can be reviewed and assigned by hand.<br>
-        <strong>Matching rule:</strong> first-session <code>utm_campaign</code> exactly matches (or is a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code> or <code>Shop_DM_PMax-25</code> (case-insensitive). Sessions 2+ are never used for matching, only shown for context.<br>
+        <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via <code id="groupEndpoint">/api/salesuk?group=dm-ad</code> (a dedicated backend, separate from the main <code>api/sales.js</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+        <strong>Why this page exists:</strong> the main sales dashboard's per-staff tabs (Kamsi/Dilaksi/DM/Sonya/Sajeepan) can double-count the same order under different definitions (product-scope vs ad-click attribution). This standalone page shows every order once, at order level, so it can be reviewed and assigned by hand. Groups on this page are checked in a fixed priority order (DM-Ad, then Meta) so no order can ever appear in more than one group's tab here.<br>
+        <strong>Matching rule:</strong> <span id="groupRule">first-session <code>utm_campaign</code> exactly matches (or is a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code> or <code>Shop_DM_PMax-25</code> (case-insensitive).</span> Sessions 2+ are never used for matching, only shown for context.<br>
         <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; order-level rows only, no per-product/SKU breakdown.<br>
         <strong>Report period:</strong> January 1&ndash;31, 2026, Europe/London timezone.<br>
         <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
@@ -174,8 +175,15 @@ function downloadCsv(content, filename){
 
 let CURRENT_MONTH = '2026-01';
 let CURRENT_GROUP = 'dm-ad';
+const GROUP_CACHE = {};
 function selectMonth(m){ CURRENT_MONTH = m; document.querySelectorAll('#monthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === m)); }
-function selectGroup(g){ CURRENT_GROUP = g; document.querySelectorAll('#groupTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-group') === g)); if (!DATA) load(false); }
+function selectGroup(g){
+  CURRENT_GROUP = g;
+  document.querySelectorAll('#groupTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-group') === g));
+  openRows = new Set();
+  if (GROUP_CACHE[g]) { DATA = GROUP_CACHE[g]; applyData(); }
+  else { DATA = null; load(false); }
+}
 
 let DATA = null;
 let openRows = new Set();
@@ -193,15 +201,8 @@ async function load(force){
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
     DATA = data;
-    document.getElementById('liveChip').textContent = 'Data retrieved from Shopify';
-    document.getElementById('liveChip').className = 'chip live';
-    document.getElementById('lastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
-    document.getElementById('lastRefresh').style.display = '';
-    document.getElementById('footRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
-    document.getElementById('kLastOk').textContent = new Date().toLocaleTimeString();
-    document.getElementById('periodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, order-level &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period.';
-    openRows = new Set();
-    renderAll();
+    GROUP_CACHE[CURRENT_GROUP] = data;
+    applyData();
   } catch (e) {
     document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message + (DATA ? ' — showing last successful data' : '');
     document.getElementById('liveChip').className = 'chip stale';
@@ -209,6 +210,24 @@ async function load(force){
   }
   loading = false;
   btn.disabled = false; btn.textContent = 'Refresh';
+}
+
+function applyData(){
+  const data = DATA;
+  document.getElementById('liveChip').textContent = 'Data retrieved from Shopify';
+  document.getElementById('liveChip').className = 'chip live';
+  document.getElementById('lastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+  document.getElementById('lastRefresh').style.display = '';
+  document.getElementById('footRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+  document.getElementById('kLastOk').textContent = new Date().toLocaleTimeString();
+  document.getElementById('periodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, order-level &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period.';
+  document.getElementById('groupLabel').textContent = data.group.name;
+  document.getElementById('groupTitle').textContent = 'Order-Level Sales — ' + data.group.name;
+  document.getElementById('groupDesc').textContent = 'Store-wide (not product-scoped) order-level sales — every order that matches ' + data.group.name + '’s rule (see footnotes below). One row per order (no per-product breakdown) — click Sessions to see every session Shopify recorded for that order.';
+  document.getElementById('groupEndpoint').textContent = '/api/salesuk?group=' + CURRENT_GROUP;
+  document.getElementById('groupRule').textContent = 'An order belongs to ' + data.group.name + ' if its ' + data.source.scope + '.';
+  openRows = new Set();
+  renderAll();
 }
 
 function renderAll(){
@@ -330,7 +349,7 @@ function exportCsv(){
     lines.push([o.matchedCampaign, o.orderName, o.orderLegacyId, o.createdAt, o.grossSales, o.discounts, o.refunds, o.netSales, o.orderTotal, o.currency, o.financialStatus, o.fulfillmentStatus, o.firstVisitSource, o.firstVisitMedium, o.firstVisitTerm, o.firstVisitContent, (o.sessions||[]).map(s=>s.classification).join(' -> ')].map(csvSafe).join(','));
   });
   const monthTag = DATA ? DATA.reportPeriod.month : CURRENT_MONTH;
-  downloadCsv(lines.join('\r\n'), monthTag + '_dm-ad-order-level-ledsone-uk.csv');
+  downloadCsv(lines.join('\r\n'), monthTag + '_' + CURRENT_GROUP + '-order-level-ledsone-uk.csv');
 }
 document.getElementById('exportCsv').addEventListener('click', exportCsv);
 

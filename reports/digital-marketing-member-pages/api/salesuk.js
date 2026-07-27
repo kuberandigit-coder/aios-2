@@ -359,9 +359,12 @@ function summarizeOrderRows(rows) {
   };
 }
 
-// ---------- DM-Ad group: Shop_DM_PMax-46_AguAsset + Shop_DM_PMax-25 ----------
-// Both campaign names given directly by the user, 2026-07-27 — combined
-// into one "DM-Ad" group so nothing from either campaign is missed.
+// ---------- Groups (mutually exclusive by construction — 2026-07-27) ----------
+// GROUPS is checked in order, first match wins, so no order can ever land
+// in more than one group's tab on this page — the exact overlap problem
+// found on the main sales.html dashboard. Add new groups by appending here;
+// never move an existing group earlier without checking what it would now
+// steal from groups after it.
 const DM_AD_CAMPAIGNS = ['shop_dm_pmax-46_aguasset', 'shop_dm_pmax-25'];
 function isDmAdCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
@@ -369,12 +372,52 @@ function isDmAdCampaign(campaign) {
   return DM_AD_CAMPAIGNS.some(base => c === base || c.startsWith(base));
 }
 
+// Meta group values as given directly by the user, 2026-07-27 (deduped):
+// campaigns "Sales Ads – Copy" (en dash), "Sales Ads", "Sales Ads |
+// Retargeting | Add to Cart"; sources "Facebook", "Instagram",
+// "android-app://m.facebook.com/".
+const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart']);
+const META_SOURCES = new Set(['facebook', 'instagram', 'android-app://m.facebook.com/']);
+function isMetaMatch(utm, fv) {
+  const campaign = (utm.campaign || '').toString().toLowerCase();
+  if (campaign && META_CAMPAIGNS.has(campaign)) return true;
+  const source = (utm.source || (fv && fv.source) || '').toString().toLowerCase();
+  if (source && META_SOURCES.has(source)) return true;
+  return false;
+}
+
+const GROUPS = [
+  {
+    key: 'dm-ad',
+    name: 'DM-Ad',
+    department: 'Google Ads (Paid Search)',
+    scope: 'first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-25" (case-insensitive)',
+    match: (utm) => isDmAdCampaign(utm.campaign),
+    matchValue: (utm) => utm.campaign,
+  },
+  {
+    key: 'meta',
+    name: 'Meta',
+    department: 'Meta Ads (Facebook/Instagram)',
+    scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
+    match: (utm, fv) => isMetaMatch(utm, fv),
+    matchValue: (utm, fv) => utm.campaign || utm.source || (fv && fv.source) || null,
+  },
+];
+
+function assignGroup(utm, fv) {
+  for (const g of GROUPS) {
+    if (g.match(utm, fv)) return g;
+  }
+  return null;
+}
+
 // ---------- Simple in-memory cache (per warm Lambda instance only) ----------
 const CACHE = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-async function handleDmAd(req, res, monthConfig, forceRefresh) {
-  const cacheKey = 'dm-ad:' + monthConfig.month;
+async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
+  const cacheKey = groupDef.key + ':' + monthConfig.month;
   const cached = CACHE.get(cacheKey);
   if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
     res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
@@ -383,11 +426,10 @@ async function handleDmAd(req, res, monthConfig, forceRefresh) {
 
   // Static-snapshot fast path (added 2026-07-27, same pattern every other
   // historical-month tab on sales.html uses) — a live full-month Shopify
-  // scan takes 60-90s+, unusable for a page load. Once generated (see
-  // scripts/generate-salesuk-snapshots.js) this makes a normal page load
-  // near-instant; ?refresh=1 always bypasses it for a fresh live scan.
+  // scan takes 30-90s+, unusable for a page load. Once generated this makes
+  // a normal page load near-instant; ?refresh=1 always bypasses it.
   if (!forceRefresh) {
-    const staticPath = path.join(__dirname, 'data', `salesuk-dm-ad-${monthConfig.month}.json`);
+    const staticPath = path.join(__dirname, 'data', `salesuk-${groupDef.key}-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
       const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
@@ -407,9 +449,10 @@ async function handleDmAd(req, res, monthConfig, forceRefresh) {
     if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') continue;
     const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
     const utm = (fv && fv.utmParameters) || {};
-    if (!isDmAdCampaign(utm.campaign)) continue;
+    const assigned = assignGroup(utm, fv);
+    if (!assigned || assigned.key !== groupDef.key) continue;
     const row = buildOrderRow(order, journey);
-    row.matchedCampaign = utm.campaign;
+    row.matchedCampaign = groupDef.matchValue(utm, fv);
     rows.push(row);
   }
 
@@ -427,11 +470,11 @@ async function handleDmAd(req, res, monthConfig, forceRefresh) {
 
   const payload = {
     success: true,
-    group: { name: 'DM-Ad', department: 'Google Ads (Paid Search)', store: 'ledsone.co.uk' },
+    group: { name: groupDef.name, department: groupDef.department, store: 'ledsone.co.uk' },
     reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/London' },
     supportedMonths: SUPPORTED_MONTHS,
     source: {
-      scope: `store-wide (NOT product-scoped) — an order belongs to DM-Ad if its first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-25" (case-insensitive). Order-level rows (no per-product breakdown) with full session history. Standalone page, built 2026-07-27.`,
+      scope: `store-wide (NOT product-scoped) — an order belongs to ${groupDef.name} if its ${groupDef.scope}. Order-level rows (no per-product breakdown) with full session history. Groups are checked in a fixed priority order (${GROUPS.map(g => g.name).join(' -> ')}) so no order can appear in more than one group's tab. Standalone page, built 2026-07-27.`,
       orders: 'Shopify Admin GraphQL API',
       journey: 'Shopify customerJourneySummary',
     },
@@ -461,13 +504,14 @@ module.exports = async function handler(req, res) {
   }
   const forceRefresh = req.query && req.query.refresh === '1';
   const monthConfig = resolveReportMonth(req.query && req.query.month);
-  const group = ((req.query && req.query.group) || 'dm-ad').toString().toLowerCase();
+  const groupKey = ((req.query && req.query.group) || 'dm-ad').toString().toLowerCase();
+  const groupDef = GROUPS.find(g => g.key === groupKey);
 
   try {
-    if (group === 'dm-ad') {
-      await handleDmAd(req, res, monthConfig, forceRefresh);
+    if (groupDef) {
+      await handleGroup(req, res, monthConfig, forceRefresh, groupDef);
     } else {
-      res.status(400).json({ success: false, error: `Unknown group "${group}"` });
+      res.status(400).json({ success: false, error: `Unknown group "${groupKey}"` });
     }
   } catch (err) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
