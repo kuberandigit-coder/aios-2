@@ -378,7 +378,7 @@ function isDmAdCampaign(campaign) {
 // "android-app://m.facebook.com/".
 const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart', 'new sales ad set', 'abo sales ads - retarget - catalog ads', 'abo sales ads - lookalike - catalog ads']);
 const META_SOURCES = new Set(['facebook', 'instagram', 'ig', 'android-app://m.facebook.com/']);
-function isMetaMatch(utm, fv, journey) {
+function isMetaMatch(utm, fv, journey, month) {
   const campaign = (utm.campaign || '').toString().toLowerCase();
   if (campaign && META_CAMPAIGNS.has(campaign)) return true;
   const source = (utm.source || (fv && fv.source) || '').toString().toLowerCase();
@@ -386,6 +386,9 @@ function isMetaMatch(utm, fv, journey) {
   // "Social | an unknown source" confirmed by the user, 2026-07-27 — a
   // Social-classified first session whose source Shopify couldn't identify.
   if (deriveChannelLabel(journey) === 'Social' && source === 'an unknown source') return true;
+  // May-only: EVERY Social-channel order -> Meta, confirmed by the user,
+  // 2026-07-27 (broader than the specific-source rule above).
+  if (month === '2026-05' && deriveChannelLabel(journey) === 'Social') return true;
   return false;
 }
 
@@ -487,7 +490,7 @@ const GROUPS = [
     name: 'Meta',
     department: 'Meta Ads (Facebook/Instagram)',
     scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart" / "New Sales ad set" / "ABO Sales Ads - Retarget - Catalog Ads" / "ABO Sales Ads - Lookalike - Catalog Ads", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/", OR first-session channel is Social with source "an unknown source" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
-    match: (utm, fv, journey) => isMetaMatch(utm, fv, journey),
+    match: (utm, fv, journey, month) => isMetaMatch(utm, fv, journey, month),
     matchValue: (utm, fv) => utm.campaign || utm.source || (fv && fv.source) || null,
   },
   {
@@ -498,7 +501,7 @@ const GROUPS = [
     match: (utm, fv, journey, month) => {
       if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
       if (!utm.campaign && !utm.term && (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' || lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all')) return true;
-      if (['2026-02', '2026-03', '2026-04'].includes(month) && !utm.campaign && !utm.term) {
+      if (['2026-02', '2026-03', '2026-04', '2026-05'].includes(month) && !utm.campaign && !utm.term) {
         const medium = (utm.medium || '').toString().toLowerCase();
         // Don't blanket-claim if the last session traces to a known
         // Sajeepan campaign — let that fall through to Sajeepan instead
@@ -512,7 +515,7 @@ const GROUPS = [
       if (utm.term) return utm.term;
       if (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (2nd session)';
       if (lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (last session)';
-      if (['2026-02', '2026-03', '2026-04'].includes(month)) return 'google_ads (untraceable campaign, ' + month + ')';
+      if (['2026-02', '2026-03', '2026-04', '2026-05'].includes(month)) return 'google_ads (untraceable campaign, ' + month + ')';
       return null;
     },
   },
@@ -578,6 +581,14 @@ const GROUPS = [
       return campaign.includes('thisoban') || term === 'thisoban';
     },
     matchValue: (utm) => utm.campaign || utm.term,
+  },
+  {
+    key: 'theekshy',
+    name: 'Theekshy',
+    department: 'Google Ads (Paid Search)',
+    scope: 'first-session utm_campaign exactly matches "Pmax_UK_Theekshy_Shoptimised_THEE_NS_MCV_UK" (case-insensitive). Found in May data, confirmed by the user, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
+    match: (utm) => (utm.campaign || '').toString().toLowerCase() === 'pmax_uk_theekshy_shoptimised_thee_ns_mcv_uk',
+    matchValue: (utm) => utm.campaign,
   },
 ];
 
