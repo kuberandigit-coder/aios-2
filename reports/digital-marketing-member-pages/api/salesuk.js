@@ -588,6 +588,16 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     // Second-session lookthrough (added 2026-07-27, per user request): when
     // the first session carries no campaign, check what the SECOND session
     // was tagged with — still not used for matching, purely diagnostic.
+    if (!t.lastSessionCampaigns) t.lastSessionCampaigns = new Map();
+    if (!t.sessionCounts) t.sessionCounts = new Map();
+    const numSessions = (row.sessions || []).length;
+    t.sessionCounts.set(numSessions, (t.sessionCounts.get(numSessions) || 0) + 1);
+    const lastSession = (row.sessions || [])[numSessions - 1];
+    if (lastSession) {
+      const lu = lastSession.utm || {};
+      const kL = lu.campaign || lu.term || '(no campaign/term)';
+      t.lastSessionCampaigns.set(kL, (t.lastSessionCampaigns.get(kL) || 0) + 1);
+    }
     const secondSession = (row.sessions || [])[1];
     if (secondSession) {
       const su = secondSession.utm || {};
@@ -601,7 +611,14 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     success: true,
     reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/London' },
     remainingTotal: { orders: remainingCount, netSales: remainingNet },
-    remainingSplit: [...tally.values()].map((v) => ({ ...v, terms: [...v.terms], mediums: [...v.mediums], secondSessionCampaigns: Object.fromEntries(v.secondSessionCampaigns) })).sort((a, b) => b.orders - a.orders),
+    remainingSplit: [...tally.values()].map((v) => ({
+      ...v,
+      terms: [...v.terms],
+      mediums: [...v.mediums],
+      secondSessionCampaigns: Object.fromEntries(v.secondSessionCampaigns),
+      lastSessionCampaigns: v.lastSessionCampaigns ? Object.fromEntries(v.lastSessionCampaigns) : {},
+      sessionCounts: v.sessionCounts ? Object.fromEntries(v.sessionCounts) : {},
+    })).sort((a, b) => b.orders - a.orders),
     meta: { generatedAt: new Date().toISOString(), executionMs: Date.now() - startTime },
   });
 }
