@@ -564,7 +564,7 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     const channel = deriveChannelLabel(journey);
     const groupValue = utm.campaign || utm.term || (fv && fv.source) || '(no first-session data)';
     const key = channel + ' | ' + groupValue;
-    if (!tally.has(key)) tally.set(key, { channel, group: groupValue, orders: 0, netSales: 0, orderNames: [], terms: new Set(), mediums: new Set(), hasCampaign: 0, noCampaign: 0 });
+    if (!tally.has(key)) tally.set(key, { channel, group: groupValue, orders: 0, netSales: 0, orderNames: [], terms: new Set(), mediums: new Set(), hasCampaign: 0, noCampaign: 0, secondSessionCampaigns: new Map() });
     const t = tally.get(key);
     t.orders += 1;
     t.netSales = round2(t.netSales + row.netSales);
@@ -572,6 +572,15 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     if (utm.term) t.terms.add(utm.term);
     t.mediums.add(utm.medium || '(none)');
     if (utm.campaign) t.hasCampaign++; else t.noCampaign++;
+    // Second-session lookthrough (added 2026-07-27, per user request): when
+    // the first session carries no campaign, check what the SECOND session
+    // was tagged with — still not used for matching, purely diagnostic.
+    const secondSession = (row.sessions || [])[1];
+    if (secondSession) {
+      const su = secondSession.utm || {};
+      const k2 = su.campaign || su.term || '(no campaign/term)';
+      t.secondSessionCampaigns.set(k2, (t.secondSessionCampaigns.get(k2) || 0) + 1);
+    }
     remainingCount += 1;
     remainingNet = round2(remainingNet + row.netSales);
   }
@@ -579,7 +588,7 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     success: true,
     reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/London' },
     remainingTotal: { orders: remainingCount, netSales: remainingNet },
-    remainingSplit: [...tally.values()].map((v) => ({ ...v, terms: [...v.terms], mediums: [...v.mediums] })).sort((a, b) => b.orders - a.orders),
+    remainingSplit: [...tally.values()].map((v) => ({ ...v, terms: [...v.terms], mediums: [...v.mediums], secondSessionCampaigns: Object.fromEntries(v.secondSessionCampaigns) })).sort((a, b) => b.orders - a.orders),
     meta: { generatedAt: new Date().toISOString(), executionMs: Date.now() - startTime },
   });
 }
