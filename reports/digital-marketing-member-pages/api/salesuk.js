@@ -494,13 +494,16 @@ const GROUPS = [
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for Google-Ads-clicks where Shopify only tagged the campaign on a later visit), OR (month is February or March 2026 AND no campaign anywhere AND utm_medium is "google_ads" — confirmed by the user, 2026-07-27, scoped to those two months only). Checked only after DM-Ad and Meta.',
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for Google-Ads-clicks where Shopify only tagged the campaign on a later visit), OR (month is February, March or April 2026 AND no campaign anywhere AND utm_medium is "google_ads", unless the last session traces to a Sajeepan campaign — confirmed by the user, 2026-07-27, scoped to those three months only). Checked only after DM-Ad and Meta.',
     match: (utm, fv, journey, month) => {
       if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
       if (!utm.campaign && !utm.term && (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' || lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all')) return true;
-      if ((month === '2026-02' || month === '2026-03') && !utm.campaign && !utm.term) {
+      if (['2026-02', '2026-03', '2026-04'].includes(month) && !utm.campaign && !utm.term) {
         const medium = (utm.medium || '').toString().toLowerCase();
-        if (medium === 'google_ads') return true;
+        // Don't blanket-claim if the last session traces to a known
+        // Sajeepan campaign — let that fall through to Sajeepan instead
+        // (checked after Sonya in GROUPS priority order).
+        if (medium === 'google_ads' && !isSajeepanCampaignUk(lastSessionCampaign(journey))) return true;
       }
       return false;
     },
@@ -509,7 +512,7 @@ const GROUPS = [
       if (utm.term) return utm.term;
       if (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (2nd session)';
       if (lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (last session)';
-      if (month === '2026-02' || month === '2026-03') return 'google_ads (untraceable campaign, ' + month + ')';
+      if (['2026-02', '2026-03', '2026-04'].includes(month)) return 'google_ads (untraceable campaign, ' + month + ')';
       return null;
     },
   },
@@ -517,9 +520,14 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "GCSS_ALL_ROAS_400_SAJEE", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Shop_DM_PMax-25_ZERO", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX", "Klarna_G2", "P_Max_Klarna_CSS_SJ_OLD" (case-insensitive), OR (first session has no campaign/term AND the 2nd session\'s campaign is "Klarna_P" — confirmed by the user, 2026-07-27). Checked only after DM-Ad, Meta and Sonya.',
-    match: (utm, fv, journey) => isSajeepanCampaignUk(utm.campaign) || (!utm.campaign && !utm.term && secondSessionCampaign(journey) === 'klarna_p'),
-    matchValue: (utm, fv, journey) => utm.campaign || (secondSessionCampaign(journey) === 'klarna_p' ? 'Klarna_P (2nd session)' : null),
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "GCSS_ALL_ROAS_400_SAJEE", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Shop_DM_PMax-25_ZERO", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX", "Klarna_G2", "P_Max_Klarna_CSS_SJ_OLD" (case-insensitive), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_P", "KLARNA_CSS_SJ25_PMAX" or "Shop_DM_PMax-25" — confirmed by the user, 2026-07-27). Checked only after DM-Ad, Meta and Sonya.',
+    match: (utm, fv, journey) => isSajeepanCampaignUk(utm.campaign) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(secondSessionCampaign(journey))) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(lastSessionCampaign(journey))),
+    matchValue: (utm, fv, journey) => {
+      if (utm.campaign) return utm.campaign;
+      if (isSajeepanCampaignUk(secondSessionCampaign(journey))) return secondSessionCampaign(journey) + ' (2nd session)';
+      if (isSajeepanCampaignUk(lastSessionCampaign(journey))) return lastSessionCampaign(journey) + ' (last session)';
+      return null;
+    },
   },
   {
     key: 'sukirtha',
