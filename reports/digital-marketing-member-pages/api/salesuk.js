@@ -365,7 +365,7 @@ function summarizeOrderRows(rows) {
 // found on the main sales.html dashboard. Add new groups by appending here;
 // never move an existing group earlier without checking what it would now
 // steal from groups after it.
-const DM_AD_CAMPAIGNS = ['shop_dm_pmax-46_aguasset', 'shop_dm_pmax-46'];
+const DM_AD_CAMPAIGNS = ['shop_dm_pmax-46_aguasset', 'shop_dm_pmax-46', 'sag_organic'];
 function isDmAdCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   if (!c) return false;
@@ -377,7 +377,7 @@ function isDmAdCampaign(campaign) {
 // Retargeting | Add to Cart"; sources "Facebook", "Instagram",
 // "android-app://m.facebook.com/".
 const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart', 'new sales ad set', 'abo sales ads - retarget - catalog ads', 'abo sales ads - lookalike - catalog ads']);
-const META_SOURCES = new Set(['facebook', 'instagram', 'android-app://m.facebook.com/']);
+const META_SOURCES = new Set(['facebook', 'instagram', 'ig', 'android-app://m.facebook.com/']);
 function isMetaMatch(utm, fv, journey) {
   const campaign = (utm.campaign || '').toString().toLowerCase();
   if (campaign && META_CAMPAIGNS.has(campaign)) return true;
@@ -465,7 +465,7 @@ const GROUPS = [
     key: 'dm-ad',
     name: 'DM-Ad',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-46" (case-insensitive). ("Shop_DM_PMax-25" moved to Sajeepan, 2026-07-27.)',
+    scope: 'first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-46", OR utm_campaign is "sag_organic" (all months — confirmed by the user, 2026-07-27) (case-insensitive). ("Shop_DM_PMax-25" moved to Sajeepan, 2026-07-27.)',
     match: (utm) => isDmAdCampaign(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
@@ -481,9 +481,23 @@ const GROUPS = [
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for a small number of Google-Ads-clicks where Shopify only tagged the campaign on the 2nd visit). Checked only after DM-Ad and Meta.',
-    match: (utm, fv, journey) => isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term) || (!utm.campaign && !utm.term && secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all'),
-    matchValue: (utm, fv, journey) => utm.campaign || utm.term || (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' ? 'Klarna_Sonya_kl-pmx-all (2nd session)' : null),
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for a small number of Google-Ads-clicks where Shopify only tagged the campaign on the 2nd visit), OR (month is exactly February 2026 AND channel is "Other" with source/campaign "Google" and no campaign — confirmed by the user, 2026-07-27, scoped to February only). Checked only after DM-Ad and Meta.',
+    match: (utm, fv, journey, month) => {
+      if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
+      if (!utm.campaign && !utm.term && secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return true;
+      if (month === '2026-02' && deriveChannelLabel(journey) === 'Other' && !utm.campaign) {
+        const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString().toLowerCase();
+        if (src === 'google') return true;
+      }
+      return false;
+    },
+    matchValue: (utm, fv, journey, month) => {
+      if (utm.campaign) return utm.campaign;
+      if (utm.term) return utm.term;
+      if (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (2nd session)';
+      if (month === '2026-02') return 'Google (Feb, untraceable campaign)';
+      return null;
+    },
   },
   {
     key: 'sajeepan',
@@ -540,9 +554,9 @@ const GROUPS = [
   },
 ];
 
-function assignGroup(utm, fv, journey) {
+function assignGroup(utm, fv, journey, month) {
   for (const g of GROUPS) {
-    if (g.match(utm, fv, journey)) return g;
+    if (g.match(utm, fv, journey, month)) return g;
   }
   return null;
 }
@@ -571,7 +585,7 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') continue;
     const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
     const utm = (fv && fv.utmParameters) || {};
-    const assigned = assignGroup(utm, fv, journey);
+    const assigned = assignGroup(utm, fv, journey, monthConfig.month);
     if (assigned) continue;
     const row = buildOrderRow(order, journey);
     const channel = deriveChannelLabel(journey);
@@ -667,10 +681,10 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') continue;
     const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
     const utm = (fv && fv.utmParameters) || {};
-    const assigned = assignGroup(utm, fv, journey);
+    const assigned = assignGroup(utm, fv, journey, monthConfig.month);
     if (!assigned || assigned.key !== groupDef.key) continue;
     const row = buildOrderRow(order, journey);
-    row.matchedCampaign = groupDef.matchValue(utm, fv, journey);
+    row.matchedCampaign = groupDef.matchValue(utm, fv, journey, monthConfig.month);
     rows.push(row);
   }
 
