@@ -454,7 +454,7 @@ function isSonyaTerm(term) {
 }
 
 // Sajeepan group campaigns, given directly by the user, 2026-07-27.
-const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p', 'sj_pmax_scale_heroes_25', 'klarna_css_sj25_pmax', 'klarna_g2']);
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p', 'sj_pmax_scale_heroes_25', 'klarna_css_sj25_pmax', 'klarna_g2', 'gcss_all_roas_400_sajee', 'shop_dm_pmax-25_zero', 'p_max_klarna_css_sj_old']);
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
@@ -503,7 +503,7 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX", "Klarna_G2" (case-insensitive), OR (first session has no campaign/term AND the 2nd session\'s campaign is "Klarna_P" — confirmed by the user, 2026-07-27). Checked only after DM-Ad, Meta and Sonya.',
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "GCSS_ALL_ROAS_400_SAJEE", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Shop_DM_PMax-25_ZERO", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX", "Klarna_G2", "P_Max_Klarna_CSS_SJ_OLD" (case-insensitive), OR (first session has no campaign/term AND the 2nd session\'s campaign is "Klarna_P" — confirmed by the user, 2026-07-27). Checked only after DM-Ad, Meta and Sonya.',
     match: (utm, fv, journey) => isSajeepanCampaignUk(utm.campaign) || (!utm.campaign && !utm.term && secondSessionCampaign(journey) === 'klarna_p'),
     matchValue: (utm, fv, journey) => utm.campaign || (secondSessionCampaign(journey) === 'klarna_p' ? 'Klarna_P (2nd session)' : null),
   },
@@ -511,8 +511,13 @@ const GROUPS = [
     key: 'sukirtha',
     name: 'Sukirtha',
     department: 'Email Marketing',
-    scope: 'first-session channel is classified Email (Shopify sourceType=NEWSLETTER, or utm_medium=email, or source/description contains "email") — EVERY email-attributed order, not restricted to a specific campaign list. Checked last — an order already claimed by DM-Ad/Meta/Sonya/Sajeepan never lands here.',
-    match: (utm, fv, journey) => !!(journey && journey.first && journey.first.classification === 'EMAIL'),
+    scope: 'first-session channel is classified Email (Shopify sourceType=NEWSLETTER, or utm_medium=email, or source/description contains "email") — EVERY email-attributed order, not restricted to a specific campaign list. Also catches utm_source/utm_campaign exactly "email" even when Shopify\'s own channel classifier mislabels it (e.g. Organic Search) — confirmed by the user, 2026-07-27. Checked last — an order already claimed by DM-Ad/Meta/Sonya/Sajeepan never lands here.',
+    match: (utm, fv, journey) => {
+      if (journey && journey.first && journey.first.classification === 'EMAIL') return true;
+      const src = (utm.source || '').toString().toLowerCase();
+      const camp = (utm.campaign || '').toString().toLowerCase();
+      return src === 'email' || camp === 'email';
+    },
     matchValue: (utm, fv) => utm.campaign || (fv && fv.sourceDescription) || (fv && fv.source) || '(email, no campaign)',
   },
   {
