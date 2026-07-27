@@ -92,6 +92,7 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" id="tabBtnTheekshy" onclick="showStaffTab('theekshy')">Theekshy</div>
   <div class="reqtab" id="tabBtnSonya" onclick="showStaffTab('sonya')">Sonya</div>
   <div class="reqtab" id="tabBtnDM" onclick="showStaffTab('dm')">DM</div>
+  <div class="reqtab" id="tabBtnMetaUk" onclick="showStaffTab('metauk')">Meta &middot; UK</div>
 </div>
 
 <div id="tabKamsi">
@@ -1443,6 +1444,95 @@ tbody tr:hover{background:var(--accent-soft);}
 </div>
 </div>
 
+<div id="tabMetaUk" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Meta &middot; UK</div>
+  <h1>Meta Ads Sales (Facebook/Instagram)</h1>
+  <div class="sub" id="muPeriodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, Meta/Social campaigns (not product-scoped) &nbsp;&middot;&nbsp; Historical, closed reporting month &mdash; not a live/updating view.</div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+    <span class="chip" id="muLiveChip">Loading historical data from Shopify&hellip;</span>
+    <span class="chip" id="muLastRefresh" style="display:none;"></span>
+    <button id="muNewOrdersBtn" class="primary" style="display:none;" onclick="muLoad(true)" title="Checks for orders created or updated since the last fetch">Check New Orders</button>
+  </div>
+</header>
+
+<div class="reqtabs" style="margin-bottom:14px;" id="muMonthTabs">
+  <div class="reqtab" data-month="2026-01" onclick="muSelectMonth('2026-01')">January</div>
+  <div class="reqtab" data-month="2026-02" onclick="muSelectMonth('2026-02')">February</div>
+  <div class="reqtab" data-month="2026-03" onclick="muSelectMonth('2026-03')">March</div>
+  <div class="reqtab" data-month="2026-04" onclick="muSelectMonth('2026-04')">April</div>
+  <div class="reqtab" data-month="2026-05" onclick="muSelectMonth('2026-05')">May</div>
+  <div class="reqtab" data-month="2026-06" onclick="muSelectMonth('2026-06')">June</div>
+  <div class="reqtab active" data-month="2026-07" onclick="muSelectMonth('2026-07')">July (live)</div>
+</div>
+
+<div class="exportbar" style="margin-bottom:14px;">
+  <button id="muGroupExportCsv" class="primary">Export CSV</button>
+</div>
+
+<div class="cards" id="muCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
+  <div class="card"><div class="label">Total Meta UK Orders</div><div class="value" id="mukOrders">&ndash;</div></div>
+  <div class="card"><div class="label">Total Units Sold</div><div class="value" id="mukUnits">&ndash;</div></div>
+  <div class="card"><div class="label">Total Gross Sales</div><div class="value" id="mukGross">&ndash;</div></div>
+  <div class="card"><div class="label">Total Refunds</div><div class="value" id="mukRefunds">&ndash;</div></div>
+  <div class="card"><div class="label">Total Net Sales</div><div class="value" id="mukNet">&ndash;</div></div>
+  <div class="card"><div class="label">Unique Products Sold</div><div class="value" id="mukProducts">&ndash;</div></div>
+  <div class="card"><div class="label">Data Retrieved At</div><div class="value" id="mucLastOk" style="font-size:13px;">&ndash;</div></div>
+</div>
+
+<div class="sub" style="margin-bottom:14px;">Store-wide (not product-scoped) Meta/Social sales — every first-session order classified Social (Facebook/Instagram/Pinterest/TikTok) that isn't already claimed by Sajeepan/Theekshy/Sonya/DM's Google Ads rules. Click a row below to filter the table to just that campaign.</div>
+
+<div class="tablebox" style="margin-bottom:14px;">
+  <div class="scroll" style="max-height:none;overflow-y:visible;">
+    <table style="min-width:900px;">
+      <thead><tr>
+        <th>Campaign</th><th class="num">Orders</th><th class="num">Units Sold</th><th class="num">Gross Sales</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net Sales</th><th class="num">Unique Products</th><th class="num">Avg / Order</th>
+      </tr></thead>
+      <tbody id="muChannelCardsBody"><tr><td colspan="9" class="loading">Loading&hellip;</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="mucCnt">&ndash;</span>
+    <input type="text" id="mucq_order" placeholder="Search order name&hellip;">
+    <input type="text" id="mucq_product" placeholder="Search Product ID&hellip;">
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Campaign <select id="mucf_channel">
+      <option value="">All Campaigns</option>
+    </select></label>
+    <button id="mucResetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th></th>
+        <th>Campaign</th><th>Order Name</th><th>Order ID</th><th>Created At</th><th>Product</th><th>Product ID</th><th>SKU</th>
+        <th class="num">Qty</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th>
+        <th>Financial Status</th><th>Fulfilment Status</th>
+        <th>First Session Source</th><th>First Session Type</th><th>All Sessions</th><th>Raw utm_campaign</th>
+      </tr></thead>
+      <tbody id="mucTbody"><tr><td colspan="19" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="mucEmpty" style="display:none;">No orders match the current filters.</div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via the same server-side serverless function as the other UK tabs (<code>/api/sales?staff=meta-uk-ads</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Matching rule (confirmed 2026-07-27):</strong> an order belongs to Meta UK if its <em>first session only</em> is classified <strong>Social</strong> (Facebook/Instagram/Pinterest/TikTok source or referrer) AND it does NOT already match Sajeepan's campaign/term rule, Theekshy's term rule, Sonya's 6-term rule, or DM's term/campaign rule (those take priority — an ad-attributed order stays with its ad owner). Sessions 2+ are never inspected.<br>
+  <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; every matching order counts regardless of which product(s) it contains.<br>
+  <strong>Report period:</strong> fixed calendar month, Europe/London timezone (DST-aware). Select a month tab above.<br>
+  <strong>Historical data:</strong> Jan&ndash;Jun 2026 are completed, closed calendar months &mdash; no auto-refresh or Refresh button.<br>
+  <strong>Live month (July onward):</strong> the current month is month-to-date &mdash; a <strong>Check New Orders</strong> button appears to check for new/updated orders since the last fetch.<br>
+  <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
+  <strong>Last refresh timestamp:</strong> <span id="muFootRefresh">&ndash;</span>
+</div>
+</div>
+
 <script>
 // IndexedDB cache for the live-month (July) tabs (added 2026-07-24, same
 // pattern already proven on Kamsi/Dilaksi/Sukirtha/Jefri/Mahima's own pages)
@@ -1524,6 +1614,9 @@ function showStaffTab(n){
   document.getElementById('tabBtnDM').classList.toggle('active', n === 'dm');
   document.getElementById('tabDM').style.display = n === 'dm' ? '' : 'none';
   if (n === 'dm' && !DM_DATA) dmLoad(false);
+  document.getElementById('tabBtnMetaUk').classList.toggle('active', n === 'metauk');
+  document.getElementById('tabMetaUk').style.display = n === 'metauk' ? '' : 'none';
+  if (n === 'metauk' && !MU_DATA) muLoad(false);
 }
 
 function showMahimaSub(sub){
@@ -4036,6 +4129,216 @@ function dmGroupExportCsv(){
   downloadCsv(lines.join('\r\n'), monthTag + '_dm-ads-sales-campaign-summary-ledsone-uk.csv');
 }
 document.getElementById('dmGroupExportCsv').addEventListener('click', dmGroupExportCsv);
+
+// ===== Meta UK tab (Meta Ads only, ledsone.co.uk, mirrors the DM tab, distinct MU-prefixed globals/functions) =====
+let MU_CURRENT_MONTH = '2026-07';
+const MU_LIVE_MONTHS = ['2026-07'];
+function muSelectMonth(month){
+  MU_CURRENT_MONTH = month;
+  document.querySelectorAll('#muMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  muLoad(false);
+}
+
+let MU_DATA = null;
+let muOpenRows = new Set();
+let muLoading = false;
+let muAbortController = null;
+let muLastSuccessfulAt = null;
+const MU_MONTH_CACHE = {};
+let muLoadSeq = 0;
+
+async function muLoad(force){
+  const myMonth = MU_CURRENT_MONTH;
+  const seq = ++muLoadSeq;
+  muLoading = true;
+  const isLive = MU_LIVE_MONTHS.includes(myMonth);
+  if (!force && isLive && !MU_MONTH_CACHE[myMonth]) { try { const saved = await idbGet('sales_mu_live'); if (saved) MU_MONTH_CACHE[myMonth] = saved; } catch (e) {} }
+  const newOrdersBtn = document.getElementById('muNewOrdersBtn');
+  newOrdersBtn.style.display = isLive ? '' : 'none';
+  newOrdersBtn.disabled = true;
+  newOrdersBtn.textContent = 'Refreshing…';
+  document.getElementById('muLiveChip').textContent = isLive ? 'Loading live data from Shopify…' : 'Loading historical data from Shopify…';
+  document.getElementById('muLiveChip').className = 'chip';
+  if (muAbortController) muAbortController.abort();
+  muAbortController = new AbortController();
+  try {
+    let data;
+    if (!force && MU_MONTH_CACHE[myMonth]) {
+      data = MU_MONTH_CACHE[myMonth];
+    } else {
+      const url = '/api/sales?staff=meta-uk-ads&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const res = await fetch(url, { signal: muAbortController.signal });
+      data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+      MU_MONTH_CACHE[myMonth] = data;
+      if (isLive) { try { await idbSet('sales_mu_live', data); } catch (e) {} }
+    }
+    if (seq !== muLoadSeq) return;
+    MU_DATA = data;
+    muLastSuccessfulAt = new Date();
+    document.getElementById('muLiveChip').textContent = isLive ? ((data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated (hourly)' : 'Live data retrieved from Shopify') + ' — click Check New Orders for the latest') : 'Historical data retrieved from Shopify';
+    document.getElementById('muLiveChip').className = 'chip';
+    document.getElementById('muLastRefresh').textContent = 'Retrieved at: ' + new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('muLastRefresh').style.display = '';
+    document.getElementById('muFootRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    document.getElementById('mucLastOk').textContent = muLastSuccessfulAt.toLocaleTimeString();
+    document.getElementById('muPeriodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, Meta/Social campaigns &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; ' + (isLive ? 'the current month, updated only when you click Check New Orders &mdash; not auto-updating.' : 'a completed, closed reporting period &mdash; not a live/updating view.');
+    muOpenRows = new Set();
+    muRenderAll();
+    muLoading = false;
+    newOrdersBtn.disabled = false;
+    newOrdersBtn.textContent = 'Check New Orders';
+  } catch (e) {
+    if (seq !== muLoadSeq) return;
+    if (e.name === 'AbortError') { muLoading = false; newOrdersBtn.disabled = false; newOrdersBtn.textContent = 'Check New Orders'; return; }
+    document.getElementById('muLiveChip').textContent = 'Failed to load: ' + e.message + (MU_DATA ? ' — showing last successful data' : '');
+    document.getElementById('muLiveChip').className = 'chip stale';
+    if (!MU_DATA) document.getElementById('mucTbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    muLoading = false;
+    newOrdersBtn.disabled = false;
+    newOrdersBtn.textContent = 'Check New Orders';
+  }
+}
+
+function muRenderAll(){
+  if (!MU_DATA) return;
+  const c = MU_DATA.combinedSummary || { ordersCount: 0, unitsSold: 0, grossSales: 0, refunds: 0, netSales: 0, uniqueProductsSold: 0, currency: 'GBP' };
+  document.getElementById('mukOrders').textContent = num(c.ordersCount);
+  document.getElementById('mukUnits').textContent = num(c.unitsSold);
+  document.getElementById('mukGross').textContent = money(c.grossSales, c.currency);
+  document.getElementById('mukRefunds').textContent = money(c.refunds, c.currency);
+  document.getElementById('mukNet').textContent = money(c.netSales, c.currency);
+  document.getElementById('mukProducts').textContent = num(c.uniqueProductsSold);
+  mucRenderAll();
+}
+
+function muFlatRows(){
+  const rows = [];
+  for (const o of (MU_DATA ? MU_DATA.allMetaUkOrders : []) || []) {
+    for (const item of o.matchedItems) rows.push({ order: o, item, group: o.campaign });
+  }
+  return rows;
+}
+
+function mucFilteredRows(){
+  const qOrder = document.getElementById('mucq_order').value.trim().toLowerCase();
+  const qProduct = document.getElementById('mucq_product').value.trim().toLowerCase();
+  const groupF = document.getElementById('mucf_channel').value;
+  return muFlatRows().filter(r => {
+    const o = r.order, item = r.item;
+    if (qOrder && !(o.orderName || '').toLowerCase().includes(qOrder)) return false;
+    if (qProduct && !String(item.productId || '').toLowerCase().includes(qProduct)) return false;
+    if (groupF && r.group !== groupF) return false;
+    return true;
+  });
+}
+
+function mucRenderAll(){
+  if (!MU_DATA) return;
+  const cb = MU_DATA.campaignSummary || [];
+  document.getElementById('muChannelCardsBody').innerHTML = cb.map(c =>
+    '<tr class="muChannelRow" data-channel="' + esc(c.campaign) + '" style="cursor:pointer;" title="Click to filter table below to this campaign">' +
+    '<td><strong>' + esc(c.campaign) + '</strong></td><td class="num">' + num(c.ordersCount) + '</td><td class="num">' + num(c.unitsSold) + '</td>' +
+    '<td class="num">' + money(c.grossSales, c.currency) + '</td><td class="num">' + money(c.discounts, c.currency) + '</td><td class="num">' + money(c.refunds, c.currency) + '</td>' +
+    '<td class="num">' + money(c.netSales, c.currency) + '</td><td class="num">' + num(c.uniqueProductsSold) + '</td><td class="num">' + money(c.averageRevenuePerOrder, c.currency) + '</td></tr>'
+  ).join('') || '<tr><td colspan="9" class="loading">No data.</td></tr>';
+
+  document.querySelectorAll('.muChannelRow').forEach(tr => {
+    tr.addEventListener('click', () => {
+      document.getElementById('mucf_channel').value = tr.getAttribute('data-channel');
+      mucRenderTable();
+      document.getElementById('mucTbody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sel = document.getElementById('mucf_channel');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">All Campaigns</option>' + cb.map(c => '<option value="' + esc(c.campaign) + '">' + esc(c.campaign) + ' (' + c.ordersCount + ')</option>').join('');
+  sel.value = prevVal;
+
+  mucRenderTable();
+}
+
+function mucRenderTable(){
+  const rows = mucFilteredRows();
+  document.getElementById('mucCnt').textContent = rows.length.toLocaleString() + ' of ' + muFlatRows().length.toLocaleString() + ' line items';
+  const tbody = document.getElementById('mucTbody');
+  const emptyEl = document.getElementById('mucEmpty');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const html = [];
+  rows.forEach(r => {
+    const o = r.order, item = r.item;
+    const fv = o.firstVisit || {};
+    const allSessionsLabel = (o.sessions || []).map(s => s.classification).join(' → ') || '—';
+    const rowId = o.orderId + '_' + item.lineItemId;
+    html.push(
+      '<tr>' +
+      '<td><button class="sessBtn' + (muOpenRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
+      '<td><strong>' + esc(r.group) + '</strong></td>' +
+      '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.productTitle) + '</td>' + '<td>' + esc(item.productId) + '</td>' + '<td>' + esc(item.sku) + '</td>' +
+      '<td class="num">' + num(item.quantity) + '</td>' + '<td class="num">' + money(item.grossSales, item.currency) + '</td>' +
+      '<td class="num">' + money(item.discounts, item.currency) + '</td>' + '<td class="num">' + money(item.refunds, item.currency) + '</td>' + '<td class="num">' + money(item.netSales, item.currency) + '</td>' +
+      '<td>' + esc(o.currency) + '</td>' +
+      '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
+      '<td>' + esc(fv.source) + '</td>' + '<td>' + esc(fv.sourceType) + '</td>' +
+      '<td>' + esc(allSessionsLabel) + '</td>' + '<td>' + esc(o.rawCampaign) + '</td>' +
+      '</tr>'
+    );
+    if (muOpenRows.has(rowId)) {
+      html.push('<tr><td colspan="19"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+        '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
+        '</tr></thead><tbody>' +
+        (o.sessions || []).map(s => {
+          const u = s.utm || {};
+          return '<tr><td>' + s.sessionNumber + '</td><td>' + esc(s.visitId) + '</td><td>' + esc(s.occurredAt ? new Date(s.occurredAt).toLocaleString() : '') + '</td>' +
+            '<td><span class="classpill ' + esc(s.classification) + '">' + esc(s.classification) + '</span></td>' +
+            '<td>' + esc(s.source) + '</td><td>' + esc(s.sourceDescription) + '</td><td>' + esc(s.sourceType) + '</td>' +
+            '<td>' + esc(s.referrerUrl) + '</td><td>' + esc(s.landingPage) + '</td><td>' + esc(s.referralCode) + '</td>' +
+            '<td>' + esc(u.source) + '</td><td>' + esc(u.medium) + '</td><td>' + esc(u.campaign) + '</td><td>' + esc(u.term) + '</td><td>' + esc(u.content) + '</td>' +
+            '<td>' + esc(s.evidence) + '</td></tr>';
+        }).join('') +
+        (o.sessions && o.sessions.length ? '' : '<tr><td colspan="16" style="text-align:center;color:var(--muted);">No session data recorded by Shopify for this order.</td></tr>') +
+        '</tbody></table></div></td></tr>');
+    }
+  });
+  tbody.innerHTML = html.join('');
+
+  tbody.querySelectorAll('.sessBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-rowid');
+      if (muOpenRows.has(id)) muOpenRows.delete(id); else muOpenRows.add(id);
+      mucRenderTable();
+    });
+  });
+}
+
+['mucq_order','mucq_product'].forEach(id => document.getElementById(id).addEventListener('input', mucRenderTable));
+document.getElementById('mucf_channel').addEventListener('change', mucRenderTable);
+document.getElementById('mucResetFilters').addEventListener('click', () => {
+  document.getElementById('mucq_order').value = '';
+  document.getElementById('mucq_product').value = '';
+  document.getElementById('mucf_channel').value = '';
+  mucRenderTable();
+});
+
+function muGroupExportCsv(){
+  const cb = MU_DATA ? (MU_DATA.campaignSummary || []) : [];
+  const header = ['Campaign','Orders','Units Sold','Gross Sales','Discounts','Refunds','Net Sales','Unique Products','Avg / Order','Currency','Report Period'];
+  const lines = [header.join(',')];
+  const period = MU_DATA ? MU_DATA.reportPeriod.label : '';
+  cb.forEach(c => {
+    lines.push([c.campaign, c.ordersCount, c.unitsSold, c.grossSales, c.discounts, c.refunds, c.netSales, c.uniqueProductsSold, c.averageRevenuePerOrder, c.currency, period].map(csvSafe).join(','));
+  });
+  const monthTag = MU_DATA ? MU_DATA.reportPeriod.month : MU_CURRENT_MONTH;
+  downloadCsv(lines.join('\r\n'), monthTag + '_meta-uk-ads-sales-campaign-summary-ledsone-uk.csv');
+}
+document.getElementById('muGroupExportCsv').addEventListener('click', muGroupExportCsv);
 
 // ===== Dilaksi tab (mirrors Kamsi tab above, distinct D-prefixed globals/functions) =====
 let D_CURRENT_MONTH = '2026-07';

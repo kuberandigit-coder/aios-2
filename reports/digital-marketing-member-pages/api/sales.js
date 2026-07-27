@@ -3747,10 +3747,10 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
 
 async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   const staffParam = req.query && req.query.staff;
-  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'jeffri-meta' ? 'jeffri-meta' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : staffParam === 'dm-ads' ? 'dm-ads' : 'sukirtha';
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'jeffri-meta' ? 'jeffri-meta' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'sajeepan-ads' ? 'sajeepan-ads' : staffParam === 'theekshy-ads' ? 'theekshy-ads' : staffParam === 'sonya-ads' ? 'sonya-ads' : staffParam === 'dm-ads' ? 'dm-ads' : staffParam === 'meta-uk-ads' ? 'meta-uk-ads' : 'sukirtha';
   const cacheKey = staff + ':' + monthConfig.month;
   const isFrStaff = staff === 'hetheesha-organic' || staff === 'thivagini-ads';
-  const isUkStaff = staff === 'sajeepan-ads' || staff === 'theekshy-ads' || staff === 'sonya-ads' || staff === 'dm-ads';
+  const isUkStaff = staff === 'sajeepan-ads' || staff === 'theekshy-ads' || staff === 'sonya-ads' || staff === 'dm-ads' || staff === 'meta-uk-ads';
 
   const cached = CACHE.get(cacheKey);
   if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
@@ -3759,7 +3759,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (!forceRefresh) {
-    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'jeffri-meta' ? 'jeffri-meta' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : staff === 'dm-ads' ? 'dm-uk-ads' : 'sukirtha-de-organic';
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'jeffri-meta' ? 'jeffri-meta' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'sajeepan-ads' ? 'sajeepan-uk-ads' : staff === 'theekshy-ads' ? 'theekshy-uk-ads' : staff === 'sonya-ads' ? 'sonya-uk-ads' : staff === 'dm-ads' ? 'dm-uk-ads' : staff === 'meta-uk-ads' ? 'meta-uk-ads' : 'sukirtha-de-organic';
     const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -4444,6 +4444,85 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     return;
   }
 
+  if (staff === 'meta-uk-ads') {
+    // Meta UK tab — added 2026-07-27, ledsone.co.uk (STORE_DOMAIN_UK),
+    // mirrors Jeffri's DE Meta tab exactly: an order belongs here if its
+    // first-session channel is Social (Facebook/Instagram/Pinterest/TikTok)
+    // AND it doesn't already match Sajeepan/Theekshy/Sonya/DM's Google Ads
+    // rules (those take priority — a Social-classified order with a
+    // matching ad term/campaign stays with its ad owner, not Meta). Catches
+    // every Meta/social order store-wide so nothing is missed. Store-wide,
+    // NOT product-scoped, all months including live July.
+    const SAJEEPAN_CAMPAIGN_CHECK = (c) => isSajeepanCampaign(c);
+    const THEEKSHY_TERMS = new Set(['theekshy']);
+    const SONYA_TERMS = new Set(['sonya', 'ninc', 'glow_up', 'sonyaireland', 'sonyaspian', 'sonytopeuropeengeu{_adgroup}']);
+    const DM_TERMS = new Set(['our_hreo']);
+    const DM_CAMPAIGN_BASE = 'shop_dm_pmax-46_aguasset';
+    const metaRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const channel = deriveChannel(journey);
+      if (channel !== 'Social') continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const term = (utm.term || '').toString().toLowerCase();
+      const campaign = (utm.campaign || '').toString().toLowerCase();
+      if (SAJEEPAN_CAMPAIGN_CHECK(utm.campaign) || SAJEEPAN_TERM_TOKENS.includes(term)) continue;
+      if (THEEKSHY_TERMS.has(term)) continue;
+      if (SONYA_TERMS.has(term)) continue;
+      if (DM_TERMS.has(term) || (campaign && (campaign === DM_CAMPAIGN_BASE || campaign.startsWith(DM_CAMPAIGN_BASE)))) continue;
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      row.group = 'Meta';
+      row.matchedTerm = utm.term || utm.campaign || (fv && fv.source) || '(no term)';
+      row.firstSessionChannel = 'SOCIAL';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || (fv && fv.source) || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.campaign = utm.campaign || utm.term || (fv && fv.source) || '(no campaign)';
+      metaRows.push(row);
+    }
+
+    const byTerm = new Map();
+    metaRows.forEach((r) => {
+      const k = r.campaign || '(no campaign)';
+      if (!byTerm.has(k)) byTerm.set(k, []);
+      byTerm.get(k).push(r);
+    });
+    const campaignSummary = [...byTerm.keys()].map((c) => ({ campaign: c, ...summarizeRows(byTerm.get(c)) })).sort((a, b) => b.ordersCount - a.ordersCount);
+    const combinedSummary = summarizeRows(metaRows);
+
+    const metaUkPayload = {
+      success: true,
+      staff: { name: 'Meta UK', department: 'Meta Ads (Facebook/Instagram)', store: 'ledsone.co.uk' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/London' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: 'store-wide (NOT product-scoped) — orders whose first session is classified as Social (Facebook/Instagram/Pinterest/TikTok) and don\'t already match Sajeepan/Theekshy/Sonya/DM\'s Google Ads utm rules (those take priority). Found via UK channel-gap audit, 2026-07-27.',
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: [...byTerm.keys()],
+      combinedSummary,
+      campaignSummary,
+      allMetaUkOrders: metaRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: metaRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: metaUkPayload, generatedAt: Date.now() });
+    res.status(200).json(metaUkPayload);
+    return;
+  }
+
   if (staff === 'sonya-ads') {
     if (req.query && req.query.debugAllTermsSonya === '1') {
       const rows = [];
@@ -5112,6 +5191,7 @@ query($cursor: String, $q: String!) {
     const sajeepanTermTally = new Map();
     const sajeepanEmptyTermContentTally = new Map();
     const paidGapTally = new Map();
+    const socialTally = new Map();
     while (hasNext) {
       const r = await fetch(`https://${STORE_DOMAIN_UK}/admin/api/${API_VERSION_UK}/graphql.json`, {
         method: 'POST',
@@ -5249,6 +5329,18 @@ query($cursor: String, $q: String!) {
               g.netSales += orderNet;
             }
           }
+
+          // UK Meta/Social audit (added 2026-07-27): tally utm_term/campaign
+          // for every order classified "Social" -- same purpose as the
+          // paid-search gap audit, so a UK Meta staff tab can be built the
+          // same way Jeffri's DE Meta tab was (mirrors debugFindMeta).
+          if (channel === 'Social') {
+            const key = `${term || '(empty term)'} | ${utm.campaign || '(empty campaign)'} | src=${utm.source || fv.source || '(none)'}`;
+            if (!socialTally.has(key)) socialTally.set(key, { orders: 0, netSales: 0, term: term || null, campaign: utm.campaign || null, source: utm.source || fv.source || null });
+            const so = socialTally.get(key);
+            so.orders += 1;
+            so.netSales += orderNet;
+          }
         }
 
         const fs = o.displayFinancialStatus || 'UNKNOWN';
@@ -5294,6 +5386,7 @@ query($cursor: String, $q: String!) {
         orders: [...sajeepanTermTally.values()].reduce((s, v) => s + v.orders, 0),
         netSales: r2([...sajeepanTermTally.values()].reduce((s, v) => s + v.netSales, 0)),
       },
+      socialAudit: [...socialTally.values()].sort((a, b) => b.orders - a.orders),
       paidSearchGapAudit: [...paidGapTally.values()].sort((a, b) => b.orders - a.orders),
       paidSearchGapTotal: {
         orders: [...paidGapTally.values()].reduce((s, v) => s + v.orders, 0),
