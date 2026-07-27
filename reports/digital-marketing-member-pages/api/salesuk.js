@@ -35,7 +35,7 @@ function londonMidnightUTCMs(year, month, day) {
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 // Jan-Feb wired up so far (Feb added 2026-07-27) — add more months here as
 // this page grows the same way sales.html did.
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-01';
