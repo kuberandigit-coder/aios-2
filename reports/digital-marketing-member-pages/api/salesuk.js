@@ -388,7 +388,7 @@ function isMetaMatch(utm, fv, journey, month) {
   if (deriveChannelLabel(journey) === 'Social' && source === 'an unknown source') return true;
   // May-only: EVERY Social-channel order -> Meta, confirmed by the user,
   // 2026-07-27 (broader than the specific-source rule above).
-  if (month === '2026-05' && deriveChannelLabel(journey) === 'Social') return true;
+  if ((month === '2026-05' || month === '2026-06') && deriveChannelLabel(journey) === 'Social') return true;
   return false;
 }
 
@@ -454,7 +454,7 @@ function isOrganicMatch(utm, fv, journey) {
 }
 
 // Sonya group campaigns, given directly by the user, 2026-07-27.
-const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight', 'sh_wall_light']);
+const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight', 'sh_wall_light', 'klarna_sonya_kl-englisheu-all']);
 function isSonyaCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SONYA_CAMPAIGNS.has(c);
@@ -501,7 +501,7 @@ const GROUPS = [
     match: (utm, fv, journey, month) => {
       if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
       if (!utm.campaign && !utm.term && (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' || lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all')) return true;
-      if (['2026-02', '2026-03', '2026-04', '2026-05'].includes(month) && !utm.campaign && !utm.term) {
+      if (['2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].includes(month) && !utm.campaign && !utm.term) {
         const medium = (utm.medium || '').toString().toLowerCase();
         // Don't blanket-claim if the last session traces to a known
         // Sajeepan campaign — let that fall through to Sajeepan instead
@@ -515,7 +515,7 @@ const GROUPS = [
       if (utm.term) return utm.term;
       if (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (2nd session)';
       if (lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (last session)';
-      if (['2026-02', '2026-03', '2026-04', '2026-05'].includes(month)) return 'google_ads (untraceable campaign, ' + month + ')';
+      if (['2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].includes(month)) return 'google_ads (untraceable campaign, ' + month + ')';
       return null;
     },
   },
@@ -588,6 +588,17 @@ const GROUPS = [
     department: 'Google Ads (Paid Search)',
     scope: 'first-session utm_campaign exactly matches "Pmax_UK_Theekshy_Shoptimised_THEE_NS_MCV_UK" (case-insensitive). Found in May data, confirmed by the user, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
     match: (utm) => (utm.campaign || '').toString().toLowerCase() === 'pmax_uk_theekshy_shoptimised_thee_ns_mcv_uk',
+    matchValue: (utm) => utm.campaign,
+  },
+  {
+    key: 'thanishtika',
+    name: 'Thanishtika',
+    department: 'Google Ads (Paid Search)',
+    scope: 'first-session utm_campaign exactly matches "Thanish-PMax-HI-12-3-2026" or "Thanish-Pmax-sho-3-2-2026" (case-insensitive). Found in June data, confirmed by the user, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
+    match: (utm) => {
+      const c = (utm.campaign || '').toString().toLowerCase();
+      return c === 'thanish-pmax-hi-12-3-2026' || c === 'thanish-pmax-sho-3-2-2026';
+    },
     matchValue: (utm) => utm.campaign,
   },
 ];
