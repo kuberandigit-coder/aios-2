@@ -433,11 +433,19 @@ const GROUPS = [
     match: (utm) => isSajeepanCampaignUk(utm.campaign),
     matchValue: (utm) => utm.campaign,
   },
+  {
+    key: 'sukirtha',
+    name: 'Sukirtha',
+    department: 'Email Marketing',
+    scope: 'first-session channel is classified Email (Shopify sourceType=NEWSLETTER, or utm_medium=email, or source/description contains "email") — EVERY email-attributed order, not restricted to a specific campaign list. Checked last — an order already claimed by DM-Ad/Meta/Sonya/Sajeepan never lands here.',
+    match: (utm, fv, journey) => !!(journey && journey.first && journey.first.classification === 'EMAIL'),
+    matchValue: (utm, fv) => utm.campaign || (fv && fv.sourceDescription) || (fv && fv.source) || '(email, no campaign)',
+  },
 ];
 
-function assignGroup(utm, fv) {
+function assignGroup(utm, fv, journey) {
   for (const g of GROUPS) {
-    if (g.match(utm, fv)) return g;
+    if (g.match(utm, fv, journey)) return g;
   }
   return null;
 }
@@ -479,7 +487,7 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') continue;
     const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
     const utm = (fv && fv.utmParameters) || {};
-    const assigned = assignGroup(utm, fv);
+    const assigned = assignGroup(utm, fv, journey);
     if (!assigned || assigned.key !== groupDef.key) continue;
     const row = buildOrderRow(order, journey);
     row.matchedCampaign = groupDef.matchValue(utm, fv);
