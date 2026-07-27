@@ -450,6 +450,53 @@ function assignGroup(utm, fv, journey) {
   return null;
 }
 
+function deriveChannelLabel(journey) {
+  if (!journey || !journey.first) return 'No Journey Data';
+  const map = {
+    ORGANIC_SEARCH: 'Organic Search', PAID_SEARCH: 'Google Ads / Paid Search', DIRECT: 'Direct',
+    SOCIAL: 'Social', EMAIL: 'Email', AFFILIATE: 'Affiliate', REFERRAL: 'Referral', OTHER: 'Other', UNKNOWN: 'Unknown',
+  };
+  return map[journey.first.classification] || 'Unknown';
+}
+
+// Diagnostic-only mode (added 2026-07-27): tally every order NOT matched by
+// any group in GROUPS, using the exact same assignGroup() logic the real
+// tabs use, so this always stays consistent with what the tabs actually
+// show — no separate/approximate reconciliation needed.
+async function handleRemaining(req, res, monthConfig, forceRefresh) {
+  const startTime = Date.now();
+  const retryState = { throttleRetries: 0 };
+  const { orders } = await fetchOrdersForMonth(monthConfig, retryState);
+  const tally = new Map();
+  let remainingCount = 0, remainingNet = 0;
+  for (const order of orders) {
+    const journey = classifyOrderJourney(order);
+    if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') continue;
+    const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+    const utm = (fv && fv.utmParameters) || {};
+    const assigned = assignGroup(utm, fv, journey);
+    if (assigned) continue;
+    const row = buildOrderRow(order, journey);
+    const channel = deriveChannelLabel(journey);
+    const groupValue = utm.campaign || utm.term || (fv && fv.source) || '(no first-session data)';
+    const key = channel + ' | ' + groupValue;
+    if (!tally.has(key)) tally.set(key, { channel, group: groupValue, orders: 0, netSales: 0, orderNames: [] });
+    const t = tally.get(key);
+    t.orders += 1;
+    t.netSales = round2(t.netSales + row.netSales);
+    if (t.orderNames.length < 1000) t.orderNames.push(row.orderName);
+    remainingCount += 1;
+    remainingNet = round2(remainingNet + row.netSales);
+  }
+  res.status(200).json({
+    success: true,
+    reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/London' },
+    remainingTotal: { orders: remainingCount, netSales: remainingNet },
+    remainingSplit: [...tally.values()].sort((a, b) => b.orders - a.orders),
+    meta: { generatedAt: new Date().toISOString(), executionMs: Date.now() - startTime },
+  });
+}
+
 // ---------- Simple in-memory cache (per warm Lambda instance only) ----------
 const CACHE = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -546,7 +593,9 @@ module.exports = async function handler(req, res) {
   const groupDef = GROUPS.find(g => g.key === groupKey);
 
   try {
-    if (groupDef) {
+    if (groupKey === 'remaining') {
+      await handleRemaining(req, res, monthConfig, forceRefresh);
+    } else if (groupDef) {
       await handleGroup(req, res, monthConfig, forceRefresh, groupDef);
     } else {
       res.status(400).json({ success: false, error: `Unknown group "${groupKey}"` });
