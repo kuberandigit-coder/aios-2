@@ -5192,6 +5192,7 @@ query($cursor: String, $q: String!) {
     const sajeepanEmptyTermContentTally = new Map();
     const paidGapTally = new Map();
     const socialTally = new Map();
+    const firstSessionSplit = new Map();
     while (hasNext) {
       const r = await fetch(`https://${STORE_DOMAIN_UK}/admin/api/${API_VERSION_UK}/graphql.json`, {
         method: 'POST',
@@ -5341,6 +5342,23 @@ query($cursor: String, $q: String!) {
             so.orders += 1;
             so.netSales += orderNet;
           }
+
+          // Full first-session split of EVERY order in the month (added
+          // 2026-07-27, per user request to review/assign every order
+          // manually instead of relying on possibly-overlapping per-staff
+          // rules). Groups by channel + campaign (or term/source when no
+          // campaign) so every one of the ~2,399 real January orders shows
+          // up in exactly one bucket here, with the order names listed so
+          // specific orders can be inspected.
+          {
+            const groupKey = utm.campaign || term || (fv && fv.source) || '(no first-session data)';
+            const key = channel + ' | ' + groupKey;
+            if (!firstSessionSplit.has(key)) firstSessionSplit.set(key, { channel, group: groupKey, orders: 0, netSales: 0, orderNames: [] });
+            const fs2 = firstSessionSplit.get(key);
+            fs2.orders += 1;
+            fs2.netSales += orderNet;
+            if (fs2.orderNames.length < 500) fs2.orderNames.push(o.name);
+          }
         }
 
         const fs = o.displayFinancialStatus || 'UNKNOWN';
@@ -5386,6 +5404,7 @@ query($cursor: String, $q: String!) {
         orders: [...sajeepanTermTally.values()].reduce((s, v) => s + v.orders, 0),
         netSales: r2([...sajeepanTermTally.values()].reduce((s, v) => s + v.netSales, 0)),
       },
+      firstSessionSplit: [...firstSessionSplit.values()].map((v) => ({ ...v, netSales: r2(v.netSales) })).sort((a, b) => b.orders - a.orders),
       socialAudit: [...socialTally.values()].sort((a, b) => b.orders - a.orders),
       paidSearchGapAudit: [...paidGapTally.values()].sort((a, b) => b.orders - a.orders),
       paidSearchGapTotal: {
