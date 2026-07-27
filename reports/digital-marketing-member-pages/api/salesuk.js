@@ -378,12 +378,25 @@ function isDmAdCampaign(campaign) {
 // "android-app://m.facebook.com/".
 const META_CAMPAIGNS = new Set(['sales ads – copy', 'sales ads', 'sales ads | retargeting | add to cart', 'new sales ad set', 'abo sales ads - retarget - catalog ads', 'abo sales ads - lookalike - catalog ads']);
 const META_SOURCES = new Set(['facebook', 'instagram', 'android-app://m.facebook.com/']);
-function isMetaMatch(utm, fv) {
+function isMetaMatch(utm, fv, journey) {
   const campaign = (utm.campaign || '').toString().toLowerCase();
   if (campaign && META_CAMPAIGNS.has(campaign)) return true;
   const source = (utm.source || (fv && fv.source) || '').toString().toLowerCase();
   if (source && META_SOURCES.has(source)) return true;
+  // "Social | an unknown source" confirmed by the user, 2026-07-27 — a
+  // Social-classified first session whose source Shopify couldn't identify.
+  if (deriveChannelLabel(journey) === 'Social' && source === 'an unknown source') return true;
   return false;
+}
+
+// Second-session lookthrough (added 2026-07-27, per user request): when the
+// first session carries no campaign/term at all, check the SECOND session's
+// utm_campaign instead — used only for a small number of specific,
+// user-confirmed cases below, never as a general rule.
+function secondSessionCampaign(journey) {
+  const second = journey && journey.classifications && journey.classifications[1];
+  const utm = second && second.visit && second.visit.utmParameters;
+  return (utm && utm.campaign || '').toString().toLowerCase();
 }
 
 // Organic group: Direct / Referral (all) / No Journey Data / a specific
@@ -425,7 +438,7 @@ function isOrganicMatch(utm, fv, journey) {
 }
 
 // Sonya group campaigns, given directly by the user, 2026-07-27.
-const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight']);
+const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight', 'sh_wall_light']);
 function isSonyaCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SONYA_CAMPAIGNS.has(c);
@@ -441,7 +454,7 @@ function isSonyaTerm(term) {
 }
 
 // Sajeepan group campaigns, given directly by the user, 2026-07-27.
-const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p', 'sj_pmax_scale_heroes_25', 'klarna_css_sj25_pmax']);
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p', 'sj_pmax_scale_heroes_25', 'klarna_css_sj25_pmax', 'klarna_g2']);
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
@@ -460,25 +473,25 @@ const GROUPS = [
     key: 'meta',
     name: 'Meta',
     department: 'Meta Ads (Facebook/Instagram)',
-    scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart" / "New Sales ad set" / "ABO Sales Ads - Retarget - Catalog Ads" / "ABO Sales Ads - Lookalike - Catalog Ads", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
-    match: (utm, fv) => isMetaMatch(utm, fv),
+    scope: 'first-session utm_campaign is one of "Sales Ads – Copy" / "Sales Ads" / "Sales Ads | Retargeting | Add to Cart" / "New Sales ad set" / "ABO Sales Ads - Retarget - Catalog Ads" / "ABO Sales Ads - Lookalike - Catalog Ads", OR first-session source is "Facebook" / "Instagram" / "android-app://m.facebook.com/", OR first-session channel is Social with source "an unknown source" (case-insensitive). Checked only after DM-Ad — an order already claimed by DM-Ad never lands here.',
+    match: (utm, fv, journey) => isMetaMatch(utm, fv, journey),
     matchValue: (utm, fv) => utm.campaign || utm.source || (fv && fv.source) || null,
   },
   {
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all" or "Sonya_PendantLight", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}") — same rule as the main dashboard\'s Sonya tab. Checked only after DM-Ad and Meta.',
-    match: (utm) => isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term),
-    matchValue: (utm) => utm.campaign || utm.term,
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for a small number of Google-Ads-clicks where Shopify only tagged the campaign on the 2nd visit). Checked only after DM-Ad and Meta.',
+    match: (utm, fv, journey) => isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term) || (!utm.campaign && !utm.term && secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all'),
+    matchValue: (utm, fv, journey) => utm.campaign || utm.term || (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' ? 'Klarna_Sonya_kl-pmx-all (2nd session)' : null),
   },
   {
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX" (case-insensitive). Checked only after DM-Ad, Meta and Sonya.',
-    match: (utm) => isSajeepanCampaignUk(utm.campaign),
-    matchValue: (utm) => utm.campaign,
+    scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX", "Klarna_G2" (case-insensitive), OR (first session has no campaign/term AND the 2nd session\'s campaign is "Klarna_P" — confirmed by the user, 2026-07-27). Checked only after DM-Ad, Meta and Sonya.',
+    match: (utm, fv, journey) => isSajeepanCampaignUk(utm.campaign) || (!utm.campaign && !utm.term && secondSessionCampaign(journey) === 'klarna_p'),
+    matchValue: (utm, fv, journey) => utm.campaign || (secondSessionCampaign(journey) === 'klarna_p' ? 'Klarna_P (2nd session)' : null),
   },
   {
     key: 'sukirtha',
