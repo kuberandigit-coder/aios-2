@@ -71,19 +71,20 @@ tbody tr:hover{background:var(--accent-soft);}
 <div class="wrap">
   <a class="back" href="../home.html">&larr; Back to Dashboard</a>
 
-  <div class="reqtabs" id="monthTabs">
-    <div class="reqtab active" data-month="2026-01" onclick="selectMonth('2026-01')">January</div>
+  <div class="reqtabs" id="groupTabs">
+    <div class="reqtab active" data-group="dm-ad" onclick="selectGroup('dm-ad')">DM-Ad</div>
+    <div class="reqtab" data-group="meta" onclick="selectGroup('meta')">Meta</div>
+    <div class="reqtab" data-group="sonya" onclick="selectGroup('sonya')">Sonya</div>
+    <div class="reqtab" data-group="sajeepan" onclick="selectGroup('sajeepan')">Sajeepan</div>
+    <div class="reqtab" data-group="sukirtha" onclick="selectGroup('sukirtha')">Sukirtha</div>
+    <div class="reqtab" data-group="organic" onclick="selectGroup('organic')">Organic</div>
+    <div class="reqtab" data-group="cppc" onclick="selectGroup('cppc')">CPPC</div>
   </div>
 
   <div id="tabJanuary">
-    <div class="reqtabs" id="groupTabs" style="margin-bottom:14px;">
-      <div class="reqtab active" data-group="dm-ad" onclick="selectGroup('dm-ad')">DM-Ad</div>
-      <div class="reqtab" data-group="meta" onclick="selectGroup('meta')">Meta</div>
-      <div class="reqtab" data-group="sonya" onclick="selectGroup('sonya')">Sonya</div>
-      <div class="reqtab" data-group="sajeepan" onclick="selectGroup('sajeepan')">Sajeepan</div>
-      <div class="reqtab" data-group="sukirtha" onclick="selectGroup('sukirtha')">Sukirtha</div>
-      <div class="reqtab" data-group="organic" onclick="selectGroup('organic')">Organic</div>
-      <div class="reqtab" data-group="cppc" onclick="selectGroup('cppc')">CPPC</div>
+    <div class="reqtabs" id="monthTabs" style="margin-bottom:14px;">
+      <div class="reqtab active" data-month="2026-01" onclick="selectMonth('2026-01')">January</div>
+      <div class="reqtab" data-month="2026-02" onclick="selectMonth('2026-02')">February</div>
     </div>
 
     <div id="groupDmAd">
@@ -181,13 +182,21 @@ function downloadCsv(content, filename){
 let CURRENT_MONTH = '2026-01';
 let CURRENT_GROUP = 'dm-ad';
 const GROUP_CACHE = {};
-function selectMonth(m){ CURRENT_MONTH = m; document.querySelectorAll('#monthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === m)); }
+function switchView(){
+  openRows = new Set();
+  const key = CURRENT_GROUP + ':' + CURRENT_MONTH;
+  if (GROUP_CACHE[key]) { DATA = GROUP_CACHE[key]; applyData(); }
+  else { DATA = null; load(false); }
+}
+function selectMonth(m){
+  CURRENT_MONTH = m;
+  document.querySelectorAll('#monthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === m));
+  switchView();
+}
 function selectGroup(g){
   CURRENT_GROUP = g;
   document.querySelectorAll('#groupTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-group') === g));
-  openRows = new Set();
-  if (GROUP_CACHE[g]) { DATA = GROUP_CACHE[g]; applyData(); }
-  else { DATA = null; load(false); }
+  switchView();
 }
 
 let DATA = null;
@@ -206,7 +215,7 @@ async function load(force){
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
     DATA = data;
-    GROUP_CACHE[CURRENT_GROUP] = data;
+    GROUP_CACHE[CURRENT_GROUP + ':' + CURRENT_MONTH] = data;
     applyData();
   } catch (e) {
     document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message + (DATA ? ' — showing last successful data' : '');
