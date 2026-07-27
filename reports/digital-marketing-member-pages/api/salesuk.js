@@ -583,6 +583,11 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     t.netSales = round2(t.netSales + row.netSales);
     if (t.orderNames.length < 1000) t.orderNames.push(row.orderName);
     if (utm.term) t.terms.add(utm.term);
+    // Terms from EVERY session, not just first — added 2026-07-27 per user
+    // request, purely diagnostic.
+    for (const s of (row.sessions || [])) {
+      if (s.utm && s.utm.term) t.terms.add(s.utm.term);
+    }
     t.mediums.add(utm.medium || '(none)');
     if (utm.campaign) t.hasCampaign++; else t.noCampaign++;
     // Second-session lookthrough (added 2026-07-27, per user request): when
