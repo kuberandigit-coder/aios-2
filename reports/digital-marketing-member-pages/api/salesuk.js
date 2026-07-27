@@ -566,7 +566,7 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     const assigned = assignGroup(utm, fv, journey);
     if (!assigned || assigned.key !== groupDef.key) continue;
     const row = buildOrderRow(order, journey);
-    row.matchedCampaign = groupDef.matchValue(utm, fv);
+    row.matchedCampaign = groupDef.matchValue(utm, fv, journey);
     rows.push(row);
   }
 
