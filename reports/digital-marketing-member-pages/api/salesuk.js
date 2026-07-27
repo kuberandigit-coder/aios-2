@@ -514,7 +514,7 @@ const GROUPS = [
     scope: 'first-session channel is classified Email (Shopify sourceType=NEWSLETTER, or utm_medium=email, or source/description contains "email") — EVERY email-attributed order, not restricted to a specific campaign list. Also catches utm_source/utm_campaign exactly "email" even when Shopify\'s own channel classifier mislabels it (e.g. Organic Search) — confirmed by the user, 2026-07-27. Checked last — an order already claimed by DM-Ad/Meta/Sonya/Sajeepan never lands here.',
     match: (utm, fv, journey) => {
       if (journey && journey.first && journey.first.classification === 'EMAIL') return true;
-      const src = (utm.source || '').toString().toLowerCase();
+      const src = (utm.source || (fv && fv.source) || '').toString().toLowerCase();
       const camp = (utm.campaign || '').toString().toLowerCase();
       return src === 'email' || camp === 'email';
     },
