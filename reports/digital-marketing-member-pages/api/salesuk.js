@@ -597,6 +597,8 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
       const lu = lastSession.utm || {};
       const kL = lu.campaign || lu.term || '(no campaign/term)';
       t.lastSessionCampaigns.set(kL, (t.lastSessionCampaigns.get(kL) || 0) + 1);
+      if (!t.orderDetails) t.orderDetails = [];
+      if (t.orderDetails.length < 200) t.orderDetails.push({ orderName: row.orderName, lastSessionCampaign: kL });
     }
     const secondSession = (row.sessions || [])[1];
     if (secondSession) {
