@@ -12,6 +12,8 @@
 const STORE_DOMAIN_UK = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
 const API_VERSION_UK = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
 const TOKEN_UK = process.env.SHOPIFY_UK_ADMIN_TOKEN;
+const fs = require('fs');
+const path = require('path');
 
 // ---------- Europe/London month boundaries, DST-aware ----------
 function londonOffsetMinutesAt(utcGuessMs) {
@@ -177,7 +179,7 @@ async function shopifyGraphQL(query, variables, retryState) {
 
 const ORDERS_QUERY = `
 query SalesUkOrders($cursor: String, $query: String!) {
-  orders(first: 50, after: $cursor, sortKey: CREATED_AT, query: $query) {
+  orders(first: 100, after: $cursor, sortKey: CREATED_AT, query: $query) {
     edges {
       node {
         id
@@ -377,6 +379,22 @@ async function handleDmAd(req, res, monthConfig, forceRefresh) {
   if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
     res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
     return;
+  }
+
+  // Static-snapshot fast path (added 2026-07-27, same pattern every other
+  // historical-month tab on sales.html uses) — a live full-month Shopify
+  // scan takes 60-90s+, unusable for a page load. Once generated (see
+  // scripts/generate-salesuk-snapshots.js) this makes a normal page load
+  // near-instant; ?refresh=1 always bypasses it for a fresh live scan.
+  if (!forceRefresh) {
+    const staticPath = path.join(__dirname, 'data', `salesuk-dm-ad-${monthConfig.month}.json`);
+    if (fs.existsSync(staticPath)) {
+      const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+      const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+      CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
+      res.status(200).json(payload);
+      return;
+    }
   }
 
   const startTime = Date.now();
