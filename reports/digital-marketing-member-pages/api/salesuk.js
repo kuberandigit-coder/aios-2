@@ -386,6 +386,27 @@ function isMetaMatch(utm, fv) {
   return false;
 }
 
+// Organic group: Direct / Referral (all) / No Journey Data / a specific
+// whitelist of Organic Search sources / Other-ChatGPT — confirmed by the
+// user, 2026-07-27, after verifying these carry no paid-ad signal.
+// Deliberately excludes "Organic Search | Multifeeds" and the other three
+// stray "Other" entries (Shopping/unknown source/klarna-merchantboost) —
+// not confirmed by the user, left in the remaining/unassigned pool.
+const ORGANIC_SEARCH_SOURCES = new Set(['google', 'android-app://com.google.android.googlequicksearchbox/', 'bing', 'duckduckgo', 'android-app://com.google.android.gm/', 'ecosia', 'yahoo']);
+function isOrganicMatch(utm, fv, journey) {
+  const channel = deriveChannelLabel(journey);
+  if (channel === 'Direct' || channel === 'Referral' || channel === 'No Journey Data') return true;
+  if (channel === 'Organic Search') {
+    const src = ((fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString().toLowerCase();
+    return ORGANIC_SEARCH_SOURCES.has(src);
+  }
+  if (channel === 'Other') {
+    const src = ((fv && fv.source) || utm.source || '').toString();
+    return src === 'ChatGPT';
+  }
+  return false;
+}
+
 // Sonya group campaigns, given directly by the user, 2026-07-27.
 const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight']);
 function isSonyaCampaign(campaign) {
@@ -440,6 +461,14 @@ const GROUPS = [
     scope: 'first-session channel is classified Email (Shopify sourceType=NEWSLETTER, or utm_medium=email, or source/description contains "email") — EVERY email-attributed order, not restricted to a specific campaign list. Checked last — an order already claimed by DM-Ad/Meta/Sonya/Sajeepan never lands here.',
     match: (utm, fv, journey) => !!(journey && journey.first && journey.first.classification === 'EMAIL'),
     matchValue: (utm, fv) => utm.campaign || (fv && fv.sourceDescription) || (fv && fv.source) || '(email, no campaign)',
+  },
+  {
+    key: 'organic',
+    name: 'Organic',
+    department: 'Organic / Direct / Referral',
+    scope: 'first-session channel is Direct, Referral (any), "No Journey Data", OR Organic Search from one of Google / Google app (Android) / Bing / DuckDuckGo / Gmail app / Ecosia / Yahoo, OR "Other" with source exactly "ChatGPT" (case-sensitive, distinct from the chatgpt.com Referral entries). Confirmed by the user, 2026-07-27, after verifying none of these carry any paid-ad signal (no gclid/paid utm_medium/paid utm_source/Shopify ad sourceType). Checked last — an order already claimed by any earlier group never lands here.',
+    match: (utm, fv, journey) => isOrganicMatch(utm, fv, journey),
+    matchValue: (utm, fv, journey) => deriveChannelLabel(journey) + ' - ' + (utm.campaign || (fv && fv.source) || (fv && fv.sourceDescription) || (journey && journey.status === 'NO_JOURNEY_DATA' ? '(no journey data)' : 'direct')),
   },
 ];
 
