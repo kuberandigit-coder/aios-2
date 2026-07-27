@@ -12,3 +12,8 @@ Index of `capability/*.md` files — reusable technical knowledge extracted from
 - [`2026-07-24_sonya-snapshot-backfill_capability.md`](2026-07-24_sonya-snapshot-backfill_capability.md) — sequential, cooldown-based monthly snapshot backfill script pattern.
 - [`2026-07-24_dm-google-ads-tab_capability.md`](2026-07-24_dm-google-ads-tab_capability.md) — templated same-day process for standing up a new staff Ads tab from a gap-audit finding.
 - [`2026-07-24_kamsi-organic-sales-rule-prompt_capability.md`](2026-07-24_kamsi-organic-sales-rule-prompt_capability.md) — reusable written definition of the "organic sales" rule for ledsone.co.uk.
+
+## 2026-07-27
+
+- [`2026-07-27_meta-uk-tab-and-overlap-discovery_capability.md`](2026-07-27_meta-uk-tab-and-overlap-discovery_capability.md) — Meta UK tab, plus the order-name-set comparison technique that found 48% cross-tab order overlap on the main dashboard.
+- [`2026-07-27_salesuk-standalone-order-level-page_capability.md`](2026-07-27_salesuk-standalone-order-level-page_capability.md) — building mutually-exclusive tab groups by construction (priority-ordered first-match-wins), order-level rows, and the page-size + static-snapshot combo needed to keep large monthly scans fast.
