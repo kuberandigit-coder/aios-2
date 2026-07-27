@@ -530,11 +530,12 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     const channel = deriveChannelLabel(journey);
     const groupValue = utm.campaign || utm.term || (fv && fv.source) || '(no first-session data)';
     const key = channel + ' | ' + groupValue;
-    if (!tally.has(key)) tally.set(key, { channel, group: groupValue, orders: 0, netSales: 0, orderNames: [] });
+    if (!tally.has(key)) tally.set(key, { channel, group: groupValue, orders: 0, netSales: 0, orderNames: [], terms: new Set() });
     const t = tally.get(key);
     t.orders += 1;
     t.netSales = round2(t.netSales + row.netSales);
     if (t.orderNames.length < 1000) t.orderNames.push(row.orderName);
+    if (utm.term) t.terms.add(utm.term);
     remainingCount += 1;
     remainingNet = round2(remainingNet + row.netSales);
   }
@@ -542,7 +543,7 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     success: true,
     reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/London' },
     remainingTotal: { orders: remainingCount, netSales: remainingNet },
-    remainingSplit: [...tally.values()].sort((a, b) => b.orders - a.orders),
+    remainingSplit: [...tally.values()].map((v) => ({ ...v, terms: [...v.terms] })).sort((a, b) => b.orders - a.orders),
     meta: { generatedAt: new Date().toISOString(), executionMs: Date.now() - startTime },
   });
 }
