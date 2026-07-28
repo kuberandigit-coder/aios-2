@@ -2486,6 +2486,54 @@ async function handleReq3(req, res) {
   res.status(200).json({ summary, rows });
 }
 
+// ==================== SUK-R5: Low-Stock Alerts ====================
+// Approved Low-Stock threshold: Current Stock < 10 (user-confirmed, 2026-07-27).
+// Reuses r3FetchAllVariants (same product/variant/inventory query as SUK-R3) —
+// no orders query needed since low-stock only depends on Current Stock.
+
+const R5_LOW_STOCK_THRESHOLD = 10;
+
+function r5ComputeStatus(currentStock, tracked) {
+  if (!tracked || currentStock === null) return 'Not Assessable';
+  return currentStock < R5_LOW_STOCK_THRESHOLD ? 'Low Stock' : 'OK';
+}
+
+async function handleReq5(req, res) {
+  const variants = await r3FetchAllVariants();
+  const retrievedAt = new Date().toISOString();
+
+  const rows = variants.map(v => ({
+    ...v,
+    status: r5ComputeStatus(v.currentStock, v.inventoryTracked),
+  }));
+
+  const totalProducts = new Set(rows.map(r => r.productId)).size;
+  const totalVariants = rows.length;
+  const totalCurrentStock = rows.filter(r => r.currentStock !== null).reduce((s, r) => s + r.currentStock, 0);
+  const lowStockCount = rows.filter(r => r.status === 'Low Stock').length;
+  const okCount = rows.filter(r => r.status === 'OK').length;
+  const outOfStockCount = rows.filter(r => r.currentStock === 0).length;
+  const missingSku = rows.filter(r => r.missingSku).length;
+  const notTracked = rows.filter(r => !r.inventoryTracked).length;
+
+  const summary = {
+    retrievedAt,
+    lowStockThreshold: R5_LOW_STOCK_THRESHOLD,
+    thresholdRule: `Current Stock < ${R5_LOW_STOCK_THRESHOLD}`,
+    inventoryLocations: [...new Set(rows.map(r => r.inventoryLocation).filter(Boolean))],
+    totalProducts,
+    totalVariants,
+    totalCurrentStock,
+    lowStockCount,
+    okCount,
+    outOfStockCount,
+    missingSku,
+    inventoryNotTracked: notTracked,
+  };
+
+  res.status(200).json({ summary, rows });
+}
+
 // ==================== Dispatcher ====================
 
 async function req2Req3Handler(req, res) {
@@ -2495,9 +2543,11 @@ async function req2Req3Handler(req, res) {
       res.status(500).json({ error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
       return;
     }
-    const reqNum = req.query && req.query.req === '3' ? '3' : '2';
+    const reqNum = req.query && req.query.req;
     if (reqNum === '3') {
       await handleReq3(req, res);
+    } else if (reqNum === '5') {
+      await handleReq5(req, res);
     } else {
       await handleReq2(req, res);
     }
@@ -3214,8 +3264,130 @@ function relatedReasonOf(url) {
   return null;
 }
 
+// ==================== Thasitha Requirement 1 — Campaign Performance & ROAS ====================
+// Live PostgreSQL refresh, matching the Jefri Requirement 1 pattern: short
+// in-memory cache, bypassed by ?refresh=1 (the page's "Refresh Data" button).
+// Source tables (see evidence/thasitha/requirement-1-postgresql-source-map.md):
+//   google_ads.campaigns            — campaign_id, campaign_name, budget, feeds (Tags),
+//                                      scoped to group_name = 'Thasi' (2 campaigns, ledsone.de)
+//   google_ads.campaign_performance — one row per (date, campaign_id): impressions, clicks,
+//                                      cost, conversion_value, conversions (account currency, EUR)
+// Read-only queries only — no writes, no schema changes. Requires the `pg` npm package
+// (already a dependency, shared with the Jefri endpoint above).
+const thasithaReq1HandlerModule = (function() {
+const { Pool } = require('pg');
+
+const CACHE = new Map();
+const CACHE_TTL_MS = 60 * 1000;
+const CACHE_KEY = 'thasitha-req1';
+
+let pool;
+function getPool() {
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString && !process.env.PGHOST) {
+      throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+    }
+    pool = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+      // Same server as the Jefri endpoint above — SSL confirmed unsupported.
+      ssl: false,
+      connectionTimeoutMillis: 8000,
+      statement_timeout: 20000,
+      max: 3,
+    });
+  }
+  return pool;
+}
+
+const CAMPAIGNS_QUERY = `
+  SELECT campaign_id, campaign_name, budget, feeds
+  FROM google_ads.campaigns
+  WHERE group_name = 'Thasi'
+  ORDER BY campaign_id;
+`;
+
+const PERFORMANCE_QUERY = `
+  SELECT to_char(date, 'YYYY-MM-DD') AS date, campaign_id, impressions, clicks,
+         cost, conversion_value, conversions
+  FROM google_ads.campaign_performance
+  WHERE campaign_id = ANY($1::bigint[])
+  ORDER BY date ASC, campaign_id ASC;
+`;
+
+async function handleThasithaReq1(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  if (req.query.refresh !== '1') {
+    const cached = CACHE.get(CACHE_KEY);
+    if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+  }
+
+  const client = await (async () => getPool().connect())().catch((err) => {
+    console.error('[thasitha/req1] DB connect failed:', err && err.message);
+    res.status(500).json({ error: 'Server not configured or database unreachable. Contact the site administrator.' });
+    return null;
+  });
+  if (!client) return;
+
+  try {
+    const campResult = await client.query(CAMPAIGNS_QUERY);
+    const campaigns = campResult.rows.map((r) => ({
+      id: String(r.campaign_id),
+      name: r.campaign_name,
+      tags: r.feeds || null,
+      budget: r.budget !== null && r.budget !== undefined ? Number(r.budget) : null,
+    }));
+    const campaignIds = campaigns.map((c) => c.id);
+
+    let rows = [];
+    if (campaignIds.length) {
+      const perfResult = await client.query(PERFORMANCE_QUERY, [campaignIds]);
+      rows = perfResult.rows.map((r) => ({
+        date: r.date,
+        campaignId: String(r.campaign_id),
+        impressions: Number(r.impressions) || 0,
+        clicks: Number(r.clicks) || 0,
+        cost: Number(r.cost) || 0,
+        conversionValue: Number(r.conversion_value) || 0,
+        conversions: Number(r.conversions) || 0,
+      }));
+    }
+
+    const dates = rows.map((r) => r.date);
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      dateRange: {
+        min: dates.length ? dates[0] : null,
+        max: dates.length ? dates[dates.length - 1] : null,
+      },
+      campaigns,
+      rows,
+    };
+    CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+    res.status(200).json(payload);
+  } catch (err) {
+    console.error('[thasitha/req1] Query failed:', err && err.message);
+    res.status(500).json({ error: 'Could not load campaign performance data. Please try again shortly.' });
+  } finally {
+    client.release();
+  }
+}
+
+return handleThasithaReq1;
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
+  if (fn === 'thasitha-req1') return thasithaReq1HandlerModule(req, res);
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);

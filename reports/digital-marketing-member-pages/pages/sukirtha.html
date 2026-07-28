@@ -96,6 +96,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <div class="reqtab" id="tabBtn2" onclick="showReqTab(2)">Requirement 2 · Duplicate Listing &amp; Price Check</div>
   <div class="reqtab" id="tabBtn3" onclick="showReqTab(3)">Requirement 3 · Slow-Moving Stock</div>
   <div class="reqtab" id="tabBtn4" onclick="showReqTab(4)">Requirement 4 · Core GA4 Data for SEO</div>
+  <div class="reqtab" id="tabBtn5" onclick="showReqTab(5)">Requirement 5 · Low-Stock Alerts</div>
 </div>
 
 <div id="reqTab1">
@@ -465,6 +466,88 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color
   <code>evidence/sukirtha/SUK-R4-*.md</code> and <code>validation/sukirtha/SUK-R4-validation-report.md</code>.
 </div>
 </div>
+
+<div id="reqTab5" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sukirtha — Requirement 5 (Live)</div>
+  <h1>Low-Stock Alerts</h1>
+  <div class="sub">Which products/variants on ledsone.de currently have low stock and require attention? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Sukirtha</strong></div>
+  <div class="filters">
+    <span class="chip">Source: Shopify Admin API (read-only)</span>
+    <span class="chip">Rule: Current Stock &lt; 10 &rarr; Low Stock</span>
+    <span class="chip" id="r5liveChip">Fetching live from Shopify…</span>
+    <span class="chip live" id="r5lastChecked" style="display:none;"></span>
+    <span class="chip" id="r5locations" style="display:none;"></span>
+    <button id="r5refreshBtn" class="primary" type="button">Refresh Data</button>
+  </div>
+</header>
+
+<div class="cards r2cards" id="r5cards" style="grid-template-columns:repeat(8,1fr);">
+  <div class="card"><div class="label">Total Products</div><div class="value" id="r5cProducts">–</div></div>
+  <div class="card"><div class="label">Total Variants</div><div class="value" id="r5cVariants">–</div></div>
+  <div class="card"><div class="label">Total Current Stock</div><div class="value" id="r5cTotalStock">–</div></div>
+  <div class="card warn"><div class="label">Low-Stock Variants</div><div class="value" id="r5cLowStock">–</div></div>
+  <div class="card"><div class="label">OK Variants</div><div class="value" id="r5cOk">–</div></div>
+  <div class="card warn"><div class="label">Out-of-Stock Variants</div><div class="value" id="r5cOos">–</div></div>
+  <div class="card warn"><div class="label">Missing SKU</div><div class="value" id="r5cMissing">–</div></div>
+  <div class="card"><div class="label">Inventory Not Tracked</div><div class="value" id="r5cNotTracked">–</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <span id="r5cnt">–</span>
+    <input type="text" id="r5q_sku" placeholder="Search SKU…">
+    <input type="text" id="r5q_pid" placeholder="Search Product ID…">
+    <button id="r5exportCsv" class="primary">Export CSV</button>
+  </div>
+  <div class="tbar" style="border-top:0;">
+    <label>Status <select id="r5f_status">
+      <option value="">All</option><option value="Low Stock">Low Stock</option><option value="OK">OK</option><option value="Not Assessable">Not Assessable</option></select></label>
+    <label>Product Status <select id="r5f_pstatus">
+      <option value="">All</option><option value="ACTIVE">Active</option><option value="DRAFT">Draft</option><option value="ARCHIVED">Archived</option></select></label>
+    <label>Inventory Location <select id="r5f_location">
+      <option value="">All</option></select></label>
+    <button id="r5resetFilters">Clear Filters</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th onclick="r5sortBy('skuRaw')">SKU</th>
+        <th onclick="r5sortBy('productId')">Product ID</th>
+        <th class="num" onclick="r5sortBy('currentStock')">Current Stock</th>
+        <th onclick="r5sortBy('status')">Status</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="r5tbody"><tr><td colspan="5" class="loading">Loading live data from Shopify…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r5empty" style="display:none;">No variants match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);border-bottom:0;justify-content:space-between;">
+    <span id="r5pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="r5psize">
+        <option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+      <button id="r5pgFirst">&laquo;</button>
+      <button id="r5pgPrev">&lsaquo; Prev</button>
+      <button id="r5pgNext">Next &rsaquo;</button>
+      <button id="r5pgLast">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data source:</strong> Shopify Admin GraphQL API (read-only) &middot; store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via a server-side serverless function (<code>/api/requirement?fn=req2-req3&amp;req=5</code>, sharing the same merged endpoint as Req2/Req3 to stay under the Vercel Hobby plan's 12-function limit) using a Shopify Admin access token stored only as a Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+  <strong>Update frequency:</strong> not a scheduled/cached snapshot &mdash; clicking "Refresh Data" always makes a fresh server-side request to Shopify. "Last Refreshed" reflects the actual successful retrieval timestamp of that call.<br>
+  <strong>Data grain:</strong> one row per Shopify Variant ID (the internal unique key). SKU is never relied on alone since SKUs can be missing or duplicated.<br>
+  <strong>Current Stock rule:</strong> Shopify inventory <code>available</code> quantity, summed across the operational location(s) returned for that variant. ledsone.de currently has a single active, order-fulfilling location — <em>LEDSone DE LTD</em> — confirmed in <code>evidence/sukirtha/SUK-R3-inventory-location-map.md</code>. If a variant is not inventory-tracked, Current Stock shows "Not Tracked" and Status shows "Not Assessable" — never treated as zero.<br>
+  <strong>Low-Stock threshold:</strong> Current Stock &lt; 10 &rarr; <span class="pill low">Low Stock</span>, else <span class="pill ok">OK</span>. This threshold was explicitly confirmed by Sukirtha's AIOS coordinator (2026-07-27) after no pre-existing approved threshold could be found in Sukirtha/AIOS assets or Shopify configuration/metafields &mdash; it is not inferred or invented from sample data.<br>
+  <strong>Sort order:</strong> sorted by Current Stock ascending by default, so the lowest-stock products appear first.<br>
+  <strong>Governance:</strong> Shopify remains the sole authoritative source for products, variants, and inventory. This dashboard is a read-only analytical view; no product, variant, or inventory record was created, changed, or modified by this page or its build process.<br>
+  <strong>Last Refreshed:</strong> <span id="r5lastRefresh">&ndash;</span><br>
+  <strong>Evidence:</strong> full discovery, Shopify data-source mapping, and validation for this requirement are recorded under
+  <code>evidence/sukirtha/SUK-R5-*.md</code> and <code>validation/sukirtha/SUK-R5-validation-report.md</code>.
+</div>
+</div>
 </div>
 
 <script>
@@ -763,13 +846,16 @@ function showReqTab(n){
   document.getElementById('reqTab2').style.display = n === 2 ? '' : 'none';
   document.getElementById('reqTab3').style.display = n === 3 ? '' : 'none';
   document.getElementById('reqTab4').style.display = n === 4 ? '' : 'none';
+  document.getElementById('reqTab5').style.display = n === 5 ? '' : 'none';
   document.getElementById('tabBtn1').classList.toggle('active', n === 1);
   document.getElementById('tabBtn2').classList.toggle('active', n === 2);
   document.getElementById('tabBtn3').classList.toggle('active', n === 3);
   document.getElementById('tabBtn4').classList.toggle('active', n === 4);
+  document.getElementById('tabBtn5').classList.toggle('active', n === 5);
   if (n === 2 && !r2Loaded) { r2Loaded = true; r2loadCachedOrFetch(); }
   if (n === 3 && !r3Loaded) { r3Loaded = true; r3loadCachedOrFetch(); }
   if (n === 4 && !r4Loaded) { r4Loaded = true; r4loadCachedOrFetch(); }
+  if (n === 5 && !r5Loaded) { r5Loaded = true; r5loadCachedOrFetch(); }
 }
 
 function eur(v){ return v === null || v === undefined ? '—' : '€' + Number(v).toFixed(2); }
@@ -1548,6 +1634,241 @@ document.getElementById('r4pgPrev').addEventListener('click', () => { if (r4pg >
 document.getElementById('r4pgNext').addEventListener('click', () => { if (r4pg < r4maxpg(r4filteredRows())) { r4pg++; r4render(); } });
 document.getElementById('r4pgLast').addEventListener('click', () => { r4pg = r4maxpg(r4filteredRows()); r4render(); });
 document.getElementById('r4exportCsv').addEventListener('click', r4exportCsv);
+
+// ===================== Requirement 5 — Low-Stock Alerts =====================
+
+const R5_CACHE_KEY = 'suk_r5_cache_v1';
+let R5_SUMMARY = null;
+let R5_ROWS = [];
+let r5pg = 1;
+let r5Loaded = false;
+let r5SortKey = 'currentStock';
+let r5SortDir = 1;
+
+function r5BadgeClass(status){
+  if (status === 'Low Stock') return 'pill low';
+  if (status === 'Not Assessable') return 'badge-na';
+  return 'pill ok';
+}
+
+function r5applyLoadedData(fromCache){
+  document.getElementById('r5liveChip').textContent = fromCache
+    ? 'Cached — last updated ' + new Date(R5_SUMMARY.retrievedAt).toLocaleString()
+    : 'Live — fetched just now';
+  document.getElementById('r5liveChip').className = fromCache ? 'chip stale' : 'chip live';
+  document.getElementById('r5lastChecked').textContent = 'Last checked: ' + new Date(R5_SUMMARY.retrievedAt).toLocaleString();
+  document.getElementById('r5lastChecked').style.display = '';
+  document.getElementById('r5locations').textContent = 'Locations: ' + (R5_SUMMARY.inventoryLocations.join(', ') || '—');
+  document.getElementById('r5locations').style.display = '';
+  document.getElementById('r5lastRefresh').textContent = new Date(R5_SUMMARY.retrievedAt).toLocaleString();
+
+  const locSel = document.getElementById('r5f_location');
+  locSel.innerHTML = '<option value="">All</option>' + R5_SUMMARY.inventoryLocations.map(l => '<option value="' + esc(l) + '">' + esc(l) + '</option>').join('');
+
+  r5pg = 1;
+  r5render();
+}
+
+async function r5loadCachedOrFetch(){
+  try {
+    const cached = await idbGet(R5_CACHE_KEY);
+    if (cached && cached.summary && cached.rows) {
+      R5_SUMMARY = cached.summary;
+      R5_ROWS = cached.rows;
+      r5applyLoadedData(true);
+      return;
+    }
+  } catch (e) { /* fall through to live fetch */ }
+  r5load();
+}
+
+async function r5load(){
+  const btn = document.getElementById('r5refreshBtn');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing Shopify inventory...';
+  document.getElementById('r5liveChip').textContent = 'Fetching live from Shopify…';
+  document.getElementById('r5liveChip').className = 'chip';
+  document.getElementById('r5tbody').innerHTML = '<tr><td colspan="5" class="loading">Loading live data from Shopify…</td></tr>';
+  try {
+    const res = await fetch('/api/requirement?fn=req2-req3&req=5');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    R5_SUMMARY = data.summary;
+    R5_ROWS = data.rows;
+    try { await idbSet(R5_CACHE_KEY, { summary: R5_SUMMARY, rows: R5_ROWS }); } catch (e) { /* storage unavailable — ignore */ }
+    r5applyLoadedData(false);
+  } catch (e) {
+    document.getElementById('r5liveChip').textContent = 'Unable to refresh Shopify inventory.';
+    document.getElementById('r5liveChip').className = 'chip stale';
+    if (!R5_ROWS.length) {
+      document.getElementById('r5tbody').innerHTML = '<tr><td colspan="5" class="loading">Unable to refresh Shopify inventory.</td></tr>';
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Refresh Data';
+  }
+}
+document.getElementById('r5refreshBtn').addEventListener('click', r5load);
+
+function r5renderCards(rows){
+  const totalProducts = new Set(rows.map(r => r.productId)).size;
+  const totalVariants = rows.length;
+  const totalStock = rows.filter(r => r.currentStock !== null).reduce((s, r) => s + r.currentStock, 0);
+  const lowStock = rows.filter(r => r.status === 'Low Stock').length;
+  const ok = rows.filter(r => r.status === 'OK').length;
+  const oos = rows.filter(r => r.currentStock === 0).length;
+  const missing = rows.filter(r => r.missingSku).length;
+  const notTracked = rows.filter(r => !r.inventoryTracked).length;
+
+  document.getElementById('r5cProducts').textContent = num(totalProducts);
+  document.getElementById('r5cVariants').textContent = num(totalVariants);
+  document.getElementById('r5cTotalStock').textContent = num(totalStock);
+  document.getElementById('r5cLowStock').textContent = num(lowStock);
+  document.getElementById('r5cOk').textContent = num(ok);
+  document.getElementById('r5cOos').textContent = num(oos);
+  document.getElementById('r5cMissing').textContent = num(missing);
+  document.getElementById('r5cNotTracked').textContent = num(notTracked);
+}
+
+function r5filteredRows(){
+  const qSku = document.getElementById('r5q_sku').value.trim().toLowerCase();
+  const qPid = document.getElementById('r5q_pid').value.trim().toLowerCase();
+  const statusF = document.getElementById('r5f_status').value;
+  const pstatusF = document.getElementById('r5f_pstatus').value;
+  const locF = document.getElementById('r5f_location').value;
+
+  let rows = R5_ROWS.filter(r => {
+    const skuHit = !qSku || (r.skuRaw||'').toLowerCase().includes(qSku);
+    const pidHit = !qPid || (r.productId||'').toLowerCase().includes(qPid);
+    const statusHit = !statusF || r.status === statusF;
+    const pstatusHit = !pstatusF || r.productStatus === pstatusF;
+    const locHit = !locF || (r.inventoryLocation||'').includes(locF);
+    return skuHit && pidHit && statusHit && pstatusHit && locHit;
+  });
+
+  rows = rows.slice().sort((a, b) => {
+    const av = a[r5SortKey], bv = b[r5SortKey];
+    if (av === null && bv === null) return 0;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * r5SortDir;
+    return String(av||'').localeCompare(String(bv||'')) * r5SortDir;
+  });
+  return rows;
+}
+
+function r5sortBy(key){
+  if (r5SortKey === key) { r5SortDir *= -1; } else { r5SortKey = key; r5SortDir = key === 'currentStock' ? 1 : 1; }
+  r5pg = 1;
+  r5render();
+}
+
+function r5maxpg(rows){
+  const size = parseInt(document.getElementById('r5psize').value, 10);
+  return Math.max(1, Math.ceil(rows.length / size));
+}
+
+function r5render(){
+  const rows = r5filteredRows();
+  r5renderCards(rows);
+  const size = parseInt(document.getElementById('r5psize').value, 10);
+  const mp = r5maxpg(rows);
+  if (r5pg > mp) r5pg = mp;
+  if (r5pg < 1) r5pg = 1;
+
+  document.getElementById('r5cnt').textContent = rows.length.toLocaleString() + ' of ' + R5_ROWS.length.toLocaleString() + ' variants';
+  const tbody = document.getElementById('r5tbody');
+  const emptyEl = document.getElementById('r5empty');
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('r5pinfo').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const from = (r5pg - 1) * size;
+  const pageRows = rows.slice(from, from + size);
+
+  tbody.innerHTML = pageRows.map((r, idx) => {
+    const skuLabel = r.missingSku ? esc(r.skuRaw || '(blank)') + ' <span class="badge-missing">Missing SKU</span>' : esc(r.skuRaw);
+    const stockLabel = r.currentStock === null ? 'Not Tracked' : num(r.currentStock);
+    const statusHtml = '<span class="' + r5BadgeClass(r.status) + '">' + esc(r.status) + '</span>';
+    const key = 'r5_' + (from + idx);
+    return (
+      '<tr>' +
+      '<td>' + skuLabel + '</td>' +
+      '<td>' + esc(r.productId) + '</td>' +
+      '<td class="num">' + stockLabel + '</td>' +
+      '<td>' + statusHtml + '</td>' +
+      '<td><button class="moreBtn" id="btn_' + key + '" onclick="r5toggleDetail(\'' + key + '\')">Details <span class="car">&#9662;</span></button></td>' +
+      '</tr>' +
+      '<tr class="detailrow" id="detail_' + key + '" style="display:none;"><td colspan="5"><div class="detailwrap">' +
+      '<div class="detailhead"><span class="dtitle">Variant Detail</span></div>' +
+      '<div class="detailtblbox"><table class="detailtbl"><thead><tr><th>Product Title</th><th>Variant Title</th><th>Variant ID</th><th>Inventory Location</th><th>Product Status</th></tr></thead><tbody>' +
+      '<tr><td>' + esc(r.productTitle) + '</td><td>' + esc(r.variantTitle) + '</td><td>' + esc(r.variantId) + '</td><td>' + esc(r.inventoryLocation || '—') + '</td><td>' + esc(r.productStatus) + '</td></tr>' +
+      '</tbody></table></div></div></td></tr>'
+    );
+  }).join('');
+  document.getElementById('r5pinfo').textContent = 'Showing ' + (from + 1) + '–' + Math.min(from + size, rows.length) + ' of ' + rows.length.toLocaleString() + ' (page ' + r5pg + ' of ' + mp + ')';
+}
+
+function r5toggleDetail(key){
+  const row = document.getElementById('detail_' + key);
+  const btn = document.getElementById('btn_' + key);
+  if (!row) return;
+  const opening = row.style.display === 'none';
+  row.style.display = opening ? '' : 'none';
+  if (btn) btn.classList.toggle('open', opening);
+}
+
+function r5csvEscape(v){
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function r5exportCsv(){
+  const rows = r5filteredRows();
+  const header = ['SKU','Product ID','Variant ID','Product Title','Current Stock','Status'];
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    const row = [
+      r.skuRaw,
+      r.productId,
+      r.variantId,
+      r.productTitle,
+      r.currentStock === null ? 'Not Tracked' : r.currentStock,
+      r.status,
+    ].map(r5csvEscape);
+    lines.push(row.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SUK-R5_low_stock_alerts_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('r5q_sku').addEventListener('input', () => { r5pg = 1; r5render(); });
+document.getElementById('r5q_pid').addEventListener('input', () => { r5pg = 1; r5render(); });
+document.getElementById('r5f_status').addEventListener('change', () => { r5pg = 1; r5render(); });
+document.getElementById('r5f_pstatus').addEventListener('change', () => { r5pg = 1; r5render(); });
+document.getElementById('r5f_location').addEventListener('change', () => { r5pg = 1; r5render(); });
+document.getElementById('r5psize').addEventListener('change', () => { r5pg = 1; r5render(); });
+document.getElementById('r5resetFilters').addEventListener('click', () => {
+  document.getElementById('r5q_sku').value = '';
+  document.getElementById('r5q_pid').value = '';
+  document.getElementById('r5f_status').value = '';
+  document.getElementById('r5f_pstatus').value = '';
+  document.getElementById('r5f_location').value = '';
+  r5pg = 1;
+  r5render();
+});
+document.getElementById('r5pgFirst').addEventListener('click', () => { r5pg = 1; r5render(); });
+document.getElementById('r5pgPrev').addEventListener('click', () => { if (r5pg > 1) { r5pg--; r5render(); } });
+document.getElementById('r5pgNext').addEventListener('click', () => { if (r5pg < r5maxpg(r5filteredRows())) { r5pg++; r5render(); } });
+document.getElementById('r5pgLast').addEventListener('click', () => { r5pg = r5maxpg(r5filteredRows()); r5render(); });
+document.getElementById('r5exportCsv').addEventListener('click', r5exportCsv);
 </script>
 </body>
 </html>
