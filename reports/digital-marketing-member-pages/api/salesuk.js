@@ -610,6 +610,26 @@ const GROUPS = [
   },
 ];
 
+// Virtual 11th tab (added 2026-07-28) — every order that doesn't match any
+// group above. Not part of GROUPS itself (it never "claims" anything from
+// the real groups; it's just "whatever's left"), so it's handled as a
+// special case in handleGroup() below. Same order-level UI/session-history
+// treatment as every other tab, and included in the hourly live-month
+// refresh so new/unrecognized campaigns surface automatically as July
+// progresses — assigning them permanently (moving them into a real group)
+// is still a manual step for now (deferred by the user, 2026-07-28).
+const NOT_ASSIGNED_GROUP = {
+  key: 'not-assigned',
+  name: 'Not Assigned',
+  department: 'Unassigned / needs review',
+  scope: 'every order that does NOT match any other group\'s rule above. Shows up here until a human assigns it to a real tab (that assignment is currently a manual step — ask to add a specific campaign/rule to a group and it moves out of this tab on the next refresh).',
+  matchValue: (utm, fv, journey) => {
+    const channel = deriveChannelLabel(journey);
+    const label = utm.campaign || utm.term || (fv && fv.source) || (journey && journey.status === 'NO_JOURNEY_DATA' ? '(no journey data)' : 'direct');
+    return channel + ' - ' + label;
+  },
+};
+
 function assignGroup(utm, fv, journey, month) {
   for (const g of GROUPS) {
     if (g.match(utm, fv, journey, month)) return g;
@@ -738,7 +758,8 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
     const utm = (fv && fv.utmParameters) || {};
     const assigned = assignGroup(utm, fv, journey, monthConfig.month);
-    if (!assigned || assigned.key !== groupDef.key) continue;
+    const isMatch = groupDef.key === NOT_ASSIGNED_GROUP.key ? !assigned : (assigned && assigned.key === groupDef.key);
+    if (!isMatch) continue;
     const row = buildOrderRow(order, journey);
     row.matchedCampaign = groupDef.matchValue(utm, fv, journey, monthConfig.month);
     rows.push(row);
@@ -793,7 +814,7 @@ module.exports = async function handler(req, res) {
   const forceRefresh = req.query && req.query.refresh === '1';
   const monthConfig = resolveReportMonth(req.query && req.query.month);
   const groupKey = ((req.query && req.query.group) || 'dm-ad').toString().toLowerCase();
-  const groupDef = GROUPS.find(g => g.key === groupKey);
+  const groupDef = groupKey === NOT_ASSIGNED_GROUP.key ? NOT_ASSIGNED_GROUP : GROUPS.find(g => g.key === groupKey);
 
   try {
     if (groupKey === 'remaining') {
