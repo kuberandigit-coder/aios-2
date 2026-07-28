@@ -3385,9 +3385,232 @@ async function handleThasithaReq1(req, res) {
 return handleThasithaReq1;
 })();
 
+// ==================== Thasitha Requirement 3 — SKU Overlap & CPC Inflation ====================
+// Live PostgreSQL refresh, replacing a static July-built JSON snapshot that
+// caused a real bug: a product removed from a Jefri campaign in March/April
+// kept showing as "overlapping" indefinitely, because the whole page (data
+// AND the "currently active" threshold) was frozen at build time.
+//
+// There is no per-product "currently in this campaign" status column for
+// PMax (confirmed in evidence/thasitha/2026-07-15_requirement-3-discovery.md —
+// google_ads.ad_group_products.status only covers Shopping/Search, zero rows
+// for PMax). The only live signal is recency of google_ads.product_performance
+// rows: a removed product stops generating rows entirely. So "currently
+// overlapping" = the (product, campaign) pair has a performance row within 1
+// day of the live MAX(date) across the whole dataset — recomputed on every
+// request, not a hardcoded date. This mirrors the same proven pattern already
+// used by Jefri's Requirement 1 (see the `active_products` CTE comment above).
+const thasithaReq3HandlerModule = (function() {
+const { Pool } = require('pg');
+
+const CACHE = new Map();
+// Longer than most other endpoints' 60s cache — this query takes ~30s on a
+// cold connection (many rows aggregated), so 60s meant almost every load
+// re-ran the full query. "Refresh Data" always bypasses this regardless.
+const CACHE_TTL_MS = 3 * 60 * 1000;
+const CACHE_KEY = 'thasitha-req3';
+
+let pool;
+function getPool() {
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString && !process.env.PGHOST) {
+      throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+    }
+    pool = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: false,
+      connectionTimeoutMillis: 8000,
+      // Longer than the other Thasitha/Jefri pools: this query aggregates
+      // tens of thousands of product_performance rows across every campaign
+      // that has ever shown any Thasi product (measured ~30-35s on a cold
+      // connection) — 30s was cutting it off mid-query.
+      statement_timeout: 60000,
+      max: 3,
+    });
+  }
+  return pool;
+}
+
+// Only products that have BOTH a Thasi campaign row AND at least one
+// non-Thasi campaign row (>=2 distinct campaigns overall) are genuine
+// overlap candidates — this is a historical/structural filter to keep the
+// payload manageable; the real "is this a LIVE overlap" decision is the
+// last_active recency check applied per (product, campaign) below and
+// re-checked client-side against the range picker.
+const QUERY = `
+WITH thasi_campaigns AS (
+  SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE group_name = 'Thasi'
+),
+thasi_products AS (
+  SELECT DISTINCT pp.product_item_id
+  FROM google_ads.product_performance pp
+  WHERE pp.campaign_id IN (SELECT campaign_id FROM thasi_campaigns)
+    AND pp.product_item_id IS NOT NULL AND pp.product_item_id <> ''
+),
+camp_counts AS (
+  SELECT pp.product_item_id, count(DISTINCT pp.campaign_id) AS n
+  FROM google_ads.product_performance pp
+  WHERE pp.product_item_id IN (SELECT product_item_id FROM thasi_products)
+  GROUP BY pp.product_item_id
+),
+overlap_products AS (
+  SELECT product_item_id FROM camp_counts WHERE n >= 2
+),
+latest AS (
+  SELECT MAX(pp.date) AS max_date
+  FROM google_ads.product_performance pp
+  WHERE pp.product_item_id IN (SELECT product_item_id FROM overlap_products)
+),
+daily AS (
+  SELECT pp.product_item_id, pp.campaign_id, pp.date,
+         SUM(pp.cost) AS cost, SUM(pp.clicks) AS clicks,
+         SUM(pp.conversions) AS conversions, SUM(pp.conversion_value) AS conversion_value
+  FROM google_ads.product_performance pp
+  WHERE pp.product_item_id IN (SELECT product_item_id FROM overlap_products)
+  GROUP BY pp.product_item_id, pp.campaign_id, pp.date
+),
+last_active AS (
+  SELECT product_item_id, campaign_id, MAX(date) AS last_active
+  FROM daily
+  GROUP BY product_item_id, campaign_id
+),
+resolved_ids AS (
+  SELECT product_item_id,
+    CASE WHEN product_item_id LIKE 'shopify\\_%'
+         THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
+         ELSE product_item_id
+    END AS shopify_id
+  FROM overlap_products
+),
+child_fallback AS (
+  SELECT m.parent_id AS parent_listing_id, MIN(child.id) AS child_listing_id
+  FROM listings.shopify_listings_parent_child_mapping m
+  JOIN listings.shopify_listings child ON child.id = m.child_id AND child.all_list = 1
+  GROUP BY m.parent_id
+),
+resolved_listing AS (
+  SELECT sl.item_id,
+    COALESCE(NULLIF(sl.sku, ''), child_sl.sku) AS sku,
+    COALESCE(NULLIF(sl.title, ''), child_sl.title) AS title,
+    COALESCE(NULLIF(sl.main_image_url, ''), child_sl.main_image_url) AS image,
+    sl.listing_url AS url
+  FROM listings.shopify_listings sl
+  LEFT JOIN child_fallback cf ON cf.parent_listing_id = sl.id
+  LEFT JOIN listings.shopify_listings child_sl ON child_sl.id = cf.child_listing_id
+  WHERE sl.channel = 'LEDSone DE'
+)
+SELECT
+  d.product_item_id, d.campaign_id, to_char(d.date, 'YYYY-MM-DD') AS date,
+  d.cost, d.clicks, d.conversions, d.conversion_value,
+  c.campaign_name, c.campaign_type, c.campaign_status,
+  (c.campaign_id IN (SELECT campaign_id FROM thasi_campaigns)) AS is_thasi,
+  to_char(la.last_active, 'YYYY-MM-DD') AS last_active,
+  rl.sku, rl.title, rl.image, rl.url,
+  to_char((SELECT max_date FROM latest), 'YYYY-MM-DD') AS latest_date
+FROM daily d
+JOIN google_ads.campaigns c ON c.campaign_id = d.campaign_id
+JOIN last_active la ON la.product_item_id = d.product_item_id AND la.campaign_id = d.campaign_id
+JOIN resolved_ids ri ON ri.product_item_id = d.product_item_id
+LEFT JOIN resolved_listing rl ON rl.item_id = ri.shopify_id
+ORDER BY d.product_item_id, d.campaign_id, d.date;
+`;
+
+async function handleThasithaReq3(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  if (req.query.refresh !== '1') {
+    const cached = CACHE.get(CACHE_KEY);
+    if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+  }
+
+  const client = await (async () => getPool().connect())().catch((err) => {
+    console.error('[thasitha/req3] DB connect failed:', err && err.message);
+    res.status(500).json({ error: 'Server not configured or database unreachable. Contact the site administrator.' });
+    return null;
+  });
+  if (!client) return;
+
+  try {
+    const result = await client.query(QUERY);
+    const rows = result.rows;
+
+    // Reshape into { sku (product_item_id), title, img, lnk, camps: [{cid, cname,
+    // ctype, cstatus, isThasi, lastActive, daily:[{d,cost,clk,conv,cv}]}] } —
+    // matching the shape the existing frontend r3ComputeRow()/renderR3Row()
+    // already expect, so only the data source changes, not that logic.
+    const productMap = new Map();
+    let latestDate = null;
+    for (const r of rows) {
+      latestDate = r.latest_date;
+      if (!productMap.has(r.product_item_id)) {
+        productMap.set(r.product_item_id, {
+          sku: r.sku || r.product_item_id,
+          title: r.title || null,
+          img: r.image || null,
+          lnk: r.url || null,
+          campsById: new Map(),
+        });
+      }
+      const product = productMap.get(r.product_item_id);
+      if (!product.campsById.has(r.campaign_id)) {
+        product.campsById.set(r.campaign_id, {
+          cid: String(r.campaign_id),
+          cname: r.campaign_name,
+          ctype: r.campaign_type,
+          cstatus: r.campaign_status,
+          isThasi: !!r.is_thasi,
+          lastActive: r.last_active,
+          daily: [],
+        });
+      }
+      product.campsById.get(r.campaign_id).daily.push({
+        d: r.date,
+        cost: Number(r.cost) || 0,
+        clk: Number(r.clicks) || 0,
+        conv: Number(r.conversions) || 0,
+        cv: Number(r.conversion_value) || 0,
+      });
+    }
+
+    const products = [...productMap.values()].map((p) => ({
+      sku: p.sku,
+      title: p.title,
+      img: p.img,
+      lnk: p.lnk,
+      camps: [...p.campsById.values()],
+    }));
+
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      latestDate,
+      products,
+    };
+    CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+    res.status(200).json(payload);
+  } catch (err) {
+    console.error('[thasitha/req3] Query failed:', err && err.message);
+    res.status(500).json({ error: 'Could not load SKU overlap data. Please try again shortly.' });
+  } finally {
+    client.release();
+  }
+}
+
+return handleThasithaReq3;
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'thasitha-req1') return thasithaReq1HandlerModule(req, res);
+  if (fn === 'thasitha-req3') return thasithaReq3HandlerModule(req, res);
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
