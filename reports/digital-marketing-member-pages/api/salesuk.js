@@ -503,11 +503,11 @@ const GROUPS = [
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27, for Google-Ads-clicks where Shopify only tagged the campaign on a later visit), OR (month is February, March or April 2026 AND no campaign anywhere AND utm_medium is "google_ads", unless the last session traces to a Sajeepan campaign — confirmed by the user, 2026-07-27, scoped to those three months only). Checked only after DM-Ad and Meta.',
-    match: (utm, fv, journey, month) => {
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27), OR (no campaign anywhere in the journey AND first-session utm_medium is "google_ads", unless the last session traces to a Sajeepan campaign — confirmed by the user, 2026-07-28, as a PERMANENT rule covering all months, including future live-month updates). Checked only after DM-Ad and Meta.',
+    match: (utm, fv, journey) => {
       if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
       if (!utm.campaign && !utm.term && (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' || lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all')) return true;
-      if (['2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].includes(month) && !utm.campaign && !utm.term) {
+      if (!utm.campaign && !utm.term) {
         const medium = (utm.medium || '').toString().toLowerCase();
         // Don't blanket-claim if the last session traces to a known
         // Sajeepan campaign — let that fall through to Sajeepan instead
@@ -516,12 +516,13 @@ const GROUPS = [
       }
       return false;
     },
-    matchValue: (utm, fv, journey, month) => {
+    matchValue: (utm, fv, journey) => {
       if (utm.campaign) return utm.campaign;
       if (utm.term) return utm.term;
       if (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (2nd session)';
       if (lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all') return 'Klarna_Sonya_kl-pmx-all (last session)';
-      if (['2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].includes(month)) return 'google_ads (untraceable campaign, ' + month + ')';
+      const medium = (utm.medium || '').toString().toLowerCase();
+      if (medium === 'google_ads') return 'google_ads (untraceable campaign)';
       return null;
     },
   },
