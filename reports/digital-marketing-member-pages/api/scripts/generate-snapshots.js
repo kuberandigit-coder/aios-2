@@ -133,7 +133,7 @@ function runJuly() {
 // takes 30-90s+, unusable for a page load, so the live month's snapshot
 // file is kept fresh by this hourly job instead.
 const SALESUK_LIVE_MONTH = '2026-07';
-const SALESUK_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika'];
+const SALESUK_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'not-assigned'];
 
 function runSalesuk() {
   console.log(`Refreshing ${SALESUK_LIVE_MONTH} salesuk.html snapshots for ${SALESUK_GROUPS.length} groups...`);
