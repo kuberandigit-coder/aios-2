@@ -592,8 +592,8 @@ const GROUPS = [
     key: 'theekshy',
     name: 'Theekshy',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Pmax_UK_Theekshy_Shoptimised_THEE_NS_MCV_UK" (case-insensitive). Found in May data, confirmed by the user, 2026-07-27. Checked last — an order already claimed by any earlier group never lands here.',
-    match: (utm) => (utm.campaign || '').toString().toLowerCase() === 'pmax_uk_theekshy_shoptimised_thee_ns_mcv_uk',
+    scope: 'first-session utm_campaign contains "theekshy" (case-insensitive) — covers "Pmax_UK_Theekshy_Shoptimised_THEE_NS_MCV_UK" (found May), "Pmax_Theekshy_Shoptimised_THEE_MYSTERY_Non_Converting_MCV_UK" (found July), and any future variant. Confirmed by the user, 2026-07-27/28. Checked last — an order already claimed by any earlier group never lands here.',
+    match: (utm) => (utm.campaign || '').toString().toLowerCase().includes('theekshy'),
     matchValue: (utm) => utm.campaign,
   },
   {
