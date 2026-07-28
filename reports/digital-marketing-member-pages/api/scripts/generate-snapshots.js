@@ -127,6 +127,30 @@ function runJuly() {
   if (failCount > 0) process.exitCode = 1;
 }
 
+// ===== mode: salesuk (api/salesuk.js, hourly, live month) =====
+// Added 2026-07-28 alongside July going live on the standalone salesuk.html
+// page — same rationale as runJuly() above: a live full-month Shopify scan
+// takes 30-90s+, unusable for a page load, so the live month's snapshot
+// file is kept fresh by this hourly job instead.
+const SALESUK_LIVE_MONTH = '2026-07';
+const SALESUK_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika'];
+
+function runSalesuk() {
+  console.log(`Refreshing ${SALESUK_LIVE_MONTH} salesuk.html snapshots for ${SALESUK_GROUPS.length} groups...`);
+  let okCount = 0, failCount = 0;
+  for (const group of SALESUK_GROUPS) {
+    const url = `${BASE_URL}/api/salesuk?group=${group}&month=${SALESUK_LIVE_MONTH}&refresh=1`;
+    const data = fetchJson(url, group);
+    if (!data) { failCount++; continue; }
+    const outPath = path.join(DATA_DIR, `salesuk-${group}-${SALESUK_LIVE_MONTH}.json`);
+    fs.writeFileSync(outPath, JSON.stringify(data));
+    console.log(`    -> ${path.basename(outPath)}`);
+    okCount++;
+  }
+  console.log(`\nDone. ${okCount} succeeded, ${failCount} failed.`);
+  if (failCount > 0) process.exitCode = 1;
+}
+
 // ===== mode: <staff> [months...] (sales-sukirtha-de.js, one-off, closed months) =====
 // Mirrors SUPPORTED_MONTHS / CURRENT_LIVE_MONTHS in api/sales-sukirtha-de.js.
 const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
@@ -180,6 +204,7 @@ function main() {
   const [, , mode, ...rest] = process.argv;
   if (mode === 'postgres') return runPostgres();
   if (mode === 'july') return runJuly();
+  if (mode === 'salesuk') return runSalesuk();
   if (mode) return runStaffMonths(mode, rest);
   console.error('Usage:');
   console.error('  node api/scripts/generate-snapshots.js postgres');
