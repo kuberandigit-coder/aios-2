@@ -33,19 +33,25 @@ function londonMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-// Jan-Feb wired up so far (Feb added 2026-07-27) — add more months here as
-// this page grows the same way sales.html did.
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'];
+// Jan-Jun wired up as closed/historical months; July added 2026-07-28 as
+// the current LIVE month (mirrors sales.html's convention) — never gets a
+// permanent static snapshot, always reflects month-to-date data. Add more
+// months here as this page grows the same way sales.html did.
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
+const CURRENT_LIVE_MONTHS = ['2026-07'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-01';
   const [y, m] = month.split('-').map(Number);
   const startMs = londonMidnightUTCMs(y, m, 1);
-  const endMs = m === 12 ? londonMidnightUTCMs(y + 1, 1, 1) : londonMidnightUTCMs(y, m + 1, 1);
+  const monthEndMs = m === 12 ? londonMidnightUTCMs(y + 1, 1, 1) : londonMidnightUTCMs(y, m + 1, 1);
+  const isLive = CURRENT_LIVE_MONTHS.includes(month);
+  const endMs = isLive ? Math.min(monthEndMs, Date.now()) : monthEndMs;
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const endDay = isLive ? Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric' }).format(new Date(endMs))) : daysInMonth;
   return {
-    month, startMs, endMs, isLive: false,
-    label: `${MONTH_NAMES[m - 1]} 1–${daysInMonth}, ${y}`,
+    month, startMs, endMs, isLive,
+    label: isLive ? `${MONTH_NAMES[m - 1]} 1–${endDay} (month to date), ${y}` : `${MONTH_NAMES[m - 1]} 1–${daysInMonth}, ${y}`,
     queryStart: new Date(startMs - 24 * 3600 * 1000).toISOString().slice(0, 10),
     queryEnd: new Date(endMs + 24 * 3600 * 1000).toISOString().slice(0, 10),
   };
