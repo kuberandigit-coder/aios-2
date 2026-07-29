@@ -3828,9 +3828,393 @@ async function handleThasithaReq3(req, res) {
 return handleThasithaReq3;
 })();
 
+// ==================== Thasitha Requirement 2 — PMax Product Zero-Performance & Root-Cause ====================
+// Live PostgreSQL refresh, replacing the static R2_PRODUCTS array baked into
+// thasitha.html on 2026-07-15/16. Same live/frozen bug class as the old
+// Req1/Req3 (see evidence/thasitha/2026-07-15_requirement-2-pmax-zero-performance-discovery.md).
+// GMC/"Data Check" approval status is structurally unavailable for PMax
+// (confirmed again live 2026-07-29 -- raw_data.gmc_product_diagnostics_daily
+// does not exist, no %eligib%/%disapprov%/%diagnostic% table or column
+// anywhere). Per user instruction, the "Data Check" column is kept but
+// reuses the exact same derived proxy Mahima's Feed Status uses: which of
+// the 10 MAHIMA_ATTR_COLUMNS-equivalent catalog fields are blank in
+// google_ads.merchant_products -- not real Merchant Center approval data.
+const thasithaReq2HandlerModule = (function() {
+const { Pool } = require('pg');
+
+const CACHE = new Map();
+const CACHE_TTL_MS = 60 * 1000;
+const CACHE_KEY = 'thasitha-req2';
+
+let pool;
+function getPool() {
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString && !process.env.PGHOST) {
+      throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+    }
+    pool = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: false,
+      connectionTimeoutMillis: 8000,
+      statement_timeout: 30000,
+      max: 3,
+    });
+  }
+  return pool;
+}
+
+const THASITHA2_ATTR_COLUMNS = ['product_category', 'item_group_id', 'mpn', 'color', 'condition', 'description', 'product_types', 'availability', 'brand', 'price'];
+
+// Self-contained Shopify stock fetch (same ledsone-de store/token/logic as
+// Mahima's fetchLiveStock) -- duplicated rather than shared because that
+// helper lives inside jefriProductStatusHandlerModule's own IIFE closure and
+// isn't reachable from this separate module, matching this file's existing
+// per-module self-containment pattern (see kamsiLiveHandlerModule above).
+const T2_SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
+const T2_SHOPIFY_API_VERSION = '2024-10';
+const t2Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function t2ShopifyGraphQL(query, variables) {
+  const token = process.env.SHOPIFY_ADMIN_TOKEN;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let res;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      res = await fetch(`https://${T2_SHOPIFY_STORE_DOMAIN}/admin/api/${T2_SHOPIFY_API_VERSION}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+    } catch (e) {
+      await t2Sleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
+      await t2Sleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+    const json = await res.json();
+    const throttled = json.errors && Array.isArray(json.errors) && json.errors.some((e) => e.extensions && e.extensions.code === 'THROTTLED');
+    if (throttled) { await t2Sleep(800 * Math.pow(2, attempt)); continue; }
+    if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+    return json.data;
+  }
+  throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
+}
+
+const T2_NODES_QUERY = `
+query($ids: [ID!]!) {
+  nodes(ids: $ids) {
+    ... on ProductVariant {
+      id
+      inventoryItem {
+        tracked
+        inventoryLevels(first: 10) {
+          edges { node { quantities(names: ["available"]) { name quantity } } }
+        }
+      }
+    }
+  }
+}`;
+
+async function t2FetchLiveStock(itemIds) {
+  const stockById = new Map();
+  const uniqueIds = [...new Set(itemIds.filter(Boolean).map(String))];
+  const BATCH = 250;
+  for (let i = 0; i < uniqueIds.length; i += BATCH) {
+    const batch = uniqueIds.slice(i, i + BATCH);
+    const gids = batch.map((id) => `gid://shopify/ProductVariant/${id}`);
+    const data = await t2ShopifyGraphQL(T2_NODES_QUERY, { ids: gids });
+    for (const node of data.nodes) {
+      if (!node || !node.id) continue;
+      const numericId = node.id.split('/').pop();
+      if (!node.inventoryItem || !node.inventoryItem.tracked) {
+        stockById.set(numericId, null);
+        continue;
+      }
+      const total = node.inventoryItem.inventoryLevels.edges.reduce((sum, e) => {
+        const avail = e.node.quantities.find((q) => q.name === 'available');
+        return sum + (avail ? avail.quantity : 0);
+      }, 0);
+      stockById.set(numericId, total);
+    }
+  }
+  return stockById;
+}
+
+const QUERY = `
+WITH bounds AS (
+  SELECT MAX(date) AS max_date FROM google_ads.product_performance
+  WHERE campaign_id IN (SELECT campaign_id FROM google_ads.campaigns WHERE group_name = 'Thasi')
+),
+range AS (
+  SELECT ((SELECT max_date FROM bounds) - INTERVAL '29 days')::date AS start_date, (SELECT max_date FROM bounds)::date AS end_date
+),
+camp AS (
+  SELECT campaign_id, campaign_name, budget FROM google_ads.campaigns WHERE group_name = 'Thasi'
+),
+perf AS (
+  SELECT pp.campaign_id, pp.product_item_id,
+    SUM(pp.impressions) AS imp, SUM(pp.clicks) AS clk, SUM(pp.cost) AS sp,
+    SUM(pp.conversions) AS cv, SUM(pp.conversion_value) AS cvv
+  FROM google_ads.product_performance pp CROSS JOIN range r
+  WHERE pp.campaign_id IN (SELECT campaign_id FROM camp) AND pp.product_item_id <> ''
+    AND pp.date BETWEEN r.start_date AND r.end_date
+  GROUP BY pp.campaign_id, pp.product_item_id
+),
+first_seen AS (
+  SELECT campaign_id, product_item_id, MIN(date) AS first_date
+  FROM google_ads.product_performance
+  WHERE campaign_id IN (SELECT campaign_id FROM camp) AND product_item_id <> ''
+  GROUP BY campaign_id, product_item_id
+),
+merch AS (
+  SELECT DISTINCT ON (product_id) *
+  FROM google_ads.merchant_products
+  ORDER BY product_id, (lan = 'de') DESC
+)
+SELECT p.campaign_id, c.campaign_name, c.budget, p.product_item_id,
+  p.imp, p.clk, p.sp, p.cv, p.cvv,
+  fs.first_date, ((SELECT end_date FROM range) - fs.first_date) AS days_live,
+  m.title, m.image_link, m.link, m.availability,
+  m.product_category, m.item_group_id, m.mpn, m.color, m.condition, m.description, m.product_types, m.brand, m.price,
+  (SELECT end_date FROM range) AS range_end
+FROM perf p
+JOIN camp c ON c.campaign_id = p.campaign_id
+LEFT JOIN first_seen fs ON fs.campaign_id = p.campaign_id AND fs.product_item_id = p.product_item_id
+LEFT JOIN merch m ON m.product_id = p.product_item_id
+ORDER BY p.sp DESC NULLS LAST;
+`;
+
+function thasitha2DataCheck(r) {
+  if (r.title === null) return { status: 'nofeed', missing: [] };
+  const missing = [];
+  for (const col of THASITHA2_ATTR_COLUMNS) {
+    const v = r[col];
+    if (v === null || v === undefined || v === '') missing.push(col);
+  }
+  return missing.length ? { status: 'notapproved', missing } : { status: 'approved', missing: [] };
+}
+
+async function handleThasithaReq2(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  if (req.query.refresh !== '1') {
+    const cached = CACHE.get(CACHE_KEY);
+    if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+  }
+
+  const client = await (async () => getPool().connect())().catch((err) => {
+    console.error('[thasitha/req2] DB connect failed:', err && err.message);
+    res.status(500).json({ error: 'Server not configured or database unreachable. Contact the site administrator.' });
+    return null;
+  });
+  if (!client) return;
+
+  try {
+    const result = await client.query(QUERY);
+    const rows = result.rows;
+
+    let liveStockById = new Map();
+    let stockSourceError = null;
+    if (!process.env.SHOPIFY_ADMIN_TOKEN) {
+      stockSourceError = 'SHOPIFY_ADMIN_TOKEN missing — Stock unavailable';
+    } else {
+      try {
+        liveStockById = await t2FetchLiveStock(rows.map((r) => r.product_item_id));
+      } catch (e) {
+        console.error('[thasitha/req2] Live stock fetch failed:', e && e.message);
+        stockSourceError = 'Could not fetch live stock from Shopify';
+      }
+    }
+
+    let rangeEnd = null;
+    const products = rows.map((r) => {
+      rangeEnd = r.range_end;
+      const dc = thasitha2DataCheck(r);
+      const liveStock = liveStockById.get(String(r.product_item_id));
+      return {
+        cid: String(r.campaign_id),
+        pid: r.product_item_id,
+        fd: r.first_date ? new Date(r.first_date).toISOString().slice(0, 10) : null,
+        dl: r.days_live === null || r.days_live === undefined ? null : Number(r.days_live),
+        imp: Number(r.imp) || 0,
+        clk: Number(r.clk) || 0,
+        sp: Number(r.sp) || 0,
+        cv: Number(r.cv) || 0,
+        cvv: Number(r.cvv) || 0,
+        qty: liveStock === undefined ? null : liveStock,
+        bud: r.budget !== null && r.budget !== undefined ? Number(r.budget) : null,
+        t: r.title || null,
+        img: r.image_link || null,
+        lnk: r.link || null,
+        av: r.availability || 'unknown',
+        gmc: dc.status,
+        gmcMissing: dc.missing,
+      };
+    });
+
+    const campaigns = {};
+    for (const r of rows) campaigns[String(r.campaign_id)] = r.campaign_name;
+
+    const payload = {
+      success: true,
+      generatedAt: new Date().toISOString(),
+      rangeEnd,
+      campaigns,
+      stockSourceError,
+      dataNote: 'Data Check column is a derived proxy (same technique as Mahima\'s Feed Status): which of 10 catalog attribute columns are blank in google_ads.merchant_products. No real Google Merchant Center approval/diagnostics data exists in PostgreSQL for PMax products (raw_data.gmc_product_diagnostics_daily does not exist; confirmed live).',
+      products,
+    };
+    CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+    res.status(200).json(payload);
+  } catch (err) {
+    console.error('[thasitha/req2] Query failed:', err && err.message);
+    res.status(500).json({ success: false, error: 'Could not load product zero-performance data. Please try again shortly.' });
+  } finally {
+    client.release();
+  }
+}
+
+return handleThasithaReq2;
+})();
+
+// ==================== Thasitha order-attribution investigation — read-only order lookup ====================
+// Temporary diagnostic endpoint for investigating order #LSDE18503 (UTM-term-
+// vs-Google-Ads-conversion mismatch). Read-only — no mutations. Reuses the
+// existing SHOPIFY_ADMIN_TOKEN for ledsone-de.myshopify.com, no new credential.
+const thasithaOrderLookupModule = (function() {
+const STORE_DOMAIN = 'ledsone-de.myshopify.com';
+const API_VERSION = '2024-10';
+
+async function shopifyGraphQL(query, variables) {
+  const res = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_TOKEN },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+  const json = await res.json();
+  if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+  return json.data;
+}
+
+const ORDER_QUERY = `
+query($q: String!) {
+  orders(first: 1, query: $q) {
+    edges {
+      node {
+        id
+        name
+        createdAt
+        processedAt
+        displayFinancialStatus
+        displayFulfillmentStatus
+        cancelledAt
+        test
+        tags
+        note
+        customAttributes { key value }
+        customer { id email createdAt }
+        totalPriceSet { shopMoney { amount currencyCode } }
+        channelInformation { channelDefinition { channelName } }
+        landingPageDisplayText
+        landingPageUrl
+        referrerDisplayText
+        referrerUrl
+        sourceIdentifier
+        sourceName
+        customerJourneySummary {
+          customerOrderIndex
+          daysToConversion
+          momentsCount { count }
+          ready
+          firstVisit {
+            occurredAt
+            landingPage
+            landingPageHtml
+            referrerUrl
+            source
+            sourceType
+            sourceDescription
+            utmParameters { source medium campaign term content }
+          }
+          lastVisit {
+            occurredAt
+            landingPage
+            landingPageHtml
+            referrerUrl
+            source
+            sourceType
+            sourceDescription
+            utmParameters { source medium campaign term content }
+          }
+          moments(first: 20) {
+            edges {
+              node {
+                ... on CustomerVisit {
+                  occurredAt
+                  landingPage
+                  referrerUrl
+                  source
+                  sourceType
+                  utmParameters { source medium campaign term content }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+async function handleOrderLookup(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (!process.env.SHOPIFY_ADMIN_TOKEN) {
+    res.status(500).json({ error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
+    return;
+  }
+  const orderName = (req.query.order || '').toString().replace(/^#/, '');
+  if (!orderName) {
+    res.status(400).json({ error: 'Missing ?order= param' });
+    return;
+  }
+  try {
+    const data = await shopifyGraphQL(ORDER_QUERY, { q: `name:${orderName}` });
+    const edge = data.orders.edges[0];
+    if (!edge) {
+      res.status(404).json({ error: 'Order not found on ledsone-de.myshopify.com', orderName });
+      return;
+    }
+    res.status(200).json({ store: STORE_DOMAIN, order: edge.node });
+  } catch (err) {
+    console.error('[thasitha/order-lookup] failed:', err && err.message);
+    res.status(500).json({ error: err.message || 'Lookup failed' });
+  }
+}
+
+return handleOrderLookup;
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
+  if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
   if (fn === 'thasitha-req1') return thasithaReq1HandlerModule(req, res);
+  if (fn === 'thasitha-req2') return thasithaReq2HandlerModule(req, res);
   if (fn === 'thasitha-req3') return thasithaReq3HandlerModule(req, res);
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
