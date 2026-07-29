@@ -630,7 +630,29 @@ const NOT_ASSIGNED_GROUP = {
   },
 };
 
-function assignGroup(utm, fv, journey, month) {
+// Manual overrides (added 2026-07-29): an order assigned from the Not
+// Assigned tab's UI via api/assign-order.js is committed to this file in
+// the GitHub repo, which redeploys and gets picked up here on the next
+// request -- checked BEFORE the normal GROUPS rules so a manual assignment
+// always wins. Read fresh (not cached) since the file is tiny and this is
+// the only way a fresh deploy's change becomes visible without restarting
+// the whole in-memory CACHE below.
+const GROUPS_BY_KEY = new Map(GROUPS.map((g) => [g.key, g]));
+function loadOverrides() {
+  try {
+    const p = path.join(__dirname, 'data', 'order-overrides.json');
+    return JSON.parse(fs.readFileSync(p, 'utf8') || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function assignGroup(utm, fv, journey, month, orderId) {
+  if (orderId) {
+    const overrides = loadOverrides();
+    const o = overrides[String(orderId)];
+    if (o && o.source === 'salesuk' && GROUPS_BY_KEY.has(o.groupKey)) return GROUPS_BY_KEY.get(o.groupKey);
+  }
   for (const g of GROUPS) {
     if (g.match(utm, fv, journey, month)) return g;
   }
@@ -661,7 +683,7 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
     if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') continue;
     const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
     const utm = (fv && fv.utmParameters) || {};
-    const assigned = assignGroup(utm, fv, journey, monthConfig.month);
+    const assigned = assignGroup(utm, fv, journey, monthConfig.month, order.legacyResourceId);
     if (assigned) continue;
     const row = buildOrderRow(order, journey);
     const channel = deriveChannelLabel(journey);
@@ -757,7 +779,7 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') continue;
     const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
     const utm = (fv && fv.utmParameters) || {};
-    const assigned = assignGroup(utm, fv, journey, monthConfig.month);
+    const assigned = assignGroup(utm, fv, journey, monthConfig.month, order.legacyResourceId);
     const isMatch = groupDef.key === NOT_ASSIGNED_GROUP.key ? !assigned : (assigned && assigned.key === groupDef.key);
     if (!isMatch) continue;
     const row = buildOrderRow(order, journey);

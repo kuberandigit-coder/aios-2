@@ -153,9 +153,9 @@ tbody tr:hover{background:var(--accent-soft);}
               <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th class="num">Order Total</th><th>Currency</th>
               <th>Financial Status</th><th>Fulfilment Status</th>
               <th>First Session Source</th><th>First Session Medium</th><th>First Session Term</th><th>First Session Content</th>
-              <th>All Sessions</th>
+              <th>All Sessions</th><th id="assignColHeader" style="display:none;">Assign</th>
             </tr></thead>
-            <tbody id="tbody"><tr><td colspan="17" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+            <tbody id="tbody"><tr><td colspan="18" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
           </table>
         </div>
         <div class="empty" id="emptyMsg" style="display:none;">No orders match the current filters.</div>
@@ -232,7 +232,7 @@ async function load(force){
   } catch (e) {
     document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message + (DATA ? ' — showing last successful data' : '');
     document.getElementById('liveChip').className = 'chip stale';
-    if (!DATA) document.getElementById('tbody').innerHTML = '<tr><td colspan="17" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    if (!DATA) document.getElementById('tbody').innerHTML = '<tr><td colspan="18" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
   }
   loading = false;
   btn.disabled = false; btn.textContent = 'Refresh';
@@ -303,6 +303,60 @@ function renderCampaigns(){
   renderTable();
 }
 
+// ---------- Not Assigned -> real group assignment (added 2026-07-29) ----------
+const ASSIGN_GROUP_OPTIONS = [
+  ['dm-ad', 'DM-Ad'], ['meta', 'Meta'], ['sonya', 'Sonya'], ['sajeepan', 'Sajeepan'],
+  ['sukirtha', 'Sukirtha'], ['organic', 'Organic'], ['cppc', 'CPPC'],
+  ['thishoban', 'Thishoban'], ['theekshy', 'Theekshy'], ['thanishtika', 'Thanishtika'],
+];
+function assignSourceFor(month){ return month.startsWith('2025-') ? 'sales25' : 'salesuk'; }
+
+function assignCellHtml(o){
+  if (CURRENT_GROUP !== 'not-assigned') return '<td></td>';
+  const options = ASSIGN_GROUP_OPTIONS.map(([k, label]) => '<option value="' + k + '">' + label + '</option>').join('');
+  return '<td>' +
+    '<select class="assignSelect" data-orderid="' + esc(o.orderLegacyId) + '" data-ordername="' + esc(o.orderName) + '" style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:11.5px;margin-right:4px;">' +
+    '<option value="">Belongs to…</option>' + options +
+    '</select>' +
+    '<button class="assignBtn" data-orderid="' + esc(o.orderLegacyId) + '" style="padding:5px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">Assign</button>' +
+    '<span class="assignStatus" data-orderid="' + esc(o.orderLegacyId) + '" style="display:block;font-size:10.5px;margin-top:3px;color:var(--muted);"></span>' +
+    '</td>';
+}
+
+async function assignOrder(orderId, orderName, groupKey, statusEl, btn){
+  statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--muted)';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/assign-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, orderName, groupKey, source: assignSourceFor(CURRENT_MONTH), month: CURRENT_MONTH }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    statusEl.textContent = 'Saved — will move to its tab after the next dashboard refresh.';
+    statusEl.style.color = 'var(--good)';
+  } catch (e) {
+    statusEl.textContent = 'Failed: ' + e.message;
+    statusEl.style.color = 'var(--bad)';
+    btn.disabled = false;
+  }
+}
+
+function wireAssignButtons(){
+  document.querySelectorAll('.assignBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const orderId = btn.getAttribute('data-orderid');
+      const sel = document.querySelector('.assignSelect[data-orderid="' + orderId + '"]');
+      const statusEl = document.querySelector('.assignStatus[data-orderid="' + orderId + '"]');
+      const groupKey = sel.value;
+      const orderName = sel.getAttribute('data-ordername');
+      if (!groupKey) { statusEl.textContent = 'Pick who it belongs to first.'; statusEl.style.color = 'var(--bad)'; return; }
+      assignOrder(orderId, orderName, groupKey, statusEl, btn);
+    });
+  });
+}
+
 function renderTable(){
   const rows = filteredRows();
   document.getElementById('rowCnt').textContent = rows.length.toLocaleString() + ' of ' + (DATA ? DATA.orders.length : 0).toLocaleString() + ' orders';
@@ -329,10 +383,11 @@ function renderTable(){
       '<td>' + esc(o.financialStatus) + '</td>' + '<td>' + esc(o.fulfillmentStatus) + '</td>' +
       '<td>' + esc(o.firstVisitSource) + '</td>' + '<td>' + esc(o.firstVisitMedium) + '</td>' + '<td>' + esc(o.firstVisitTerm) + '</td>' + '<td>' + esc(o.firstVisitContent) + '</td>' +
       '<td>' + esc((o.sessions||[]).map(s=>s.classification).join(' → ') || '—') + '</td>' +
+      assignCellHtml(o) +
       '</tr>'
     );
     if (openRows.has(rowId)) {
-      html.push('<tr><td colspan="17"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+      html.push('<tr><td colspan="18"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
         '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
         '</tr></thead><tbody>' +
         (o.sessions || []).map(s => {
@@ -357,6 +412,8 @@ function renderTable(){
       renderTable();
     });
   });
+  document.getElementById('assignColHeader').style.display = CURRENT_GROUP === 'not-assigned' ? '' : 'none';
+  wireAssignButtons();
 }
 
 ['q_order'].forEach(id => document.getElementById(id).addEventListener('input', renderTable));
