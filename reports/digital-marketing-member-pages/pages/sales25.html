@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEDSone UK — Order-Level Sales Review</title>
+<title>LEDSone UK — 2025 Order-Level Sales Review</title>
 <style>
 :root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -74,6 +74,7 @@ tbody tr:hover{background:var(--accent-soft);}
 </head>
 <body>
 <div class="wrap">
+<a class="back" href="../home.html">&larr; Back to all members</a>
   <div class="reqtabs" id="groupTabs">
     <div class="reqtab active" data-group="dm-ad" onclick="selectGroup('dm-ad')">DM-Ad</div>
     <div class="reqtab" data-group="meta" onclick="selectGroup('meta')">Meta</div>
@@ -90,20 +91,15 @@ tbody tr:hover{background:var(--accent-soft);}
 
   <div id="tabJanuary">
     <div class="reqtabs" id="monthTabs" style="margin-bottom:14px;">
-      <div class="reqtab active" data-month="2026-01" onclick="selectMonth('2026-01')">January</div>
-      <div class="reqtab" data-month="2026-02" onclick="selectMonth('2026-02')">February</div>
-      <div class="reqtab" data-month="2026-03" onclick="selectMonth('2026-03')">March</div>
-      <div class="reqtab" data-month="2026-04" onclick="selectMonth('2026-04')">April</div>
-      <div class="reqtab" data-month="2026-05" onclick="selectMonth('2026-05')">May</div>
-      <div class="reqtab" data-month="2026-06" onclick="selectMonth('2026-06')">June</div>
-      <div class="reqtab" data-month="2026-07" onclick="selectMonth('2026-07')">July (live)</div>
+      <div class="reqtab active" data-month="2025-01" onclick="selectMonth('2025-01')">January</div>
+      <div class="reqtab" data-month="2025-02" onclick="selectMonth('2025-02')">February</div>
     </div>
 
     <div id="groupDmAd">
       <header>
         <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;" id="groupLabel">DM-Ad</div>
         <h1 id="groupTitle">Order-Level Sales — Shop_DM_PMax-46_AguAsset + Shop_DM_PMax-25</h1>
-        <div class="sub" id="periodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, order-level (not product-scoped) &nbsp;&middot;&nbsp; January 2026, closed reporting month.</div>
+        <div class="sub" id="periodSub">Store: <strong>ledsone.co.uk</strong> &nbsp;&middot;&nbsp; store-wide, order-level (not product-scoped) &nbsp;&middot;&nbsp; January 2025, closed reporting month.</div>
         <div class="filters">
           <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
           <span class="chip" id="liveChip">Loading&hellip;</span>
@@ -154,7 +150,7 @@ tbody tr:hover{background:var(--accent-soft);}
           <label>Belongs to <select id="bulkGroupSelect">
             <option value="">Select…</option>
           </select></label>
-          <label>Tab (Year) <select id="bulkMonthSelect"></select></label>
+          <label>Tab (Month) <select id="bulkMonthSelect"></select></label>
           <button id="bulkAssignBtn" class="assignBtn">Assign Selected</button>
           <button id="bulkClearBtn">Clear Selection</button>
           <button id="viewAssignLogBtn" type="button">View Assignment Log</button>
@@ -162,7 +158,7 @@ tbody tr:hover{background:var(--accent-soft);}
         </div>
         <div id="assignLogPanel" style="display:none;padding:14px 20px;border-bottom:1px solid var(--line);background:#f7f9fc;max-height:300px;overflow-y:auto;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <strong style="font-size:13px;">Assignment Log — every order assigned so far, across all tabs/years</strong>
+            <strong style="font-size:13px;">Assignment Log — every 2025 order assigned so far</strong>
             <button id="closeAssignLogBtn" type="button" style="padding:4px 10px;font-size:11px;">Close</button>
           </div>
           <table style="width:100%;font-size:12px;">
@@ -188,11 +184,11 @@ tbody tr:hover{background:var(--accent-soft);}
       </div>
 
       <div class="footnotes">
-        <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via <code id="groupEndpoint">/api/salesuk?group=dm-ad</code> (a dedicated backend, separate from the main <code>api/sales.js</code>) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
-        <strong>Why this page exists:</strong> the main sales dashboard's per-staff tabs (Kamsi/Dilaksi/DM/Sonya/Sajeepan) can double-count the same order under different definitions (product-scope vs ad-click attribution). This standalone page shows every order once, at order level, so it can be reviewed and assigned by hand. Groups on this page are checked in a fixed priority order (DM-Ad, then Meta) so no order can ever appear in more than one group's tab here.<br>
-        <strong>Matching rule:</strong> <span id="groupRule">first-session <code>utm_campaign</code> exactly matches (or is a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code> or <code>Shop_DM_PMax-25</code> (case-insensitive).</span> Sessions 2+ are never used for matching, only shown for context.<br>
+        <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.co.uk</code> (<code>ledsone.myshopify.com</code>) &middot; fetched via <code id="groupEndpoint">/api/sales25?group=dm-ad</code> (a dedicated 2025 backend, separate from <code>api/salesuk.js</code> which handles 2026) using the <code>SHOPIFY_UK_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+        <strong>Why this page exists:</strong> a standalone page for the whole of 2025, reusing the exact same confirmed campaign/UTM ownership rules already established on salesuk.html for 2026 &mdash; kept separate per user request, 2026-07-29. Groups on this page are checked in a fixed priority order (DM-Ad -&gt; Meta -&gt; Sonya -&gt; Sajeepan -&gt; Sukirtha -&gt; Organic -&gt; CPPC -&gt; Thishoban -&gt; Theekshy -&gt; Thanishtika) so no order can ever appear in more than one group's tab here.<br>
+        <strong>Matching rule:</strong> <span id="groupRule">first-session <code>utm_campaign</code> exactly matches (or is a prefixed variant of) <code>Shop_DM_PMax-46_AguAsset</code> or <code>Shop_DM_PMax-46</code>, or <code>sag_organic</code> (case-insensitive).</span> Sessions 2+ are never used for matching, only shown for context.<br>
         <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; order-level rows only, no per-product/SKU breakdown.<br>
-        <strong>Report period:</strong> January 1&ndash;31, 2026, Europe/London timezone.<br>
+        <strong>Report period:</strong> <span id="footPeriodNote">January 1&ndash;31, 2025</span>, Europe/London timezone.<br>
         <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
         <strong>Last refresh timestamp:</strong> <span id="footRefresh">&ndash;</span>
       </div>
@@ -213,11 +209,12 @@ function downloadCsv(content, filename){
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-let CURRENT_MONTH = '2026-01';
+let CURRENT_MONTH = '2025-01';
 let CURRENT_GROUP = 'dm-ad';
-// 2025 lives on its own standalone page (pages/sales25.html + api/sales25.js,
-// added 2026-07-29) per user request -- this page only ever handles 2026.
-function apiEndpointFor(month){ return '/api/salesuk'; }
+// This page is 2025-only -- always hits api/sales25.js (separate backend,
+// same confirmed rules as api/salesuk.js which handles 2026, per user
+// request 2026-07-29 to keep the two years on separate pages).
+function apiEndpointFor(month){ return '/api/sales25'; }
 const GROUP_CACHE = {};
 function switchView(){
   openRows = new Set();
@@ -274,6 +271,7 @@ function applyData(){
   document.getElementById('footRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
   document.getElementById('kLastOk').textContent = new Date().toLocaleTimeString();
   document.getElementById('periodSub').innerHTML = 'Store: <strong>ledsone.co.uk</strong> &middot; store-wide, order-level &middot; <strong>' + esc(data.reportPeriod.label) + '</strong> (Europe/London) &middot; a completed, closed reporting period.';
+  document.getElementById('footPeriodNote').textContent = data.reportPeriod.label;
   document.getElementById('groupLabel').textContent = data.group.name;
   document.getElementById('groupTitle').textContent = 'Order-Level Sales — ' + data.group.name;
   document.getElementById('groupDesc').textContent = 'Store-wide (not product-scoped) order-level sales — every order that matches ' + data.group.name + '’s rule (see footnotes below). One row per order (no per-product breakdown) — click Sessions to see every session Shopify recorded for that order.';
@@ -330,22 +328,16 @@ function renderCampaigns(){
   renderTable();
 }
 
-// ---------- Not Assigned -> real group assignment (added 2026-07-29) ----------
-// Main tab = person/group. Sub tab = month/year. Assigning needs BOTH picked
-// explicitly (per user request, 2026-07-29: "every main tab have subtab
-// also so need another selection dropdown after main tab selection and
-// inside there sub tab selection") -- defaults to the month currently being
-// viewed, but can be changed before clicking Assign.
+// ---------- Not Assigned -> real group assignment ----------
 const ASSIGN_GROUP_OPTIONS = [
   ['dm-ad', 'DM-Ad'], ['meta', 'Meta'], ['sonya', 'Sonya'], ['sajeepan', 'Sajeepan'],
   ['sukirtha', 'Sukirtha'], ['organic', 'Organic'], ['cppc', 'CPPC'],
   ['thishoban', 'Thishoban'], ['theekshy', 'Theekshy'], ['thanishtika', 'Thanishtika'],
 ];
 const ASSIGN_MONTH_OPTIONS = [
-  ['2026-01', 'January 2026'], ['2026-02', 'February 2026'], ['2026-03', 'March 2026'],
-  ['2026-04', 'April 2026'], ['2026-05', 'May 2026'], ['2026-06', 'June 2026'], ['2026-07', 'July 2026 (live)'],
+  ['2025-01', 'January 2025'], ['2025-02', 'February 2025'],
 ];
-function assignSourceFor(month){ return 'salesuk'; }
+function assignSourceFor(month){ return 'sales25'; }
 function assignMonthOptionsHtml(selected){
   return ASSIGN_MONTH_OPTIONS.map(([v, label]) => '<option value="' + v + '"' + (v === selected ? ' selected' : '') + '>' + label + '</option>').join('');
 }
@@ -365,20 +357,11 @@ function assignCellHtml(o){
     '</td>';
 }
 
-// Removes an order from the currently-displayed Not Assigned view right
-// away (optimistic UI) -- addresses "after transfer no need in not
-// assigned". The backend also drops it permanently from Not Assigned (and
-// injects it into the target group) on the next request once the
-// GitHub-committed override redeploys, usually under a minute; this just
-// avoids making the user wait for that to see it disappear locally.
 function removeOrderFromCurrentView(orderId){
   if (!DATA || !DATA.orders) return;
   DATA.orders = DATA.orders.filter(o => String(o.orderLegacyId) !== String(orderId));
   const key = CURRENT_GROUP + ':' + CURRENT_MONTH;
   if (GROUP_CACHE[key]) GROUP_CACHE[key] = DATA;
-  // Row list updates immediately; KPI cards/campaign totals stay as last
-  // fetched until the next real refresh (they're server-computed summaries,
-  // not worth duplicating client-side for a same-session cosmetic fix).
   renderTable();
 }
 
@@ -418,12 +401,7 @@ function wireAssignButtons(){
   });
 }
 
-// ---------- Bulk select + assign (added 2026-07-29) ----------
-// Lets the user tick multiple orders in Not Assigned, pick one destination
-// group, and assign all of them in a single request/GitHub commit. The
-// "Tab: <label>" chip in the bulk bar always shows which month/year the
-// selected orders belong to — every row currently on screen is already
-// scoped to CURRENT_MONTH, so there's no cross-tab mixing to worry about.
+// ---------- Bulk select + assign ----------
 let SELECTED_ORDER_IDS = new Set();
 
 function selectCellHtml(o){
@@ -455,11 +433,7 @@ function updateBulkBar(){
   }
 }
 
-// ---------- Assignment log viewer (added 2026-07-29, per user request: ----------
-// "how to find is that transferred or not") -- reads straight from the
-// GitHub-committed overrides file via GET /api/assign-order, so it's always
-// the true source of what's been assigned, independent of whether the
-// affected tab has redeployed/refreshed yet.
+// ---------- Assignment log viewer ----------
 const ASSIGN_GROUP_LABELS = Object.fromEntries(ASSIGN_GROUP_OPTIONS);
 const ASSIGN_MONTH_LABELS = Object.fromEntries(ASSIGN_MONTH_OPTIONS);
 let assignLogWired = false;
@@ -470,12 +444,12 @@ async function loadAssignLog(){
     const res = await fetch('/api/assign-order');
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-    const rows2026 = data.assignments.filter(a => a.source === 'salesuk');
-    if (!rows2026.length) {
-      body.innerHTML = '<tr><td colspan="4" style="padding:8px;color:var(--muted);">No 2026 assignments made yet.</td></tr>';
+    const rows2025 = data.assignments.filter(a => a.source === 'sales25');
+    if (!rows2025.length) {
+      body.innerHTML = '<tr><td colspan="4" style="padding:8px;color:var(--muted);">No 2025 assignments made yet.</td></tr>';
       return;
     }
-    body.innerHTML = rows2026.map(a =>
+    body.innerHTML = rows2025.map(a =>
       '<tr><td style="padding:4px 8px;">' + esc(a.orderName || a.orderId) + '</td>' +
       '<td style="padding:4px 8px;">' + esc(ASSIGN_GROUP_LABELS[a.groupKey] || a.groupKey) + '</td>' +
       '<td style="padding:4px 8px;">' + esc(ASSIGN_MONTH_LABELS[a.month] || a.month) + '</td>' +
@@ -513,7 +487,6 @@ function wireBulkControls(){
     document.querySelectorAll('.rowSelectCb').forEach(cb => {
       cb.checked = selectAllCb.checked;
       const id = cb.getAttribute('data-orderid');
-      const name = cb.getAttribute('data-ordername');
       if (selectAllCb.checked) SELECTED_ORDER_IDS.add(id); else SELECTED_ORDER_IDS.delete(id);
     });
     updateBulkBar();
@@ -639,7 +612,7 @@ function exportCsv(){
     lines.push([o.matchedCampaign, o.orderName, o.orderLegacyId, o.createdAt, o.grossSales, o.discounts, o.refunds, o.netSales, o.orderTotal, o.currency, o.financialStatus, o.fulfillmentStatus, o.firstVisitSource, o.firstVisitMedium, o.firstVisitTerm, o.firstVisitContent, (o.sessions||[]).map(s=>s.classification).join(' -> ')].map(csvSafe).join(','));
   });
   const monthTag = DATA ? DATA.reportPeriod.month : CURRENT_MONTH;
-  downloadCsv(lines.join('\r\n'), monthTag + '_' + CURRENT_GROUP + '-order-level-ledsone-uk.csv');
+  downloadCsv(lines.join('\r\n'), monthTag + '_' + CURRENT_GROUP + '-order-level-ledsone-uk-2025.csv');
 }
 document.getElementById('exportCsv').addEventListener('click', exportCsv);
 
