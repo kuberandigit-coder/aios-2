@@ -710,7 +710,7 @@ function applyOverridesToSnapshot(payload, groupDef, monthConfig) {
         const naData = JSON.parse(fs.readFileSync(naPath, 'utf8'));
         for (const r of naData.orders || []) {
           if (idsForThisGroup.has(String(r.orderLegacyId)) && !rows.some((x) => x.orderLegacyId === r.orderLegacyId)) {
-            rows.push({ ...r, matchedCampaign: '(manually assigned)' });
+            rows.push({ ...r, matchedCampaign: (r.firstVisitCampaign || r.matchedCampaign || '(unknown)') + ' (M)' });
           }
         }
       }
