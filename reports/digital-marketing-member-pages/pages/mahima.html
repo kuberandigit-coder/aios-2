@@ -1282,6 +1282,14 @@ document.getElementById('r3refreshBtn').addEventListener('click',function(){ r3R
 // ===== Requirement 5 — Product ID Coverage =====
 const PAGE_SIZE5=100;
 let ROWS5=[], page5=0, filtered5=[], F5=[];
+const MAHIMA5_SHORT_NAMES={
+  'Pmax DE | Mahi | Klarna | DE | All_Myid | MCV':'Klarna All',
+  'Pmax DE | Mahi | Shoptimised|  BESTEN-BELEUCHTUNG | priceGT10_5 | MCV':'Besten-Beleuchtung',
+  'Pmax DE | Mahi | Shoptimised | LIGHTINGSOLUTION | All_Myid_1 | MCV':'Lighting Solution',
+  'Pmax DE | Mahi | Shoptimised |JAN-TOP-SALES | JanTopSales_3 | MCV':'Jan Top Sales',
+  'Shopping DE | Mahi | klarna | TOP-MAHI | Verkaufsprodukt | tROAS | 11/06':'Top-Mahi Shopping',
+};
+function shortCamp5(name){ return MAHIMA5_SHORT_NAMES[name] || name; }
 
 function actionBadgeClass5(a){
   if(a==='Scale') return 'b-scale5';
@@ -1318,7 +1326,7 @@ function rowHtml5(r){
     <td class="skucell">${esc(r.productId)}</td>
     <td class="skucell">${esc(r.sku)}</td>
     <td><span class="badge ${r.inCampaign?'b-in-yes':'b-in-no'}">${r.inCampaign?'Yes':'No'}</span></td>
-    <td class="wrap-cell">${r.campaigns&&r.campaigns.length?esc(r.campaigns.join(', ')):naSpan()}</td>
+    <td class="wrap-cell">${r.campaigns&&r.campaigns.length?esc(r.campaigns.map(shortCamp5).join(', ')):naSpan()}</td>
     <td class="wrap-cell">${r.category?esc(r.category):naSpan()}</td>
     <td class="num">${r.impressions.toLocaleString()}</td>
     <td class="num">${r.clicks.toLocaleString()}</td>
@@ -1388,7 +1396,7 @@ function exportCsv5(){
   filtered5.forEach(function(r){
     const row=[
       r._rangeLabel,'Product ID Coverage',r.productId,r.sku,r.inCampaign?'Yes':'No',
-      r.campaigns?r.campaigns.join('; '):'',r.category||'',
+      r.campaigns?r.campaigns.map(shortCamp5).join('; '):'',r.category||'',
       r.impressions,r.clicks,r.cost.toFixed(2),r.conversions.toFixed(2),r.convValue.toFixed(2),
       r.prevRoas!=null?(r.prevRoas*100).toFixed(0)+'%':'N/A',
       r.roas!=null?(r.roas*100).toFixed(0)+'%':'N/A',
@@ -1424,7 +1432,7 @@ function r5ApplyLive(data, isRestored){
   F5=ROWS5; filtered5=ROWS5; page5=0;
 
   const campsel=document.getElementById('campsel5');
-  campsel.innerHTML='<option value="all">All Campaigns</option>'+(data.campaignList||[]).map(function(c){return `<option value="${esc(c.name)}">${esc(c.name)}</option>`;}).join('');
+  campsel.innerHTML='<option value="all">All Campaigns</option>'+(data.campaignList||[]).map(function(c){return `<option value="${esc(c.name)}">${esc(shortCamp5(c.name))}</option>`;}).join('');
   const actionsel=document.getElementById('actionsel5');
   const actions=Array.from(new Set(ROWS5.map(function(r){return r.action;}))).sort();
   actionsel.innerHTML='<option value="all">All Actions</option>'+actions.map(function(a){return `<option value="${esc(a)}">${esc(a)}</option>`;}).join('');
