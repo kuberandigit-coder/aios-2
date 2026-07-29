@@ -158,7 +158,18 @@ tbody tr:hover{background:var(--accent-soft);}
           <label>Tab (Year) <select id="bulkMonthSelect"></select></label>
           <button id="bulkAssignBtn" class="assignBtn">Assign Selected</button>
           <button id="bulkClearBtn">Clear Selection</button>
+          <button id="viewAssignLogBtn" type="button">View Assignment Log</button>
           <span id="bulkStatus" style="font-size:12px;"></span>
+        </div>
+        <div id="assignLogPanel" style="display:none;padding:14px 20px;border-bottom:1px solid var(--line);background:#f7f9fc;max-height:300px;overflow-y:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <strong style="font-size:13px;">Assignment Log — every order assigned so far, across all tabs/years</strong>
+            <button id="closeAssignLogBtn" type="button" style="padding:4px 10px;font-size:11px;">Close</button>
+          </div>
+          <table style="width:100%;font-size:12px;">
+            <thead><tr><th style="text-align:left;padding:4px 8px;">Order</th><th style="text-align:left;padding:4px 8px;">Assigned To</th><th style="text-align:left;padding:4px 8px;">Tab</th><th style="text-align:left;padding:4px 8px;">When</th></tr></thead>
+            <tbody id="assignLogBody"><tr><td colspan="4" style="padding:8px;color:var(--muted);">Loading…</td></tr></tbody>
+          </table>
         </div>
         <div class="scroll">
           <table>
@@ -357,6 +368,23 @@ function assignCellHtml(o){
     '</td>';
 }
 
+// Removes an order from the currently-displayed Not Assigned view right
+// away (optimistic UI) -- addresses "after transfer no need in not
+// assigned". The backend also drops it permanently from Not Assigned (and
+// injects it into the target group) on the next request once the
+// GitHub-committed override redeploys, usually under a minute; this just
+// avoids making the user wait for that to see it disappear locally.
+function removeOrderFromCurrentView(orderId){
+  if (!DATA || !DATA.orders) return;
+  DATA.orders = DATA.orders.filter(o => String(o.orderLegacyId) !== String(orderId));
+  const key = CURRENT_GROUP + ':' + CURRENT_MONTH;
+  if (GROUP_CACHE[key]) GROUP_CACHE[key] = DATA;
+  // Row list updates immediately; KPI cards/campaign totals stay as last
+  // fetched until the next real refresh (they're server-computed summaries,
+  // not worth duplicating client-side for a same-session cosmetic fix).
+  renderTable();
+}
+
 async function assignOrder(orderId, orderName, groupKey, targetMonth, statusEl, btn){
   statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--muted)';
   btn.disabled = true;
@@ -368,7 +396,8 @@ async function assignOrder(orderId, orderName, groupKey, targetMonth, statusEl, 
     });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-    statusEl.textContent = 'Saved — will move to its tab after the next dashboard refresh.';
+    if (CURRENT_GROUP === 'not-assigned' && targetMonth === CURRENT_MONTH) removeOrderFromCurrentView(orderId);
+    statusEl.textContent = 'Saved — removed from Not Assigned. Fully synced everywhere in ~1 min (redeploy).';
     statusEl.style.color = 'var(--good)';
   } catch (e) {
     statusEl.textContent = 'Failed: ' + e.message;
@@ -429,7 +458,50 @@ function updateBulkBar(){
   }
 }
 
+// ---------- Assignment log viewer (added 2026-07-29, per user request: ----------
+// "how to find is that transferred or not") -- reads straight from the
+// GitHub-committed overrides file via GET /api/assign-order, so it's always
+// the true source of what's been assigned, independent of whether the
+// affected tab has redeployed/refreshed yet.
+const ASSIGN_GROUP_LABELS = Object.fromEntries(ASSIGN_GROUP_OPTIONS);
+const ASSIGN_MONTH_LABELS = Object.fromEntries(ASSIGN_MONTH_OPTIONS);
+let assignLogWired = false;
+async function loadAssignLog(){
+  const body = document.getElementById('assignLogBody');
+  body.innerHTML = '<tr><td colspan="4" style="padding:8px;color:var(--muted);">Loading…</td></tr>';
+  try {
+    const res = await fetch('/api/assign-order');
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+    if (!data.assignments.length) {
+      body.innerHTML = '<tr><td colspan="4" style="padding:8px;color:var(--muted);">No assignments made yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = data.assignments.map(a =>
+      '<tr><td style="padding:4px 8px;">' + esc(a.orderName || a.orderId) + '</td>' +
+      '<td style="padding:4px 8px;">' + esc(ASSIGN_GROUP_LABELS[a.groupKey] || a.groupKey) + '</td>' +
+      '<td style="padding:4px 8px;">' + esc(ASSIGN_MONTH_LABELS[a.month] || a.month) + '</td>' +
+      '<td style="padding:4px 8px;">' + esc(new Date(a.assignedAt).toLocaleString()) + '</td></tr>'
+    ).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="4" style="padding:8px;color:var(--bad);">Failed to load: ' + esc(e.message) + '</td></tr>';
+  }
+}
+function wireAssignLogPanel(){
+  if (assignLogWired) return;
+  assignLogWired = true;
+  document.getElementById('viewAssignLogBtn').addEventListener('click', () => {
+    const panel = document.getElementById('assignLogPanel');
+    panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    if (panel.style.display !== 'none') loadAssignLog();
+  });
+  document.getElementById('closeAssignLogBtn').addEventListener('click', () => {
+    document.getElementById('assignLogPanel').style.display = 'none';
+  });
+}
+
 function wireBulkControls(){
+  wireAssignLogPanel();
   document.querySelectorAll('.rowSelectCb').forEach(cb => {
     cb.addEventListener('change', () => {
       const id = cb.getAttribute('data-orderid');
@@ -472,7 +544,13 @@ function wireBulkControls(){
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-      statusEl.textContent = data.message;
+      if (CURRENT_GROUP === 'not-assigned' && targetMonth === CURRENT_MONTH && DATA && DATA.orders) {
+        const assignedIds = new Set(orders.map(o => String(o.orderId)));
+        DATA.orders = DATA.orders.filter(o => !assignedIds.has(String(o.orderLegacyId)));
+        const key = CURRENT_GROUP + ':' + CURRENT_MONTH;
+        if (GROUP_CACHE[key]) GROUP_CACHE[key] = DATA;
+      }
+      statusEl.textContent = data.message + ' Removed from this view now — fully synced everywhere in ~1 min.';
       statusEl.style.color = 'var(--good)';
       SELECTED_ORDER_IDS.clear();
       renderTable();

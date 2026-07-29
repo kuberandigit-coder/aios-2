@@ -686,6 +686,56 @@ async function handleRemaining(req, res, monthConfig, forceRefresh) {
 const CACHE = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
+// Patches a group's static-snapshot payload with manual overrides so an
+// assignment made from the Not Assigned tab's UI takes effect immediately
+// (same mechanism as salesuk.js, added 2026-07-29 per user request: "after
+// transfer no need in not assigned"). Overrides always originate from Not
+// Assigned, so the full order row data needed to inject into a real group's
+// view is sourced from Not Assigned's own static snapshot for that month.
+function applyOverridesToSnapshot(payload, groupDef, monthConfig) {
+  const overrides = loadOverrides();
+  const overrideEntries = Object.entries(overrides).filter(([, o]) => o.source === 'sales25' && o.month === monthConfig.month);
+  if (!overrideEntries.length) return payload;
+  const overriddenIds = new Set(overrideEntries.map(([id]) => id));
+
+  let rows;
+  if (groupDef.key === NOT_ASSIGNED_GROUP.key) {
+    rows = payload.orders.filter((r) => !overriddenIds.has(String(r.orderLegacyId)));
+  } else {
+    const idsForThisGroup = new Set(overrideEntries.filter(([, o]) => o.groupKey === groupDef.key).map(([id]) => id));
+    rows = [...payload.orders];
+    if (idsForThisGroup.size) {
+      const naPath = path.join(__dirname, 'data', `sales25-not-assigned-${monthConfig.month}.json`);
+      if (fs.existsSync(naPath)) {
+        const naData = JSON.parse(fs.readFileSync(naPath, 'utf8'));
+        for (const r of naData.orders || []) {
+          if (idsForThisGroup.has(String(r.orderLegacyId)) && !rows.some((x) => x.orderLegacyId === r.orderLegacyId)) {
+            rows.push({ ...r, matchedCampaign: '(manually assigned)' });
+          }
+        }
+      }
+    }
+  }
+
+  const byCampaign = new Map();
+  for (const r of rows) {
+    const k = r.matchedCampaign || '(unknown)';
+    if (!byCampaign.has(k)) byCampaign.set(k, []);
+    byCampaign.get(k).push(r);
+  }
+  const campaignSummary = [...byCampaign.keys()].sort()
+    .map((code) => ({ campaign: code, ...summarizeOrderRows(byCampaign.get(code)) }))
+    .sort((a, b) => b.ordersCount - a.ordersCount);
+
+  return {
+    ...payload,
+    campaignList: [...byCampaign.keys()].sort(),
+    combinedSummary: summarizeOrderRows(rows),
+    campaignSummary,
+    orders: rows,
+  };
+}
+
 async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
   const cacheKey = groupDef.key + ':' + monthConfig.month;
   const cached = CACHE.get(cacheKey);
@@ -700,7 +750,8 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     const staticPath = path.join(__dirname, 'data', `sales25-${groupDef.key}-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
-      const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+      let payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+      payload = applyOverridesToSnapshot(payload, groupDef, monthConfig);
       CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
       res.status(200).json(payload);
       return;

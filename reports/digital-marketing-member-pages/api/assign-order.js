@@ -66,9 +66,26 @@ async function writeOverrides(overrides, sha, commitMessage) {
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+
+  // GET = audit log ("how do I find out if it's been transferred?") --
+  // returns every assignment made so far, straight from the GitHub-committed
+  // overrides file, so you can always check what's assigned and to whom
+  // without waiting for a redeploy or opening the target tab.
+  if (req.method === 'GET') {
+    try {
+      const { overrides } = await readOverrides();
+      const list = Object.entries(overrides).map(([orderId, o]) => ({ orderId, ...o }))
+        .sort((a, b) => new Date(b.assignedAt) - new Date(a.assignedAt));
+      res.status(200).json({ success: true, count: list.length, assignments: list });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+    }
+    return;
+  }
+
   if (req.method !== 'POST') { res.status(405).json({ success: false, error: 'Method not allowed' }); return; }
 
   try {
