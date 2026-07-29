@@ -4002,22 +4002,33 @@ merch AS (
   SELECT DISTINCT ON (product_id) *
   FROM google_ads.merchant_products
   ORDER BY product_id, (lan = 'de') DESC
+),
+listing AS (
+  SELECT DISTINCT ON (item_id) item_id, title, main_image_url, listing_url
+  FROM listings.shopify_listings
+  WHERE channel = 'LEDSone DE'
+  ORDER BY item_id, (all_list = 1) DESC
 )
 SELECT p.campaign_id, c.campaign_name, c.budget, p.product_item_id,
   p.imp, p.clk, p.sp, p.cv, p.cvv,
   fs.first_date, ((SELECT end_date FROM range) - fs.first_date) AS days_live,
-  m.title, m.image_link, m.link, m.availability,
+  COALESCE(m.title, l.title) AS title,
+  m.title AS merch_title,
+  COALESCE(m.image_link, l.main_image_url) AS image_link,
+  COALESCE(m.link, l.listing_url) AS link,
+  m.availability,
   m.product_category, m.item_group_id, m.mpn, m.color, m.condition, m.description, m.product_types, m.brand, m.price,
   (SELECT end_date FROM range) AS range_end
 FROM perf p
 JOIN camp c ON c.campaign_id = p.campaign_id
 LEFT JOIN first_seen fs ON fs.campaign_id = p.campaign_id AND fs.product_item_id = p.product_item_id
 LEFT JOIN merch m ON m.product_id = p.product_item_id
+LEFT JOIN listing l ON l.item_id = p.product_item_id
 ORDER BY p.sp DESC NULLS LAST;
 `;
 
 function thasitha2DataCheck(r) {
-  if (r.title === null) return { status: 'nofeed', missing: [] };
+  if (r.merch_title === null) return { status: 'nofeed', missing: [] };
   const missing = [];
   for (const col of THASITHA2_ATTR_COLUMNS) {
     const v = r[col];
