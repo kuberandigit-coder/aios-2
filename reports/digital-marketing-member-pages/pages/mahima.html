@@ -546,7 +546,7 @@ tr.row-keep3{background:#f2fbf6;} tr.row-exclude3{background:#fdf3f3;}
 <div class="tablewrap">
 <table class="rt">
 <thead><tr>
-  <th>Date Range</th><th>Report Name</th><th>Product ID</th><th>SKU</th><th>In Campaign?</th><th>Which Campaigns?</th>
+  <th>Date Range</th><th>Product ID</th><th>SKU</th><th>In Campaign?</th><th>Which Campaigns?</th>
   <th>Product Category</th><th>Impressions</th><th>Clicks</th><th>Cost</th><th>Conversions</th><th>Conv. Value</th>
   <th>Previous ROAS</th><th>ROAS</th><th>ROAS Trend</th><th>Last Conversion Day</th><th>Feed Status</th>
   <th>Missing Attribute</th><th>Priority</th><th>Suggested Action</th>
@@ -1322,7 +1322,6 @@ function trendArrow5(t){
 function rowHtml5(r){
   return `<tr>
     <td>${esc(r._rangeLabel)}</td>
-    <td>Product ID Coverage</td>
     <td class="skucell">${esc(r.productId)}</td>
     <td class="skucell">${esc(r.sku)}</td>
     <td><span class="badge ${r.inCampaign?'b-in-yes':'b-in-no'}">${r.inCampaign?'Yes':'No'}</span></td>
@@ -1391,11 +1390,11 @@ function quickFilter5(btn,dim,val){
 window.quickFilter5=quickFilter5;
 
 function exportCsv5(){
-  const headers=['Date Range','Report Name','Product ID','SKU','In Campaign?','Which Campaigns?','Product Category','Impressions','Clicks','Cost','Conversions','Conv. Value','Previous ROAS','ROAS','ROAS Trend','Last Conversion Day','Feed Status','Missing Attribute','Priority','Suggested Action'];
+  const headers=['Date Range','Product ID','SKU','In Campaign?','Which Campaigns?','Product Category','Impressions','Clicks','Cost','Conversions','Conv. Value','Previous ROAS','ROAS','ROAS Trend','Last Conversion Day','Feed Status','Missing Attribute','Priority','Suggested Action'];
   const lines=[headers.join(',')];
   filtered5.forEach(function(r){
     const row=[
-      r._rangeLabel,'Product ID Coverage',r.productId,r.sku,r.inCampaign?'Yes':'No',
+      r._rangeLabel,r.productId,r.sku,r.inCampaign?'Yes':'No',
       r.campaigns?r.campaigns.map(shortCamp5).join('; '):'',r.category||'',
       r.impressions,r.clicks,r.cost.toFixed(2),r.conversions.toFixed(2),r.convValue.toFixed(2),
       r.prevRoas!=null?(r.prevRoas*100).toFixed(0)+'%':'N/A',
