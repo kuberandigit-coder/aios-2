@@ -145,9 +145,20 @@ tbody tr:hover{background:var(--accent-soft);}
           </select></label>
           <button id="resetFilters">Clear Filters</button>
         </div>
+        <div class="tbar" id="bulkAssignBar" style="display:none;border-top:0;background:#eaf0ff;">
+          <span id="bulkSelCount" style="font-weight:700;">0 selected</span>
+          <span class="chip" style="background:#fff;border:1px solid var(--line);color:var(--ink);">Tab: <strong id="bulkTabLabel" style="margin-left:4px;"></strong></span>
+          <label>Belongs to <select id="bulkGroupSelect">
+            <option value="">Select…</option>
+          </select></label>
+          <button id="bulkAssignBtn" class="primary">Assign Selected</button>
+          <button id="bulkClearBtn">Clear Selection</button>
+          <span id="bulkStatus" style="font-size:12px;"></span>
+        </div>
         <div class="scroll">
           <table>
             <thead><tr>
+              <th><input type="checkbox" id="selectAllCb" style="display:none;"></th>
               <th></th>
               <th>Campaign</th><th>Order Name</th><th>Order ID</th><th>Created At</th>
               <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th class="num">Order Total</th><th>Currency</th>
@@ -155,7 +166,7 @@ tbody tr:hover{background:var(--accent-soft);}
               <th>First Session Source</th><th>First Session Medium</th><th>First Session Term</th><th>First Session Content</th>
               <th>All Sessions</th><th id="assignColHeader" style="display:none;">Assign</th>
             </tr></thead>
-            <tbody id="tbody"><tr><td colspan="18" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
+            <tbody id="tbody"><tr><td colspan="19" class="loading">Loading live data from Shopify&hellip;</td></tr></tbody>
           </table>
         </div>
         <div class="empty" id="emptyMsg" style="display:none;">No orders match the current filters.</div>
@@ -202,11 +213,13 @@ function switchView(){
 }
 function selectMonth(m){
   CURRENT_MONTH = m;
+  SELECTED_ORDER_IDS.clear();
   document.querySelectorAll('#monthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === m));
   switchView();
 }
 function selectGroup(g){
   CURRENT_GROUP = g;
+  SELECTED_ORDER_IDS.clear();
   document.querySelectorAll('#groupTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-group') === g));
   switchView();
 }
@@ -232,7 +245,7 @@ async function load(force){
   } catch (e) {
     document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message + (DATA ? ' — showing last successful data' : '');
     document.getElementById('liveChip').className = 'chip stale';
-    if (!DATA) document.getElementById('tbody').innerHTML = '<tr><td colspan="18" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+    if (!DATA) document.getElementById('tbody').innerHTML = '<tr><td colspan="19" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
   }
   loading = false;
   btn.disabled = false; btn.textContent = 'Refresh';
@@ -357,6 +370,93 @@ function wireAssignButtons(){
   });
 }
 
+// ---------- Bulk select + assign (added 2026-07-29) ----------
+// Lets the user tick multiple orders in Not Assigned, pick one destination
+// group, and assign all of them in a single request/GitHub commit. The
+// "Tab: <label>" chip in the bulk bar always shows which month/year the
+// selected orders belong to — every row currently on screen is already
+// scoped to CURRENT_MONTH, so there's no cross-tab mixing to worry about.
+let SELECTED_ORDER_IDS = new Set();
+
+function selectCellHtml(o){
+  if (CURRENT_GROUP !== 'not-assigned') return '<td></td>';
+  const checked = SELECTED_ORDER_IDS.has(String(o.orderLegacyId)) ? ' checked' : '';
+  return '<td><input type="checkbox" class="rowSelectCb" data-orderid="' + esc(o.orderLegacyId) + '" data-ordername="' + esc(o.orderName) + '"' + checked + '></td>';
+}
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkAssignBar');
+  const selectAllCb = document.getElementById('selectAllCb');
+  if (CURRENT_GROUP !== 'not-assigned') {
+    bar.style.display = 'none';
+    selectAllCb.style.display = 'none';
+    return;
+  }
+  selectAllCb.style.display = '';
+  bar.style.display = '';
+  document.getElementById('bulkSelCount').textContent = SELECTED_ORDER_IDS.size + ' selected';
+  document.getElementById('bulkTabLabel').textContent = DATA && DATA.reportPeriod ? DATA.reportPeriod.label : CURRENT_MONTH;
+  if (!document.getElementById('bulkGroupSelect').options.length || document.getElementById('bulkGroupSelect').options.length === 1) {
+    document.getElementById('bulkGroupSelect').innerHTML = '<option value="">Select…</option>' +
+      ASSIGN_GROUP_OPTIONS.map(([k, label]) => '<option value="' + k + '">' + label + '</option>').join('');
+  }
+}
+
+function wireBulkControls(){
+  document.querySelectorAll('.rowSelectCb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.getAttribute('data-orderid');
+      if (cb.checked) SELECTED_ORDER_IDS.add(id); else SELECTED_ORDER_IDS.delete(id);
+      updateBulkBar();
+    });
+  });
+  const selectAllCb = document.getElementById('selectAllCb');
+  selectAllCb.checked = false;
+  selectAllCb.onchange = () => {
+    document.querySelectorAll('.rowSelectCb').forEach(cb => {
+      cb.checked = selectAllCb.checked;
+      const id = cb.getAttribute('data-orderid');
+      const name = cb.getAttribute('data-ordername');
+      if (selectAllCb.checked) SELECTED_ORDER_IDS.add(id); else SELECTED_ORDER_IDS.delete(id);
+    });
+    updateBulkBar();
+  };
+  document.getElementById('bulkClearBtn').onclick = () => {
+    SELECTED_ORDER_IDS.clear();
+    renderTable();
+  };
+  document.getElementById('bulkAssignBtn').onclick = async () => {
+    const statusEl = document.getElementById('bulkStatus');
+    const groupKey = document.getElementById('bulkGroupSelect').value;
+    if (!SELECTED_ORDER_IDS.size) { statusEl.textContent = 'Select at least one order first.'; statusEl.style.color = 'var(--bad)'; return; }
+    if (!groupKey) { statusEl.textContent = 'Pick who these orders belong to.'; statusEl.style.color = 'var(--bad)'; return; }
+    const orders = [...SELECTED_ORDER_IDS].map(id => {
+      const cb = document.querySelector('.rowSelectCb[data-orderid="' + id + '"]');
+      return { orderId: id, orderName: cb ? cb.getAttribute('data-ordername') : null };
+    });
+    statusEl.textContent = 'Saving ' + orders.length + ' orders…'; statusEl.style.color = 'var(--muted)';
+    document.getElementById('bulkAssignBtn').disabled = true;
+    try {
+      const res = await fetch('/api/assign-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orders, groupKey, source: assignSourceFor(CURRENT_MONTH), month: CURRENT_MONTH }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+      statusEl.textContent = data.message;
+      statusEl.style.color = 'var(--good)';
+      SELECTED_ORDER_IDS.clear();
+      renderTable();
+    } catch (e) {
+      statusEl.textContent = 'Failed: ' + e.message;
+      statusEl.style.color = 'var(--bad)';
+    } finally {
+      document.getElementById('bulkAssignBtn').disabled = false;
+    }
+  };
+}
+
 function renderTable(){
   const rows = filteredRows();
   document.getElementById('rowCnt').textContent = rows.length.toLocaleString() + ' of ' + (DATA ? DATA.orders.length : 0).toLocaleString() + ' orders';
@@ -373,6 +473,7 @@ function renderTable(){
     const rowId = o.orderId;
     html.push(
       '<tr>' +
+      selectCellHtml(o) +
       '<td><button class="sessBtn' + (openRows.has(rowId) ? ' open' : '') + '" data-rowid="' + esc(rowId) + '">Sessions <span class="car">&#9662;</span></button></td>' +
       '<td><strong>' + esc(o.matchedCampaign) + '</strong></td>' +
       '<td>' + esc(o.orderName) + '</td>' + '<td>' + esc(o.orderLegacyId) + '</td>' + '<td>' + esc(new Date(o.createdAt).toLocaleString()) + '</td>' +
@@ -387,7 +488,7 @@ function renderTable(){
       '</tr>'
     );
     if (openRows.has(rowId)) {
-      html.push('<tr><td colspan="18"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
+      html.push('<tr><td colspan="19"><div class="detailwrap"><table class="detailtbl"><thead><tr>' +
         '<th>#</th><th>Visit ID</th><th>Occurred At</th><th>Classification</th><th>Source</th><th>Description</th><th>Type</th><th>Referrer</th><th>Landing Page</th><th>Referral Code</th><th>UTM Source</th><th>UTM Medium</th><th>UTM Campaign</th><th>UTM Term</th><th>UTM Content</th><th>Evidence</th>' +
         '</tr></thead><tbody>' +
         (o.sessions || []).map(s => {
@@ -414,6 +515,8 @@ function renderTable(){
   });
   document.getElementById('assignColHeader').style.display = CURRENT_GROUP === 'not-assigned' ? '' : 'none';
   wireAssignButtons();
+  updateBulkBar();
+  wireBulkControls();
 }
 
 ['q_order'].forEach(id => document.getElementById(id).addEventListener('input', renderTable));

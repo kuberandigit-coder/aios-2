@@ -73,24 +73,42 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
-    const { orderId, orderName, groupKey, source, month } = body;
+    const { orderId, orderName, groupKey, source, month, orders } = body;
 
-    if (!orderId) return res.status(400).json({ success: false, error: 'orderId is required' });
+    // Bulk shape: { orders: [{orderId, orderName}, ...], groupKey, source, month }
+    // -- one GitHub commit for the whole batch (added 2026-07-29 per user
+    // request: "need to select here by bulk and transfer to person"),
+    // rather than one commit per order (slow, and risks two concurrent
+    // requests racing on the file's `sha` and clobbering each other).
+    const isBulk = Array.isArray(orders);
+    const items = isBulk ? orders : [{ orderId, orderName }];
+
+    if (!items.length) return res.status(400).json({ success: false, error: 'orders (or orderId) is required' });
+    for (const it of items) {
+      if (!it || !it.orderId) return res.status(400).json({ success: false, error: 'Every order needs an orderId' });
+    }
     if (!VALID_GROUP_KEYS.has(groupKey)) return res.status(400).json({ success: false, error: `Invalid groupKey "${groupKey}"` });
     if (!VALID_SOURCES.has(source)) return res.status(400).json({ success: false, error: `Invalid source "${source}" (must be salesuk or sales25)` });
     if (!month) return res.status(400).json({ success: false, error: 'month is required' });
 
     const { overrides, sha } = await readOverrides();
-    overrides[String(orderId)] = {
-      groupKey, source, month,
-      orderName: orderName || null,
-      assignedAt: new Date().toISOString(),
-    };
-    await writeOverrides(overrides, sha, `chore: assign order ${orderName || orderId} to ${groupKey} (${month}) via salesuk.html Not Assigned tab`);
+    const assignedAt = new Date().toISOString();
+    for (const it of items) {
+      overrides[String(it.orderId)] = {
+        groupKey, source, month,
+        orderName: it.orderName || null,
+        assignedAt,
+      };
+    }
+    const commitMessage = items.length === 1
+      ? `chore: assign order ${items[0].orderName || items[0].orderId} to ${groupKey} (${month}) via salesuk.html Not Assigned tab`
+      : `chore: bulk-assign ${items.length} orders to ${groupKey} (${month}) via salesuk.html Not Assigned tab`;
+    await writeOverrides(overrides, sha, commitMessage);
 
     res.status(200).json({
       success: true,
-      message: 'Assignment saved. It will appear in the target tab after the site redeploys (usually under a minute).',
+      assignedCount: items.length,
+      message: `${items.length} order${items.length === 1 ? '' : 's'} saved. Will appear in the target tab after the site redeploys (usually under a minute).`,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
