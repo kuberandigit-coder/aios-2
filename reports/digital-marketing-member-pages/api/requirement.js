@@ -4004,7 +4004,7 @@ merch AS (
   ORDER BY product_id, (lan = 'de') DESC
 ),
 listing AS (
-  SELECT DISTINCT ON (item_id) item_id, title, main_image_url, listing_url
+  SELECT DISTINCT ON (item_id) item_id, title, main_image_url, listing_url, quantity
   FROM listings.shopify_listings
   WHERE channel = 'LEDSone DE'
   ORDER BY item_id, (all_list = 1) DESC
@@ -4016,7 +4016,7 @@ SELECT p.campaign_id, c.campaign_name, c.budget, p.product_item_id,
   m.title AS merch_title,
   COALESCE(m.image_link, l.main_image_url) AS image_link,
   COALESCE(m.link, l.listing_url) AS link,
-  m.availability,
+  m.availability, l.quantity AS listing_qty,
   m.product_category, m.item_group_id, m.mpn, m.color, m.condition, m.description, m.product_types, m.brand, m.price,
   (SELECT end_date FROM range) AS range_end
 FROM perf p
@@ -4095,16 +4095,22 @@ async function handleThasithaReq2(req, res) {
         sp: Number(r.sp) || 0,
         cv: Number(r.cv) || 0,
         cvv: Number(r.cvv) || 0,
-        qty: liveStock === undefined ? null : liveStock,
+        // qty: live Shopify (freshest) when available; else the synced
+        // listings.shopify_listings quantity (a periodic snapshot, not
+        // live, but real data -- used only when live lookup has nothing,
+        // e.g. the variant doesn't resolve via the Admin API at all).
+        qty: liveStock !== undefined && liveStock !== null ? liveStock : (r.listing_qty !== null && r.listing_qty !== undefined ? Number(r.listing_qty) : null),
         bud: r.budget !== null && r.budget !== undefined ? Number(r.budget) : null,
         t: r.title || (liveInfo ? liveInfo.title : null),
         img: r.image_link || (liveInfo ? liveInfo.image : null),
         lnk: r.link || (liveInfo ? liveInfo.link : null),
-        // Stock Status: prefer live Shopify quantity (most authoritative,
-        // freshest -- also covers products the merchant feed hasn't synced
-        // yet, same gap as title/image above) over the merchant feed's own
-        // availability text; only "unknown" when neither source has data.
-        av: r.availability || (liveStock != null ? (liveStock > 0 ? 'in stock' : 'out of stock') : 'unknown'),
+        // Stock Status: prefer the merchant feed's own availability text,
+        // else derive from live Shopify quantity, else the synced listings
+        // quantity snapshot -- only "unknown" when all three have nothing.
+        av: r.availability
+          || (liveStock != null ? (liveStock > 0 ? 'in stock' : 'out of stock') : null)
+          || (r.listing_qty != null ? (Number(r.listing_qty) > 0 ? 'in stock' : 'out of stock') : null)
+          || 'unknown',
         gmc: dc.status,
         gmcMissing: dc.missing,
       };
