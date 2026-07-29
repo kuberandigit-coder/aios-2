@@ -85,6 +85,7 @@ tbody tr:hover{background:var(--accent-soft);}
 
   <div id="tabJanuary">
     <div class="reqtabs" id="monthTabs" style="margin-bottom:14px;">
+      <div class="reqtab" data-month="2025-01" onclick="selectMonth('2025-01')">Jan 2025</div>
       <div class="reqtab active" data-month="2026-01" onclick="selectMonth('2026-01')">January</div>
       <div class="reqtab" data-month="2026-02" onclick="selectMonth('2026-02')">February</div>
       <div class="reqtab" data-month="2026-03" onclick="selectMonth('2026-03')">March</div>
@@ -188,6 +189,10 @@ function downloadCsv(content, filename){
 
 let CURRENT_MONTH = '2026-01';
 let CURRENT_GROUP = 'dm-ad';
+// 2025 data lives in a deliberately separate backend file (api/sales25.js,
+// added 2026-07-29) reusing the exact same confirmed campaign/UTM ownership
+// rules as api/salesuk.js (2026 data) — same frontend, routed by month.
+function apiEndpointFor(month){ return month.startsWith('2025-') ? '/api/sales25' : '/api/salesuk'; }
 const GROUP_CACHE = {};
 function switchView(){
   openRows = new Set();
@@ -217,7 +222,7 @@ async function load(force){
   document.getElementById('liveChip').textContent = 'Loading historical data from Shopify…';
   document.getElementById('liveChip').className = 'chip';
   try {
-    const url = '/api/salesuk?group=' + encodeURIComponent(CURRENT_GROUP) + '&month=' + encodeURIComponent(CURRENT_MONTH) + (force ? '&refresh=1' : '');
+    const url = apiEndpointFor(CURRENT_MONTH) + '?group=' + encodeURIComponent(CURRENT_GROUP) + '&month=' + encodeURIComponent(CURRENT_MONTH) + (force ? '&refresh=1' : '');
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -245,7 +250,7 @@ function applyData(){
   document.getElementById('groupLabel').textContent = data.group.name;
   document.getElementById('groupTitle').textContent = 'Order-Level Sales — ' + data.group.name;
   document.getElementById('groupDesc').textContent = 'Store-wide (not product-scoped) order-level sales — every order that matches ' + data.group.name + '’s rule (see footnotes below). One row per order (no per-product breakdown) — click Sessions to see every session Shopify recorded for that order.';
-  document.getElementById('groupEndpoint').textContent = '/api/salesuk?group=' + CURRENT_GROUP;
+  document.getElementById('groupEndpoint').textContent = apiEndpointFor(CURRENT_MONTH) + '?group=' + CURRENT_GROUP;
   document.getElementById('groupRule').textContent = 'An order belongs to ' + data.group.name + ' if its ' + data.source.scope + '.';
   openRows = new Set();
   renderAll();
