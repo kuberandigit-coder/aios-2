@@ -424,7 +424,7 @@ function isOrganicMatch(utm, fv, journey) {
   return false;
 }
 
-const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight', 'sh_wall_light', 'klarna_sonya_kl-englisheu-all']);
+const SONYA_CAMPAIGNS = new Set(['klarna_sonya_kl-pmx-all', 'sonya_pendantlight', 'sh_wall_light', 'klarna_sonya_kl-englisheu-all', 'pmax_fr_all_sonya', 'agunoimsh']);
 function isSonyaCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SONYA_CAMPAIGNS.has(c);
@@ -435,7 +435,7 @@ function isSonyaTerm(term) {
   return !!t && SONYA_TERMS.has(t);
 }
 
-const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p', 'sj_pmax_scale_heroes_25', 'klarna_css_sj25_pmax', 'klarna_g2', 'gcss_all_roas_400_sajee', 'shop_dm_pmax-25_zero', 'p_max_klarna_css_sj_old']);
+const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_sajee_pmax', 'sj_top_20x', 'sajeepan_pmax_gcss_ceiling_rose_fitting_asset', 'shop_sj_pmax-25', 'aji_sh_pmax', 'shop_dm_pmax-25', 'klarna_p', 'sj_pmax_scale_heroes_25', 'klarna_css_sj25_pmax', 'klarna_g2', 'gcss_all_roas_400_sajee', 'shop_dm_pmax-25_zero', 'p_max_klarna_css_sj_old', 'sajee_roas_400_bsell', 'sajee_gcss_ceiling_rose', 'shoptimised_wall_light_sajee', 'bsell_06_gcss_sajee', 'shoptimised_led_modules_sajee']);
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
