@@ -3912,6 +3912,13 @@ async function t2ShopifyGraphQL(query, variables) {
   throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
 }
 
+// Includes product title/handle/featuredImage alongside inventory -- needed
+// as a fallback for brand-new campaigns whose products haven't synced into
+// the slower google_ads.merchant_products feed export yet (real gap found
+// 2026-07-29: Thasi's campaign added 2026-07-22 has 193 of 226 products with
+// zero merchant_products row). Shopify itself always has the real product,
+// since it's actively selling -- pulling from there is live real data, not
+// fabrication.
 const T2_NODES_QUERY = `
 query($ids: [ID!]!) {
   nodes(ids: $ids) {
@@ -3923,12 +3930,18 @@ query($ids: [ID!]!) {
           edges { node { quantities(names: ["available"]) { name quantity } } }
         }
       }
+      product {
+        title
+        handle
+        featuredImage { url }
+      }
     }
   }
 }`;
 
 async function t2FetchLiveStock(itemIds) {
   const stockById = new Map();
+  const infoById = new Map();
   const uniqueIds = [...new Set(itemIds.filter(Boolean).map(String))];
   const BATCH = 250;
   for (let i = 0; i < uniqueIds.length; i += BATCH) {
@@ -3940,16 +3953,23 @@ async function t2FetchLiveStock(itemIds) {
       const numericId = node.id.split('/').pop();
       if (!node.inventoryItem || !node.inventoryItem.tracked) {
         stockById.set(numericId, null);
-        continue;
+      } else {
+        const total = node.inventoryItem.inventoryLevels.edges.reduce((sum, e) => {
+          const avail = e.node.quantities.find((q) => q.name === 'available');
+          return sum + (avail ? avail.quantity : 0);
+        }, 0);
+        stockById.set(numericId, total);
       }
-      const total = node.inventoryItem.inventoryLevels.edges.reduce((sum, e) => {
-        const avail = e.node.quantities.find((q) => q.name === 'available');
-        return sum + (avail ? avail.quantity : 0);
-      }, 0);
-      stockById.set(numericId, total);
+      if (node.product) {
+        infoById.set(numericId, {
+          title: node.product.title || null,
+          image: node.product.featuredImage ? node.product.featuredImage.url : null,
+          link: node.product.handle ? `https://ledsone.de/products/${node.product.handle}` : null,
+        });
+      }
     }
   }
-  return stockById;
+  return { stockById, infoById };
 }
 
 const QUERY = `
@@ -4029,12 +4049,15 @@ async function handleThasithaReq2(req, res) {
     const rows = result.rows;
 
     let liveStockById = new Map();
+    let liveInfoById = new Map();
     let stockSourceError = null;
     if (!process.env.SHOPIFY_ADMIN_TOKEN) {
       stockSourceError = 'SHOPIFY_ADMIN_TOKEN missing — Stock unavailable';
     } else {
       try {
-        liveStockById = await t2FetchLiveStock(rows.map((r) => r.product_item_id));
+        const live = await t2FetchLiveStock(rows.map((r) => r.product_item_id));
+        liveStockById = live.stockById;
+        liveInfoById = live.infoById;
       } catch (e) {
         console.error('[thasitha/req2] Live stock fetch failed:', e && e.message);
         stockSourceError = 'Could not fetch live stock from Shopify';
@@ -4046,6 +4069,11 @@ async function handleThasithaReq2(req, res) {
       rangeEnd = r.range_end;
       const dc = thasitha2DataCheck(r);
       const liveStock = liveStockById.get(String(r.product_item_id));
+      // Fallback to live Shopify title/image/link when this product hasn't
+      // synced into the merchant_products feed export yet (common for
+      // brand-new campaigns -- real gap, not a bug, see comment on
+      // T2_NODES_QUERY above).
+      const liveInfo = liveInfoById.get(String(r.product_item_id));
       return {
         cid: String(r.campaign_id),
         pid: r.product_item_id,
@@ -4058,9 +4086,9 @@ async function handleThasithaReq2(req, res) {
         cvv: Number(r.cvv) || 0,
         qty: liveStock === undefined ? null : liveStock,
         bud: r.budget !== null && r.budget !== undefined ? Number(r.budget) : null,
-        t: r.title || null,
-        img: r.image_link || null,
-        lnk: r.link || null,
+        t: r.title || (liveInfo ? liveInfo.title : null),
+        img: r.image_link || (liveInfo ? liveInfo.image : null),
+        lnk: r.link || (liveInfo ? liveInfo.link : null),
         av: r.availability || 'unknown',
         gmc: dc.status,
         gmcMissing: dc.missing,
