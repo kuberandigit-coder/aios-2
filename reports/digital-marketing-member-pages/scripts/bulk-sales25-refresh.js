@@ -7,7 +7,9 @@ const { execFileSync } = require('child_process');
 
 const BASE_URL = 'https://digital-marketing-member-pages.vercel.app';
 const DATA_DIR = path.join(__dirname, '..', 'api', 'data');
-const ALL_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'not-assigned'];
+// cppc/thishoban/theekshy/thanishtika removed 2026-07-29 per user request --
+// zero orders every month Jan-May 2025, not tracked for 2025 anymore.
+const ALL_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'not-assigned'];
 const month = process.argv[2] || '2025-01';
 const groups = process.argv[3] ? process.argv[3].split(',') : ALL_GROUPS;
 

@@ -522,50 +522,6 @@ const GROUPS = [
     match: (utm, fv, journey) => isOrganicMatch(utm, fv, journey),
     matchValue: (utm, fv, journey) => deriveChannelLabel(journey) + ' - ' + ((fv && fv.source) || (fv && fv.sourceDescription) || utm.campaign || (journey && journey.status === 'NO_JOURNEY_DATA' ? '(no journey data)' : 'direct')),
   },
-  {
-    key: 'cppc',
-    name: 'CPPC',
-    department: 'Google Shopping (Free/Comparison Listings)',
-    scope: 'same rule as salesuk.js: first-session channel "Other" with utm_campaign (or source/sourceDescription) exactly "Shopping".',
-    match: (utm, fv, journey) => {
-      const channel = deriveChannelLabel(journey);
-      if (channel !== 'Other') return false;
-      const val = (utm.campaign || (fv && (fv.source || fv.sourceDescription)) || utm.source || '').toString();
-      return val === 'Shopping';
-    },
-    matchValue: (utm, fv) => utm.campaign || (fv && (fv.source || fv.sourceDescription)) || utm.source || 'Shopping',
-  },
-  {
-    key: 'thishoban',
-    name: 'Thishoban',
-    department: 'Google Ads (Paid Search)',
-    scope: 'same rule as salesuk.js: first-session utm_campaign contains "THISOBAN" OR utm_term exactly "THISOBAN".',
-    match: (utm) => {
-      const campaign = (utm.campaign || '').toString().toLowerCase();
-      const term = (utm.term || '').toString().toLowerCase();
-      return campaign.includes('thisoban') || term === 'thisoban';
-    },
-    matchValue: (utm) => utm.campaign || utm.term,
-  },
-  {
-    key: 'theekshy',
-    name: 'Theekshy',
-    department: 'Google Ads (Paid Search)',
-    scope: 'same rule as salesuk.js: first-session utm_campaign contains "theekshy".',
-    match: (utm) => (utm.campaign || '').toString().toLowerCase().includes('theekshy'),
-    matchValue: (utm) => utm.campaign,
-  },
-  {
-    key: 'thanishtika',
-    name: 'Thanishtika',
-    department: 'Google Ads (Paid Search)',
-    scope: 'same rule as salesuk.js: first-session utm_campaign exactly matches "Thanish-PMax-HI-12-3-2026" or "Thanish-Pmax-sho-3-2-2026".',
-    match: (utm) => {
-      const c = (utm.campaign || '').toString().toLowerCase();
-      return c === 'thanish-pmax-hi-12-3-2026' || c === 'thanish-pmax-sho-3-2-2026';
-    },
-    matchValue: (utm) => utm.campaign,
-  },
 ];
 
 // Virtual "Not Assigned" tab — every order that doesn't match any group
