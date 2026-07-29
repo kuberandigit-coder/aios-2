@@ -70,6 +70,12 @@ table.rt td.num{text-align:right;}
 @media(max-width:600px){h1{font-size:18px;}.card .v{font-size:17px;}}
 .b-keep{background:#0a7d4f;} .b-exclude{background:#c62828;}
 .p-high{color:#c62828;font-weight:700;} .p-medium{color:#9a6b00;font-weight:700;} .p-low{color:#5b6577;font-weight:600;}
+.trend-up{color:#0a7d4f;font-weight:700;} .trend-down{color:#c62828;font-weight:700;} .trend-flat{color:#6b7280;font-weight:600;} .trend-na{color:var(--na);font-style:italic;}
+.b-scale5{background:#0a7d4f;} .b-maintain5{background:#1f5eff;} .b-reduce5{background:#ef6c00;} .b-pause5{background:#c62828;} .b-optimize5{background:#c9a400;} .b-add5{background:#1f5eff;} .b-fixfeed5{background:#7a0f0f;} .b-namissing5{background:#9aa3b2;}
+.pri-High{color:#c62828;font-weight:700;} .pri-Medium{color:#c9700a;font-weight:700;} .pri-Low{color:#0a7d4f;font-weight:600;}
+.b-in-yes{background:#0a7d4f;} .b-in-no{background:#9aa3b2;}
+.b-elig{background:#0a7d4f;} .b-notelig{background:#c62828;} .b-elig-na{background:#9aa3b2;}
+#q5, #campsel5, #feedsel5, #actionsel5, #prioritysel5, #catsel5{flex:1;min-width:170px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;}
 tr.row-keep3{background:#f2fbf6;} tr.row-exclude3{background:#fdf3f3;}
 #q3, #campsel3, #actionsel3, #intentsel3, #prioritysel3{flex:1;min-width:170px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;}
 .qbtn.qb-keep.on{background:#0a7d4f;border-color:#0a7d4f;}
@@ -108,6 +114,7 @@ tr.row-keep3{background:#f2fbf6;} tr.row-exclude3{background:#fdf3f3;}
   <button class="tabbtn on" id="tabBtn1" onclick="showTab(1)">Tab 1: Product Performance Report</button>
   <button class="tabbtn" id="tabBtn2" onclick="showTab(2)">Tab 2: Stock Management</button>
   <button class="tabbtn" id="tabBtn3" onclick="showTab(3)">Tab 3: Search Terms Report</button>
+  <button class="tabbtn" id="tabBtn5" onclick="showTab(5)">Tab 5: Product ID Coverage</button>
 </div>
 
 <div id="tabPanel1" class="tab-panel">
@@ -474,14 +481,121 @@ tr.row-keep3{background:#f2fbf6;} tr.row-exclude3{background:#fdf3f3;}
 </div>
 
 </div>
+
+<div id="tabPanel5" class="tab-panel" style="display:none;">
+
+<header class="top">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 5 &mdash; Product ID Coverage</div>
+  <h1>Mahima - Product ID Coverage</h1>
+  <div class="sub">Which Shopify Product IDs are running in Google Ads campaigns, which are not, how does current performance compare with the previous period, and what should be done about it? &middot; Account: <strong>ledsone.de</strong> &middot; Universe: <strong>full ledsone.de merchant feed catalog</strong> (5,274 products) &times; Mahima's 5 active campaigns.</div>
+  <div class="chips">
+    <span class="chip" id="r5liveChip">Loading live data&hellip;</span>
+    <button id="r5refreshBtn" class="primary" type="button">Refresh</button>
+    <button class="primary" type="button" onclick="exportCsv5()" style="background:#0a7d4f;border-color:#0a7d4f;">Export CSV</button>
+  </div>
+</header>
+
+<div class="cards" id="kpiCards5">
+  <div class="card"><div class="l">Total Products</div><div class="v" id="kpi5Total">&hellip;</div></div>
+  <div class="card"><div class="l">In Campaign</div><div class="v" id="kpi5InCampaign" style="color:#0a7d4f">&hellip;</div></div>
+  <div class="card"><div class="l">Not In Campaign</div><div class="v" id="kpi5NotInCampaign" style="color:#9aa3b2">&hellip;</div></div>
+  <div class="card"><div class="l">Feed Eligible</div><div class="v" id="kpi5Eligible" style="color:#0a7d4f">&hellip;</div></div>
+  <div class="card"><div class="l">Feed Issues</div><div class="v" id="kpi5FeedIssues" style="color:#c62828">&hellip;</div></div>
+  <div class="card"><div class="l">High Priority</div><div class="v" id="kpi5High" style="color:#c62828">&hellip;</div></div>
+  <div class="card"><div class="l">Products to Scale</div><div class="v" id="kpi5Scale" style="color:#0a7d4f">&hellip;</div></div>
+  <div class="card"><div class="l">Products to Add</div><div class="v" id="kpi5Add" style="color:#1f5eff">&hellip;</div></div>
+</div>
+
+<div class="quickfilters" id="quickFilters5">
+  <button class="qbtn on" data-action="all" onclick="quickFilter5(this,'all','all')">All Products</button>
+  <button class="qbtn qb-restock" data-action="notin" onclick="quickFilter5(this,'in','No')">&#128308; Not In Campaign</button>
+  <button class="qbtn qb-monitor" data-action="high" onclick="quickFilter5(this,'priority','High')">&#128993; High Priority</button>
+  <button class="qbtn qb-healthy" data-action="scale" onclick="quickFilter5(this,'action','Scale')">&#128994; Scale</button>
+</div>
+
+<div class="toolbar filterbar2">
+  <label class="flabel">Search
+    <input id="q5" type="text" placeholder="Product ID, SKU, or title&hellip;">
+  </label>
+  <label class="flabel">Campaign
+    <select id="campsel5"><option value="all">All Campaigns</option></select>
+  </label>
+  <label class="flabel">In Campaign?
+    <select id="incampsel5"><option value="all">All</option><option value="Yes">Yes</option><option value="No">No</option></select>
+  </label>
+  <label class="flabel">Feed Status
+    <select id="feedsel5"><option value="all">All</option><option value="Eligible">Eligible</option><option value="Not Eligible">Not Eligible</option><option value="Data Missing">Data Missing</option></select>
+  </label>
+  <label class="flabel">Suggested Action
+    <select id="actionsel5"><option value="all">All Actions</option></select>
+  </label>
+  <label class="flabel">Priority
+    <select id="prioritysel5"><option value="all">All Priorities</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
+  </label>
+  <label class="flabel">Category
+    <select id="catsel5"><option value="all">All Categories</option></select>
+  </label>
+</div>
+
+<div class="pager">
+  <button class="tbtn" id="prevPage5">&larr; Prev</button>
+  <span class="info" id="pageInfo5"></span>
+  <button class="tbtn" id="nextPage5">Next &rarr;</button>
+</div>
+
+<div class="tablewrap">
+<table class="rt">
+<thead><tr>
+  <th>Date Range</th><th>Report Name</th><th>Product ID</th><th>SKU</th><th>In Campaign?</th><th>Which Campaigns?</th>
+  <th>Product Category</th><th>Impressions</th><th>Clicks</th><th>Cost</th><th>Conversions</th><th>Conv. Value</th>
+  <th>Previous ROAS</th><th>ROAS</th><th>ROAS Trend</th><th>Last Conversion Day</th><th>Feed Status</th>
+  <th>Missing Attribute</th><th>Priority</th><th>Suggested Action</th>
+</tr></thead>
+<tbody id="tbody5"></tbody>
+</table>
+</div>
+
+<div class="legend">
+  <strong>ROAS Trend:</strong> <span class="trend-up">&uarr; Up</span> <span class="trend-down">&darr; Down</span> <span class="trend-flat">&rarr; Flat</span> <span class="trend-na">N/A (not in campaign)</span> &mdash; ROAS &gt; Previous ROAS = Up; ROAS &lt; Previous ROAS = Down; else Flat.<br>
+  <strong>Priority:</strong> <span class="pri-High">High</span> / <span class="pri-Medium">Medium</span> / <span class="pri-Low">Low</span><br>
+  <strong>Suggested Action:</strong>
+  <span class="badge b-fixfeed5">Fix Feed First</span>
+  <span class="badge b-add5">Add to Campaign</span>
+  <span class="badge b-optimize5">Optimize Feed</span>
+  <span class="badge b-pause5">Pause</span>
+  <span class="badge b-scale5">Scale</span>
+  <span class="badge b-maintain5">Maintain</span>
+  <span class="badge b-reduce5">Reduce</span>
+  &mdash; exact logic: <em>Not in campaign &rarr; feed not eligible = Fix Feed First, else Add to Campaign. In campaign &rarr; feed not eligible = Optimize Feed; else 0 conversions = Pause; ROAS &ge; 4 = Scale; ROAS &ge; 2.5 = Maintain; else Reduce.</em>
+</div>
+
+<div class="sources">
+  <strong>Data Sources &amp; Calculation Rules</strong><br>
+  <strong>Universe:</strong> full ledsone.de merchant feed catalog, <code>google_ads.merchant_products</code> (country=DE, deduped by normalized product id) &mdash; the only non-invented "all of Mahima's products" set, since her campaigns target this feed. LEFT JOINed to <code>google_ads.product_performance</code> for her 5 campaigns, so products with zero campaign rows correctly show <strong>Not In Campaign</strong> rather than being excluded.<br>
+  <strong>Current period</strong> defaults to the trailing 30 days ending on the latest data date. <strong>Previous period</strong> = the immediately preceding period of equal length (mirrors Req1's 7d/30d trailing-window pattern).<br>
+  <strong>ROAS</strong> = Conversion Value / Cost. <strong>Last Conversion Day</strong> = most recent date with conversions &gt; 0, across all history for Mahima's campaigns (not limited to the selected period).<br>
+  <strong>Feed Status / Missing Attribute:</strong> no live Google Merchant Center diagnostics feed exists in PostgreSQL (<code>raw_data.gmc_product_diagnostics_daily</code> was empty as of 2026-07-09 and has since been dropped &mdash; see <code>evidence/mahima/2026-07-09_mahima_req1_missing_attribute_evidence.md</code>). Reusing Req1's proven proxy: Missing Attribute = which of 10 catalog attribute columns (category, item group ID, MPN, color, condition, description, product type, availability, brand, price) are blank in <code>google_ads.merchant_products</code>; Feed Status = Not Eligible if any are blank, else Eligible.
+</div>
+
+<div class="limits">
+  <strong>Known limitations</strong><br>
+  1. Feed Status / Missing Attribute are derived from catalog-field completeness, not Google's own Merchant Center eligibility API &mdash; that data does not exist anywhere in PostgreSQL (confirmed, see Data Sources note above).<br>
+  2. Universe is the DE merchant feed catalog, not the full Shopify catalog &mdash; products never submitted to the DE feed at all cannot appear here.<br>
+  3. Previous Period is a fixed trailing-window comparison (not user-adjustable in this view) to keep the calculation well-defined and non-invented.<br>
+  4. Read-only analysis &mdash; no campaigns, feed data, or products were changed in Google Ads or Shopify.
+</div>
+
+</div>
 <script>
 function showTab(n){
   document.getElementById('tabPanel1').style.display = n===1 ? '' : 'none';
   document.getElementById('tabPanel2').style.display = n===2 ? '' : 'none';
   document.getElementById('tabPanel3').style.display = n===3 ? '' : 'none';
+  document.getElementById('tabPanel5').style.display = n===5 ? '' : 'none';
   document.getElementById('tabBtn1').classList.toggle('on', n===1);
   document.getElementById('tabBtn2').classList.toggle('on', n===2);
   document.getElementById('tabBtn3').classList.toggle('on', n===3);
+  document.getElementById('tabBtn5').classList.toggle('on', n===5);
 }
 window.showTab=showTab;
 
@@ -1163,6 +1277,210 @@ document.getElementById('r3refreshBtn').addEventListener('click',function(){ r3R
     var saved = await idbGet('mahima_r3_live');
     if (saved) r3ApplyLive(saved, true);
   } catch (e) {}
+})();
+
+// ===== Requirement 5 — Product ID Coverage =====
+const PAGE_SIZE5=100;
+let ROWS5=[], page5=0, filtered5=[], F5=[];
+
+function actionBadgeClass5(a){
+  if(a==='Scale') return 'b-scale5';
+  if(a==='Maintain') return 'b-maintain5';
+  if(a==='Reduce') return 'b-reduce5';
+  if(a==='Pause') return 'b-pause5';
+  if(a==='Optimize Feed') return 'b-optimize5';
+  if(a==='Add to Campaign') return 'b-add5';
+  if(a==='Fix Feed First — Not Enrolled') return 'b-fixfeed5';
+  return 'b-namissing5';
+}
+function feedBadgeClass5(s){
+  if(s==='Eligible') return 'b-elig';
+  if(s==='Not Eligible') return 'b-notelig';
+  return 'b-elig-na';
+}
+function trendClass5(t){
+  if(t==='Up') return 'trend-up';
+  if(t==='Down') return 'trend-down';
+  if(t==='Flat') return 'trend-flat';
+  return 'trend-na';
+}
+function trendArrow5(t){
+  if(t==='Up') return '↑ Up';
+  if(t==='Down') return '↓ Down';
+  if(t==='Flat') return '→ Flat';
+  return 'N/A';
+}
+
+function rowHtml5(r){
+  return `<tr>
+    <td>${esc(r._rangeLabel)}</td>
+    <td>Product ID Coverage</td>
+    <td class="skucell">${esc(r.productId)}</td>
+    <td class="skucell">${esc(r.sku)}</td>
+    <td><span class="badge ${r.inCampaign?'b-in-yes':'b-in-no'}">${r.inCampaign?'Yes':'No'}</span></td>
+    <td class="wrap-cell">${r.campaigns&&r.campaigns.length?esc(r.campaigns.join(', ')):naSpan()}</td>
+    <td class="wrap-cell">${r.category?esc(r.category):naSpan()}</td>
+    <td class="num">${r.impressions.toLocaleString()}</td>
+    <td class="num">${r.clicks.toLocaleString()}</td>
+    <td class="num">&euro;${r.cost.toFixed(2)}</td>
+    <td class="num">${r.conversions.toFixed(2)}</td>
+    <td class="num">&euro;${r.convValue.toFixed(2)}</td>
+    <td class="num">${r.prevRoas!=null?(r.prevRoas*100).toFixed(0)+'%':naSpan()}</td>
+    <td class="num">${r.roas!=null?(r.roas*100).toFixed(0)+'%':naSpan()}</td>
+    <td class="${trendClass5(r.roasTrend)}">${trendArrow5(r.roasTrend)}</td>
+    <td>${r.lastConversionDate?esc(new Date(r.lastConversionDate).toISOString().slice(0,10)):naSpan()}</td>
+    <td><span class="badge ${feedBadgeClass5(r.feedStatus)}">${esc(r.feedStatus)}</span></td>
+    <td class="wrap-cell">${esc(r.missingAttribute)}</td>
+    <td class="pri-${r.priority}">${esc(r.priority)}</td>
+    <td><span class="badge ${actionBadgeClass5(r.action)}">${esc(r.action)}</span></td>
+  </tr>`;
+}
+
+function render5(){
+  const start=page5*PAGE_SIZE5;
+  const pageRows=filtered5.slice(start,start+PAGE_SIZE5);
+  document.getElementById('tbody5').innerHTML=pageRows.map(rowHtml5).join('');
+  const shownFrom=filtered5.length?start+1:0;
+  const shownTo=Math.min(start+PAGE_SIZE5,filtered5.length);
+  document.getElementById('pageInfo5').textContent=`Showing ${shownFrom.toLocaleString()}–${shownTo.toLocaleString()} of ${filtered5.length.toLocaleString()} products`;
+  document.getElementById('prevPage5').disabled=page5<=0;
+  document.getElementById('nextPage5').disabled=start+PAGE_SIZE5>=filtered5.length;
+}
+
+function applyFilter5(){
+  const s=document.getElementById('q5').value.trim().toLowerCase();
+  const camp=document.getElementById('campsel5').value;
+  const inc=document.getElementById('incampsel5').value;
+  const feed=document.getElementById('feedsel5').value;
+  const act=document.getElementById('actionsel5').value;
+  const pri=document.getElementById('prioritysel5').value;
+  const cat=document.getElementById('catsel5').value;
+  filtered5=F5.filter(function(r){
+    const textHit=!s||r._pid.includes(s)||r._ti.includes(s);
+    const campHit=camp==='all'||(r.campaigns&&r.campaigns.includes(camp));
+    const incHit=inc==='all'||(r.inCampaign?'Yes':'No')===inc;
+    const feedHit=feed==='all'||r.feedStatus===feed;
+    const actHit=act==='all'||r.action===act;
+    const priHit=pri==='all'||r.priority===pri;
+    const catHit=cat==='all'||r.category===cat;
+    return textHit&&campHit&&incHit&&feedHit&&actHit&&priHit&&catHit;
+  });
+  page5=0;
+  render5();
+}
+
+function quickFilter5(btn,dim,val){
+  document.querySelectorAll('#quickFilters5 .qbtn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  document.getElementById('incampsel5').value='all';
+  document.getElementById('prioritysel5').value='all';
+  document.getElementById('actionsel5').value='all';
+  if(dim==='in') document.getElementById('incampsel5').value=val;
+  if(dim==='priority') document.getElementById('prioritysel5').value=val;
+  if(dim==='action') document.getElementById('actionsel5').value=val;
+  applyFilter5();
+}
+window.quickFilter5=quickFilter5;
+
+function exportCsv5(){
+  const headers=['Date Range','Report Name','Product ID','SKU','In Campaign?','Which Campaigns?','Product Category','Impressions','Clicks','Cost','Conversions','Conv. Value','Previous ROAS','ROAS','ROAS Trend','Last Conversion Day','Feed Status','Missing Attribute','Priority','Suggested Action'];
+  const lines=[headers.join(',')];
+  filtered5.forEach(function(r){
+    const row=[
+      r._rangeLabel,'Product ID Coverage',r.productId,r.sku,r.inCampaign?'Yes':'No',
+      r.campaigns?r.campaigns.join('; '):'',r.category||'',
+      r.impressions,r.clicks,r.cost.toFixed(2),r.conversions.toFixed(2),r.convValue.toFixed(2),
+      r.prevRoas!=null?(r.prevRoas*100).toFixed(0)+'%':'N/A',
+      r.roas!=null?(r.roas*100).toFixed(0)+'%':'N/A',
+      trendArrow5(r.roasTrend),
+      r.lastConversionDate?new Date(r.lastConversionDate).toISOString().slice(0,10):'N/A',
+      r.feedStatus,r.missingAttribute,r.priority,r.action
+    ];
+    lines.push(row.map(csvEscape).join(','));
+  });
+  const csv=lines.join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const ts=new Date().toISOString().slice(0,10);
+  a.href=url;
+  a.download='mahima-req5-product-id-coverage-'+ts+'-'+filtered5.length+'rows.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+window.exportCsv5=exportCsv5;
+
+function r5ApplyLive(data, isRestored){
+  var chip=document.getElementById('r5liveChip');
+  const rangeLabel=(data.dateRange&&data.dateRange.start&&data.dateRange.end)?(String(data.dateRange.start).slice(0,10)+' to '+String(data.dateRange.end).slice(0,10)):'Last 30 Days';
+  ROWS5=data.products.map(function(r){
+    r._pid=(r.productId||'').toLowerCase();
+    r._ti=(r.title||'').toLowerCase();
+    r._rangeLabel=rangeLabel;
+    return r;
+  });
+  F5=ROWS5; filtered5=ROWS5; page5=0;
+
+  const campsel=document.getElementById('campsel5');
+  campsel.innerHTML='<option value="all">All Campaigns</option>'+(data.campaignList||[]).map(function(c){return `<option value="${esc(c.name)}">${esc(c.name)}</option>`;}).join('');
+  const actionsel=document.getElementById('actionsel5');
+  const actions=Array.from(new Set(ROWS5.map(function(r){return r.action;}))).sort();
+  actionsel.innerHTML='<option value="all">All Actions</option>'+actions.map(function(a){return `<option value="${esc(a)}">${esc(a)}</option>`;}).join('');
+  const catsel=document.getElementById('catsel5');
+  const cats=Array.from(new Set(ROWS5.map(function(r){return r.category;}).filter(Boolean))).sort();
+  catsel.innerHTML='<option value="all">All Categories</option>'+cats.map(function(c){return `<option value="${esc(c)}">${esc(c)}</option>`;}).join('');
+
+  document.getElementById('kpi5Total').textContent=data.summary.totalProducts.toLocaleString();
+  document.getElementById('kpi5InCampaign').textContent=data.summary.inCampaign.toLocaleString();
+  document.getElementById('kpi5NotInCampaign').textContent=data.summary.notInCampaign.toLocaleString();
+  document.getElementById('kpi5Eligible').textContent=data.summary.eligible.toLocaleString();
+  document.getElementById('kpi5FeedIssues').textContent=data.summary.feedIssues.toLocaleString();
+  document.getElementById('kpi5High').textContent=data.summary.highPriority.toLocaleString();
+  document.getElementById('kpi5Scale').textContent=data.summary.toScale.toLocaleString();
+  document.getElementById('kpi5Add').textContent=data.summary.toAdd.toLocaleString();
+
+  applyFilter5();
+  chip.textContent='Live — fetched '+new Date(data.generatedAt).toLocaleString()+(isRestored?' (restored)':'')+' · '+rangeLabel;
+  chip.className='chip live';
+}
+
+async function r5Reload(force){
+  var chip=document.getElementById('r5liveChip');
+  var btn=document.getElementById('r5refreshBtn');
+  btn.disabled=true; btn.textContent='Refreshing…';
+  chip.textContent='Fetching live data from PostgreSQL…';
+  chip.className='chip';
+  try{
+    var res=await fetch('/api/requirement?fn=mahima-req5'+(force?'&refresh=1':''));
+    var data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.error||('HTTP '+res.status));
+    r5ApplyLive(data, false);
+    try { await idbSet('mahima_r5_live', data); } catch (e) {}
+  }catch(e){
+    chip.textContent='Failed to load: '+e.message;
+    chip.className='chip stale';
+  }finally{
+    btn.disabled=false; btn.textContent='Refresh';
+  }
+}
+document.getElementById('q5').addEventListener('input',debounce(applyFilter5,180));
+document.getElementById('campsel5').addEventListener('change',applyFilter5);
+document.getElementById('incampsel5').addEventListener('change',applyFilter5);
+document.getElementById('feedsel5').addEventListener('change',applyFilter5);
+document.getElementById('actionsel5').addEventListener('change',applyFilter5);
+document.getElementById('prioritysel5').addEventListener('change',applyFilter5);
+document.getElementById('catsel5').addEventListener('change',applyFilter5);
+document.getElementById('prevPage5').addEventListener('click',function(){if(page5>0){page5--;render5();window.scrollTo({top:0,behavior:'instant'});}});
+document.getElementById('nextPage5').addEventListener('click',function(){if((page5+1)*PAGE_SIZE5<filtered5.length){page5++;render5();window.scrollTo({top:0,behavior:'instant'});}});
+document.getElementById('r5refreshBtn').addEventListener('click',function(){ r5Reload(true); });
+(async function(){
+  try {
+    var saved = await idbGet('mahima_r5_live');
+    if (saved) r5ApplyLive(saved, true);
+  } catch (e) {}
+  r5Reload(false);
 })();
 </script>
 </div>

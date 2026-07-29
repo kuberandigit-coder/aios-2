@@ -898,6 +898,226 @@ query($after: String, $q: String) {
     }
   }
 
+  // ===== Mahima Requirement 5 — Product ID Coverage (added 2026-07-29) =====
+  // Universe = full ledsone.de merchant feed catalog (google_ads.merchant_products,
+  // country='DE', deduped by normalized product id, same pattern as MAHIMA_QUERY's
+  // merch_norm) LEFT JOINed out to Mahima's 5 campaigns' performance -- this is the
+  // only non-invented "all of Mahima's products" universe available (her campaigns
+  // target the DE feed), so products with zero campaign rows correctly surface as
+  // "Not In Campaign" instead of being invisible.
+  // Previous Period = the immediately preceding period of equal length to the
+  // selected/default range (default range = trailing 30 days), same trailing-window
+  // idea already used by MAHIMA_QUERY's d7/d30 CTEs.
+  // Feed Status / Missing Attribute: no real Merchant Center diagnostics exist in
+  // Postgres (raw_data.gmc_product_diagnostics_daily is gone -- see
+  // evidence/mahima/2026-07-09_mahima_req1_missing_attribute_evidence.md). Reusing
+  // Req1's proven proxy: Missing Attribute = which of the 10 MAHIMA_ATTR_COLUMNS are
+  // NULL/blank for that product; Feed Status = "Not Eligible" if any are missing,
+  // else "Eligible" -- same signal Req1 already uses to flag "Optimize".
+  const MAHIMA5_CACHE = new Map();
+  const MAHIMA5_CACHE_TTL_MS = 60 * 1000;
+
+  const MAHIMA5_QUERY = `
+WITH bounds AS (
+  SELECT MAX(date) AS max_date FROM google_ads.product_performance WHERE campaign_id = ANY($1::bigint[])
+),
+range AS (
+  SELECT
+    COALESCE($2::date, (SELECT max_date FROM bounds) - INTERVAL '29 days')::date AS cur_start,
+    COALESCE($3::date, (SELECT max_date FROM bounds))::date AS cur_end
+),
+prev_range AS (
+  SELECT (cur_start - (cur_end - cur_start + 1))::date AS prev_start, (cur_start - INTERVAL '1 day')::date AS prev_end
+  FROM range
+),
+camp AS (
+  SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE campaign_id = ANY($1::bigint[])
+),
+perf_cur_norm AS (
+  SELECT pp.campaign_id, pp.clicks, pp.impressions, pp.conversions, pp.cost, pp.conversion_value,
+    lower(CASE WHEN pp.product_item_id ~* '^shopify_[a-z]+_[0-9]+_[0-9]+$'
+      THEN split_part(pp.product_item_id, '_', 3) ELSE pp.product_item_id END) AS norm_id
+  FROM google_ads.product_performance pp CROSS JOIN range r
+  WHERE pp.campaign_id = ANY($1::bigint[]) AND pp.date BETWEEN r.cur_start AND r.cur_end
+),
+perf_by_norm AS (
+  SELECT p.norm_id,
+    SUM(p.clicks) AS clicks, SUM(p.impressions) AS impressions, SUM(p.conversions) AS conversions,
+    SUM(p.cost) AS cost, SUM(p.conversion_value) AS conv_value,
+    array_agg(DISTINCT c.campaign_name) AS campaigns
+  FROM perf_cur_norm p JOIN camp c ON c.campaign_id = p.campaign_id
+  GROUP BY p.norm_id
+),
+prev_by_norm AS (
+  SELECT lower(CASE WHEN pp.product_item_id ~* '^shopify_[a-z]+_[0-9]+_[0-9]+$'
+      THEN split_part(pp.product_item_id, '_', 3) ELSE pp.product_item_id END) AS norm_id,
+    SUM(pp.cost) AS cost, SUM(pp.conversion_value) AS conv_value
+  FROM google_ads.product_performance pp CROSS JOIN prev_range pr
+  WHERE pp.campaign_id = ANY($1::bigint[]) AND pp.date BETWEEN pr.prev_start AND pr.prev_end
+  GROUP BY 1
+),
+last_conv_norm AS (
+  SELECT lower(CASE WHEN pp.product_item_id ~* '^shopify_[a-z]+_[0-9]+_[0-9]+$'
+      THEN split_part(pp.product_item_id, '_', 3) ELSE pp.product_item_id END) AS norm_id,
+    MAX(pp.date) AS last_conv_date
+  FROM google_ads.product_performance pp
+  WHERE pp.campaign_id = ANY($1::bigint[]) AND pp.conversions > 0
+  GROUP BY 1
+),
+merch_norm AS (
+  SELECT DISTINCT ON (norm_id) * FROM (
+    SELECT *, lower(CASE WHEN product_id ~* '^shopify_[a-z]+_[0-9]+_[0-9]+$'
+        THEN split_part(product_id, '_', 3) ELSE product_id END) AS norm_id
+    FROM google_ads.merchant_products WHERE country = 'DE'
+  ) x
+  ORDER BY norm_id, (currency = 'EUR') DESC
+)
+SELECT m.norm_id AS product_id, m.title, m.product_category, m.item_group_id, m.mpn, m.color,
+  m.condition, m.description, m.product_types, m.availability, m.brand, m.price,
+  pf.campaigns, pf.clicks, pf.impressions, pf.conversions, pf.cost, pf.conv_value,
+  pv.cost AS prev_cost, pv.conv_value AS prev_conv_value,
+  lc.last_conv_date,
+  (SELECT cur_start FROM range) AS range_start, (SELECT cur_end FROM range) AS range_end,
+  (SELECT prev_start FROM prev_range) AS prev_start, (SELECT prev_end FROM prev_range) AS prev_end
+FROM merch_norm m
+LEFT JOIN perf_by_norm pf ON pf.norm_id = m.norm_id
+LEFT JOIN prev_by_norm pv ON pv.norm_id = m.norm_id
+LEFT JOIN last_conv_norm lc ON lc.norm_id = m.norm_id
+ORDER BY pf.cost DESC NULLS LAST;
+`;
+
+  function mahima5MissingAttribute(r) {
+    const missing = [];
+    for (const col of MAHIMA_ATTR_COLUMNS) {
+      const v = r[col];
+      if (v === null || v === undefined || v === '') missing.push(col);
+    }
+    return missing;
+  }
+
+  function mahima5SuggestedAction(inCampaign, feedEligible, conversions, roas) {
+    if (!inCampaign) {
+      return feedEligible ? 'Add to Campaign' : 'Fix Feed First — Not Enrolled';
+    }
+    if (!feedEligible) return 'Optimize Feed';
+    if (conversions === 0) return 'Pause';
+    if (roas >= 4) return 'Scale';
+    if (roas >= 2.5) return 'Maintain';
+    return 'Reduce';
+  }
+
+  function mahima5Priority(action) {
+    if (action === 'Fix Feed First — Not Enrolled' || action === 'Pause' || action === 'Optimize Feed') return 'High';
+    if (action === 'Add to Campaign' || action === 'Reduce') return 'Medium';
+    return 'Low';
+  }
+
+  async function mahimaReq5Handler(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    const cacheKey = [req.query.from || '', req.query.to || ''].join('|');
+    if (req.query.refresh !== '1') {
+      const cached = MAHIMA5_CACHE.get(cacheKey);
+      if (cached && (Date.now() - cached.at) < MAHIMA5_CACHE_TTL_MS) {
+        res.status(200).json(cached.data);
+        return;
+      }
+    }
+
+    const client = await (async () => getPool().connect())().catch((err) => {
+      console.error('[mahima/req5] DB connect failed:', err && err.message);
+      res.status(500).json({ error: 'Server not configured or database unreachable. Contact the site administrator.' });
+      return null;
+    });
+    if (!client) return;
+
+    try {
+      const from = isValidDate(req.query.from) ? req.query.from : null;
+      const to = isValidDate(req.query.to) ? req.query.to : null;
+      const result = await client.query(MAHIMA5_QUERY, [MAHIMA_CAMPAIGN_IDS, from, to]);
+      const rows = result.rows;
+
+      let rangeStart = null, rangeEnd = null, prevStart = null, prevEnd = null;
+      const products = rows.map((r) => {
+        rangeStart = r.range_start; rangeEnd = r.range_end; prevStart = r.prev_start; prevEnd = r.prev_end;
+        const inCampaign = !!(r.campaigns && r.campaigns.length && r.cost !== null);
+        const campaigns = inCampaign ? r.campaigns.filter(Boolean) : [];
+        const missing = r.title === null ? null : mahima5MissingAttribute(r);
+        const feedStatus = missing === null ? 'Data Missing' : (missing.length ? 'Not Eligible' : 'Eligible');
+        const missingAttribute = missing === null ? 'Data Missing' : (missing.length ? missing.join(', ') : 'None missing');
+        const feedEligible = feedStatus === 'Eligible';
+
+        const clicks = Number(r.clicks) || 0;
+        const impressions = Number(r.impressions) || 0;
+        const conversions = Math.round((Number(r.conversions) || 0) * 100) / 100;
+        const cost = Math.round((Number(r.cost) || 0) * 100) / 100;
+        const convValue = Math.round((Number(r.conv_value) || 0) * 100) / 100;
+        const prevCost = Number(r.prev_cost) || 0;
+        const prevConvValue = Number(r.prev_conv_value) || 0;
+
+        const roas = cost > 0 ? Math.round((convValue / cost) * 100) / 100 : 0;
+        const prevRoas = prevCost > 0 ? Math.round((prevConvValue / prevCost) * 100) / 100 : 0;
+        let roasTrend = 'Flat';
+        if (inCampaign) {
+          if (roas > prevRoas) roasTrend = 'Up';
+          else if (roas < prevRoas) roasTrend = 'Down';
+        } else {
+          roasTrend = 'N/A';
+        }
+
+        const action = missing === null ? 'Data Missing' : mahima5SuggestedAction(inCampaign, feedEligible, conversions, roas);
+        const priority = action === 'Data Missing' ? 'Low' : mahima5Priority(action);
+
+        return {
+          productId: r.product_id,
+          sku: r.product_id,
+          title: r.title || null,
+          category: r.product_category || null,
+          inCampaign,
+          campaigns,
+          impressions, clicks, cost, conversions, convValue,
+          prevRoas: inCampaign ? prevRoas : null,
+          roas: inCampaign ? roas : null,
+          roasTrend,
+          lastConversionDate: r.last_conv_date || null,
+          feedStatus,
+          missingAttribute,
+          priority,
+          action,
+        };
+      });
+
+      const summary = {
+        totalProducts: products.length,
+        inCampaign: products.filter((p) => p.inCampaign).length,
+        notInCampaign: products.filter((p) => !p.inCampaign).length,
+        eligible: products.filter((p) => p.feedStatus === 'Eligible').length,
+        feedIssues: products.filter((p) => p.feedStatus === 'Not Eligible').length,
+        highPriority: products.filter((p) => p.priority === 'High').length,
+        toScale: products.filter((p) => p.action === 'Scale').length,
+        toAdd: products.filter((p) => p.action === 'Add to Campaign').length,
+      };
+
+      const payload = {
+        success: true,
+        generatedAt: new Date().toISOString(),
+        dateRange: { start: rangeStart, end: rangeEnd },
+        prevRange: { start: prevStart, end: prevEnd },
+        campaignList: MAHIMA_CAMPAIGNS,
+        dataNote: 'Feed Status / Missing Attribute: no live Google Merchant Center diagnostics feed exists in PostgreSQL (raw_data.gmc_product_diagnostics_daily was empty as of 2026-07-09 and has since been dropped). Values shown are derived the same way Req1 already does: which of 10 catalog attribute columns are blank in google_ads.merchant_products.',
+        summary,
+        products,
+      };
+      MAHIMA5_CACHE.set(cacheKey, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[mahima/req5] Query failed:', err && err.message);
+      res.status(500).json({ success: false, error: 'Could not load product coverage data. Please try again shortly.' });
+    } finally {
+      client.release();
+    }
+  }
+
   // ===== Jefri Requirement 3 — 3-Period Product Comparison (T-03, added 2026-07-24) =====
   // Business requirement: compare each product's Conv. Value / ROAS across
   // three FIXED calendar-quarter windows (not rolling) to flag Improved /
@@ -1113,6 +1333,7 @@ ORDER BY last3.conv_value DESC NULLS LAST;
 
   jefriProductStatusHandler.mahimaReq1Handler = mahimaReq1Handler;
   jefriProductStatusHandler.mahimaReq2Handler = mahimaReq2Handler;
+  jefriProductStatusHandler.mahimaReq5Handler = mahimaReq5Handler;
   jefriProductStatusHandler.jefriReq3Handler = jefriReq3Handler;
   return jefriProductStatusHandler;
 })();
@@ -3614,6 +3835,7 @@ module.exports = async (req, res) => {
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
+  if (fn === 'mahima-req5') return jefriProductStatusHandlerModule.mahimaReq5Handler(req, res);
   if (fn === 'jefri-req3') return jefriProductStatusHandlerModule.jefriReq3Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);
