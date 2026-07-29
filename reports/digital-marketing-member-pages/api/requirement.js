@@ -4100,7 +4100,11 @@ async function handleThasithaReq2(req, res) {
         t: r.title || (liveInfo ? liveInfo.title : null),
         img: r.image_link || (liveInfo ? liveInfo.image : null),
         lnk: r.link || (liveInfo ? liveInfo.link : null),
-        av: r.availability || 'unknown',
+        // Stock Status: prefer live Shopify quantity (most authoritative,
+        // freshest -- also covers products the merchant feed hasn't synced
+        // yet, same gap as title/image above) over the merchant feed's own
+        // availability text; only "unknown" when neither source has data.
+        av: r.availability || (liveStock != null ? (liveStock > 0 ? 'in stock' : 'out of stock') : 'unknown'),
         gmc: dc.status,
         gmcMissing: dc.missing,
       };
