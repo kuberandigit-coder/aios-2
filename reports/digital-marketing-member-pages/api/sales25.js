@@ -38,7 +38,7 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 // the user — not the full year yet). Add more 2025 months here the same way
 // salesuk.js grew month by month for 2026. None of these are ever "live"
 // (LIVE_MONTHS stays empty) since all of 2025 is fully closed history.
-const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04'];
+const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05'];
 const CURRENT_LIVE_MONTHS = [];
 
 function resolveReportMonth(monthParam) {
