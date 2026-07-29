@@ -48,6 +48,11 @@ tbody tr:hover{background:var(--accent-soft);}
 .reqtab{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
 .reqtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .sessBtn{background:var(--accent-soft);border:1px solid #cddcfb;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--accent);white-space:nowrap;}
+.assignBtn{background:var(--accent);border:1px solid var(--accent);border-radius:7px;padding:6px 14px;font-size:11.5px;font-weight:700;cursor:pointer;color:#fff;white-space:nowrap;transition:background .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(31,94,255,.25);}
+.assignBtn:hover{background:#1749cc;border-color:#1749cc;box-shadow:0 2px 5px rgba(31,94,255,.35);}
+.assignBtn:active{background:#123aa8;}
+.assignBtn:disabled{opacity:.55;cursor:wait;box-shadow:none;}
+.assignSelect,.assignMonthSelect{cursor:pointer;}
 .sessBtn:hover{background:var(--accent);color:#fff;}
 .sessBtn .car{display:inline-block;transition:transform .15s;margin-left:2px;}
 .sessBtn.open .car{transform:rotate(180deg);}
@@ -147,11 +152,11 @@ tbody tr:hover{background:var(--accent-soft);}
         </div>
         <div class="tbar" id="bulkAssignBar" style="display:none;border-top:0;background:#eaf0ff;">
           <span id="bulkSelCount" style="font-weight:700;">0 selected</span>
-          <span class="chip" style="background:#fff;border:1px solid var(--line);color:var(--ink);">Tab: <strong id="bulkTabLabel" style="margin-left:4px;"></strong></span>
           <label>Belongs to <select id="bulkGroupSelect">
             <option value="">Select…</option>
           </select></label>
-          <button id="bulkAssignBtn" class="primary">Assign Selected</button>
+          <label>Tab (Year) <select id="bulkMonthSelect"></select></label>
+          <button id="bulkAssignBtn" class="assignBtn">Assign Selected</button>
           <button id="bulkClearBtn">Clear Selection</button>
           <span id="bulkStatus" style="font-size:12px;"></span>
         </div>
@@ -317,12 +322,25 @@ function renderCampaigns(){
 }
 
 // ---------- Not Assigned -> real group assignment (added 2026-07-29) ----------
+// Main tab = person/group. Sub tab = month/year. Assigning needs BOTH picked
+// explicitly (per user request, 2026-07-29: "every main tab have subtab
+// also so need another selection dropdown after main tab selection and
+// inside there sub tab selection") -- defaults to the month currently being
+// viewed, but can be changed before clicking Assign.
 const ASSIGN_GROUP_OPTIONS = [
   ['dm-ad', 'DM-Ad'], ['meta', 'Meta'], ['sonya', 'Sonya'], ['sajeepan', 'Sajeepan'],
   ['sukirtha', 'Sukirtha'], ['organic', 'Organic'], ['cppc', 'CPPC'],
   ['thishoban', 'Thishoban'], ['theekshy', 'Theekshy'], ['thanishtika', 'Thanishtika'],
 ];
+const ASSIGN_MONTH_OPTIONS = [
+  ['2025-01', 'Jan 2025'],
+  ['2026-01', 'January 2026'], ['2026-02', 'February 2026'], ['2026-03', 'March 2026'],
+  ['2026-04', 'April 2026'], ['2026-05', 'May 2026'], ['2026-06', 'June 2026'], ['2026-07', 'July 2026 (live)'],
+];
 function assignSourceFor(month){ return month.startsWith('2025-') ? 'sales25' : 'salesuk'; }
+function assignMonthOptionsHtml(selected){
+  return ASSIGN_MONTH_OPTIONS.map(([v, label]) => '<option value="' + v + '"' + (v === selected ? ' selected' : '') + '>' + label + '</option>').join('');
+}
 
 function assignCellHtml(o){
   if (CURRENT_GROUP !== 'not-assigned') return '<td></td>';
@@ -331,19 +349,22 @@ function assignCellHtml(o){
     '<select class="assignSelect" data-orderid="' + esc(o.orderLegacyId) + '" data-ordername="' + esc(o.orderName) + '" style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:11.5px;margin-right:4px;">' +
     '<option value="">Belongs to…</option>' + options +
     '</select>' +
-    '<button class="assignBtn" data-orderid="' + esc(o.orderLegacyId) + '" style="padding:5px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">Assign</button>' +
+    '<select class="assignMonthSelect" data-orderid="' + esc(o.orderLegacyId) + '" style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:11.5px;margin-right:4px;">' +
+    assignMonthOptionsHtml(CURRENT_MONTH) +
+    '</select>' +
+    '<button class="assignBtn" data-orderid="' + esc(o.orderLegacyId) + '">Assign</button>' +
     '<span class="assignStatus" data-orderid="' + esc(o.orderLegacyId) + '" style="display:block;font-size:10.5px;margin-top:3px;color:var(--muted);"></span>' +
     '</td>';
 }
 
-async function assignOrder(orderId, orderName, groupKey, statusEl, btn){
+async function assignOrder(orderId, orderName, groupKey, targetMonth, statusEl, btn){
   statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--muted)';
   btn.disabled = true;
   try {
     const res = await fetch('/api/assign-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId, orderName, groupKey, source: assignSourceFor(CURRENT_MONTH), month: CURRENT_MONTH }),
+      body: JSON.stringify({ orderId, orderName, groupKey, source: assignSourceFor(targetMonth), month: targetMonth }),
     });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
@@ -361,11 +382,12 @@ function wireAssignButtons(){
     btn.addEventListener('click', () => {
       const orderId = btn.getAttribute('data-orderid');
       const sel = document.querySelector('.assignSelect[data-orderid="' + orderId + '"]');
+      const monthSel = document.querySelector('.assignMonthSelect[data-orderid="' + orderId + '"]');
       const statusEl = document.querySelector('.assignStatus[data-orderid="' + orderId + '"]');
       const groupKey = sel.value;
       const orderName = sel.getAttribute('data-ordername');
       if (!groupKey) { statusEl.textContent = 'Pick who it belongs to first.'; statusEl.style.color = 'var(--bad)'; return; }
-      assignOrder(orderId, orderName, groupKey, statusEl, btn);
+      assignOrder(orderId, orderName, groupKey, monthSel.value, statusEl, btn);
     });
   });
 }
@@ -395,10 +417,15 @@ function updateBulkBar(){
   selectAllCb.style.display = '';
   bar.style.display = '';
   document.getElementById('bulkSelCount').textContent = SELECTED_ORDER_IDS.size + ' selected';
-  document.getElementById('bulkTabLabel').textContent = DATA && DATA.reportPeriod ? DATA.reportPeriod.label : CURRENT_MONTH;
   if (!document.getElementById('bulkGroupSelect').options.length || document.getElementById('bulkGroupSelect').options.length === 1) {
     document.getElementById('bulkGroupSelect').innerHTML = '<option value="">Select…</option>' +
       ASSIGN_GROUP_OPTIONS.map(([k, label]) => '<option value="' + k + '">' + label + '</option>').join('');
+  }
+  const monthSel = document.getElementById('bulkMonthSelect');
+  const keepValue = monthSel.dataset.touched === '1' ? monthSel.value : CURRENT_MONTH;
+  monthSel.innerHTML = assignMonthOptionsHtml(keepValue);
+  if (!monthSel.dataset.touched) {
+    monthSel.addEventListener('change', () => { monthSel.dataset.touched = '1'; });
   }
 }
 
@@ -428,6 +455,7 @@ function wireBulkControls(){
   document.getElementById('bulkAssignBtn').onclick = async () => {
     const statusEl = document.getElementById('bulkStatus');
     const groupKey = document.getElementById('bulkGroupSelect').value;
+    const targetMonth = document.getElementById('bulkMonthSelect').value;
     if (!SELECTED_ORDER_IDS.size) { statusEl.textContent = 'Select at least one order first.'; statusEl.style.color = 'var(--bad)'; return; }
     if (!groupKey) { statusEl.textContent = 'Pick who these orders belong to.'; statusEl.style.color = 'var(--bad)'; return; }
     const orders = [...SELECTED_ORDER_IDS].map(id => {
@@ -440,7 +468,7 @@ function wireBulkControls(){
       const res = await fetch('/api/assign-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orders, groupKey, source: assignSourceFor(CURRENT_MONTH), month: CURRENT_MONTH }),
+        body: JSON.stringify({ orders, groupKey, source: assignSourceFor(targetMonth), month: targetMonth }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
