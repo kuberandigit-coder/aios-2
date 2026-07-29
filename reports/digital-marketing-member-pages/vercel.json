@@ -2,6 +2,7 @@
   "functions": {
     "api/sales.js": { "maxDuration": 300 },
     "api/requirement.js": { "maxDuration": 300 },
-    "api/salesuk.js": { "maxDuration": 300 }
+    "api/salesuk.js": { "maxDuration": 300 },
+    "api/sales25.js": { "maxDuration": 300 }
   }
 }
