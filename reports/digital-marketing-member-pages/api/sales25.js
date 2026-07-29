@@ -429,7 +429,7 @@ function isSonyaCampaign(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SONYA_CAMPAIGNS.has(c);
 }
-const SONYA_TERMS = new Set(['sonya', 'ninc', 'glow_up', 'sonyaireland', 'sonyaspian', 'sonytopeuropeengeu{_adgroup}']);
+const SONYA_TERMS = new Set(['sonya', 'ninc', 'glow_up', 'sonyaireland', 'sonyaspian', 'sonytopeuropeengeu{_adgroup}', 'agu']);
 function isSonyaTerm(term) {
   const t = (term || '').toString().toLowerCase();
   return !!t && SONYA_TERMS.has(t);
@@ -439,6 +439,11 @@ const SAJEEPAN_CAMPAIGNS_UK = new Set(['accessories_sj', 'gcss_all_roas_400_saje
 function isSajeepanCampaignUk(campaign) {
   const c = (campaign || '').toString().toLowerCase();
   return !!c && SAJEEPAN_CAMPAIGNS_UK.has(c);
+}
+const SAJEEPAN_TERMS = new Set(['unnai_nampu']);
+function isSajeepanTerm(term) {
+  const t = (term || '').toString().toLowerCase();
+  return !!t && SAJEEPAN_TERMS.has(t);
 }
 
 const GROUPS = [
@@ -486,10 +491,11 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'same rule as salesuk.js: first-session utm_campaign matches one of Sajeepan\'s confirmed campaign names, OR (first session has no campaign/term AND the 2nd/LAST session\'s campaign is one of "Klarna_P"/"KLARNA_CSS_SJ25_PMAX"/"Shop_DM_PMax-25").',
-    match: (utm, fv, journey) => isSajeepanCampaignUk(utm.campaign) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(secondSessionCampaign(journey))) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(lastSessionCampaign(journey))),
+    scope: 'same rule as salesuk.js: first-session utm_campaign matches one of Sajeepan\'s confirmed campaign names, OR utm_term is "UNNAI_NAMPU" (confirmed by the user, 2026-07-29), OR (first session has no campaign/term AND the 2nd/LAST session\'s campaign is one of "Klarna_P"/"KLARNA_CSS_SJ25_PMAX"/"Shop_DM_PMax-25").',
+    match: (utm, fv, journey) => isSajeepanCampaignUk(utm.campaign) || isSajeepanTerm(utm.term) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(secondSessionCampaign(journey))) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(lastSessionCampaign(journey))),
     matchValue: (utm, fv, journey) => {
       if (utm.campaign) return utm.campaign;
+      if (utm.term) return utm.term;
       if (isSajeepanCampaignUk(secondSessionCampaign(journey))) return secondSessionCampaign(journey) + ' (2nd session)';
       if (isSajeepanCampaignUk(lastSessionCampaign(journey))) return lastSessionCampaign(journey) + ' (last session)';
       return null;
