@@ -838,7 +838,10 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     const isMatch = groupDef.key === NOT_ASSIGNED_GROUP.key ? !assigned : (assigned && assigned.key === groupDef.key);
     if (!isMatch) continue;
     const row = buildOrderRow(order, journey);
-    row.matchedCampaign = groupDef.matchValue(utm, fv, journey, monthConfig.month);
+    const ov = loadOverrides()[String(order.legacyResourceId)];
+    row.matchedCampaign = (ov && ov.source === 'salesuk')
+      ? (row.firstVisitCampaign || '(unknown)') + ' (M)'
+      : groupDef.matchValue(utm, fv, journey, monthConfig.month);
     rows.push(row);
   }
 
