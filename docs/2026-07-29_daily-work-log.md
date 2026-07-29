@@ -17,5 +17,11 @@ Cleanup day following the salesuk.html buildout: retired dead backend code for t
 ## Status
 Live and verified.
 
+6. **Mahima Requirement 5 — Product ID Coverage tab** (new): built as Tab 5 on `mahima.html` — one row per product in the full ledsone.de merchant feed catalog (5,274 products) LEFT JOINed to Mahima's 5 campaigns, showing campaign membership, current-vs-previous-period ROAS with trend, Feed Status/Missing Attribute (real GMC diagnostics confirmed absent from PostgreSQL — reused Req1's proven attribute-completeness proxy instead, per user's decision), Priority, and Suggested Action, all computed via the exact formulas specified. New `mahimaReq5Handler`/`MAHIMA5_QUERY` in `api/requirement.js` (`fn=mahima-req5`). Deployed via push to `staff/main` (auto-deploy), verified live via curl; synced to `aios-2` and the third Piranav checkout.
+
+## Files Touched (Mahima Req5)
+- `reports/digital-marketing-member-pages/api/requirement.js`
+- `reports/digital-marketing-member-pages/pages/mahima.html`
+
 ## Outstanding
 Same as 2026-07-28: Assign-from-UI persistence for Not Assigned, August wiring, a small number of genuinely untraceable orders per month.
