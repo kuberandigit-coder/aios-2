@@ -17,3 +17,7 @@ Index of `capability/*.md` files — reusable technical knowledge extracted from
 
 - [`2026-07-27_meta-uk-tab-and-overlap-discovery_capability.md`](2026-07-27_meta-uk-tab-and-overlap-discovery_capability.md) — Meta UK tab, plus the order-name-set comparison technique that found 48% cross-tab order overlap on the main dashboard.
 - [`2026-07-27_salesuk-standalone-order-level-page_capability.md`](2026-07-27_salesuk-standalone-order-level-page_capability.md) — building mutually-exclusive tab groups by construction (priority-ordered first-match-wins), order-level rows, and the page-size + static-snapshot combo needed to keep large monthly scans fast.
+
+## 2026-07-29
+
+- [`2026-07-29_salesuk-group-construction-and-dual-repo-deploy_capability.md`](2026-07-29_salesuk-group-construction-and-dual-repo-deploy_capability.md) — second/last-session lookthrough matching, permanent vs month-scoped rules, the Not Assigned virtual group, and the dual-repo (aios-2 + Staff-requirements) deploy hazard discovered and fixed this session.
