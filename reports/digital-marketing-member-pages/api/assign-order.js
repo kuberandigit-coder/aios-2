@@ -25,7 +25,7 @@ const FILE_PATH = 'api/data/order-overrides.json';
 // allowlist so a malformed/malicious request body can never write an
 // arbitrary groupKey into the overrides file.
 const VALID_GROUP_KEYS = new Set(['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'jeffri', 'thasitha', 'mahima']);
-const VALID_SOURCES = new Set(['salesuk', 'sales25', 'salesde']);
+const VALID_SOURCES = new Set(['salesuk', 'sales25', 'salesde25']);
 
 async function githubApi(path, options) {
   const token = process.env.GITHUB_ASSIGN_TOKEN;
@@ -105,7 +105,7 @@ module.exports = async function handler(req, res) {
       if (!it || !it.orderId) return res.status(400).json({ success: false, error: 'Every order needs an orderId' });
     }
     if (!VALID_GROUP_KEYS.has(groupKey)) return res.status(400).json({ success: false, error: `Invalid groupKey "${groupKey}"` });
-    if (!VALID_SOURCES.has(source)) return res.status(400).json({ success: false, error: `Invalid source "${source}" (must be salesuk, sales25, or salesde)` });
+    if (!VALID_SOURCES.has(source)) return res.status(400).json({ success: false, error: `Invalid source "${source}" (must be salesuk, sales25, or salesde25)` });
     if (!month) return res.status(400).json({ success: false, error: 'month is required' });
 
     const { overrides, sha } = await readOverrides();

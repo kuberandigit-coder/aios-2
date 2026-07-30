@@ -41,8 +41,8 @@ function berlinMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06', '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12'];
+const CURRENT_LIVE_MONTHS = [];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : SUPPORTED_MONTHS[0];
@@ -616,7 +616,7 @@ function assignGroup(utm, fv, journey, month, order) {
   if (order && order.legacyResourceId) {
     const overrides = loadOverrides();
     const o = overrides[String(order.legacyResourceId)];
-    if (o && o.source === 'salesde' && GROUPS_BY_KEY.has(o.groupKey)) return GROUPS_BY_KEY.get(o.groupKey);
+    if (o && o.source === 'salesde25' && GROUPS_BY_KEY.has(o.groupKey)) return GROUPS_BY_KEY.get(o.groupKey);
   }
   for (const g of GROUPS) {
     if (g.match(utm, fv, journey, month, order)) return g;
@@ -693,7 +693,7 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
   }
 
   if (!forceRefresh) {
-    const staticPath = path.join(__dirname, 'data', `salesde-${groupDef.key}-${monthConfig.month}.json`);
+    const staticPath = path.join(__dirname, 'data', `salesde25-${groupDef.key}-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
       const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };

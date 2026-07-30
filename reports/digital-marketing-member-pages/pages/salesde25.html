@@ -85,20 +85,25 @@ tbody tr:hover{background:var(--accent-soft);}
 
   <div id="tabJanuary">
     <div class="reqtabs" id="monthTabs" style="margin-bottom:14px;">
-      <div class="reqtab active" data-month="2026-01" onclick="selectMonth('2026-01')">January 2026</div>
-      <div class="reqtab" data-month="2026-02" onclick="selectMonth('2026-02')">February 2026</div>
-      <div class="reqtab" data-month="2026-03" onclick="selectMonth('2026-03')">March 2026</div>
-      <div class="reqtab" data-month="2026-04" onclick="selectMonth('2026-04')">April 2026</div>
-      <div class="reqtab" data-month="2026-05" onclick="selectMonth('2026-05')">May 2026</div>
-      <div class="reqtab" data-month="2026-06" onclick="selectMonth('2026-06')">June 2026</div>
-      <div class="reqtab" data-month="2026-07" onclick="selectMonth('2026-07')">July 2026 (live)</div>
+      <div class="reqtab active" data-month="2025-01" onclick="selectMonth('2025-01')">January 2025</div>
+      <div class="reqtab" data-month="2025-02" onclick="selectMonth('2025-02')">February 2025</div>
+      <div class="reqtab" data-month="2025-03" onclick="selectMonth('2025-03')">March 2025</div>
+      <div class="reqtab" data-month="2025-04" onclick="selectMonth('2025-04')">April 2025</div>
+      <div class="reqtab" data-month="2025-05" onclick="selectMonth('2025-05')">May 2025</div>
+      <div class="reqtab" data-month="2025-06" onclick="selectMonth('2025-06')">June 2025</div>
+      <div class="reqtab" data-month="2025-07" onclick="selectMonth('2025-07')">July 2025</div>
+      <div class="reqtab" data-month="2025-08" onclick="selectMonth('2025-08')">August 2025</div>
+      <div class="reqtab" data-month="2025-09" onclick="selectMonth('2025-09')">September 2025</div>
+      <div class="reqtab" data-month="2025-10" onclick="selectMonth('2025-10')">October 2025</div>
+      <div class="reqtab" data-month="2025-11" onclick="selectMonth('2025-11')">November 2025</div>
+      <div class="reqtab" data-month="2025-12" onclick="selectMonth('2025-12')">December 2025</div>
     </div>
 
     <div id="groupDmAd">
       <header>
         <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;" id="groupLabel">Jeffri</div>
         <h1 id="groupTitle">Order-Level Sales — Jeffri</h1>
-        <div class="sub" id="periodSub">Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; store-wide, order-level (not product-scoped) &nbsp;&middot;&nbsp; January 2026, closed reporting month.</div>
+        <div class="sub" id="periodSub">Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; store-wide, order-level (not product-scoped) &nbsp;&middot;&nbsp; January 2025, closed reporting month.</div>
         <div class="filters">
           <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
           <span class="chip" id="liveChip">Loading&hellip;</span>
@@ -183,11 +188,11 @@ tbody tr:hover{background:var(--accent-soft);}
       </div>
 
       <div class="footnotes">
-        <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via <code id="groupEndpoint">/api/salesde?group=not-assigned</code> using the <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
-        <strong>Why this page exists:</strong> the existing DE staff tabs (Mahima, Jeffri, Sukirtha Email, Organic, Mahima Organic) on the main dashboard are product-scoped and have never been verified for order-level completeness/duplication (per user, 2026-07-30). This standalone page rebuilds DE sales the same order-level, zero-duplication way already proven on salesuk.html/sales25.html.<br>
-        <strong>Ownership rules:</strong> ported verbatim from the existing product-scoped api/sales.js DE handlers (Jeffri Ads + Meta, Thasitha Ads, Mahima Ads + owned products, Sukirtha Organic/Direct/Referral/Email), re-expressed as order-level rules (2026-07-30). Anything not matching one of these four falls to Not Assigned for manual review.<br>
+        <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> (<code>ledsone-de.myshopify.com</code>) &middot; fetched via <code id="groupEndpoint">/api/salesde25?group=not-assigned</code> using the <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable &mdash; never present in this HTML or any client-side script.<br>
+        <strong>Why this page exists:</strong> 2025 DE sales, rebuilt the same order-level, zero-duplication way already proven on salesuk.html/sales25.html (per user, 2026-07-30).<br>
+        <strong>Ownership rules:</strong> same order-level rules already verified for 2026 DE (Jeffri Ads + Meta, Thasitha Ads, Mahima Ads + owned products, Sukirtha Organic/Direct/Referral/Email), applied here to 2025 order data. Anything not matching one of these four falls to Not Assigned for manual review.<br>
         <strong>Scope:</strong> store-wide, <em>not</em> product-scoped &mdash; order-level rows only, no per-product/SKU breakdown.<br>
-        <strong>Report period:</strong> <span id="footPeriodNote">January 1&ndash;31, 2026</span>, Europe/Berlin timezone.<br>
+        <strong>Report period:</strong> <span id="footPeriodNote">January 1&ndash;31, 2025</span>, Europe/Berlin timezone.<br>
         <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
         <strong>Last refresh timestamp:</strong> <span id="footRefresh">&ndash;</span>
       </div>
@@ -208,9 +213,9 @@ function downloadCsv(content, filename){
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-let CURRENT_MONTH = '2026-01';
+let CURRENT_MONTH = '2025-01';
 let CURRENT_GROUP = 'jeffri';
-function apiEndpointFor(month){ return '/api/salesde'; }
+function apiEndpointFor(month){ return '/api/salesde25'; }
 const GROUP_CACHE = {};
 function switchView(){
   openRows = new Set();
@@ -324,21 +329,24 @@ function renderCampaigns(){
 }
 
 // ---------- Not Assigned -> real group assignment ----------
-// Empty until ownership is confirmed -- filled in the same way as
-// salesuk.html/sales25.html once real GROUPS exist in api/salesde.js.
 const ASSIGN_GROUP_OPTIONS = [
   ['jeffri', 'Jeffri'], ['thasitha', 'Thasitha'], ['mahima', 'Mahima'], ['sukirtha', 'Sukirtha'],
 ];
 const ASSIGN_MONTH_OPTIONS = [
-  ['2026-01', 'January 2026'],
-  ['2026-02', 'February 2026'],
-  ['2026-03', 'March 2026'],
-  ['2026-04', 'April 2026'],
-  ['2026-05', 'May 2026'],
-  ['2026-06', 'June 2026'],
-  ['2026-07', 'July 2026'],
+  ['2025-01', 'January 2025'],
+  ['2025-02', 'February 2025'],
+  ['2025-03', 'March 2025'],
+  ['2025-04', 'April 2025'],
+  ['2025-05', 'May 2025'],
+  ['2025-06', 'June 2025'],
+  ['2025-07', 'July 2025'],
+  ['2025-08', 'August 2025'],
+  ['2025-09', 'September 2025'],
+  ['2025-10', 'October 2025'],
+  ['2025-11', 'November 2025'],
+  ['2025-12', 'December 2025'],
 ];
-function assignSourceFor(month){ return 'salesde'; }
+function assignSourceFor(month){ return 'salesde25'; }
 function assignMonthOptionsHtml(selected){
   return ASSIGN_MONTH_OPTIONS.map(([v, label]) => '<option value="' + v + '"' + (v === selected ? ' selected' : '') + '>' + label + '</option>').join('');
 }
@@ -443,7 +451,7 @@ async function loadAssignLog(){
     const res = await fetch('/api/assign-order');
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-    const rowsDe = data.assignments.filter(a => a.source === 'salesde');
+    const rowsDe = data.assignments.filter(a => a.source === 'salesde25');
     if (!rowsDe.length) {
       body.innerHTML = '<tr><td colspan="4" style="padding:8px;color:var(--muted);">No DE assignments made yet.</td></tr>';
       return;
