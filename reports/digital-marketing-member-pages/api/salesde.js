@@ -41,8 +41,8 @@ function berlinMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const SUPPORTED_MONTHS = ['2026-01'];
-const CURRENT_LIVE_MONTHS = [];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
+const CURRENT_LIVE_MONTHS = ['2026-07'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : SUPPORTED_MONTHS[0];

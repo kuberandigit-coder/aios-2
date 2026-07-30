@@ -86,6 +86,12 @@ tbody tr:hover{background:var(--accent-soft);}
   <div id="tabJanuary">
     <div class="reqtabs" id="monthTabs" style="margin-bottom:14px;">
       <div class="reqtab active" data-month="2026-01" onclick="selectMonth('2026-01')">January 2026</div>
+      <div class="reqtab" data-month="2026-02" onclick="selectMonth('2026-02')">February 2026</div>
+      <div class="reqtab" data-month="2026-03" onclick="selectMonth('2026-03')">March 2026</div>
+      <div class="reqtab" data-month="2026-04" onclick="selectMonth('2026-04')">April 2026</div>
+      <div class="reqtab" data-month="2026-05" onclick="selectMonth('2026-05')">May 2026</div>
+      <div class="reqtab" data-month="2026-06" onclick="selectMonth('2026-06')">June 2026</div>
+      <div class="reqtab" data-month="2026-07" onclick="selectMonth('2026-07')">July 2026 (live)</div>
     </div>
 
     <div id="groupDmAd">
@@ -325,6 +331,12 @@ const ASSIGN_GROUP_OPTIONS = [
 ];
 const ASSIGN_MONTH_OPTIONS = [
   ['2026-01', 'January 2026'],
+  ['2026-02', 'February 2026'],
+  ['2026-03', 'March 2026'],
+  ['2026-04', 'April 2026'],
+  ['2026-05', 'May 2026'],
+  ['2026-06', 'June 2026'],
+  ['2026-07', 'July 2026'],
 ];
 function assignSourceFor(month){ return 'salesde'; }
 function assignMonthOptionsHtml(selected){
