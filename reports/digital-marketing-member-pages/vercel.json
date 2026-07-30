@@ -4,6 +4,7 @@
     "api/requirement.js": { "maxDuration": 300 },
     "api/salesuk.js": { "maxDuration": 300 },
     "api/sales25.js": { "maxDuration": 300 },
-    "api/assign-order.js": { "maxDuration": 30 }
+    "api/assign-order.js": { "maxDuration": 30 },
+    "api/salesde.js": { "maxDuration": 300 }
   }
 }
