@@ -2190,11 +2190,15 @@ const GROUPS = [
         if (medium === 'google_ads' && !isSajeepanCampaignUk(lastSessionCampaign(journey))) return true;
       }
       if ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSonyaProduct(order)) return true;
+      if (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSonyaProduct(order)) return true;
       return false;
     },
     matchValue: (utm, fv, journey, month, order) => {
       if ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSonyaProduct(order)) {
         return (utm.campaign || 'DM-Ad campaign') + ' (product-owned, moved from DM Campaigns)';
+      }
+      if (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSonyaProduct(order)) {
+        return 'Direct -> 2nd session Google Ads (product-owned)';
       }
       if (utm.campaign) return utm.campaign;
       if (utm.term) return utm.term;
@@ -2210,10 +2214,13 @@ const GROUPS = [
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
     scope: 'first-session utm_campaign exactly matches one of "Accessories_sj", "GCSS_ALL_ROAS_400_SAJEE_PMAX", "GCSS_ALL_ROAS_400_SAJEE", "SJ_TOP_20X", "sajeepan_pmax_gcss_ceiling_rose_fitting_asset", "Shop_SJ_PMax-25", "Aji_Sh_PMax", "Shop_DM_PMax-25", "Shop_DM_PMax-25_ZERO", "Klarna_P", "SJ_PMAX_Scale_Heroes_25", "KLARNA_CSS_SJ25_PMAX", "Klarna_G2", "P_Max_Klarna_CSS_SJ_OLD" (case-insensitive), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_P", "KLARNA_CSS_SJ25_PMAX" or "Shop_DM_PMax-25" — confirmed by the user, 2026-07-27), OR the order contains one of Sajeepan\'s owned product IDs and would otherwise have matched DM-Ad\'s campaign rule (product-ID split added 2026-07-30, per user request to split DM Campaigns sales by product ownership). Checked only after DM-Ad, Meta and Sonya.',
-    match: (utm, fv, journey, month, order) => isSajeepanCampaignUk(utm.campaign) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(secondSessionCampaign(journey))) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(lastSessionCampaign(journey))) || ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSajeepanProduct(order)),
+    match: (utm, fv, journey, month, order) => isSajeepanCampaignUk(utm.campaign) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(secondSessionCampaign(journey))) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(lastSessionCampaign(journey))) || ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSajeepanProduct(order)) || (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSajeepanProduct(order)),
     matchValue: (utm, fv, journey, month, order) => {
       if ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSajeepanProduct(order)) {
         return (utm.campaign || 'DM-Ad campaign') + ' (product-owned, moved from DM Campaigns)';
+      }
+      if (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSajeepanProduct(order)) {
+        return 'Direct -> 2nd session Google Ads (product-owned)';
       }
       if (utm.campaign) return utm.campaign;
       if (isSajeepanCampaignUk(secondSessionCampaign(journey))) return secondSessionCampaign(journey) + ' (2nd session)';
@@ -2235,28 +2242,28 @@ const GROUPS = [
     matchValue: (utm, fv) => utm.campaign || (fv && fv.sourceDescription) || (fv && fv.source) || '(email, no campaign)',
   },
   {
-    key: 'direct',
-    name: 'Direct',
-    department: 'Direct Traffic',
-    scope: 'first-session channel is classified Direct (no referrer, no UTM params, typed the URL or used a bookmark). Split out of the Organic tab into its own tab/page (per user request, 2026-07-30) — checked before Organic so Direct orders never land there anymore.',
-    match: (utm, fv, journey) => deriveChannelLabel(journey) === 'Direct',
-    matchValue: (utm, fv, journey) => 'Direct' + ((fv && fv.source) ? ' - ' + fv.source : ''),
-  },
-  {
     key: 'kamsi',
     name: 'Kamsi',
     department: 'Organic (product-scoped)',
-    scope: 'the order matches Organic\'s rule (see below) AND contains one of Kamsi\'s owned product IDs. Split out of the shared Organic tab into her own tab (per user request, 2026-07-30) — checked before Organic and before Dilaksi, so her product-owned orders never land in either.',
-    match: (utm, fv, journey, month, order) => isOrganicMatch(utm, fv, journey) && orderHasKamsiProduct(order),
-    matchValue: () => '(owned product, organic)',
+    scope: 'the order matches Organic\'s rule (see below) AND contains one of Kamsi\'s owned product IDs, OR the order is first-session Direct whose 2nd session is NOT Google Ads paid search (i.e. "pure organic" Direct, per user request 2026-07-30) AND contains one of her products. Checked before Dilaksi, Direct and Organic, so her product-owned orders never land in any of those.',
+    match: (utm, fv, journey, month, order) => (isOrganicMatch(utm, fv, journey) || (deriveChannelLabel(journey) === 'Direct' && !isSecondSessionPaidSearch(journey))) && orderHasKamsiProduct(order),
+    matchValue: (utm, fv, journey) => deriveChannelLabel(journey) === 'Direct' ? '(owned product, Direct -> pure organic)' : '(owned product, organic)',
   },
   {
     key: 'dilaksi',
     name: 'Dilaksi',
     department: 'Organic (product-scoped)',
-    scope: 'the order matches Organic\'s rule (see below) AND contains one of Dilaksi\'s owned product IDs. Split out of the shared Organic tab into her own tab (per user request, 2026-07-30) — checked after Kamsi (1 product ID appears in both lists as given by the user, resolves to Kamsi) and before Organic.',
-    match: (utm, fv, journey, month, order) => isOrganicMatch(utm, fv, journey) && orderHasDilaksiProduct(order),
-    matchValue: () => '(owned product, organic)',
+    scope: 'the order matches Organic\'s rule (see below) AND contains one of Dilaksi\'s owned product IDs, OR the order is first-session Direct whose 2nd session is NOT Google Ads paid search AND contains one of her products (per user request, 2026-07-30). Checked after Kamsi (1 product ID appears in both lists as given by the user, resolves to Kamsi) and before Direct/Organic.',
+    match: (utm, fv, journey, month, order) => (isOrganicMatch(utm, fv, journey) || (deriveChannelLabel(journey) === 'Direct' && !isSecondSessionPaidSearch(journey))) && orderHasDilaksiProduct(order),
+    matchValue: (utm, fv, journey) => deriveChannelLabel(journey) === 'Direct' ? '(owned product, Direct -> pure organic)' : '(owned product, organic)',
+  },
+  {
+    key: 'direct',
+    name: 'Direct',
+    department: 'Direct Traffic',
+    scope: 'first-session channel is classified Direct (no referrer, no UTM params, typed the URL or used a bookmark) AND not claimed by Sajeepan/Sonya (2nd session Google Ads + their product) or Kamsi/Dilaksi (2nd session not Google Ads + their product) above. Split out of the Organic tab into its own tab/page (per user request, 2026-07-30) — checked before Organic so Direct orders never land there anymore.',
+    match: (utm, fv, journey) => deriveChannelLabel(journey) === 'Direct',
+    matchValue: (utm, fv, journey) => 'Direct' + (isSecondSessionPaidSearch(journey) ? ' -> 2nd session Google Ads (unowned)' : '') + ((fv && fv.source) ? ' - ' + fv.source : ''),
   },
   {
     key: 'organic',
@@ -2372,6 +2379,19 @@ function deriveChannelLabel(journey) {
     SOCIAL: 'Social', EMAIL: 'Email', AFFILIATE: 'Affiliate', REFERRAL: 'Referral', OTHER: 'Other', UNKNOWN: 'Unknown',
   };
   return map[journey.first.classification] || 'Unknown';
+}
+
+// Direct-traffic reclassification (added 2026-07-30, per user request): a
+// "Direct" first session with no referrer can still be followed by a 2nd
+// session that DOES carry an ad signal — Shopify's own classifier says so
+// per-session (classifications[1].classification), which is more reliable
+// than re-parsing UTM strings. If that 2nd session is Google Ads paid
+// search, the order is treated as ad-driven (routed to Sajeepan/Sonya by
+// product ownership); otherwise it stays "pure organic" (routed to
+// Kamsi/Dilaksi by product ownership, same as any other Organic order).
+function isSecondSessionPaidSearch(journey) {
+  const second = journey && journey.classifications && journey.classifications[1];
+  return !!second && second.classification === 'PAID_SEARCH';
 }
 
 // Diagnostic-only mode (added 2026-07-27): tally every order NOT matched by
