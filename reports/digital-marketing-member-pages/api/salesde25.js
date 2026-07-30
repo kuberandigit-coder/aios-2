@@ -41,7 +41,7 @@ function berlinMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06', '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12'];
+const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'];
 const CURRENT_LIVE_MONTHS = [];
 
 function resolveReportMonth(monthParam) {
@@ -558,14 +558,6 @@ const GROUPS = [
     scope: 'ported from api/sales.js staff=jeffri-ads (first-session utm_term exactly "jeff"/"Jeichitom_Maara", or no term with utm_medium="SMARKETER_sale") OR staff=jeffri-meta (first-session channel Social, not already Jeffri-ads or Mahima-ad-term).',
     match: (utm, fv, journey) => isJeffriAdsMatch(utm) || isJeffriMetaMatch(utm, journey),
     matchValue: (utm, fv, journey) => utm.term || utm.campaign || (deriveChannelLabel(journey) === 'Social' ? 'Meta (Social)' : '(no term) medium=SMARKETER_sale'),
-  },
-  {
-    key: 'thasitha',
-    name: 'Thasitha',
-    department: 'Google Ads (Paid Search)',
-    scope: 'ported from api/sales.js staff=thasitha-ads: first-session utm_term exactly "thasi" (case-insensitive).',
-    match: (utm) => THASITHA_ADS_TERMS.has((utm.term || '').toString().toLowerCase()),
-    matchValue: (utm) => utm.term,
   },
   {
     key: 'mahima',
