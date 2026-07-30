@@ -7,7 +7,7 @@ const { execFileSync } = require('child_process');
 
 const BASE_URL = 'https://digital-marketing-member-pages.vercel.app';
 const DATA_DIR = path.join(__dirname, '..', 'api', 'data');
-const ALL_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'not-assigned'];
+const ALL_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'direct', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'not-assigned'];
 const month = process.argv[2] || '2026-02';
 const groups = process.argv[3] ? process.argv[3].split(',') : ALL_GROUPS;
 

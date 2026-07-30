@@ -431,7 +431,9 @@ function lastSessionCampaign(journey) {
 const ORGANIC_SEARCH_SOURCES = new Set(['google', 'android-app://com.google.android.googlequicksearchbox/', 'bing', 'duckduckgo', 'android-app://com.google.android.gm/', 'ecosia', 'yahoo']);
 function isOrganicMatch(utm, fv, journey) {
   const channel = deriveChannelLabel(journey);
-  if (channel === 'Direct' || channel === 'Referral' || channel === 'No Journey Data') return true;
+  // 'Direct' removed from Organic (2026-07-30, per user request) — it now
+  // has its own standalone "Direct" tab/page, checked earlier in GROUPS.
+  if (channel === 'Referral' || channel === 'No Journey Data') return true;
   if (channel === 'Organic Search') {
     // Match on the actual traffic SOURCE, not utm_campaign — Shopify tags
     // some genuine Google-organic clicks (via the free Google Shopping
@@ -1212,10 +1214,18 @@ const GROUPS = [
     matchValue: (utm, fv) => utm.campaign || (fv && fv.sourceDescription) || (fv && fv.source) || '(email, no campaign)',
   },
   {
+    key: 'direct',
+    name: 'Direct',
+    department: 'Direct Traffic',
+    scope: 'first-session channel is classified Direct (no referrer, no UTM params, typed the URL or used a bookmark). Split out of the Organic tab into its own tab/page (per user request, 2026-07-30) — checked before Organic so Direct orders never land there anymore.',
+    match: (utm, fv, journey) => deriveChannelLabel(journey) === 'Direct',
+    matchValue: (utm, fv, journey) => 'Direct' + ((fv && fv.source) ? ' - ' + fv.source : ''),
+  },
+  {
     key: 'organic',
     name: 'Organic',
     department: 'Organic / Direct / Referral',
-    scope: 'first-session channel is Direct, Referral (any), "No Journey Data", Organic Search from one of Google / Google app (Android) / Bing / DuckDuckGo / Gmail app / Ecosia / Yahoo, Social from Pinterest, OR "Other" with source "ChatGPT" or "an unknown source". Confirmed by the user, 2026-07-27, after verifying none of these carry any paid-ad signal (no gclid/paid utm_medium/paid utm_source/Shopify ad sourceType). Checked last — an order already claimed by any earlier group never lands here.',
+    scope: 'first-session channel is Referral (any), "No Journey Data", Organic Search from one of Google / Google app (Android) / Bing / DuckDuckGo / Gmail app / Ecosia / Yahoo, Social from Pinterest, OR "Other" with source "ChatGPT" or "an unknown source". Confirmed by the user, 2026-07-27, after verifying none of these carry any paid-ad signal (no gclid/paid utm_medium/paid utm_source/Shopify ad sourceType). ("Direct" moved out to its own tab, 2026-07-30.) Checked last — an order already claimed by any earlier group never lands here.',
     match: (utm, fv, journey) => isOrganicMatch(utm, fv, journey),
     // Source/sourceDescription take priority over utm.campaign for display
     // — a genuine Google-organic click can carry utm_campaign="Multifeeds"

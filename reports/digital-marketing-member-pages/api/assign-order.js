@@ -24,7 +24,7 @@ const FILE_PATH = 'api/data/order-overrides.json';
 // Every valid destination group, across both years -- kept as an explicit
 // allowlist so a malformed/malicious request body can never write an
 // arbitrary groupKey into the overrides file.
-const VALID_GROUP_KEYS = new Set(['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'jeffri', 'thasitha', 'mahima', 'mahima-ads', 'mahima-organic']);
+const VALID_GROUP_KEYS = new Set(['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'jeffri', 'thasitha', 'mahima', 'mahima-ads', 'mahima-organic', 'direct']);
 const VALID_SOURCES = new Set(['salesuk', 'sales25', 'salesde25']);
 
 async function githubApi(path, options) {
