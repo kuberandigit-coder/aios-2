@@ -77,7 +77,8 @@ tbody tr:hover{background:var(--accent-soft);}
 <a class="back" href="javascript:void(0)" onclick="history.back()">&larr; Back</a>
   <div class="reqtabs" id="groupTabs">
     <div class="reqtab active" data-group="jeffri" onclick="selectGroup('jeffri')">Jeffri</div>
-    <div class="reqtab" data-group="mahima" onclick="selectGroup('mahima')">Mahima</div>
+    <div class="reqtab" data-group="mahima-ads" onclick="selectGroup('mahima-ads')">Mahima Ads</div>
+    <div class="reqtab" data-group="mahima-organic" onclick="selectGroup('mahima-organic')">Mahima Organic</div>
     <div class="reqtab" data-group="sukirtha" onclick="selectGroup('sukirtha')">Sukirtha</div>
     <div class="reqtab" data-group="not-assigned" onclick="selectGroup('not-assigned')">Not Assigned</div>
   </div>
@@ -323,7 +324,7 @@ function renderCampaigns(){
 
 // ---------- Not Assigned -> real group assignment ----------
 const ASSIGN_GROUP_OPTIONS = [
-  ['jeffri', 'Jeffri'], ['mahima', 'Mahima'], ['sukirtha', 'Sukirtha'],
+  ['jeffri', 'Jeffri'], ['mahima-ads', 'Mahima Ads'], ['mahima-organic', 'Mahima Organic'], ['sukirtha', 'Sukirtha'],
 ];
 const ASSIGN_MONTH_OPTIONS = [
   ['2025-01', 'January 2025'],
