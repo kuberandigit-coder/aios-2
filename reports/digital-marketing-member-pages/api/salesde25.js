@@ -3747,7 +3747,7 @@ async function handleEmail(req, res, monthConfig, forceRefresh, startTime) {
 
 async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   const staffParam = req.query && req.query.staff;
-  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'jeffri-meta' ? 'jeffri-meta' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : 'sukirtha';
+  const staff = staffParam === 'mahima' ? 'mahima' : staffParam === 'mahima-ads' ? 'mahima-ads' : staffParam === 'jeffri-ads' ? 'jeffri-ads' : staffParam === 'jeffri-meta' ? 'jeffri-meta' : staffParam === 'mahima-total' ? 'mahima-total' : staffParam === 'mahima-ads-term' ? 'mahima-ads-term' : staffParam === 'hetheesha-organic' ? 'hetheesha-organic' : staffParam === 'thivagini-ads' ? 'thivagini-ads' : staffParam === 'thasitha-ads' ? 'thasitha-ads' : staffParam === 'not-assigned' ? 'not-assigned' : 'sukirtha';
   const cacheKey = staff + ':' + monthConfig.month;
   const isFrStaff = staff === 'hetheesha-organic' || staff === 'thivagini-ads';
   const isUkStaff = false;
@@ -3759,7 +3759,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   }
 
   if (!forceRefresh) {
-    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'jeffri-meta' ? 'jeffri-meta' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : 'sukirtha-de-organic';
+    const snapshotName = staff === 'mahima' ? 'mahima-de-organic' : staff === 'mahima-ads' ? 'mahima-de-ads' : staff === 'jeffri-ads' ? 'jeffri-de-ads' : staff === 'jeffri-meta' ? 'jeffri-meta' : staff === 'mahima-total' ? 'mahima-de-total' : staff === 'mahima-ads-term' ? 'mahima-de-ads-term' : staff === 'hetheesha-organic' ? 'hetheesha-fr-organic' : staff === 'thivagini-ads' ? 'thivagini-fr-ads' : staff === 'thasitha-ads' ? 'thasitha-de-ads' : staff === 'not-assigned' ? 'not-assigned-de' : 'sukirtha-de-organic';
     const staticPath = path.join(__dirname, 'data', `${snapshotName}-sales-${monthConfig.month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -4087,6 +4087,15 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
         matched = utm.term;
       } else if (!term && medium === 'smarketer_sale') {
         matched = '(no term) medium=SMARKETER_sale';
+      } else if (medium === 'jeff' || medium === 'bestselling' || medium === 'trafo' || medium === '7' || medium === 'smarketer_sale' || medium === 'smarkeater_sale') {
+        // Other-bucket medium tags confirmed 2026-07-31: Jeff, Bestselling,
+        // Trafo, 7, SMARKETER_sale (incl. the "SMARKEATER_sale" typo
+        // variant seen live) all belong to Jeffri, regardless of month.
+        matched = '(medium) ' + (utm.medium || medium);
+      } else if (medium === '36' && ['2025-01', '2025-02', '2025-03'].includes(monthConfig.month)) {
+        // "medium=36" belongs to Jeffri only Jan-Mar 2025; from Apr 2025
+        // onward it's reassigned to Mahima (see mahima-organic-search).
+        matched = '(medium=36, Jan-Mar)';
       }
       if (!matched) continue;
       row.campaign = matched;
@@ -4138,6 +4147,74 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     };
     CACHE.set(cacheKey, { data: jeffriPayload, generatedAt: Date.now() });
     res.status(200).json(jeffriPayload);
+    return;
+  }
+
+  if (staff === 'not-assigned') {
+    // "Not Assigned" tab — added 2026-07-31 for the leftover slice of the
+    // Other-channel bucket that couldn't be confidently mapped to a person:
+    // medium tags "google-ads-pirunthu" and "product_sync" (plus the
+    // "AI_Bestselling" automated-feed tag, folded in here since it has no
+    // named owner either). Store-wide, not product-scoped.
+    const NOT_ASSIGNED_MEDIUMS = new Set(['google-ads-pirunthu', 'product_sync', 'ai_bestselling']);
+    const naRows = [];
+    for (const order of orders) {
+      const journey = classifyOrderJourneyOrganic(order);
+      const row = buildSukirthaOrderRowEmail(order, journey);
+      if (!row) continue;
+      const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+      const utm = (fv && fv.utmParameters) || {};
+      const medium = (utm.medium || '').toString().toLowerCase();
+      if (!NOT_ASSIGNED_MEDIUMS.has(medium)) continue;
+      row.campaign = utm.medium || null;
+      row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+      row.rawCampaign = utm.campaign || null;
+      row.firstVisitSource = utm.source || null;
+      row.firstVisitMedium = utm.medium || null;
+      row.firstVisitTerm = utm.term || null;
+      row.firstVisitContent = utm.content || null;
+      naRows.push(row);
+    }
+
+    const byCampaign = new Map();
+    for (const r of naRows) {
+      if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+      byCampaign.get(r.campaign).push(r);
+    }
+    const campaignSummary = [...byCampaign.keys()].sort()
+      .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+      .filter(c => c.ordersCount > 0)
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    const combinedSummary = summarizeRows(naRows);
+
+    const notAssignedPayload = {
+      success: true,
+      group: { name: 'Not Assigned', department: 'Other-channel orders with no confident owner' },
+      reportPeriod: { month: monthConfig.month, label: monthConfig.label, start: monthConfig.startISO, endExclusive: monthConfig.endISO, timezone: 'Europe/Berlin' },
+      supportedMonths: SUPPORTED_MONTHS,
+      isLive: monthConfig.isLive,
+      source: {
+        scope: `store-wide (NOT product-scoped) — orders whose first-session medium is "google-ads-pirunthu", "product_sync", or "AI_Bestselling" (confirmed rule, 2026-07-31): no named owner, so left unassigned rather than guessed.`,
+        orders: 'Shopify Admin GraphQL API',
+        journey: 'Shopify customerJourneySummary',
+      },
+      campaignList: [...byCampaign.keys()].sort(),
+      combinedSummary,
+      campaignSummary,
+      allNotAssignedOrders: naRows,
+      meta: {
+        generatedAt: new Date().toISOString(),
+        cacheStatus: 'miss',
+        ordersFetched: orders.length,
+        matchedOrders: naRows.length,
+        pagesFetched: pages,
+        throttleRetries: retryState.throttleRetries,
+        executionMs: Date.now() - startTime,
+      },
+    };
+    CACHE.set(cacheKey, { data: notAssignedPayload, generatedAt: Date.now() });
+    res.status(200).json(notAssignedPayload);
     return;
   }
 
@@ -5069,12 +5146,20 @@ module.exports = async function handler(req, res) {
         if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') { excludedCount++; continue; }
         const isOrganicSearch = journey.first && journey.first.classification === 'ORGANIC_SEARCH';
         const isNoJourney = journey.status === 'NO_JOURNEY_DATA' || journey.status === 'ATTRIBUTION_PENDING';
-        if (!isOrganicSearch && !isNoJourney) continue;
+        const isDirect = journey.first && journey.first.classification === 'DIRECT';
+        const fvEarly = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        const utmEarly = (fvEarly && fvEarly.utmParameters) || {};
+        const mediumEarly = (utmEarly.medium || '').toString().toLowerCase();
+        // Other-bucket "medium=36" tag: confirmed 2026-07-31 — belongs to
+        // Jeffri for Jan-Mar 2025, then reassigned to Mahima for Apr-Jun
+        // 2025, unconditional (no product check), per explicit user rule.
+        const isMedium36ToMahima = mediumEarly === '36' && ['2025-04', '2025-05', '2025-06'].includes(monthConfig.month);
+        if (!isOrganicSearch && !isNoJourney && !isDirect && !isMedium36ToMahima) continue;
         const hasMahimaProduct = order.lineItems.edges.some((e) => {
           const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
           return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));
         });
-        if (!hasMahimaProduct) continue;
+        if (!hasMahimaProduct && !isMedium36ToMahima) continue;
         let grossSales = 0, discounts = 0;
         for (const edge of order.lineItems.edges) {
           const li = edge.node;
@@ -5153,12 +5238,16 @@ module.exports = async function handler(req, res) {
         if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') { excludedCount++; continue; }
         const isOrganicSearch = journey.first && journey.first.classification === 'ORGANIC_SEARCH';
         const isNoJourney = journey.status === 'NO_JOURNEY_DATA' || journey.status === 'ATTRIBUTION_PENDING';
-        if (!isOrganicSearch && !isNoJourney) continue;
+        const isDirect = journey.first && journey.first.classification === 'DIRECT';
+        const isReferral = journey.first && journey.first.classification === 'REFERRAL';
+        if (!isOrganicSearch && !isNoJourney && !isDirect && !isReferral) continue;
         const hasMahimaProduct = order.lineItems.edges.some((e) => {
           const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
           return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));
         });
-        if (hasMahimaProduct) continue;
+        // Referral goes wholly to Sukirtha regardless of product ownership
+        // (per user request, 2026-07-30) — everything else stays product-split.
+        if (hasMahimaProduct && !isReferral) continue;
         let grossSales = 0, discounts = 0;
         for (const edge of order.lineItems.edges) {
           const li = edge.node;

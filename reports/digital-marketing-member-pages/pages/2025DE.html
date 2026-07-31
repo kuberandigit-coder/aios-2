@@ -47,6 +47,58 @@ tbody tr:nth-child(even){background:#fafbfd;}
   <div class="reqtab active" id="tabBtnMahima" onclick="selectStaff('mahima')">Mahima</div>
   <div class="reqtab" id="tabBtnSukirtha" onclick="selectStaff('sukirtha')">Sukirtha</div>
   <div class="reqtab" id="tabBtnJeffri" onclick="selectStaff('jeffri')">Jeffri</div>
+  <div class="reqtab" id="tabBtnNotAssigned" onclick="selectStaff('notassigned')">Not Assigned</div>
+</div>
+
+<!-- ===== Not Assigned ===== -->
+<div id="tabNotAssigned" style="display:none;">
+  <div class="reqtabs" id="monthTabs_notassigned">
+    <div class="reqtab active" data-month="2025-01" onclick="selectMonth('notassigned','2025-01')">January</div>
+    <div class="reqtab" data-month="2025-02" onclick="selectMonth('notassigned','2025-02')">February</div>
+    <div class="reqtab" data-month="2025-03" onclick="selectMonth('notassigned','2025-03')">March</div>
+    <div class="reqtab" data-month="2025-04" onclick="selectMonth('notassigned','2025-04')">April</div>
+    <div class="reqtab" data-month="2025-05" onclick="selectMonth('notassigned','2025-05')">May</div>
+    <div class="reqtab" data-month="2025-06" onclick="selectMonth('notassigned','2025-06')">June</div>
+  </div>
+
+  <header>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Not Assigned</div>
+    <h1>Not Assigned — Other-Channel Sales With No Confident Owner</h1>
+    <div class="sub">Store: <strong>ledsone.de</strong> &middot; first-session <code>utm_medium</code> is "google-ads-pirunthu", "product_sync", or "AI_Bestselling" &middot; <span id="periodLabel_notassigned">January 1&ndash;31, 2025</span></div>
+    <div class="filters">
+      <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+      <span class="chip" id="liveChip_notassigned">Loading&hellip;</span>
+      <button class="primary" onclick="load('notassigned', true)">Refresh</button>
+    </div>
+  </header>
+
+  <div class="cards" style="margin-top:14px;">
+    <div class="card"><div class="label">Total Orders</div><div class="value" id="kOrders_notassigned">&ndash;</div></div>
+    <div class="card"><div class="label">Gross Sales</div><div class="value" id="kGross_notassigned">&ndash;</div></div>
+    <div class="card"><div class="label">Discounts</div><div class="value" id="kDiscounts_notassigned">&ndash;</div></div>
+    <div class="card"><div class="label">Refunds</div><div class="value" id="kRefunds_notassigned">&ndash;</div></div>
+    <div class="card"><div class="label">Net Sales</div><div class="value" id="kNet_notassigned">&ndash;</div></div>
+  </div>
+
+  <div class="tablebox">
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>Order</th><th>Created</th><th>Financial Status</th><th>Fulfilment Status</th>
+          <th class="num">Net</th>
+          <th>Currency</th><th>Campaign</th><th>First Session Source</th><th>First Session Medium</th><th>First Session Term</th>
+        </tr></thead>
+        <tbody id="tbody_notassigned"><tr><td colspan="10" class="loading">Loading&hellip;</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty" id="emptyMsg_notassigned" style="display:none;">No orders match this month.</div>
+  </div>
+
+  <div class="footnotes">
+    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> &middot; fetched via <code>/api/salesde25?staff=not-assigned</code> using the <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable.<br>
+    <strong>Scope:</strong> store-wide, not product-scoped &mdash; Other-channel orders whose first-session medium is "google-ads-pirunthu", "product_sync", or "AI_Bestselling", left here because they carry no named owner (confirmed rule, 2026-07-31).<br>
+    <strong>Last refresh:</strong> <span id="footRefresh_notassigned">&ndash;</span>
+  </div>
 </div>
 
 <!-- ===== Jeffri ===== -->
@@ -159,6 +211,7 @@ tbody tr:nth-child(even){background:#fafbfd;}
 <div id="tabSukirtha" style="display:none;">
   <div class="subtabs">
     <div class="subtab active" id="subBtn_sukirtha_organic" onclick="selectSub('sukirtha','organic')">Organic</div>
+    <div class="subtab" id="subBtn_sukirtha_email" onclick="selectSub('sukirtha','email')">Email</div>
   </div>
 
   <div class="reqtabs" id="monthTabs_sukirtha">
@@ -223,16 +276,23 @@ const SUB_CONFIG = {
     groupTitle: { mahima: 'Mahima — Pure Organic Search Sales', sukirtha: 'Sukirtha — Pure Organic Search Sales' },
     scopeNote: {
       mahima: 'an order belongs here if (1) its first session classifies as confidently Organic Search (no paid evidence at all; also excludes the ambiguous "Other" bucket), OR Shopify recorded no session data for it at all (NO_JOURNEY_DATA / ATTRIBUTION_PENDING, treated as organic) — AND (2) it contains at least one of Mahima\'s owned product IDs.',
-      sukirtha: 'an order belongs here if (1) its first session classifies as confidently Organic Search, OR Shopify recorded no session data for it at all (NO_JOURNEY_DATA / ATTRIBUTION_PENDING, treated as organic) — AND (2) it does NOT contain any of Mahima\'s owned product IDs. Together, Mahima\'s and Sukirtha\'s Organic tabs are mutually exclusive and always sum to the month\'s full Organic Search + No Journey Data total.',
+      sukirtha: 'an order belongs here if (1) its first session classifies as confidently Organic Search, Direct, or Referral, OR Shopify recorded no session data for it at all (NO_JOURNEY_DATA / ATTRIBUTION_PENDING) — AND (2) it does NOT contain any of Mahima\'s owned product IDs (Referral is the one exception: it goes wholly to Sukirtha regardless of product ownership). Together, Mahima\'s and Sukirtha\'s Organic tabs are mutually exclusive and always sum to the month\'s full pool.',
     },
+  },
+  email: {
+    label: 'Email',
+    endpoint: { sukirtha: 'sukirtha-email' },
+    groupLabel: { sukirtha: 'Sukirtha · Email (store-wide)' },
+    groupTitle: { sukirtha: 'Sukirtha — Email Sales' },
+    scopeNote: { sukirtha: 'every order whose journey involves the Email channel (Shopify sourceType=NEWSLETTER, utm_medium=email, or source/description containing "email") — store-wide, no product filter.' },
   },
 };
 
 const CURRENT_SUB = { mahima: 'organic', sukirtha: 'organic' };
-const CURRENT_MONTH = { mahima: '2025-01', sukirtha: '2025-01', jeffri: '2025-01' };
-const DATA = { mahima: null, sukirtha: null, jeffri: null };
-const MONTH_CACHE = { mahima: {}, sukirtha: {}, jeffri: {} }; // keyed by `${sub}:${month}` (jeffri has no sub, uses month only)
-const LOAD_SEQ = { mahima: 0, sukirtha: 0, jeffri: 0 };
+const CURRENT_MONTH = { mahima: '2025-01', sukirtha: '2025-01', jeffri: '2025-01', notassigned: '2025-01' };
+const DATA = { mahima: null, sukirtha: null, jeffri: null, notassigned: null };
+const MONTH_CACHE = { mahima: {}, sukirtha: {}, jeffri: {}, notassigned: {} }; // keyed by `${sub}:${month}` (jeffri/notassigned have no sub, uses month only)
+const LOAD_SEQ = { mahima: 0, sukirtha: 0, jeffri: 0, notassigned: 0 };
 
 function selectStaff(n){
   document.getElementById('tabBtnMahima').classList.toggle('active', n === 'mahima');
@@ -241,17 +301,23 @@ function selectStaff(n){
   document.getElementById('tabSukirtha').style.display = n === 'sukirtha' ? '' : 'none';
   document.getElementById('tabBtnJeffri').classList.toggle('active', n === 'jeffri');
   document.getElementById('tabJeffri').style.display = n === 'jeffri' ? '' : 'none';
+  document.getElementById('tabBtnNotAssigned').classList.toggle('active', n === 'notassigned');
+  document.getElementById('tabNotAssigned').style.display = n === 'notassigned' ? '' : 'none';
   if (n === 'jeffri' && !DATA.jeffri) load('jeffri', false);
+  if (n === 'notassigned' && !DATA.notassigned) load('notassigned', false);
 }
 
 function selectSub(staff, sub){
   CURRENT_SUB[staff] = sub;
   document.getElementById('subBtn_' + staff + '_organic').classList.toggle('active', sub === 'organic');
+  if (document.getElementById('subBtn_' + staff + '_email')) {
+    document.getElementById('subBtn_' + staff + '_email').classList.toggle('active', sub === 'email');
+  }
   const cfg = SUB_CONFIG[sub];
   document.getElementById('groupLabel_' + staff).textContent = cfg.groupLabel[staff];
   document.getElementById('groupTitle_' + staff).textContent = cfg.groupTitle[staff];
   document.getElementById('scopeNote_' + staff).textContent = cfg.scopeNote[staff];
-  document.getElementById('endpointNote_' + staff).textContent = '/api/salesde25?staff=' + cfg.endpoint[staff];
+  document.getElementById('endpointNote_' + staff).textContent = sub === 'email' ? '/api/salesde25?type=email' : ('/api/salesde25?staff=' + cfg.endpoint[staff]);
   load(staff, false);
 }
 
@@ -272,16 +338,20 @@ async function load(staff, force){
     if (!force && MONTH_CACHE[staff][cacheKey]) {
       data = MONTH_CACHE[staff][cacheKey];
     } else {
-      const endpoint = staff === 'jeffri' ? 'jeffri-ads' : SUB_CONFIG[sub].endpoint[staff];
-      const url = '/api/salesde25?staff=' + endpoint + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const isEmail = staff === 'sukirtha' && sub === 'email';
+      const url = isEmail
+        ? '/api/salesde25?type=email&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '')
+        : '/api/salesde25?staff=' + (staff === 'jeffri' ? 'jeffri-ads' : staff === 'notassigned' ? 'not-assigned' : SUB_CONFIG[sub].endpoint[staff]) + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url);
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-      if (staff === 'jeffri') {
-        // Normalize: allJeffriAdsOrders -> orders, with per-order netSales
-        // summed from matchedItems (this endpoint is product/line-item
-        // scoped, unlike the flat mahima-organic-search/sukirtha shape).
-        data.orders = (data.allJeffriAdsOrders || []).map(o => ({
+      if (staff === 'jeffri' || staff === 'notassigned' || isEmail) {
+        // Normalize: allJeffriAdsOrders/allNotAssignedOrders/allSukirthaOrders
+        // -> orders, with per-order netSales summed from matchedItems (these
+        // endpoints are product/line-item scoped, unlike the flat
+        // organic-search shape).
+        const list = data.allJeffriAdsOrders || data.allNotAssignedOrders || data.allSukirthaOrders || [];
+        data.orders = list.map(o => ({
           orderName: o.orderName, createdAt: o.createdAt, financialStatus: o.financialStatus, fulfillmentStatus: o.fulfillmentStatus,
           currency: o.currency, campaign: o.campaign,
           firstVisitSource: o.firstVisitSource, firstVisitMedium: o.firstVisitMedium, firstVisitTerm: o.firstVisitTerm,
@@ -317,7 +387,8 @@ function renderAll(staff){
   const tbody = document.getElementById('tbody_' + staff);
   document.getElementById('emptyMsg_' + staff).style.display = rows.length ? 'none' : '';
   if (!rows.length) { tbody.innerHTML = ''; return; }
-  if (staff === 'jeffri') {
+  const isEmail = staff === 'sukirtha' && CURRENT_SUB.sukirtha === 'email';
+  if (staff === 'jeffri' || staff === 'notassigned' || isEmail) {
     tbody.innerHTML = rows.map(o => `
       <tr>
         <td>${esc(o.orderName)}</td>
