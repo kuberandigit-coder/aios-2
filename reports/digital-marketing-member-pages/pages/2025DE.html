@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEDSone DE 2025 — Staff Sales</title>
+<style>
+:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;}
+.wrap{max-width:1400px;margin:0 auto;}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+h1{font-size:22px;letter-spacing:.2px;}
+.sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
+.filters button.primary{background:var(--accent);color:#fff;border-color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.card .value{font-size:22px;font-weight:700;margin-top:6px;}
+.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.scroll{overflow-x:auto;max-height:70vh;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px;}
+thead th{background:#f0f3f8;text-align:left;padding:11px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;position:sticky;top:0;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
+tbody tr:nth-child(even){background:#fafbfd;}
+.empty,.loading{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+.footnotes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:12.5px;color:var(--muted);line-height:1.65;}
+.footnotes strong{color:var(--ink);}
+.reqtabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.reqtab{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
+.reqtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.subtabs{display:flex;gap:8px;margin-bottom:16px;}
+.subtab{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;}
+.subtab.active{background:#0e7490;color:#fff;border-color:#0e7490;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="sales.html">&larr; Back</a>
+
+<div class="reqtabs" id="staffTabs">
+  <div class="reqtab active" id="tabBtnMahima" onclick="selectStaff('mahima')">Mahima</div>
+</div>
+
+<div id="tabMahima">
+  <div class="subtabs" id="mahimaSubTabs">
+    <div class="subtab active" id="subBtnOrganic" onclick="selectMahimaSub('organic')">Organic</div>
+  </div>
+
+  <div id="mahimaOrganicPanel">
+    <div class="reqtabs" id="monthTabs">
+      <div class="reqtab active" data-month="2025-01" onclick="selectMonth('2025-01')">January</div>
+      <div class="reqtab" data-month="2025-02" onclick="selectMonth('2025-02')">February</div>
+      <div class="reqtab" data-month="2025-03" onclick="selectMonth('2025-03')">March</div>
+      <div class="reqtab" data-month="2025-04" onclick="selectMonth('2025-04')">April</div>
+      <div class="reqtab" data-month="2025-05" onclick="selectMonth('2025-05')">May</div>
+      <div class="reqtab" data-month="2025-06" onclick="selectMonth('2025-06')">June</div>
+    </div>
+
+    <header>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Mahima &middot; Organic Search (product-scoped)</div>
+      <h1>Mahima — Pure Organic Search Sales</h1>
+      <div class="sub" id="periodSub">Store: <strong>ledsone.de</strong> &middot; Mahima-owned products only, within the <strong>Organic Search</strong> channel only &middot; <span id="periodLabel">January 1&ndash;31, 2025</span></div>
+      <div class="filters">
+        <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+        <span class="chip" id="liveChip">Loading&hellip;</span>
+        <button id="refreshBtn" class="primary" onclick="load(true)">Refresh</button>
+      </div>
+    </header>
+
+    <div class="cards" style="margin-top:14px;">
+      <div class="card"><div class="label">Total Orders</div><div class="value" id="kOrders">&ndash;</div></div>
+      <div class="card"><div class="label">Gross Sales</div><div class="value" id="kGross">&ndash;</div></div>
+      <div class="card"><div class="label">Discounts</div><div class="value" id="kDiscounts">&ndash;</div></div>
+      <div class="card"><div class="label">Refunds</div><div class="value" id="kRefunds">&ndash;</div></div>
+      <div class="card"><div class="label">Net Sales</div><div class="value" id="kNet">&ndash;</div></div>
+    </div>
+
+    <div class="tablebox">
+      <div class="scroll">
+        <table>
+          <thead><tr>
+            <th>Order</th><th>Created</th><th>Financial Status</th><th>Fulfilment Status</th>
+            <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th>
+            <th>Currency</th><th>First Session Source</th><th>First Session Medium</th>
+          </tr></thead>
+          <tbody id="tbody"><tr><td colspan="11" class="loading">Loading&hellip;</td></tr></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyMsg" style="display:none;">No orders match this month.</div>
+    </div>
+
+    <div class="footnotes">
+      <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> &middot; fetched via <code>/api/salesde25?staff=mahima-organic-search</code> using the <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable.<br>
+      <strong>Scope:</strong> an order belongs here only if (1) its first session classifies as confidently <strong>Organic Search</strong> (no paid evidence at all — any gclid, paid utm_medium, or ad-campaign signal excludes it; also excludes the ambiguous "Other" bucket where source=Google but with an unrecognized sourceType) AND (2) it contains at least one of Mahima's owned product IDs.<br>
+      <strong>Not included here:</strong> Mahima's Direct / Referral / No Journey Data / AI Tools organic-family orders (those are on the main <code>salesde25.html</code> Mahima Organic tab) and her Google Ads orders (separate Ads tab there too) — this page is deliberately narrower: pure Organic Search only.<br>
+      <strong>Last refresh:</strong> <span id="footRefresh">&ndash;</span>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function esc(s){ if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+function money(v, ccy){ if (v === null || v === undefined) return '—'; const sym = ccy === 'EUR' ? '€' : (ccy ? ccy + ' ' : '€'); return sym + Number(v).toFixed(2); }
+
+function selectStaff(n){
+  document.getElementById('tabBtnMahima').classList.toggle('active', n === 'mahima');
+  document.getElementById('tabMahima').style.display = n === 'mahima' ? '' : 'none';
+}
+function selectMahimaSub(n){
+  document.getElementById('subBtnOrganic').classList.toggle('active', n === 'organic');
+  document.getElementById('mahimaOrganicPanel').style.display = n === 'organic' ? '' : 'none';
+}
+
+let CURRENT_MONTH = '2025-01';
+let DATA = null;
+const MONTH_CACHE = {};
+let loadSeq = 0;
+
+function selectMonth(month){
+  CURRENT_MONTH = month;
+  document.querySelectorAll('#monthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  load(false);
+}
+
+async function load(force){
+  const myMonth = CURRENT_MONTH;
+  const seq = ++loadSeq;
+  document.getElementById('liveChip').textContent = 'Loading historical data from Shopify…';
+  const refreshBtn = document.getElementById('refreshBtn');
+  refreshBtn.disabled = true;
+  try {
+    let data;
+    if (!force && MONTH_CACHE[myMonth]) {
+      data = MONTH_CACHE[myMonth];
+    } else {
+      const url = '/api/salesde25?staff=mahima-organic-search&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const res = await fetch(url);
+      data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+      MONTH_CACHE[myMonth] = data;
+    }
+    if (seq !== loadSeq) return;
+    DATA = data;
+    document.getElementById('liveChip').textContent = (data.meta && data.meta.cacheStatus === 'hit' ? 'Cached' : 'Retrieved from Shopify') + ' — ' + data.meta.ordersFetched + ' raw orders scanned this month';
+    document.getElementById('periodLabel').textContent = data.reportPeriod.label;
+    document.getElementById('footRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
+    renderAll();
+  } catch (e) {
+    if (seq !== loadSeq) return;
+    document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message;
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="11" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
+  } finally {
+    refreshBtn.disabled = false;
+  }
+}
+
+function renderAll(){
+  if (!DATA) return;
+  const s = DATA.combinedSummary || {};
+  document.getElementById('kOrders').textContent = s.ordersCount || 0;
+  document.getElementById('kGross').textContent = money(s.grossSales, 'EUR');
+  document.getElementById('kDiscounts').textContent = money(s.discounts, 'EUR');
+  document.getElementById('kRefunds').textContent = money(s.refunds, 'EUR');
+  document.getElementById('kNet').textContent = money(s.netSales, 'EUR');
+
+  const rows = DATA.orders || [];
+  const tbody = document.getElementById('tbody');
+  document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
+  if (!rows.length) { tbody.innerHTML = ''; return; }
+  tbody.innerHTML = rows.map(o => `
+    <tr>
+      <td>${esc(o.orderName)}</td>
+      <td>${esc(new Date(o.createdAt).toLocaleDateString())}</td>
+      <td>${esc(o.financialStatus)}</td>
+      <td>${esc(o.fulfillmentStatus)}</td>
+      <td class="num">${money(o.grossSales, o.currency)}</td>
+      <td class="num">${money(o.discounts, o.currency)}</td>
+      <td class="num">${money(o.refunds, o.currency)}</td>
+      <td class="num">${money(o.netSales, o.currency)}</td>
+      <td>${esc(o.currency)}</td>
+      <td>${esc(o.firstVisitSource || '—')}</td>
+      <td>${esc(o.firstVisitMedium || '—')}</td>
+    </tr>
+  `).join('');
+}
+
+load(false);
+</script>
+</body>
+</html>

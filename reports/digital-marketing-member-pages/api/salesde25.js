@@ -5035,6 +5035,80 @@ module.exports = async function handler(req, res) {
       res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
       return;
     }
+    // Mahima "pure" Organic Search sub-tab (added 2026-07-30, for the new
+    // 2025DE.html page) — narrower than the existing staff=mahima tab
+    // (which covers her Fully Organic / First-Session Organic / Direct /
+    // Referral / No Journey Data / AI Tools buckets). This one is scoped
+    // specifically to orders whose FIRST session classifies as confidently
+    // ORGANIC_SEARCH (see classifySession — excludes anything with paid
+    // evidence, and excludes the ambiguous "Other" bucket), AND that
+    // contain one of Mahima's owned product IDs.
+    if (req.query && req.query.staff === 'mahima-organic-search') {
+      const cacheKey = 'mahima-organic-search:' + monthConfig.month;
+      const cached = CACHE.get(cacheKey);
+      if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
+        res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
+        return;
+      }
+      const retryState = { throttleRetries: 0 };
+      const { orders } = await fetchOrdersForMonth(monthConfig, retryState, STORE_DOMAIN, TOKEN, API_VERSION);
+      const rows = [];
+      let excludedCount = 0;
+      for (const order of orders) {
+        const journey = classifyOrderJourneyOrganic(order);
+        if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') { excludedCount++; continue; }
+        if (!journey.first || journey.first.classification !== 'ORGANIC_SEARCH') continue;
+        const hasMahimaProduct = order.lineItems.edges.some((e) => {
+          const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
+          return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));
+        });
+        if (!hasMahimaProduct) continue;
+        let grossSales = 0, discounts = 0;
+        for (const edge of order.lineItems.edges) {
+          const li = edge.node;
+          const grossInclTax = round2(amt(li.originalUnitPriceSet) * li.quantity);
+          const tax = round2((li.taxLines || []).reduce((s, t) => s + amt(t.priceSet), 0));
+          grossSales = round2(grossSales + (grossInclTax - tax));
+          const discountedInclTax = amt(li.discountedTotalSet);
+          discounts = round2(discounts + Math.max(0, grossInclTax - discountedInclTax));
+        }
+        let refunds = 0;
+        for (const rEdge of (order.refunds || [])) {
+          for (const rliEdge of (rEdge.refundLineItems && rEdge.refundLineItems.edges || [])) {
+            refunds += amt(rliEdge.node.subtotalSet);
+          }
+        }
+        refunds = round2(refunds);
+        const netSales = round2(grossSales - discounts - refunds);
+        const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        rows.push({
+          orderId: order.id, orderLegacyId: order.legacyResourceId, orderName: order.name,
+          createdAt: order.createdAt, financialStatus: order.displayFinancialStatus, fulfillmentStatus: order.displayFulfillmentStatus,
+          currency: (order.currentTotalPriceSet && order.currentTotalPriceSet.shopMoney.currencyCode) || 'EUR',
+          grossSales, discounts, refunds, netSales,
+          firstVisitSource: (fv && (fv.source || fv.sourceDescription)) || null,
+          firstVisitMedium: (fv && fv.utmParameters && fv.utmParameters.medium) || null,
+        });
+      }
+      const combinedSummary = {
+        ordersCount: rows.length,
+        grossSales: round2(rows.reduce((s, r) => s + r.grossSales, 0)),
+        discounts: round2(rows.reduce((s, r) => s + r.discounts, 0)),
+        refunds: round2(rows.reduce((s, r) => s + r.refunds, 0)),
+        netSales: round2(rows.reduce((s, r) => s + r.netSales, 0)),
+      };
+      const payload = {
+        success: true,
+        group: { name: 'Mahima Organic Search', department: 'Organic (product-scoped, pure Organic Search only)' },
+        reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/Berlin' },
+        source: { scope: 'first-session channel classifies as confidently ORGANIC_SEARCH (excludes any order with paid evidence, and excludes the ambiguous "Other" bucket) AND the order contains one of Mahima\'s owned product IDs.' },
+        combinedSummary, orders: rows,
+        meta: { generatedAt: new Date().toISOString(), cacheStatus: 'miss', ordersFetched: orders.length, excludedCount, executionMs: Date.now() - startTime },
+      };
+      CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
+      res.status(200).json(payload);
+      return;
+    }
     if (type === 'email') {
       await handleEmail(req, res, monthConfig, forceRefresh, startTime);
     } else {
