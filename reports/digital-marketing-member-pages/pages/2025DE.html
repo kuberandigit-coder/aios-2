@@ -45,40 +45,42 @@ tbody tr:nth-child(even){background:#fafbfd;}
 
 <div class="reqtabs" id="staffTabs">
   <div class="reqtab active" id="tabBtnMahima" onclick="selectStaff('mahima')">Mahima</div>
+  <div class="reqtab" id="tabBtnSukirtha" onclick="selectStaff('sukirtha')">Sukirtha</div>
 </div>
 
+<!-- ===== Mahima ===== -->
 <div id="tabMahima">
-  <div class="subtabs" id="mahimaSubTabs">
-    <div class="subtab active" id="subBtnOrganic" onclick="selectMahimaSub('organic')">Organic</div>
+  <div class="subtabs">
+    <div class="subtab active" id="subBtnMahimaOrganic" onclick="selectSub('mahima','organic')">Organic</div>
   </div>
 
-  <div id="mahimaOrganicPanel">
-    <div class="reqtabs" id="monthTabs">
-      <div class="reqtab active" data-month="2025-01" onclick="selectMonth('2025-01')">January</div>
-      <div class="reqtab" data-month="2025-02" onclick="selectMonth('2025-02')">February</div>
-      <div class="reqtab" data-month="2025-03" onclick="selectMonth('2025-03')">March</div>
-      <div class="reqtab" data-month="2025-04" onclick="selectMonth('2025-04')">April</div>
-      <div class="reqtab" data-month="2025-05" onclick="selectMonth('2025-05')">May</div>
-      <div class="reqtab" data-month="2025-06" onclick="selectMonth('2025-06')">June</div>
+  <div id="panelMahimaOrganic">
+    <div class="reqtabs" id="monthTabsMahima">
+      <div class="reqtab active" data-month="2025-01" onclick="selectMonth('mahima','2025-01')">January</div>
+      <div class="reqtab" data-month="2025-02" onclick="selectMonth('mahima','2025-02')">February</div>
+      <div class="reqtab" data-month="2025-03" onclick="selectMonth('mahima','2025-03')">March</div>
+      <div class="reqtab" data-month="2025-04" onclick="selectMonth('mahima','2025-04')">April</div>
+      <div class="reqtab" data-month="2025-05" onclick="selectMonth('mahima','2025-05')">May</div>
+      <div class="reqtab" data-month="2025-06" onclick="selectMonth('mahima','2025-06')">June</div>
     </div>
 
     <header>
       <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Mahima &middot; Organic Search (product-scoped)</div>
       <h1>Mahima — Pure Organic Search Sales</h1>
-      <div class="sub" id="periodSub">Store: <strong>ledsone.de</strong> &middot; Mahima-owned products only, within the <strong>Organic Search</strong> channel only &middot; <span id="periodLabel">January 1&ndash;31, 2025</span></div>
+      <div class="sub">Store: <strong>ledsone.de</strong> &middot; Mahima-owned products only, within the <strong>Organic Search</strong> channel only &middot; <span id="periodLabel_mahima">January 1&ndash;31, 2025</span></div>
       <div class="filters">
         <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
-        <span class="chip" id="liveChip">Loading&hellip;</span>
-        <button id="refreshBtn" class="primary" onclick="load(true)">Refresh</button>
+        <span class="chip" id="liveChip_mahima">Loading&hellip;</span>
+        <button class="primary" onclick="load('mahima', true)">Refresh</button>
       </div>
     </header>
 
     <div class="cards" style="margin-top:14px;">
-      <div class="card"><div class="label">Total Orders</div><div class="value" id="kOrders">&ndash;</div></div>
-      <div class="card"><div class="label">Gross Sales</div><div class="value" id="kGross">&ndash;</div></div>
-      <div class="card"><div class="label">Discounts</div><div class="value" id="kDiscounts">&ndash;</div></div>
-      <div class="card"><div class="label">Refunds</div><div class="value" id="kRefunds">&ndash;</div></div>
-      <div class="card"><div class="label">Net Sales</div><div class="value" id="kNet">&ndash;</div></div>
+      <div class="card"><div class="label">Total Orders</div><div class="value" id="kOrders_mahima">&ndash;</div></div>
+      <div class="card"><div class="label">Gross Sales</div><div class="value" id="kGross_mahima">&ndash;</div></div>
+      <div class="card"><div class="label">Discounts</div><div class="value" id="kDiscounts_mahima">&ndash;</div></div>
+      <div class="card"><div class="label">Refunds</div><div class="value" id="kRefunds_mahima">&ndash;</div></div>
+      <div class="card"><div class="label">Net Sales</div><div class="value" id="kNet_mahima">&ndash;</div></div>
     </div>
 
     <div class="tablebox">
@@ -89,17 +91,74 @@ tbody tr:nth-child(even){background:#fafbfd;}
             <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th>
             <th>Currency</th><th>First Session Source</th><th>First Session Medium</th>
           </tr></thead>
-          <tbody id="tbody"><tr><td colspan="11" class="loading">Loading&hellip;</td></tr></tbody>
+          <tbody id="tbody_mahima"><tr><td colspan="11" class="loading">Loading&hellip;</td></tr></tbody>
         </table>
       </div>
-      <div class="empty" id="emptyMsg" style="display:none;">No orders match this month.</div>
+      <div class="empty" id="emptyMsg_mahima" style="display:none;">No orders match this month.</div>
     </div>
 
     <div class="footnotes">
       <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> &middot; fetched via <code>/api/salesde25?staff=mahima-organic-search</code> using the <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable.<br>
       <strong>Scope:</strong> an order belongs here only if (1) its first session classifies as confidently <strong>Organic Search</strong> (no paid evidence at all — any gclid, paid utm_medium, or ad-campaign signal excludes it; also excludes the ambiguous "Other" bucket where source=Google but with an unrecognized sourceType) AND (2) it contains at least one of Mahima's owned product IDs.<br>
-      <strong>Not included here:</strong> Mahima's Direct / Referral / No Journey Data / AI Tools organic-family orders (those are on the main <code>salesde25.html</code> Mahima Organic tab) and her Google Ads orders (separate Ads tab there too) — this page is deliberately narrower: pure Organic Search only.<br>
-      <strong>Last refresh:</strong> <span id="footRefresh">&ndash;</span>
+      <strong>Not included here:</strong> Mahima's Direct / Referral / No Journey Data / AI Tools organic-family orders, or her Google Ads orders — this page is deliberately narrower: pure Organic Search only.<br>
+      <strong>Last refresh:</strong> <span id="footRefresh_mahima">&ndash;</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Sukirtha ===== -->
+<div id="tabSukirtha" style="display:none;">
+  <div class="subtabs">
+    <div class="subtab active" id="subBtnSukirthaOrganic" onclick="selectSub('sukirtha','organic')">Organic</div>
+  </div>
+
+  <div id="panelSukirthaOrganic">
+    <div class="reqtabs" id="monthTabsSukirtha">
+      <div class="reqtab active" data-month="2025-01" onclick="selectMonth('sukirtha','2025-01')">January</div>
+      <div class="reqtab" data-month="2025-02" onclick="selectMonth('sukirtha','2025-02')">February</div>
+      <div class="reqtab" data-month="2025-03" onclick="selectMonth('sukirtha','2025-03')">March</div>
+      <div class="reqtab" data-month="2025-04" onclick="selectMonth('sukirtha','2025-04')">April</div>
+      <div class="reqtab" data-month="2025-05" onclick="selectMonth('sukirtha','2025-05')">May</div>
+      <div class="reqtab" data-month="2025-06" onclick="selectMonth('sukirtha','2025-06')">June</div>
+    </div>
+
+    <header>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Sukirtha &middot; Organic Search (store-wide)</div>
+      <h1>Sukirtha — Pure Organic Search Sales</h1>
+      <div class="sub">Store: <strong>ledsone.de</strong> &middot; the balance of the Organic Search pool &mdash; every order NOT containing a Mahima-owned product &middot; <span id="periodLabel_sukirtha">January 1&ndash;31, 2025</span></div>
+      <div class="filters">
+        <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+        <span class="chip" id="liveChip_sukirtha">Loading&hellip;</span>
+        <button class="primary" onclick="load('sukirtha', true)">Refresh</button>
+      </div>
+    </header>
+
+    <div class="cards" style="margin-top:14px;">
+      <div class="card"><div class="label">Total Orders</div><div class="value" id="kOrders_sukirtha">&ndash;</div></div>
+      <div class="card"><div class="label">Gross Sales</div><div class="value" id="kGross_sukirtha">&ndash;</div></div>
+      <div class="card"><div class="label">Discounts</div><div class="value" id="kDiscounts_sukirtha">&ndash;</div></div>
+      <div class="card"><div class="label">Refunds</div><div class="value" id="kRefunds_sukirtha">&ndash;</div></div>
+      <div class="card"><div class="label">Net Sales</div><div class="value" id="kNet_sukirtha">&ndash;</div></div>
+    </div>
+
+    <div class="tablebox">
+      <div class="scroll">
+        <table>
+          <thead><tr>
+            <th>Order</th><th>Created</th><th>Financial Status</th><th>Fulfilment Status</th>
+            <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th>
+            <th>Currency</th><th>First Session Source</th><th>First Session Medium</th>
+          </tr></thead>
+          <tbody id="tbody_sukirtha"><tr><td colspan="11" class="loading">Loading&hellip;</td></tr></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyMsg_sukirtha" style="display:none;">No orders match this month.</div>
+    </div>
+
+    <div class="footnotes">
+      <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> &middot; fetched via <code>/api/salesde25?staff=sukirtha-organic-search</code> using the <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable.<br>
+      <strong>Scope:</strong> an order belongs here if (1) its first session classifies as confidently <strong>Organic Search</strong> (no paid evidence at all; also excludes the ambiguous "Other" bucket) AND (2) it does NOT contain any of Mahima's owned product IDs. Together, Mahima's and Sukirtha's Organic Search tabs are mutually exclusive and always sum to the month's full Organic Search total.<br>
+      <strong>Last refresh:</strong> <span id="footRefresh_sukirtha">&ndash;</span>
     </div>
   </div>
 </div>
@@ -109,70 +168,69 @@ tbody tr:nth-child(even){background:#fafbfd;}
 function esc(s){ if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function money(v, ccy){ if (v === null || v === undefined) return '—'; const sym = ccy === 'EUR' ? '€' : (ccy ? ccy + ' ' : '€'); return sym + Number(v).toFixed(2); }
 
+const STAFF_ENDPOINT = { mahima: 'mahima-organic-search', sukirtha: 'sukirtha-organic-search' };
+const CURRENT_MONTH = { mahima: '2025-01', sukirtha: '2025-01' };
+const DATA = { mahima: null, sukirtha: null };
+const MONTH_CACHE = { mahima: {}, sukirtha: {} };
+const LOAD_SEQ = { mahima: 0, sukirtha: 0 };
+
 function selectStaff(n){
   document.getElementById('tabBtnMahima').classList.toggle('active', n === 'mahima');
   document.getElementById('tabMahima').style.display = n === 'mahima' ? '' : 'none';
+  document.getElementById('tabBtnSukirtha').classList.toggle('active', n === 'sukirtha');
+  document.getElementById('tabSukirtha').style.display = n === 'sukirtha' ? '' : 'none';
 }
-function selectMahimaSub(n){
-  document.getElementById('subBtnOrganic').classList.toggle('active', n === 'organic');
-  document.getElementById('mahimaOrganicPanel').style.display = n === 'organic' ? '' : 'none';
-}
-
-let CURRENT_MONTH = '2025-01';
-let DATA = null;
-const MONTH_CACHE = {};
-let loadSeq = 0;
-
-function selectMonth(month){
-  CURRENT_MONTH = month;
-  document.querySelectorAll('#monthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
-  load(false);
+function selectSub(staff, sub){
+  // Only one sub-tab (Organic) exists today; kept for future expansion (Ads etc.)
 }
 
-async function load(force){
-  const myMonth = CURRENT_MONTH;
-  const seq = ++loadSeq;
-  document.getElementById('liveChip').textContent = 'Loading historical data from Shopify…';
-  const refreshBtn = document.getElementById('refreshBtn');
-  refreshBtn.disabled = true;
+function selectMonth(staff, month){
+  CURRENT_MONTH[staff] = month;
+  document.querySelectorAll('#monthTabs' + (staff === 'mahima' ? 'Mahima' : 'Sukirtha') + ' .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
+  load(staff, false);
+}
+
+async function load(staff, force){
+  const myMonth = CURRENT_MONTH[staff];
+  const seq = ++LOAD_SEQ[staff];
+  document.getElementById('liveChip_' + staff).textContent = 'Loading historical data from Shopify…';
   try {
     let data;
-    if (!force && MONTH_CACHE[myMonth]) {
-      data = MONTH_CACHE[myMonth];
+    if (!force && MONTH_CACHE[staff][myMonth]) {
+      data = MONTH_CACHE[staff][myMonth];
     } else {
-      const url = '/api/salesde25?staff=mahima-organic-search&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
+      const url = '/api/salesde25?staff=' + STAFF_ENDPOINT[staff] + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url);
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-      MONTH_CACHE[myMonth] = data;
+      MONTH_CACHE[staff][myMonth] = data;
     }
-    if (seq !== loadSeq) return;
-    DATA = data;
-    document.getElementById('liveChip').textContent = (data.meta && data.meta.cacheStatus === 'hit' ? 'Cached' : 'Retrieved from Shopify') + ' — ' + data.meta.ordersFetched + ' raw orders scanned this month';
-    document.getElementById('periodLabel').textContent = data.reportPeriod.label;
-    document.getElementById('footRefresh').textContent = new Date(data.meta.generatedAt).toLocaleString();
-    renderAll();
+    if (seq !== LOAD_SEQ[staff]) return;
+    DATA[staff] = data;
+    document.getElementById('liveChip_' + staff).textContent = (data.meta && data.meta.cacheStatus === 'hit' ? 'Cached' : (data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated snapshot' : 'Retrieved live from Shopify')) + ' — ' + data.meta.ordersFetched + ' raw orders scanned this month';
+    document.getElementById('periodLabel_' + staff).textContent = data.reportPeriod.label;
+    document.getElementById('footRefresh_' + staff).textContent = new Date(data.meta.generatedAt).toLocaleString();
+    renderAll(staff);
   } catch (e) {
-    if (seq !== loadSeq) return;
-    document.getElementById('liveChip').textContent = 'Failed to load: ' + e.message;
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="11" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
-  } finally {
-    refreshBtn.disabled = false;
+    if (seq !== LOAD_SEQ[staff]) return;
+    document.getElementById('liveChip_' + staff).textContent = 'Failed to load: ' + e.message;
+    document.getElementById('tbody_' + staff).innerHTML = '<tr><td colspan="11" class="loading">Could not load Shopify data. ' + esc(e.message) + '</td></tr>';
   }
 }
 
-function renderAll(){
-  if (!DATA) return;
-  const s = DATA.combinedSummary || {};
-  document.getElementById('kOrders').textContent = s.ordersCount || 0;
-  document.getElementById('kGross').textContent = money(s.grossSales, 'EUR');
-  document.getElementById('kDiscounts').textContent = money(s.discounts, 'EUR');
-  document.getElementById('kRefunds').textContent = money(s.refunds, 'EUR');
-  document.getElementById('kNet').textContent = money(s.netSales, 'EUR');
+function renderAll(staff){
+  const data = DATA[staff];
+  if (!data) return;
+  const s = data.combinedSummary || {};
+  document.getElementById('kOrders_' + staff).textContent = s.ordersCount || 0;
+  document.getElementById('kGross_' + staff).textContent = money(s.grossSales, 'EUR');
+  document.getElementById('kDiscounts_' + staff).textContent = money(s.discounts, 'EUR');
+  document.getElementById('kRefunds_' + staff).textContent = money(s.refunds, 'EUR');
+  document.getElementById('kNet_' + staff).textContent = money(s.netSales, 'EUR');
 
-  const rows = DATA.orders || [];
-  const tbody = document.getElementById('tbody');
-  document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
+  const rows = data.orders || [];
+  const tbody = document.getElementById('tbody_' + staff);
+  document.getElementById('emptyMsg_' + staff).style.display = rows.length ? 'none' : '';
   if (!rows.length) { tbody.innerHTML = ''; return; }
   tbody.innerHTML = rows.map(o => `
     <tr>
@@ -191,7 +249,7 @@ function renderAll(){
   `).join('');
 }
 
-load(false);
+load('mahima', false);
 </script>
 </body>
 </html>
