@@ -4156,7 +4156,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
     // medium tags "google-ads-pirunthu" and "product_sync" (plus the
     // "AI_Bestselling" automated-feed tag, folded in here since it has no
     // named owner either). Store-wide, not product-scoped.
-    const NOT_ASSIGNED_MEDIUMS = new Set(['google-ads-pirunthu', 'product_sync', 'ai_bestselling']);
+    const NOT_ASSIGNED_MEDIUMS = new Set(['google-ads-pirunthu', 'product_sync', 'ai_bestselling', 'shoptimised']);
     const naRows = [];
     for (const order of orders) {
       const journey = classifyOrderJourneyOrganic(order);
@@ -4195,7 +4195,7 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
       supportedMonths: SUPPORTED_MONTHS,
       isLive: monthConfig.isLive,
       source: {
-        scope: `store-wide (NOT product-scoped) — orders whose first-session medium is "google-ads-pirunthu", "product_sync", or "AI_Bestselling" (confirmed rule, 2026-07-31): no named owner, so left unassigned rather than guessed.`,
+        scope: `store-wide (NOT product-scoped) — orders whose first-session medium is "google-ads-pirunthu", "product_sync", "AI_Bestselling", or "Shoptimised" (confirmed rule, 2026-07-31): no named owner, so left unassigned rather than guessed.`,
         orders: 'Shopify Admin GraphQL API',
         journey: 'Shopify customerJourneySummary',
       },
