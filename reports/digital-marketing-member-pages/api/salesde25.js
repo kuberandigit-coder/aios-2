@@ -5112,6 +5112,86 @@ module.exports = async function handler(req, res) {
       res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
       return;
     }
+    // Mahima Ads sub-tab (added 2026-07-31) — the ex-"balance" medium/term
+    // combos confirmed by the user as Mahima's Google Ads traffic, month by
+    // month (Mar-Jun 2025 only; no rows before March). Store-wide, NOT
+    // product-scoped.
+    if (req.query && req.query.staff === 'mahima-ads') {
+      const cacheKey = 'mahima-ads:' + monthConfig.month;
+      const cached = CACHE.get(cacheKey);
+      if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
+        res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
+        return;
+      }
+      if (!forceRefresh) {
+        const staticPath = path.join(__dirname, 'data', `mahima-ads-de-sales-${monthConfig.month}.json`);
+        if (fs.existsSync(staticPath)) {
+          const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+          const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+          CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
+          res.status(200).json(payload);
+          return;
+        }
+      }
+      const MAHIMA_ADS_RULES = {
+        '2025-03': [{ medium: 'pmax', term: 'lighting_fixture' }, { medium: 'cpc', term: '{searchquery}' }, { medium: 'pmax', term: 'klarna' }],
+        '2025-04': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }],
+        '2025-05': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }, { medium: 'pmax', term: 'klarna' }, { medium: 'shopping', term: 'klarna' }],
+        '2025-06': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }, { medium: 'shopping', term: 'klarna' }, { medium: 'google-ads-dustin' }, { medium: 'shopping ads' }],
+      };
+      const rules = MAHIMA_ADS_RULES[monthConfig.month] || [];
+      const retryState = { throttleRetries: 0 };
+      const { orders } = await fetchOrdersForMonth(monthConfig, retryState, STORE_DOMAIN, TOKEN, API_VERSION);
+      const adsRows = [];
+      for (const order of orders) {
+        const journey = classifyOrderJourneyOrganic(order);
+        const row = buildSukirthaOrderRowEmail(order, journey);
+        if (!row) continue;
+        const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        const utm = (fv && fv.utmParameters) || {};
+        const medium = (utm.medium || '').toString().toLowerCase();
+        const term = (utm.term || '').toString().toLowerCase();
+        const matchedRule = rules.find(r => r.medium === medium && (r.term === undefined || r.term === term));
+        if (!matchedRule) continue;
+        row.campaign = (utm.medium || '') + (utm.term ? (' / ' + utm.term) : '');
+        row.firstSessionChannel = journey.first ? journey.first.classification : 'UNKNOWN';
+        row.rawCampaign = utm.campaign || null;
+        row.firstVisitSource = utm.source || null;
+        row.firstVisitMedium = utm.medium || null;
+        row.firstVisitTerm = utm.term || null;
+        row.firstVisitContent = utm.content || null;
+        adsRows.push(row);
+      }
+
+      const byCampaign = new Map();
+      for (const r of adsRows) {
+        if (!byCampaign.has(r.campaign)) byCampaign.set(r.campaign, []);
+        byCampaign.get(r.campaign).push(r);
+      }
+      const campaignSummary = [...byCampaign.keys()].sort()
+        .map(code => ({ campaign: code, ...summarizeRows(byCampaign.get(code) || []) }))
+        .filter(c => c.ordersCount > 0)
+        .sort((a, b) => b.ordersCount - a.ordersCount);
+
+      const combinedSummary = summarizeRows(adsRows);
+
+      const mahimaAdsPayload = {
+        success: true,
+        staff: { name: 'Mahima', department: 'Google Ads (Paid Search)', store: 'ledsone.de' },
+        reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/Berlin' },
+        supportedMonths: SUPPORTED_MONTHS,
+        isLive: monthConfig.isLive,
+        source: { scope: 'store-wide (NOT product-scoped) — confirmed medium/term combos per month (2026-07-31): Mar: pmax/lighting_fixture, cpc/{searchquery}, pmax/klarna. Apr: klarna/april_15, pmax/lighting_fixture. May: klarna/april_15, pmax/lighting_fixture, pmax/klarna, shopping/klarna. Jun: klarna/april_15, pmax/lighting_fixture, shopping/klarna, google-ads-dustin, shopping ads.' },
+        campaignList: [...byCampaign.keys()].sort(),
+        combinedSummary,
+        campaignSummary,
+        allMahimaAdsOrders: adsRows,
+        meta: { generatedAt: new Date().toISOString(), cacheStatus: 'miss', ordersFetched: orders.length, matchedOrders: adsRows.length, executionMs: Date.now() - startTime },
+      };
+      CACHE.set(cacheKey, { data: mahimaAdsPayload, generatedAt: Date.now() });
+      res.status(200).json(mahimaAdsPayload);
+      return;
+    }
     // Mahima "pure" Organic Search sub-tab (added 2026-07-30, for the new
     // 2025DE.html page) — narrower than the existing staff=mahima tab
     // (which covers her Fully Organic / First-Session Organic / Direct /
@@ -5147,14 +5227,33 @@ module.exports = async function handler(req, res) {
         const isOrganicSearch = journey.first && journey.first.classification === 'ORGANIC_SEARCH';
         const isNoJourney = journey.status === 'NO_JOURNEY_DATA' || journey.status === 'ATTRIBUTION_PENDING';
         const isDirect = journey.first && journey.first.classification === 'DIRECT';
+        const isSocial = journey.first && journey.first.classification === 'SOCIAL';
         const fvEarly = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
         const utmEarly = (fvEarly && fvEarly.utmParameters) || {};
         const mediumEarly = (utmEarly.medium || '').toString().toLowerCase();
+        const termEarly = (utmEarly.term || '').toString().toLowerCase();
         // Other-bucket "medium=36" tag: confirmed 2026-07-31 — belongs to
         // Jeffri for Jan-Mar 2025, then reassigned to Mahima for Apr-Jun
         // 2025, unconditional (no product check), per explicit user rule.
         const isMedium36ToMahima = mediumEarly === '36' && ['2025-04', '2025-05', '2025-06'].includes(monthConfig.month);
-        if (!isOrganicSearch && !isNoJourney && !isDirect && !isMedium36ToMahima) continue;
+        // De-dup guard (confirmed 2026-07-31, e.g. #LSDE8521): an order
+        // already claimed by Jeffri's term/medium rule, Not Assigned's
+        // medium set, or Mahima Ads' medium/term rules must never also
+        // appear here — those claims take priority over the broad
+        // first-session fallback.
+        const claimedByJeffri = termEarly === 'jeff' || termEarly === 'jeichitom_maara' ||
+          ['jeff', 'bestselling', 'trafo', '7', 'smarketer_sale', 'smarkeater_sale'].includes(mediumEarly) ||
+          (mediumEarly === '36' && ['2025-01', '2025-02', '2025-03'].includes(monthConfig.month));
+        const claimedByNotAssigned = ['google-ads-pirunthu', 'product_sync', 'ai_bestselling', 'shoptimised'].includes(mediumEarly);
+        const MAHIMA_ADS_RULES_EXCL = {
+          '2025-03': [{ medium: 'pmax', term: 'lighting_fixture' }, { medium: 'cpc', term: '{searchquery}' }, { medium: 'pmax', term: 'klarna' }],
+          '2025-04': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }],
+          '2025-05': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }, { medium: 'pmax', term: 'klarna' }, { medium: 'shopping', term: 'klarna' }],
+          '2025-06': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }, { medium: 'shopping', term: 'klarna' }, { medium: 'google-ads-dustin' }, { medium: 'shopping ads' }],
+        };
+        const claimedByMahimaAds = (MAHIMA_ADS_RULES_EXCL[monthConfig.month] || []).some(r => r.medium === mediumEarly && (r.term === undefined || r.term === termEarly));
+        if (claimedByJeffri || claimedByNotAssigned || claimedByMahimaAds) continue;
+        if (!isOrganicSearch && !isNoJourney && !isDirect && !isMedium36ToMahima && !isSocial) continue;
         const hasMahimaProduct = order.lineItems.edges.some((e) => {
           const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
           return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));
@@ -5240,7 +5339,29 @@ module.exports = async function handler(req, res) {
         const isNoJourney = journey.status === 'NO_JOURNEY_DATA' || journey.status === 'ATTRIBUTION_PENDING';
         const isDirect = journey.first && journey.first.classification === 'DIRECT';
         const isReferral = journey.first && journey.first.classification === 'REFERRAL';
-        if (!isOrganicSearch && !isNoJourney && !isDirect && !isReferral) continue;
+        const isSocial = journey.first && journey.first.classification === 'SOCIAL';
+        const fvEarly = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
+        const utmEarly = (fvEarly && fvEarly.utmParameters) || {};
+        const mediumEarly = (utmEarly.medium || '').toString().toLowerCase();
+        const termEarly = (utmEarly.term || '').toString().toLowerCase();
+        // De-dup guard (confirmed 2026-07-31, e.g. #LSDE8521 -> Jeffri only,
+        // #LSDE8345 -> Not Assigned only): an order already claimed by
+        // Jeffri's term/medium rule, Not Assigned's medium set, or Mahima
+        // Ads' medium/term rules must never also appear here — those claims
+        // take priority over the broad first-session fallback.
+        const claimedByJeffri = termEarly === 'jeff' || termEarly === 'jeichitom_maara' ||
+          ['jeff', 'bestselling', 'trafo', '7', 'smarketer_sale', 'smarkeater_sale'].includes(mediumEarly) ||
+          (mediumEarly === '36' && ['2025-01', '2025-02', '2025-03'].includes(monthConfig.month));
+        const claimedByNotAssigned = ['google-ads-pirunthu', 'product_sync', 'ai_bestselling', 'shoptimised'].includes(mediumEarly);
+        const MAHIMA_ADS_RULES_EXCL = {
+          '2025-03': [{ medium: 'pmax', term: 'lighting_fixture' }, { medium: 'cpc', term: '{searchquery}' }, { medium: 'pmax', term: 'klarna' }],
+          '2025-04': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }],
+          '2025-05': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }, { medium: 'pmax', term: 'klarna' }, { medium: 'shopping', term: 'klarna' }],
+          '2025-06': [{ medium: 'klarna', term: 'april_15' }, { medium: 'pmax', term: 'lighting_fixture' }, { medium: 'shopping', term: 'klarna' }, { medium: 'google-ads-dustin' }, { medium: 'shopping ads' }],
+        };
+        const claimedByMahimaAds = (MAHIMA_ADS_RULES_EXCL[monthConfig.month] || []).some(r => r.medium === mediumEarly && (r.term === undefined || r.term === termEarly));
+        if (claimedByJeffri || claimedByNotAssigned || claimedByMahimaAds) continue;
+        if (!isOrganicSearch && !isNoJourney && !isDirect && !isReferral && !isSocial) continue;
         const hasMahimaProduct = order.lineItems.edges.some((e) => {
           const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
           return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));

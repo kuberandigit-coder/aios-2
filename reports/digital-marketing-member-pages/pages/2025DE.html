@@ -156,6 +156,7 @@ tbody tr:nth-child(even){background:#fafbfd;}
 <div id="tabMahima">
   <div class="subtabs">
     <div class="subtab active" id="subBtn_mahima_organic" onclick="selectSub('mahima','organic')">Organic</div>
+    <div class="subtab" id="subBtn_mahima_ads" onclick="selectSub('mahima','ads')">Google Ads</div>
   </div>
 
   <div class="reqtabs" id="monthTabs_mahima">
@@ -189,7 +190,7 @@ tbody tr:nth-child(even){background:#fafbfd;}
   <div class="tablebox">
     <div class="scroll">
       <table>
-        <thead><tr>
+        <thead id="thead_mahima"><tr>
           <th>Order</th><th>Created</th><th>Financial Status</th><th>Fulfilment Status</th>
           <th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th>
           <th>Currency</th><th>First Session Source</th><th>First Session Medium</th>
@@ -286,6 +287,13 @@ const SUB_CONFIG = {
     groupTitle: { sukirtha: 'Sukirtha — Email Sales' },
     scopeNote: { sukirtha: 'every order whose journey involves the Email channel (Shopify sourceType=NEWSLETTER, utm_medium=email, or source/description containing "email") — store-wide, no product filter.' },
   },
+  ads: {
+    label: 'Google Ads',
+    endpoint: { mahima: 'mahima-ads' },
+    groupLabel: { mahima: 'Mahima · Google Ads (store-wide)' },
+    groupTitle: { mahima: 'Mahima — Google Ads Sales' },
+    scopeNote: { mahima: 'confirmed medium/term combos per month (2026-07-31, no rows before March): Mar: pmax/lighting_fixture, cpc/{searchquery}, pmax/klarna. Apr: klarna/april_15, pmax/lighting_fixture. May: klarna/april_15, pmax/lighting_fixture, pmax/klarna, shopping/klarna. Jun: klarna/april_15, pmax/lighting_fixture, shopping/klarna, google-ads-dustin, shopping ads. Store-wide, not product-scoped.' },
+  },
 };
 
 const CURRENT_SUB = { mahima: 'organic', sukirtha: 'organic' };
@@ -313,6 +321,9 @@ function selectSub(staff, sub){
   if (document.getElementById('subBtn_' + staff + '_email')) {
     document.getElementById('subBtn_' + staff + '_email').classList.toggle('active', sub === 'email');
   }
+  if (document.getElementById('subBtn_' + staff + '_ads')) {
+    document.getElementById('subBtn_' + staff + '_ads').classList.toggle('active', sub === 'ads');
+  }
   const cfg = SUB_CONFIG[sub];
   document.getElementById('groupLabel_' + staff).textContent = cfg.groupLabel[staff];
   document.getElementById('groupTitle_' + staff).textContent = cfg.groupTitle[staff];
@@ -339,18 +350,19 @@ async function load(staff, force){
       data = MONTH_CACHE[staff][cacheKey];
     } else {
       const isEmail = staff === 'sukirtha' && sub === 'email';
+      const isMahimaAds = staff === 'mahima' && sub === 'ads';
       const url = isEmail
         ? '/api/salesde25?type=email&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '')
         : '/api/salesde25?staff=' + (staff === 'jeffri' ? 'jeffri-ads' : staff === 'notassigned' ? 'not-assigned' : SUB_CONFIG[sub].endpoint[staff]) + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url);
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
-      if (staff === 'jeffri' || staff === 'notassigned' || isEmail) {
-        // Normalize: allJeffriAdsOrders/allNotAssignedOrders/allSukirthaOrders
-        // -> orders, with per-order netSales summed from matchedItems (these
-        // endpoints are product/line-item scoped, unlike the flat
-        // organic-search shape).
-        const list = data.allJeffriAdsOrders || data.allNotAssignedOrders || data.allSukirthaOrders || [];
+      if (staff === 'jeffri' || staff === 'notassigned' || isEmail || isMahimaAds) {
+        // Normalize: allJeffriAdsOrders/allNotAssignedOrders/allSukirthaOrders/
+        // allMahimaAdsOrders -> orders, with per-order netSales summed from
+        // matchedItems (these endpoints are product/line-item scoped, unlike
+        // the flat organic-search shape).
+        const list = data.allJeffriAdsOrders || data.allNotAssignedOrders || data.allMahimaAdsOrders || data.allSukirthaOrders || [];
         data.orders = list.map(o => ({
           orderName: o.orderName, createdAt: o.createdAt, financialStatus: o.financialStatus, fulfillmentStatus: o.fulfillmentStatus,
           currency: o.currency, campaign: o.campaign,
@@ -388,7 +400,14 @@ function renderAll(staff){
   document.getElementById('emptyMsg_' + staff).style.display = rows.length ? 'none' : '';
   if (!rows.length) { tbody.innerHTML = ''; return; }
   const isEmail = staff === 'sukirtha' && CURRENT_SUB.sukirtha === 'email';
-  if (staff === 'jeffri' || staff === 'notassigned' || isEmail) {
+  const isMahimaAds = staff === 'mahima' && CURRENT_SUB.mahima === 'ads';
+  if (staff === 'mahima') {
+    const thead = document.getElementById('thead_mahima');
+    thead.innerHTML = isMahimaAds
+      ? '<tr><th>Order</th><th>Created</th><th>Financial Status</th><th>Fulfilment Status</th><th class="num">Net</th><th>Currency</th><th>Campaign</th><th>First Session Source</th><th>First Session Medium</th><th>First Session Term</th></tr>'
+      : '<tr><th>Order</th><th>Created</th><th>Financial Status</th><th>Fulfilment Status</th><th class="num">Gross</th><th class="num">Discounts</th><th class="num">Refunds</th><th class="num">Net</th><th>Currency</th><th>First Session Source</th><th>First Session Medium</th></tr>';
+  }
+  if (staff === 'jeffri' || staff === 'notassigned' || isEmail || isMahimaAds) {
     tbody.innerHTML = rows.map(o => `
       <tr>
         <td>${esc(o.orderName)}</td>
