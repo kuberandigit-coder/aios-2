@@ -101,6 +101,12 @@ tbody tr:hover{background:var(--accent-soft);}
 <div id="sukirthaDE">
 <div class="sub" style="margin-bottom:14px;">Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Sukirtha owns both Email Marketing and Organic Search performance on this store &nbsp;&middot;&nbsp; both sections below are store-wide (every order counts, no product filter), mirroring the UK Email tab's scope.</div>
 
+<div class="reqtabs" style="margin-bottom:16px;">
+  <div class="reqtab active" id="sSubBtnOrganic" onclick="showSukirthaSub('organic')">Organic</div>
+  <div class="reqtab" id="sSubBtnEmail" onclick="showSukirthaSub('email')">Email</div>
+</div>
+
+<div id="sSubOrganic">
 <div class="tablebox" style="margin-bottom:18px;padding:22px 24px;">
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">DE &middot; Organic Search</div>
   <h1 style="font-size:19px;margin-bottom:6px;">DE Organic Sales</h1>
@@ -187,7 +193,9 @@ tbody tr:hover{background:var(--accent-soft);}
     <strong>Last refresh timestamp:</strong> <span id="sdoFootRefresh">&ndash;</span>
   </div>
 </div>
+</div>
 
+<div id="sSubEmail" style="display:none;">
 <div class="tablebox" style="padding:22px 24px;">
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">DE &middot; Email Marketing</div>
   <h1 style="font-size:19px;margin-bottom:6px;">DE Email Sales</h1>
@@ -273,6 +281,7 @@ tbody tr:hover{background:var(--accent-soft);}
     <strong>Privacy:</strong> no customer email, phone, address, or payment data is fetched, stored, or displayed.<br>
     <strong>Last refresh timestamp:</strong> <span id="sdeFootRefresh">&ndash;</span>
   </div>
+</div>
 </div>
 </div>
 </div>
@@ -888,6 +897,13 @@ function showStaffTab(n){
   document.getElementById('tabBtnThasitha').classList.toggle('active', n === 'thasitha');
   document.getElementById('tabThasitha').style.display = n === 'thasitha' ? '' : 'none';
   if (n === 'thasitha' && !TH_DATA) thLoad(false);
+}
+
+function showSukirthaSub(sub){
+  document.getElementById('sSubBtnOrganic').classList.toggle('active', sub === 'organic');
+  document.getElementById('sSubOrganic').style.display = sub === 'organic' ? '' : 'none';
+  document.getElementById('sSubBtnEmail').classList.toggle('active', sub === 'email');
+  document.getElementById('sSubEmail').style.display = sub === 'email' ? '' : 'none';
 }
 
 function showMahimaSub(sub){
@@ -2800,11 +2816,11 @@ function sdeGroupExportCsv(){
   const monthTag = SDE_DATA ? SDE_DATA.reportPeriod.month : SDE_CURRENT_MONTH;
   downloadCsv(lines.join('\r\n'), monthTag + '_sukirtha-de-email-sales-group-summary-ledsone-de.csv');
 }
-
+document.getElementById('sdeGroupExportCsv').addEventListener('click', sdeGroupExportCsv);
 
 // Historical/closed-period data — loaded once per month selection, no
 // auto-refresh polling and no manual Refresh button (these months are
-// already over; the numbers won''t change on their own).
+// already over; the numbers won't change on their own).
 mLoad(false);
 sdoLoad(false);
 sdeLoad(false);
