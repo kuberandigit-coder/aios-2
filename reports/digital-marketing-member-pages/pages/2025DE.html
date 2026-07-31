@@ -46,6 +46,58 @@ tbody tr:nth-child(even){background:#fafbfd;}
 <div class="reqtabs" id="staffTabs">
   <div class="reqtab active" id="tabBtnMahima" onclick="selectStaff('mahima')">Mahima</div>
   <div class="reqtab" id="tabBtnSukirtha" onclick="selectStaff('sukirtha')">Sukirtha</div>
+  <div class="reqtab" id="tabBtnJeffri" onclick="selectStaff('jeffri')">Jeffri</div>
+</div>
+
+<!-- ===== Jeffri ===== -->
+<div id="tabJeffri" style="display:none;">
+  <div class="reqtabs" id="monthTabs_jeffri">
+    <div class="reqtab active" data-month="2025-01" onclick="selectMonth('jeffri','2025-01')">January</div>
+    <div class="reqtab" data-month="2025-02" onclick="selectMonth('jeffri','2025-02')">February</div>
+    <div class="reqtab" data-month="2025-03" onclick="selectMonth('jeffri','2025-03')">March</div>
+    <div class="reqtab" data-month="2025-04" onclick="selectMonth('jeffri','2025-04')">April</div>
+    <div class="reqtab" data-month="2025-05" onclick="selectMonth('jeffri','2025-05')">May</div>
+    <div class="reqtab" data-month="2025-06" onclick="selectMonth('jeffri','2025-06')">June</div>
+  </div>
+
+  <header>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jeffri &middot; Google Ads</div>
+    <h1>Jeffri — Google Ads Sales</h1>
+    <div class="sub">Store: <strong>ledsone.de</strong> &middot; first-session <code>utm_term</code> exactly "jeff"/"Jeichitom_Maara" (case-insensitive), OR no term with <code>utm_medium</code>="SMARKETER_sale" &middot; <span id="periodLabel_jeffri">January 1&ndash;31, 2025</span></div>
+    <div class="filters">
+      <span class="chip">Source: Shopify Admin GraphQL API (read-only)</span>
+      <span class="chip" id="liveChip_jeffri">Loading&hellip;</span>
+      <button class="primary" onclick="load('jeffri', true)">Refresh</button>
+    </div>
+  </header>
+
+  <div class="cards" style="margin-top:14px;">
+    <div class="card"><div class="label">Total Orders</div><div class="value" id="kOrders_jeffri">&ndash;</div></div>
+    <div class="card"><div class="label">Gross Sales</div><div class="value" id="kGross_jeffri">&ndash;</div></div>
+    <div class="card"><div class="label">Discounts</div><div class="value" id="kDiscounts_jeffri">&ndash;</div></div>
+    <div class="card"><div class="label">Refunds</div><div class="value" id="kRefunds_jeffri">&ndash;</div></div>
+    <div class="card"><div class="label">Net Sales</div><div class="value" id="kNet_jeffri">&ndash;</div></div>
+  </div>
+
+  <div class="tablebox">
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>Order</th><th>Created</th><th>Financial Status</th><th>Fulfilment Status</th>
+          <th class="num">Net</th>
+          <th>Currency</th><th>Campaign</th><th>First Session Source</th><th>First Session Medium</th><th>First Session Term</th>
+        </tr></thead>
+        <tbody id="tbody_jeffri"><tr><td colspan="10" class="loading">Loading&hellip;</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty" id="emptyMsg_jeffri" style="display:none;">No orders match this month.</div>
+  </div>
+
+  <div class="footnotes">
+    <strong>Data source:</strong> Shopify Admin GraphQL API (read-only), store <code>ledsone.de</code> &middot; fetched via <code>/api/salesde25?staff=jeffri-ads</code> using the <code>SHOPIFY_ADMIN_TOKEN</code> Vercel server-side environment variable.<br>
+    <strong>Scope:</strong> product-scoped, same logic as the 2026 Jeffri Ads tab &mdash; first-session <code>utm_term</code> exactly "jeff" or "Jeichitom_Maara" (case-insensitive), OR no term at all with <code>utm_medium</code>="SMARKETER_sale". Meta not included for 2025 (per user request).<br>
+    <strong>Last refresh:</strong> <span id="footRefresh_jeffri">&ndash;</span>
+  </div>
 </div>
 
 <!-- ===== Mahima ===== -->
@@ -177,16 +229,19 @@ const SUB_CONFIG = {
 };
 
 const CURRENT_SUB = { mahima: 'organic', sukirtha: 'organic' };
-const CURRENT_MONTH = { mahima: '2025-01', sukirtha: '2025-01' };
-const DATA = { mahima: null, sukirtha: null };
-const MONTH_CACHE = { mahima: {}, sukirtha: {} }; // keyed by `${sub}:${month}`
-const LOAD_SEQ = { mahima: 0, sukirtha: 0 };
+const CURRENT_MONTH = { mahima: '2025-01', sukirtha: '2025-01', jeffri: '2025-01' };
+const DATA = { mahima: null, sukirtha: null, jeffri: null };
+const MONTH_CACHE = { mahima: {}, sukirtha: {}, jeffri: {} }; // keyed by `${sub}:${month}` (jeffri has no sub, uses month only)
+const LOAD_SEQ = { mahima: 0, sukirtha: 0, jeffri: 0 };
 
 function selectStaff(n){
   document.getElementById('tabBtnMahima').classList.toggle('active', n === 'mahima');
   document.getElementById('tabMahima').style.display = n === 'mahima' ? '' : 'none';
   document.getElementById('tabBtnSukirtha').classList.toggle('active', n === 'sukirtha');
   document.getElementById('tabSukirtha').style.display = n === 'sukirtha' ? '' : 'none';
+  document.getElementById('tabBtnJeffri').classList.toggle('active', n === 'jeffri');
+  document.getElementById('tabJeffri').style.display = n === 'jeffri' ? '' : 'none';
+  if (n === 'jeffri' && !DATA.jeffri) load('jeffri', false);
 }
 
 function selectSub(staff, sub){
@@ -207,9 +262,9 @@ function selectMonth(staff, month){
 }
 
 async function load(staff, force){
-  const sub = CURRENT_SUB[staff];
+  const sub = CURRENT_SUB[staff]; // undefined for jeffri, harmless
   const myMonth = CURRENT_MONTH[staff];
-  const cacheKey = sub + ':' + myMonth;
+  const cacheKey = (sub || 'ads') + ':' + myMonth;
   const seq = ++LOAD_SEQ[staff];
   document.getElementById('liveChip_' + staff).textContent = 'Loading historical data from Shopify…';
   try {
@@ -217,14 +272,25 @@ async function load(staff, force){
     if (!force && MONTH_CACHE[staff][cacheKey]) {
       data = MONTH_CACHE[staff][cacheKey];
     } else {
-      const endpoint = SUB_CONFIG[sub].endpoint[staff];
+      const endpoint = staff === 'jeffri' ? 'jeffri-ads' : SUB_CONFIG[sub].endpoint[staff];
       const url = '/api/salesde25?staff=' + endpoint + '&month=' + encodeURIComponent(myMonth) + (force ? '&refresh=1' : '');
       const res = await fetch(url);
       data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+      if (staff === 'jeffri') {
+        // Normalize: allJeffriAdsOrders -> orders, with per-order netSales
+        // summed from matchedItems (this endpoint is product/line-item
+        // scoped, unlike the flat mahima-organic-search/sukirtha shape).
+        data.orders = (data.allJeffriAdsOrders || []).map(o => ({
+          orderName: o.orderName, createdAt: o.createdAt, financialStatus: o.financialStatus, fulfillmentStatus: o.fulfillmentStatus,
+          currency: o.currency, campaign: o.campaign,
+          firstVisitSource: o.firstVisitSource, firstVisitMedium: o.firstVisitMedium, firstVisitTerm: o.firstVisitTerm,
+          netSales: Math.round((o.matchedItems || []).reduce((s, mi) => s + (mi.netSales || 0), 0) * 100) / 100,
+        }));
+      }
       MONTH_CACHE[staff][cacheKey] = data;
     }
-    if (seq !== LOAD_SEQ[staff] || CURRENT_SUB[staff] !== sub || CURRENT_MONTH[staff] !== myMonth) return;
+    if (seq !== LOAD_SEQ[staff] || CURRENT_MONTH[staff] !== myMonth) return;
     DATA[staff] = data;
     document.getElementById('liveChip_' + staff).textContent = (data.meta && data.meta.cacheStatus === 'hit' ? 'Cached' : (data.meta && data.meta.cacheStatus === 'static-snapshot' ? 'Auto-updated snapshot' : 'Retrieved live from Shopify')) + ' — ' + data.meta.ordersFetched + ' raw orders scanned this month';
     document.getElementById('periodLabel_' + staff).textContent = data.reportPeriod.label;
@@ -251,6 +317,23 @@ function renderAll(staff){
   const tbody = document.getElementById('tbody_' + staff);
   document.getElementById('emptyMsg_' + staff).style.display = rows.length ? 'none' : '';
   if (!rows.length) { tbody.innerHTML = ''; return; }
+  if (staff === 'jeffri') {
+    tbody.innerHTML = rows.map(o => `
+      <tr>
+        <td>${esc(o.orderName)}</td>
+        <td>${esc(new Date(o.createdAt).toLocaleDateString())}</td>
+        <td>${esc(o.financialStatus)}</td>
+        <td>${esc(o.fulfillmentStatus)}</td>
+        <td class="num">${money(o.netSales, o.currency)}</td>
+        <td>${esc(o.currency)}</td>
+        <td>${esc(o.campaign || '—')}</td>
+        <td>${esc(o.firstVisitSource || '—')}</td>
+        <td>${esc(o.firstVisitMedium || '—')}</td>
+        <td>${esc(o.firstVisitTerm || '—')}</td>
+      </tr>
+    `).join('');
+    return;
+  }
   tbody.innerHTML = rows.map(o => `
     <tr>
       <td>${esc(o.orderName)}</td>
