@@ -5050,6 +5050,16 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
         return;
       }
+      if (!forceRefresh) {
+        const staticPath = path.join(__dirname, 'data', `mahima-organic-search-sales-${monthConfig.month}.json`);
+        if (fs.existsSync(staticPath)) {
+          const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+          const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+          CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
+          res.status(200).json(payload);
+          return;
+        }
+      }
       const retryState = { throttleRetries: 0 };
       const { orders } = await fetchOrdersForMonth(monthConfig, retryState, STORE_DOMAIN, TOKEN, API_VERSION);
       const rows = [];
