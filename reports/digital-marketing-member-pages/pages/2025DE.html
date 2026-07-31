@@ -52,7 +52,6 @@ tbody tr:nth-child(even){background:#fafbfd;}
 <div id="tabMahima">
   <div class="subtabs">
     <div class="subtab active" id="subBtn_mahima_organic" onclick="selectSub('mahima','organic')">Organic</div>
-    <div class="subtab" id="subBtn_mahima_nojourney" onclick="selectSub('mahima','nojourney')">No Journey Data</div>
   </div>
 
   <div class="reqtabs" id="monthTabs_mahima">
@@ -108,7 +107,6 @@ tbody tr:nth-child(even){background:#fafbfd;}
 <div id="tabSukirtha" style="display:none;">
   <div class="subtabs">
     <div class="subtab active" id="subBtn_sukirtha_organic" onclick="selectSub('sukirtha','organic')">Organic</div>
-    <div class="subtab" id="subBtn_sukirtha_nojourney" onclick="selectSub('sukirtha','nojourney')">No Journey Data</div>
   </div>
 
   <div class="reqtabs" id="monthTabs_sukirtha">
@@ -172,18 +170,8 @@ const SUB_CONFIG = {
     groupLabel: { mahima: 'Mahima · Organic Search (product-scoped)', sukirtha: 'Sukirtha · Organic Search (store-wide)' },
     groupTitle: { mahima: 'Mahima — Pure Organic Search Sales', sukirtha: 'Sukirtha — Pure Organic Search Sales' },
     scopeNote: {
-      mahima: 'an order belongs here only if (1) its first session classifies as confidently Organic Search (no paid evidence at all — any gclid, paid utm_medium, or ad-campaign signal excludes it; also excludes the ambiguous "Other" bucket where source=Google but with an unrecognized sourceType) AND (2) it contains at least one of Mahima\'s owned product IDs.',
-      sukirtha: 'an order belongs here if (1) its first session classifies as confidently Organic Search (no paid evidence at all; also excludes the ambiguous "Other" bucket) AND (2) it does NOT contain any of Mahima\'s owned product IDs. Together, Mahima\'s and Sukirtha\'s Organic Search tabs are mutually exclusive and always sum to the month\'s full Organic Search total.',
-    },
-  },
-  nojourney: {
-    label: 'No Journey Data',
-    endpoint: { mahima: 'mahima-no-journey', sukirtha: 'sukirtha-no-journey' },
-    groupLabel: { mahima: 'Mahima · No Journey Data (product-scoped)', sukirtha: 'Sukirtha · No Journey Data (store-wide)' },
-    groupTitle: { mahima: 'Mahima — No Journey Data Sales', sukirtha: 'Sukirtha — No Journey Data Sales' },
-    scopeNote: {
-      mahima: 'an order belongs here if (1) Shopify recorded no session data for it at all (status NO_JOURNEY_DATA or ATTRIBUTION_PENDING) AND (2) it contains at least one of Mahima\'s owned product IDs.',
-      sukirtha: 'an order belongs here if (1) Shopify recorded no session data for it at all (status NO_JOURNEY_DATA or ATTRIBUTION_PENDING) AND (2) it does NOT contain any of Mahima\'s owned product IDs. Together, Mahima\'s and Sukirtha\'s No Journey Data tabs are mutually exclusive and always sum to the month\'s full No Journey Data total.',
+      mahima: 'an order belongs here if (1) its first session classifies as confidently Organic Search (no paid evidence at all; also excludes the ambiguous "Other" bucket), OR Shopify recorded no session data for it at all (NO_JOURNEY_DATA / ATTRIBUTION_PENDING, treated as organic) — AND (2) it contains at least one of Mahima\'s owned product IDs.',
+      sukirtha: 'an order belongs here if (1) its first session classifies as confidently Organic Search, OR Shopify recorded no session data for it at all (NO_JOURNEY_DATA / ATTRIBUTION_PENDING, treated as organic) — AND (2) it does NOT contain any of Mahima\'s owned product IDs. Together, Mahima\'s and Sukirtha\'s Organic tabs are mutually exclusive and always sum to the month\'s full Organic Search + No Journey Data total.',
     },
   },
 };
@@ -204,7 +192,6 @@ function selectStaff(n){
 function selectSub(staff, sub){
   CURRENT_SUB[staff] = sub;
   document.getElementById('subBtn_' + staff + '_organic').classList.toggle('active', sub === 'organic');
-  document.getElementById('subBtn_' + staff + '_nojourney').classList.toggle('active', sub === 'nojourney');
   const cfg = SUB_CONFIG[sub];
   document.getElementById('groupLabel_' + staff).textContent = cfg.groupLabel[staff];
   document.getElementById('groupTitle_' + staff).textContent = cfg.groupTitle[staff];

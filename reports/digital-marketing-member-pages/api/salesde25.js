@@ -5067,7 +5067,9 @@ module.exports = async function handler(req, res) {
       for (const order of orders) {
         const journey = classifyOrderJourneyOrganic(order);
         if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') { excludedCount++; continue; }
-        if (!journey.first || journey.first.classification !== 'ORGANIC_SEARCH') continue;
+        const isOrganicSearch = journey.first && journey.first.classification === 'ORGANIC_SEARCH';
+        const isNoJourney = journey.status === 'NO_JOURNEY_DATA' || journey.status === 'ATTRIBUTION_PENDING';
+        if (!isOrganicSearch && !isNoJourney) continue;
         const hasMahimaProduct = order.lineItems.edges.some((e) => {
           const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
           return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));
@@ -5149,7 +5151,9 @@ module.exports = async function handler(req, res) {
       for (const order of orders) {
         const journey = classifyOrderJourneyOrganic(order);
         if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') { excludedCount++; continue; }
-        if (!journey.first || journey.first.classification !== 'ORGANIC_SEARCH') continue;
+        const isOrganicSearch = journey.first && journey.first.classification === 'ORGANIC_SEARCH';
+        const isNoJourney = journey.status === 'NO_JOURNEY_DATA' || journey.status === 'ATTRIBUTION_PENDING';
+        if (!isOrganicSearch && !isNoJourney) continue;
         const hasMahimaProduct = order.lineItems.edges.some((e) => {
           const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
           return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));
@@ -5194,91 +5198,6 @@ module.exports = async function handler(req, res) {
         group: { name: 'Sukirtha Organic Search', department: 'Organic (store-wide, pure Organic Search only)' },
         reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/Berlin' },
         source: { scope: 'first-session channel classifies as confidently ORGANIC_SEARCH (excludes any order with paid evidence, and excludes the ambiguous "Other" bucket) AND the order does NOT contain any of Mahima\'s owned product IDs (the balance of the Organic Search pool).' },
-        combinedSummary, orders: rows,
-        meta: { generatedAt: new Date().toISOString(), cacheStatus: 'miss', ordersFetched: orders.length, excludedCount, executionMs: Date.now() - startTime },
-      };
-      CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
-      res.status(200).json(payload);
-      return;
-    }
-    // Mahima/Sukirtha "No Journey Data" sub-tabs (added 2026-07-30) — same
-    // product-ID split pattern as Organic Search above, but for orders
-    // Shopify recorded no session data for at all (status NO_JOURNEY_DATA
-    // or ATTRIBUTION_PENDING). Mutually exclusive by construction; together
-    // they always sum to the month's full No Journey Data total.
-    if (req.query && (req.query.staff === 'mahima-no-journey' || req.query.staff === 'sukirtha-no-journey')) {
-      const staffKey = req.query.staff;
-      const wantsMahima = staffKey === 'mahima-no-journey';
-      const cacheKey = staffKey + ':' + monthConfig.month;
-      const cached = CACHE.get(cacheKey);
-      if (!forceRefresh && cached && (Date.now() - cached.generatedAt) < CACHE_TTL_MS) {
-        res.status(200).json({ ...cached.data, meta: { ...cached.data.meta, cacheStatus: 'hit' } });
-        return;
-      }
-      if (!forceRefresh) {
-        const staticPath = path.join(__dirname, 'data', `${staffKey}-sales-${monthConfig.month}.json`);
-        if (fs.existsSync(staticPath)) {
-          const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
-          const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
-          CACHE.set(cacheKey, { data: payload, generatedAt: Date.now() });
-          res.status(200).json(payload);
-          return;
-        }
-      }
-      const retryState = { throttleRetries: 0 };
-      const { orders } = await fetchOrdersForMonth(monthConfig, retryState, STORE_DOMAIN, TOKEN, API_VERSION);
-      const rows = [];
-      let excludedCount = 0;
-      for (const order of orders) {
-        const journey = classifyOrderJourneyOrganic(order);
-        if (journey.status === 'EXCLUDED_TEST_ORDER' || journey.status === 'EXCLUDED_CANCELLED_ORDER') { excludedCount++; continue; }
-        const isNoJourney = journey.status === 'NO_JOURNEY_DATA' || journey.status === 'ATTRIBUTION_PENDING';
-        if (!isNoJourney) continue;
-        const hasMahimaProduct = order.lineItems.edges.some((e) => {
-          const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
-          return pid && MAHIMA_EXCLUDED_PRODUCT_IDS.has(String(pid));
-        });
-        if (wantsMahima && !hasMahimaProduct) continue;
-        if (!wantsMahima && hasMahimaProduct) continue;
-        let grossSales = 0, discounts = 0;
-        for (const edge of order.lineItems.edges) {
-          const li = edge.node;
-          const grossInclTax = round2(amt(li.originalUnitPriceSet) * li.quantity);
-          const tax = round2((li.taxLines || []).reduce((s, t) => s + amt(t.priceSet), 0));
-          grossSales = round2(grossSales + (grossInclTax - tax));
-          const discountedInclTax = amt(li.discountedTotalSet);
-          discounts = round2(discounts + Math.max(0, grossInclTax - discountedInclTax));
-        }
-        let refunds = 0;
-        for (const rEdge of (order.refunds || [])) {
-          for (const rliEdge of (rEdge.refundLineItems && rEdge.refundLineItems.edges || [])) {
-            refunds += amt(rliEdge.node.subtotalSet);
-          }
-        }
-        refunds = round2(refunds);
-        const netSales = round2(grossSales - discounts - refunds);
-        const fv = order.customerJourneySummary && order.customerJourneySummary.firstVisit;
-        rows.push({
-          orderId: order.id, orderLegacyId: order.legacyResourceId, orderName: order.name,
-          createdAt: order.createdAt, financialStatus: order.displayFinancialStatus, fulfillmentStatus: order.displayFulfillmentStatus,
-          currency: (order.currentTotalPriceSet && order.currentTotalPriceSet.shopMoney.currencyCode) || 'EUR',
-          grossSales, discounts, refunds, netSales,
-          firstVisitSource: (fv && (fv.source || fv.sourceDescription)) || null,
-          firstVisitMedium: (fv && fv.utmParameters && fv.utmParameters.medium) || null,
-        });
-      }
-      const combinedSummary = {
-        ordersCount: rows.length,
-        grossSales: round2(rows.reduce((s, r) => s + r.grossSales, 0)),
-        discounts: round2(rows.reduce((s, r) => s + r.discounts, 0)),
-        refunds: round2(rows.reduce((s, r) => s + r.refunds, 0)),
-        netSales: round2(rows.reduce((s, r) => s + r.netSales, 0)),
-      };
-      const payload = {
-        success: true,
-        group: { name: (wantsMahima ? 'Mahima' : 'Sukirtha') + ' No Journey Data', department: 'No Journey Data (' + (wantsMahima ? 'product-scoped' : 'store-wide balance') + ')' },
-        reportPeriod: { month: monthConfig.month, label: monthConfig.label, timezone: 'Europe/Berlin' },
-        source: { scope: 'order status is NO_JOURNEY_DATA or ATTRIBUTION_PENDING (Shopify recorded no session data at all) AND the order ' + (wantsMahima ? 'contains' : 'does NOT contain') + ' one of Mahima\'s owned product IDs.' },
         combinedSummary, orders: rows,
         meta: { generatedAt: new Date().toISOString(), cacheStatus: 'miss', ordersFetched: orders.length, excludedCount, executionMs: Date.now() - startTime },
       };
