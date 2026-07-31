@@ -78,7 +78,6 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
   <h1>Product Status Labels</h1>
   <div class="sub">Which advertised products are Heroes, Villains, Zombies or Sidekicks based on current Google Ads product performance? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads) &nbsp;&middot;&nbsp; Scope: Jefri's 5 named campaigns, currently-active products only (Klarna NEWALL, Shoparize ALL, Shoptimised AOVU15, Shoparize FTJ, Shoparize IT)</div>
   <div class="filters">
-    <span class="chip" id="rangeChip">Date range: &ndash;</span>
     <span class="chip" id="liveChip">Loading…</span>
     <button id="refreshBtn" type="button">Refresh</button>
   </div>
@@ -429,8 +428,6 @@ function applyReq1Data(data, isRestored){
       campaignSel.appendChild(opt);
     });
   }
-  const fmtDate = (s) => s ? String(s).slice(0, 10) : '—';
-  document.getElementById('rangeChip').textContent = 'Date range: ' + fmtDate(data.dateRange.start) + ' to ' + fmtDate(data.dateRange.end) + ' (last 90 days)';
   document.getElementById('liveChip').textContent = 'Live — fetched ' + new Date(data.generatedAt).toLocaleString() + (isRestored ? ' (restored)' : '');
   document.getElementById('liveChip').className = 'chip live';
   document.getElementById('cTotal').textContent = num(SUMMARY.totalProducts);
