@@ -200,15 +200,40 @@ function runStaffMonths(staff, monthArgs) {
   console.log('Done. Redeploy (vercel --prod) so the new snapshot files are served.');
 }
 
+// ===== mode: muguntha (api/muguntha.js, Sonya ADS cost, closed months) =====
+// muguntha.html's Sales calls already hit sales25.js/salesuk.js's own
+// static-snapshot fast path — this covers the one remaining live query
+// (Postgres ADS cost) so closed months don't hit the DB on every page load.
+const MUGUNTHA_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06', '2026-06', '2026-07'];
+
+function runMuguntha(monthArgs) {
+  const months = monthArgs.length ? monthArgs : MUGUNTHA_MONTHS;
+  console.log(`Refreshing Muguntha/Sonya ADS-cost snapshots for ${months.length} months...`);
+  let okCount = 0, failCount = 0;
+  for (const month of months) {
+    const url = `${BASE_URL}/api/muguntha?month=${month}&refresh=1`;
+    const data = fetchJson(url, month);
+    if (!data) { failCount++; continue; }
+    const outPath = path.join(DATA_DIR, `muguntha-sonya-${month}.json`);
+    fs.writeFileSync(outPath, JSON.stringify(data));
+    console.log(`    -> ${path.basename(outPath)} (cost: ${data.cost})`);
+    okCount++;
+  }
+  console.log(`\nDone. ${okCount} succeeded, ${failCount} failed.`);
+  if (failCount > 0) process.exitCode = 1;
+}
+
 function main() {
   const [, , mode, ...rest] = process.argv;
   if (mode === 'postgres') return runPostgres();
   if (mode === 'july') return runJuly();
   if (mode === 'salesuk') return runSalesuk();
+  if (mode === 'muguntha') return runMuguntha(rest);
   if (mode) return runStaffMonths(mode, rest);
   console.error('Usage:');
   console.error('  node api/scripts/generate-snapshots.js postgres');
   console.error('  node api/scripts/generate-snapshots.js july');
+  console.error('  node api/scripts/generate-snapshots.js muguntha [months...]');
   console.error('  node api/scripts/generate-snapshots.js <staff> [months...]');
   console.error('Known staff values:', Object.keys(SNAPSHOT_NAME_BY_STAFF).join(', '));
   process.exit(1);

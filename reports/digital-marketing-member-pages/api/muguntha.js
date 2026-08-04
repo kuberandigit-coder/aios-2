@@ -5,7 +5,16 @@
 // Sales/Net/ROAS come from the existing Shopify-backed endpoints
 // (api/sales25.js and api/salesuk.js, group=sonya) which muguntha.html calls
 // directly per month, exactly like every other staff dashboard already does.
+//
+// Snapshot method (added 2026-08-04, mirrors salesuk.js/sales25.js): closed
+// months are served from a static JSON file in api/data/ instead of hitting
+// Postgres on every page load — same static-snapshot fast path pattern used
+// everywhere else in this project. Files are generated offline via
+// `node api/scripts/generate-snapshots.js muguntha [months...]` and committed
+// to git; `?refresh=1` always bypasses the snapshot and queries live.
 
+const fs = require('fs');
+const path = require('path');
 const { Pool } = require('pg');
 
 let pool;
@@ -41,36 +50,59 @@ function getPool() {
 // £675.66 when both accounts were summed together (caught 2026-08-04 by
 // cross-checking against the Google Ads UI screenshot for Jan 1-31, 2025).
 const LEDSONE_ACCOUNT_ID = 4503486236;
+const SOURCE_LABEL = `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='Sonya' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only)`;
 const COST_QUERY = `
-  SELECT to_char(cp.date, 'YYYY-MM') AS month, SUM(cp.cost) AS cost
+  SELECT SUM(cp.cost) AS cost
   FROM google_ads.campaign_performance cp
   JOIN google_ads.campaigns c ON c.campaign_id = cp.campaign_id
   WHERE c.group_name = 'Sonya' AND c.account_id = ${LEDSONE_ACCOUNT_ID}
-    AND to_char(cp.date, 'YYYY-MM') = ANY($1::text[])
-  GROUP BY 1
+    AND to_char(cp.date, 'YYYY-MM') = $1
 `;
+
+// 2026-08 is the current live month (never snapshotted, mirrors
+// CURRENT_LIVE_MONTHS in salesuk.js) — always queried live.
+const CURRENT_LIVE_MONTHS = ['2026-08'];
+
+async function queryCostForMonth(month) {
+  const client = await getPool().connect();
+  try {
+    const result = await client.query(COST_QUERY, [month]);
+    const cost = result.rows[0] && result.rows[0].cost != null ? Number(result.rows[0].cost) : 0;
+    return Math.round(cost * 100) / 100;
+  } finally {
+    client.release();
+  }
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  const months = (req.query && req.query.months ? String(req.query.months) : '')
-    .split(',').map((m) => m.trim()).filter((m) => /^\d{4}-\d{2}$/.test(m));
-  if (!months.length) {
-    res.status(400).json({ success: false, error: 'Provide ?months=2025-01,2025-02,...' });
+  const month = req.query && req.query.month ? String(req.query.month) : '';
+  const forceRefresh = req.query && req.query.refresh === '1';
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    res.status(400).json({ success: false, error: 'Provide ?month=YYYY-MM' });
     return;
   }
-  try {
-    const client = await getPool().connect();
-    let rows;
-    try {
-      const result = await client.query(COST_QUERY, [months]);
-      rows = result.rows;
-    } finally {
-      client.release();
+
+  const isLive = CURRENT_LIVE_MONTHS.includes(month);
+  if (!forceRefresh && !isLive) {
+    const staticPath = path.join(__dirname, 'data', `muguntha-sonya-${month}.json`);
+    if (fs.existsSync(staticPath)) {
+      const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+      res.status(200).json({ ...staticData, meta: { ...(staticData.meta || {}), cacheStatus: 'static-snapshot' } });
+      return;
     }
-    const cost = {};
-    for (const m of months) cost[m] = 0;
-    for (const r of rows) cost[r.month] = Math.round(Number(r.cost) * 100) / 100;
-    res.status(200).json({ success: true, employee: 'sonya', source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='Sonya' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only)`, cost });
+  }
+
+  try {
+    const cost = await queryCostForMonth(month);
+    res.status(200).json({
+      success: true,
+      employee: 'sonya',
+      month,
+      cost,
+      source: SOURCE_LABEL,
+      meta: { cacheStatus: 'live', generatedAt: new Date().toISOString() },
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
   }

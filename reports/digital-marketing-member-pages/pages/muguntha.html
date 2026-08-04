@@ -111,10 +111,11 @@ async function fetchGroupSales(endpoint, month, force){
   return data.combinedSummary ? data.combinedSummary.orderTotalSum : 0;
 }
 
-async function fetchCost(months){
-  const res = await fetch('/api/muguntha?months=' + months.join(','));
+async function fetchCost(month, force){
+  const url = '/api/muguntha?month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
+  const res = await fetch(url);
   const data = await res.json();
-  if (!data.success) throw new Error(data.error || 'cost fetch failed');
+  if (!data.success) throw new Error(data.error || ('cost fetch failed for ' + month));
   return data.cost;
 }
 
@@ -127,16 +128,16 @@ async function loadAll(force){
   tbody.innerHTML = '<tr><td colspan="12" class="loading">Loading Sonya\'s 2025 vs 2026 performance…</td></tr>';
 
   try {
-    const [sales25Arr, sales26Arr, cost25, cost26] = await Promise.all([
+    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
       Promise.all(MONTHS_2025.map((m) => fetchGroupSales('sales25', m, force))),
       Promise.all(MONTHS_2026.map((m) => fetchGroupSales('salesuk', m, force))),
-      fetchCost(MONTHS_2025),
-      fetchCost(MONTHS_2026),
+      Promise.all(MONTHS_2025.map((m) => fetchCost(m, force))),
+      Promise.all(MONTHS_2026.map((m) => fetchCost(m, force))),
     ]);
 
-    const sales25ByMonth = {}, sales26ByMonth = {};
-    MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; });
-    MONTHS_2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; });
+    const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
+    MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; cost25[m] = cost25Arr[i]; });
+    MONTHS_2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; cost26[m] = cost26Arr[i]; });
 
     // Align by calendar month number (MM), not by array position — 2025 runs
     // Jan-Jun and 2026 runs Jun-Aug, so a positional zip would pair e.g.

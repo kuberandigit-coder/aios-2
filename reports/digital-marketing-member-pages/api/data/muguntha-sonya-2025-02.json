@@ -1,0 +1,1 @@
+{"success":true,"employee":"sonya","month":"2025-02","cost":425.38,"source":"google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='Sonya' AND account_id=4503486236 (LEDSone account only)","meta":{"cacheStatus":"live","generatedAt":"2026-08-04T08:16:22.408Z"}}
