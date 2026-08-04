@@ -4316,8 +4316,190 @@ async function handleOrderLookup(req, res) {
 return handleOrderLookup;
 })();
 
+// ===== SUK-R6: Missing Meta Title & Meta Description Detection (2026-08-04) =====
+// Mirrors Kamsi's Requirement 5 (same detection logic — metaStatusR5/
+// actionNeededR5/normalizeR5 elsewhere in this file — duplicated here, not
+// shared, matching the isolation pattern already used for Jefri Req2 vs
+// Req1), scoped to ledsone.de instead of ledsone.co.uk. Server-side only:
+// reads SHOPIFY_ADMIN_TOKEN from env, never exposed to the client.
+// Read-only Admin GraphQL calls only — no mutations, no writes.
+const sukirthaR6HandlerModule = (function() {
+  const STORE_DOMAIN = 'ledsone-de.myshopify.com';
+  const API_VERSION = '2024-10';
+  const TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  async function shopifyGraphQL(query, variables) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const res = await fetch('https://' + STORE_DOMAIN + '/admin/api/' + API_VERSION + '/graphql.json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': TOKEN,
+        },
+        body: JSON.stringify({ query, variables }),
+      });
+      if (!res.ok) throw new Error('Shopify API error ' + res.status);
+      const json = await res.json();
+      const throttled = json.errors && json.errors.some((e) => e.extensions && e.extensions.code === 'THROTTLED');
+      if (throttled) {
+        await sleep(1000 * Math.pow(2, attempt));
+        continue;
+      }
+      if (json.errors) throw new Error(JSON.stringify(json.errors));
+      return json.data;
+    }
+    throw new Error('Shopify API error: exceeded retries due to throttling');
+  }
+
+  const PRODUCTS_QUERY = [
+    'query($after: String) {',
+    '  products(first: 100, after: $after) {',
+    '    edges {',
+    '      node {',
+    '        id',
+    '        title',
+    '        handle',
+    '        description',
+    '        productType',
+    '        updatedAt',
+    '        seo { title description }',
+    '      }',
+    '    }',
+    '    pageInfo { hasNextPage endCursor }',
+    '  }',
+    '}',
+  ].join('\n');
+
+  async function fetchAllProducts() {
+    const products = [];
+    let after = null;
+    let hasNext = true;
+    let pages = 0;
+    while (hasNext) {
+      const data = await shopifyGraphQL(PRODUCTS_QUERY, { after });
+      for (const edge of data.products.edges) products.push(edge.node);
+      hasNext = data.products.pageInfo.hasNextPage;
+      after = data.products.pageInfo.endCursor;
+      pages++;
+    }
+    return { products, pages };
+  }
+
+  function normalize(s) {
+    return (s || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/~\d+\s*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function metaStatus(seoValue, sourceValue) {
+    const seoTrim = (seoValue || '').trim();
+    if (!seoTrim) return 'Missing';
+    if (normalize(seoValue) === normalize(sourceValue)) return 'Auto-generated';
+    return 'Custom';
+  }
+
+  function actionNeeded(mts, mds) {
+    const titleBad = mts !== 'Custom';
+    const descBad = mds !== 'Custom';
+    if (titleBad && descBad) return 'Add Custom Meta Title and Meta Description';
+    if (titleBad) return 'Add Custom Meta Title';
+    if (descBad) return 'Add Custom Meta Description';
+    return 'OK';
+  }
+
+  const CACHE = new Map();
+  const CACHE_TTL_MS = 60 * 1000;
+  const CACHE_KEY = 'sukirtha-r6-meta';
+
+  return async function sukirthaR6Handler(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    try {
+      if (!TOKEN) {
+        res.status(500).json({ error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
+        return;
+      }
+      if (req.query.refresh !== '1') {
+        const cached = CACHE.get(CACHE_KEY);
+        if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+          res.status(200).json(cached.data);
+          return;
+        }
+        // Static snapshot — survives cold starts/deploys, same pattern used
+        // by Kamsi's Req5 (jefri-search-terms-snapshot.json, etc.). Requires
+        // this file to exist in api/data/; regenerated via ?refresh=1 or the
+        // hourly snapshot-refresh workflow, same as everywhere else in this
+        // project.
+        const fs = require('fs');
+        const path = require('path');
+        const staticPath = path.join(__dirname, 'data', 'sukirtha-r6-meta-snapshot.json');
+        if (fs.existsSync(staticPath)) {
+          const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+          const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+          CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+          res.status(200).json(payload);
+          return;
+        }
+      }
+
+      const { products, pages } = await fetchAllProducts();
+
+      const rows = products.map((p) => {
+        const seoTitle = p.seo && p.seo.title ? p.seo.title : '';
+        const seoDesc = p.seo && p.seo.description ? p.seo.description : '';
+        const mts = metaStatus(seoTitle, p.title);
+        const mds = metaStatus(seoDesc, p.description);
+        return {
+          url: '/products/' + p.handle,
+          productType: p.productType || 'Uncategorized',
+          title: p.title,
+          description: p.description || '',
+          metaTitle: seoTitle,
+          metaDescription: seoDesc,
+          metaTitleStatus: mts,
+          metaDescriptionStatus: mds,
+          metaTitleLength: seoTitle.length,
+          metaDescriptionLength: seoDesc.length,
+          actionNeeded: actionNeeded(mts, mds),
+          lastUpdated: p.updatedAt,
+        };
+      });
+
+      const summary = {
+        totalProductsChecked: rows.length,
+        missingMetaTitle: rows.filter((r) => r.metaTitleStatus === 'Missing').length,
+        autoGeneratedMetaTitle: rows.filter((r) => r.metaTitleStatus === 'Auto-generated').length,
+        missingMetaDescription: rows.filter((r) => r.metaDescriptionStatus === 'Missing').length,
+        autoGeneratedMetaDescription: rows.filter((r) => r.metaDescriptionStatus === 'Auto-generated').length,
+        okProducts: rows.filter((r) => r.actionNeeded === 'OK').length,
+      };
+
+      const payload = {
+        success: true,
+        staff: { name: 'Sukirtha', department: 'SEO', store: 'ledsone.de' },
+        source: {
+          scope: 'All Shopify products on ledsone.de, via Admin GraphQL API (read-only). Same detection logic as Kamsi Requirement 5 (ledsone.co.uk).',
+        },
+        summary,
+        rows,
+        meta: { generatedAt: new Date().toISOString(), productsFetched: products.length, pagesFetched: pages },
+      };
+      CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[sukirtha-r6-meta] failed:', err && err.message);
+      res.status(500).json({ error: 'Could not load meta title/description data. Please try again shortly.' });
+    }
+  };
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
+  if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
   if (fn === 'thasitha-req1') return thasithaReq1HandlerModule(req, res);
   if (fn === 'thasitha-req2') return thasithaReq2HandlerModule(req, res);
