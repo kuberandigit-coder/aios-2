@@ -5,97 +5,190 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LEDSone — Management: Employee Performance (Sonya)</title>
 <style>
-:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
+:root{--navy:#0c1a30;--navy2:#0e2143;--gold:#c9a227;--sidebar-text:#aab4c8;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--good-soft:#e6f6ec;--bad:#c62828;--bad-soft:#fdecea;--warn:#b7791f;--warn-soft:#fdf3e0;--na:#9aa3b2;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;}
-.wrap{max-width:1500px;margin:0 auto;}
-.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
-.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
-header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
-h1{font-size:22px;letter-spacing:.2px;}
-.sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
-.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center;}
-.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
-.chip.live{background:#eef7ee;color:var(--good);}
-.filters button.primary{background:var(--accent);color:#fff;border-color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh;}
+
+/* ---------- Sidebar ---------- */
+.sidebar{width:264px;flex-shrink:0;background:var(--navy);color:var(--sidebar-text);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;}
+.brand .mark{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
+.brand .txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;}
+.brand .txt span{display:block;font-size:10.5px;color:#7f8bab;letter-spacing:.8px;text-transform:uppercase;margin-top:2px;}
+.navlabel{font-size:10.5px;color:#5e6b8a;text-transform:uppercase;letter-spacing:.8px;font-weight:700;padding:16px 10px 8px;}
+.navlist{list-style:none;display:flex;flex-direction:column;gap:2px;}
+.navlist a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;color:var(--sidebar-text);text-decoration:none;font-size:13.5px;font-weight:600;transition:background .18s ease,color .18s ease,transform .15s ease,box-shadow .18s ease;}
+.navlist a .ic{width:22px;height:22px;flex-shrink:0;border-radius:7px;background:rgba(255,255,255,.07);display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;opacity:.9;transition:background .18s ease,opacity .18s ease;}
+.navlist a:hover{background:rgba(255,255,255,.07);color:#fff;transform:translateX(3px);}
+.navlist a:hover .ic{background:rgba(255,255,255,.14);opacity:1;}
+.navlist a.active{background:rgba(31,94,255,.18);color:#fff;box-shadow:inset 3px 0 0 var(--accent);}
+.navlist a.active .ic{background:var(--accent);opacity:1;}
+.sidebar-spacer{flex:1;}
+.sidebar-foot{border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:10px;}
+.dev-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid #b98b1e;border-radius:10px;padding:9px 12px;margin-bottom:10px;}
+.dev-badge .av{width:26px;height:26px;border-radius:999px;background:#0c1a30;border:1px solid #b98b1e;display:flex;align-items:center;justify-content:center;color:#e8d59a;font-weight:800;font-size:12px;flex-shrink:0;}
+.dev-badge b{display:block;color:#fff;font-size:12.5px;}
+.dev-badge span{display:block;color:#e8d59a;font-size:10.5px;}
+.back-btn{display:block;text-align:center;background:rgba(255,255,255,.06);color:#dfe4ee;text-decoration:none;font-size:13px;font-weight:700;padding:10px;border-radius:9px;transition:background .15s;}
+.back-btn:hover{background:rgba(255,255,255,.12);}
+
+/* ---------- Main ---------- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{background:var(--navy2);color:#fff;padding:28px 36px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;border-bottom:3px solid var(--gold);}
+.topbar h1{font-size:26px;font-weight:800;letter-spacing:.2px;}
+.topbar .sub{color:#9fb0d1;font-size:13px;margin-top:8px;max-width:760px;line-height:1.6;}
+.topbar .sub strong{color:#e8d59a;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.chip{background:rgba(255,255,255,.08);color:#dfe4ee;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:.2px;}
+.chip.live{background:var(--good-soft);color:var(--good);}
+.filters button.primary{background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:9px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;}
 .filters button.primary:hover{background:#1749cc;}
 .filters button.primary:disabled{opacity:.6;cursor:wait;}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
-.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
-.card .value{font-size:22px;font-weight:700;margin-top:6px;}
+
+.content{padding:28px 36px 40px;flex:1;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
+.card{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(16,24,40,.05);transition:box-shadow .15s ease,transform .15s ease;}
+.card:hover{box-shadow:0 4px 14px rgba(16,24,40,.09);transform:translateY(-1px);}
+.card .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;}
+.card .value{font-size:22px;font-weight:800;margin-top:8px;font-variant-numeric:tabular-nums;}
+.card.warn{border-top-color:var(--bad);}
 .card.warn .value{color:var(--bad);}
+.card.good{border-top-color:var(--good);}
 .card.good .value{color:var(--good);}
-.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
-.tbar{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+
+.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,.05);}
+.tbar{padding:16px 22px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fbfcfe,#f7f8fb);}
+.tbar strong{color:var(--navy);font-size:18px;font-weight:800;}
 .scroll{overflow-x:auto;max-height:70vh;overflow-y:auto;}
-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1400px;}
-thead th{background:#f0f3f8;text-align:left;padding:11px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:2;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1400px;font-variant-numeric:tabular-nums;}
+thead th{background:var(--navy);text-align:left;padding:13px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:#c3cce3;border-bottom:2px solid var(--gold);white-space:nowrap;position:sticky;top:0;z-index:2;}
 thead th.num,td.num{text-align:right;}
-tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4;white-space:nowrap;}
-tbody tr:nth-child(even){background:#fafbfd;}
+tbody td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4;white-space:nowrap;font-size:13px;}
+tbody td:first-child{font-weight:700;color:var(--navy);}
+tbody tr:nth-child(even){background:#f9fafc;}
+tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover{background:var(--accent-soft);}
-.pill{display:inline-block;border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;white-space:nowrap;color:#fff;}
-.pill.archived{background:#616e85;}
-.pill.notarchived{background:#0a7d4f;}
+tbody tr:hover td:first-child{color:var(--accent);}
+.pill{display:inline-block;border-radius:999px;padding:4px 12px;font-size:10.5px;font-weight:800;white-space:nowrap;letter-spacing:.4px;}
+.pill.archived{background:#eef0f4;color:#5b6577;border:1px solid #dde1e9;}
+.pill.notarchived{background:var(--good-soft);color:var(--good);border:1px solid #bfe7cf;}
 .empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
-.footnotes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:12.5px;color:var(--muted);line-height:1.65;}
+.footnotes{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px;font-size:12.5px;color:var(--muted);line-height:1.7;box-shadow:0 1px 2px rgba(16,24,40,.04);}
 .footnotes strong{color:var(--ink);}
 .loading{padding:60px 20px;text-align:center;color:var(--muted);}
 .up{color:var(--good);font-weight:700;}
 .down{color:var(--bad);font-weight:700;}
-@media(max-width:700px){h1{font-size:18px;}.card .value{font-size:18px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+.roas-warn{color:var(--warn);font-weight:700;}
+.costnote{color:var(--muted);font-weight:400;font-size:11.5px;}
+.comingsoon{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:70px 30px;text-align:center;box-shadow:0 1px 3px rgba(16,24,40,.05);}
+.comingsoon-avatar{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#1f5eff,#3ddc97);color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+.comingsoon h2{font-size:20px;color:var(--navy);margin-bottom:10px;}
+.comingsoon p{color:var(--muted);font-size:13.5px;line-height:1.7;max-width:420px;margin:0 auto 18px;}
+.comingsoon .chip{background:var(--warn-soft);color:var(--warn);}
+@media(max-width:900px){.sidebar{position:fixed;left:-264px;z-index:10;transition:left .2s;}.topbar,.content{padding-left:20px;padding-right:20px;}}
+@media(max-width:700px){.topbar h1{font-size:19px;}.card .value{font-size:18px;}.topbar{padding:18px 20px;}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-<span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Kuberan</span>
-</div>
-<a href="../home.html" class="back">&larr; Back to dashboard</a>
-<header>
-  <h1>Management — Employee Performance Analysis (2025 vs 2026)</h1>
-  <div class="sub">Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on Sonya's campaigns &middot; Target ROAS 30%</div>
-  <div class="filters">
-    <span class="chip live" id="statusChip">Loading&hellip;</span>
-    <button class="primary" id="refreshBtn">Refresh (live)</button>
-  </div>
-</header>
 
-<div class="cards" id="kpiCards"></div>
-
-<div class="tablebox">
-  <div class="tbar">
-    <strong>Month-by-Month — Sonya</strong>
-    <span id="rowCount"></span>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="mark">L</div>
+    <div class="txt"><b>LEDSone</b><span>Digital Marketing</span></div>
   </div>
-  <div class="scroll">
-    <table id="mainTable">
-      <thead>
-        <tr>
-          <th>Month</th><th>Name</th>
-          <th class="num">2025 Sales</th><th class="num">2025 Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
-          <th class="num">2026 Sales</th><th class="num">2026 Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-          <th class="num">Target Achievement</th><th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="tblBody"><tr><td colspan="12" class="loading">Loading Sonya's 2025 vs 2026 performance&hellip;</td></tr></tbody>
-    </table>
-  </div>
-</div>
 
-<div class="footnotes">
-  <strong>Data sources.</strong><br>
-  Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
-  ADS Cost &mdash; sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "Sonya" campaign group (<code>group_name='Sonya'</code>, <code>account_id=4503486236</code> &mdash; matches "Campaign group: Sonya" in the Google Ads UI), via the new read-only endpoint <code>/api/muguntha?months=...</code>. Scoped to this one account only &mdash; a separate, unrelated Google Ads account also has a group internally named "Sonya" and is deliberately excluded.<br>
-  Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
-  Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
-</div>
+  <div class="navlabel">Main</div>
+  <ul class="navlist">
+    <li><a href="../home.html"><span class="ic">&#9635;</span> Overview</a></li>
+    <li><a href="./sales2.html"><span class="ic">&#128200;</span> Sales</a></li>
+  </ul>
+
+  <div class="navlabel">Performance Analysis</div>
+  <ul class="navlist" id="memberNav">
+    <li><a href="#" data-member="sonya" class="active"><span class="ic">S</span> Sonya</a></li>
+    <li><a href="#" data-member="jefri"><span class="ic">J</span> Jefri</a></li>
+    <li><a href="#" data-member="dilaksi"><span class="ic">D</span> Dilaksi</a></li>
+    <li><a href="#" data-member="kamsi"><span class="ic">K</span> Kamsi</a></li>
+    <li><a href="#" data-member="mahima"><span class="ic">M</span> Mahima</a></li>
+    <li><a href="#" data-member="thasitha"><span class="ic">T</span> Thasitha</a></li>
+    <li><a href="#" data-member="sukirtha"><span class="ic">S</span> Sukirtha</a></li>
+    <li><a href="#" data-member="sajeepan"><span class="ic">S</span> Sajeepan</a></li>
+    <li><a href="#" data-member="theekshy"><span class="ic">T</span> Theekshy</a></li>
+    <li><a href="#" data-member="jackson"><span class="ic">J</span> Jackson</a></li>
+    <li><a href="#" data-member="hetheesha"><span class="ic">H</span> Hetheesha</a></li>
+    <li><a href="#" data-member="thivajini"><span class="ic">T</span> Thivajini</a></li>
+  </ul>
+
+  <div class="sidebar-spacer"></div>
+
+  <div class="sidebar-foot">
+    <div class="dev-badge">
+      <div class="av">K</div>
+      <div><b>Developed by</b><span>Kuberan</span></div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1 id="pageTitle">Employee Performance &mdash; Sonya</h1>
+      <div class="sub" id="pageSub">Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on Sonya's campaigns &middot; Target ROAS 30%</div>
+    </div>
+    <div class="filters" id="sonyaFilters">
+      <span class="chip live" id="statusChip">Loading&hellip;</span>
+      <button class="primary" id="refreshBtn">Refresh (live)</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="panel-sonya" class="member-panel">
+      <div class="cards" id="kpiCards"></div>
+
+      <div class="tablebox">
+        <div class="tbar">
+          <strong>Month-by-Month &mdash; Sonya</strong>
+          <span id="rowCount"></span>
+        </div>
+        <div class="scroll">
+          <table id="mainTable">
+            <thead>
+              <tr>
+                <th>Month</th><th>Name</th>
+                <th class="num">2025 Sales</th><th class="num">2025 Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
+                <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
+                <th class="num">Target Achievement</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tblBody"><tr><td colspan="12" class="loading">Loading Sonya's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnotes">
+        <strong>Data sources.</strong><br>
+        Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
+        2025 Cost &mdash; sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "Sonya" campaign group (<code>group_name='Sonya'</code>, <code>account_id=4503486236</code>) only. The DM 46 campaign is not factored into 2025 at all.<br>
+        2026 Total Cost &mdash; Sonya's own campaign cost (as above) <strong>plus</strong> her product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sonya credit for any DM 46 order containing one of her owned products, so her share of that campaign's cost is folded into this single 2026 Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to her owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only her share is.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
+        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+      </div>
+    </div>
+
+    <div id="panel-placeholder" class="member-panel" style="display:none;">
+      <div class="comingsoon">
+        <div class="comingsoon-avatar" id="csAvatar">?</div>
+        <h2 id="csName">Member</h2>
+        <p>Performance analysis for this team member hasn't been built yet.<br>Scoped to be added next &mdash; same Sales vs. Cost vs. Net vs. ROAS format as Sonya's.</p>
+        <span class="chip">Coming soon</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 const TARGET_ROAS = 0.30;
-const MONTHS_2025 = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06'];
+const MONTHS_2025 = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08'];
 const MONTHS_2026 = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08'];
 const MONTH_NAME = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August'};
 const LIVE_2026 = ['2026-08'];
@@ -116,7 +209,12 @@ async function fetchCost(month, force){
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) throw new Error(data.error || ('cost fetch failed for ' + month));
-  return data.cost;
+  return {
+    ownCost: data.cost,
+    dmSonyaProductCost: data.dmSonyaProductCost || 0,
+    dmTotalCost: data.dmTotalCost || 0,
+    totalCost: data.totalCost != null ? data.totalCost : data.cost,
+  };
 }
 
 async function loadAll(force){
@@ -148,9 +246,21 @@ async function loadAll(force){
       const m25 = MONTHS_2025.find((m) => m.slice(5) === mm) || null;
       const m26 = MONTHS_2026.find((m) => m.slice(5) === mm) || null;
       const sales2025 = m25 ? sales25ByMonth[m25] : null;
-      const costVal2025 = m25 ? (cost25[m25] || 0) : null;
+      const c25 = m25 ? cost25[m25] : null;
       const sales2026 = m26 ? sales26ByMonth[m26] : null;
-      const costVal2026 = m26 ? (cost26[m26] || 0) : null;
+      const c26 = m26 ? cost26[m26] : null;
+
+      // 2025 does not consider the DM campaign at all — Cost is Sonya's own
+      // campaign cost only (per user instruction 2026-08-04).
+      const costVal2025 = c25 ? c25.ownCost : null;
+      // 2026 Total Cost = Sonya's own campaign cost + her product-share of
+      // the DM 46 campaign's spend, folded into one number, with the DM
+      // portion shown in brackets alongside it (per user instruction
+      // 2026-08-04).
+      const costVal2026 = c26 ? c26.totalCost : null;
+      const ownCost2026 = c26 ? c26.ownCost : null;
+      const dmSonya2026 = c26 ? c26.dmSonyaProductCost : null;
+
       const net2025 = sales2025 != null ? sales2025 - costVal2025 : null;
       const roas2025 = sales2025 != null && costVal2025 > 0 ? sales2025 / costVal2025 : null;
       const net2026 = sales2026 != null ? sales2026 - costVal2026 : null;
@@ -158,7 +268,12 @@ async function loadAll(force){
       const monthLabel = MONTH_NAME[mm];
       const targetAch = roas2026 != null ? roas2026 / TARGET_ROAS : (roas2025 != null ? roas2025 / TARGET_ROAS : null);
       const isLive = m26 && LIVE_2026.includes(m26);
-      rows.push({ monthLabel, m25, m26, sales2025, costVal2025, net2025, roas2025, sales2026, costVal2026, net2026, roas2026, targetAch, isLive });
+      rows.push({
+        monthLabel, m25, m26,
+        sales2025, costVal2025, net2025, roas2025,
+        sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
+        targetAch, isLive,
+      });
     }
 
     renderTable(rows);
@@ -176,6 +291,18 @@ function renderTable(rows){
   const tbody = document.getElementById('tblBody');
   document.getElementById('rowCount').textContent = rows.length + ' months';
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No data</td></tr>'; return; }
+  const netCell = (v) => v != null ? ('<span class="' + (v >= 0 ? 'up' : 'down') + '">' + fmtMoney(v) + '</span>') : 'N/A';
+  const roasCell = (v) => {
+    if (v == null) return 'N/A';
+    const cls = v >= TARGET_ROAS ? 'up' : (v >= TARGET_ROAS * 0.7 ? 'roas-warn' : 'down');
+    return '<span class="' + cls + '">' + fmtPct(v) + '</span>';
+  };
+  const targetCell = (v) => {
+    if (v == null) return 'N/A';
+    const cls = v >= 1 ? 'up' : (v >= 0.7 ? 'roas-warn' : 'down');
+    return '<span class="' + cls + '">' + fmtPct(v) + '</span>';
+  };
+
   tbody.innerHTML = rows.map((r) => {
     const statusPill = r.isLive ? '<span class="pill notarchived">Not-Archived</span>' : '<span class="pill archived">Archived</span>';
     return '<tr>' +
@@ -183,13 +310,13 @@ function renderTable(rows){
       '<td>Sonya</td>' +
       '<td class="num">' + (r.sales2025 != null ? fmtMoney(r.sales2025) : 'N/A') + '</td>' +
       '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.net2025 != null ? fmtMoney(r.net2025) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.roas2025 != null ? fmtPct(r.roas2025) : 'N/A') + '</td>' +
+      '<td class="num">' + netCell(r.net2025) + '</td>' +
+      '<td class="num">' + roasCell(r.roas2025) + '</td>' +
       '<td class="num">' + (r.sales2026 != null ? fmtMoney(r.sales2026) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.costVal2026 != null ? fmtMoney(r.costVal2026) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.net2026 != null ? fmtMoney(r.net2026) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.roas2026 != null ? fmtPct(r.roas2026) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.targetAch != null ? fmtPct(r.targetAch) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.costVal2026 != null ? fmtMoney(r.costVal2026) + (r.ownCost2026 != null && r.dmSonya2026 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2026) + ', DM: ' + fmtMoney(r.dmSonya2026) + ')</span>' : '') : 'N/A') + '</td>' +
+      '<td class="num">' + netCell(r.net2026) + '</td>' +
+      '<td class="num">' + roasCell(r.roas2026) + '</td>' +
+      '<td class="num">' + targetCell(r.targetAch) + '</td>' +
       '<td>' + statusPill + '</td>' +
       '</tr>';
   }).join('');
@@ -206,18 +333,13 @@ function renderCards(rows){
   const avgRoas2026 = totalCost2026 > 0 ? totalSales2026 / totalCost2026 : null;
 
   const cards = [
-    { label: 'Total Employees', value: '1 (Sonya)' },
     { label: '2025 Sales', value: fmtMoney(totalSales2025) },
     { label: '2026 Sales', value: fmtMoney(totalSales2026) },
     { label: 'Sales Growth %', value: salesGrowth != null ? fmtPct(salesGrowth) : 'N/A', cls: salesGrowth >= 0 ? 'good' : 'warn' },
-    { label: '2025 Cost', value: fmtMoney(totalCost2025) },
-    { label: '2026 Cost', value: fmtMoney(totalCost2026) },
-    { label: 'Cost Growth %', value: costGrowth != null ? fmtPct(costGrowth) : 'N/A' },
     { label: '2025 Net Profit', value: fmtMoney(totalNet2025) },
     { label: '2026 Net Profit', value: fmtMoney(totalNet2026) },
     { label: 'Net Growth %', value: netGrowth != null ? fmtPct(netGrowth) : 'N/A', cls: netGrowth >= 0 ? 'good' : 'warn' },
     { label: 'Avg ROAS (2026)', value: avgRoas2026 != null ? fmtPct(avgRoas2026) : 'N/A' },
-    { label: 'Target ROAS', value: fmtPct(TARGET_ROAS) },
   ];
   document.getElementById('kpiCards').innerHTML = cards.map((c) =>
     '<div class="card' + (c.cls ? ' ' + c.cls : '') + '"><div class="label">' + c.label + '</div><div class="value">' + c.value + '</div></div>'
@@ -226,6 +348,49 @@ function renderCards(rows){
 
 document.getElementById('refreshBtn').addEventListener('click', () => loadAll(true));
 loadAll(false);
+
+// ---------- Member tab switching (all members share this one page; only
+// Sonya has real data built so far — others show a "coming soon" panel in
+// place, per user instruction 2026-08-04: no standalone pages per member). ----------
+const MEMBER_NAMES = {
+  sonya: 'Sonya', jefri: 'Jefri', dilaksi: 'Dilaksi', kamsi: 'Kamsi', mahima: 'Mahima',
+  thasitha: 'Thasitha', sukirtha: 'Sukirtha', sajeepan: 'Sajeepan', theekshy: 'Theekshy',
+  jackson: 'Jackson', hetheesha: 'Hetheesha', thivajini: 'Thivajini',
+};
+const panelSonya = document.getElementById('panel-sonya');
+const panelPlaceholder = document.getElementById('panel-placeholder');
+const sonyaFilters = document.getElementById('sonyaFilters');
+const pageTitle = document.getElementById('pageTitle');
+const pageSub = document.getElementById('pageSub');
+const csAvatar = document.getElementById('csAvatar');
+const csName = document.getElementById('csName');
+
+function selectMember(key){
+  document.querySelectorAll('#memberNav a').forEach((a) => a.classList.toggle('active', a.dataset.member === key));
+  const name = MEMBER_NAMES[key] || key;
+  if (key === 'sonya') {
+    pageTitle.textContent = 'Employee Performance — Sonya';
+    pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on Sonya\'s campaigns &middot; Target ROAS 30%';
+    sonyaFilters.style.display = '';
+    panelSonya.style.display = '';
+    panelPlaceholder.style.display = 'none';
+  } else {
+    pageTitle.textContent = 'Employee Performance — ' + name;
+    pageSub.innerHTML = 'Requested by Muguntha &middot; scoped to <strong>' + name + '</strong> &middot; not built yet';
+    sonyaFilters.style.display = 'none';
+    panelSonya.style.display = 'none';
+    panelPlaceholder.style.display = '';
+    csAvatar.textContent = name.charAt(0);
+    csName.textContent = name;
+  }
+}
+
+document.getElementById('memberNav').addEventListener('click', (e) => {
+  const a = e.target.closest('a[data-member]');
+  if (!a) return;
+  e.preventDefault();
+  selectMember(a.dataset.member);
+});
 </script>
 </body>
 </html>

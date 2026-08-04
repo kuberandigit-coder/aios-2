@@ -2634,3 +2634,7 @@ module.exports = async function handler(req, res) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
   }
 };
+
+// Exposed so api/muguntha.js can filter Google Ads product-level cost by the
+// same product IDs, without duplicating this ~370-entry list (added 2026-08-04).
+module.exports.SONYA_PRODUCT_IDS_UK = SONYA_PRODUCT_IDS_UK;

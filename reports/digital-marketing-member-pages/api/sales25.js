@@ -34,11 +34,12 @@ function londonMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-// 2025 backfill, started 2026-07-29 with January only (scope confirmed by
-// the user — not the full year yet). Add more 2025 months here the same way
-// salesuk.js grew month by month for 2026. None of these are ever "live"
-// (LIVE_MONTHS stays empty) since all of 2025 is fully closed history.
-const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'];
+// 2025 backfill, started 2026-07-29 with January, extended 2026-08-04 to
+// cover the full year (Jul-Dec added). Same order-fetching/attribution code
+// used for Jan-Jun, just whitelisted for more months. None of these are
+// ever "live" (LIVE_MONTHS stays empty) since all of 2025 is fully closed
+// history.
+const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06', '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12'];
 const CURRENT_LIVE_MONTHS = [];
 
 function resolveReportMonth(monthParam) {

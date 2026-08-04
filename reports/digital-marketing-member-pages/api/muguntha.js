@@ -16,6 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const { SONYA_PRODUCT_IDS_UK } = require('./salesuk.js');
 
 let pool;
 function getPool() {
@@ -59,6 +60,38 @@ const COST_QUERY = `
     AND to_char(cp.date, 'YYYY-MM') = $1
 `;
 
+// DM campaign (added 2026-08-04): "Pmax UK | Muguntha | Shoptimised | GB |
+// DM 46 All | MCV | UK" — the campaign behind salesuk.js's/sales25.js's
+// 'shop_dm_pmax-46*' UTM group. Sales attribution already routes any DM-ad
+// order containing one of Sonya's owned products to her Sonya tab (see
+// orderHasSonyaProduct() + isDmAdCampaign() in salesuk.js), so her share of
+// this campaign's spend belongs in her cost too — not the full campaign,
+// and not zero.
+const DM_CAMPAIGN_ID = '20810136438';
+const DM_SOURCE_LABEL = `google_ads.product_performance WHERE campaign_id=${DM_CAMPAIGN_ID} (DM 46 campaign), filtered to Sonya's owned product IDs (same list salesuk.js uses for sales attribution)`;
+const DM_TOTAL_SOURCE_LABEL = `google_ads.campaign_performance WHERE campaign_id=${DM_CAMPAIGN_ID} (full DM 46 campaign spend, all products/traffic — shown for context only)`;
+
+// product_item_id format is "shopify_gb_{productId}_{variantId}" — split_part
+// index 3 pulls out {productId} to match against Sonya's Shopify product IDs.
+const DM_SONYA_PRODUCT_COST_QUERY = `
+  SELECT COALESCE(SUM(pp.cost), 0) AS cost
+  FROM google_ads.product_performance pp
+  WHERE pp.campaign_id = ${DM_CAMPAIGN_ID}
+    AND split_part(pp.product_item_id, '_', 3) = ANY($1::text[])
+    AND to_char(pp.date, 'YYYY-MM') = $2
+`;
+
+// Full DM campaign spend (all products + any unattributed "other" traffic
+// PMax doesn't break out at product level) — shown as a separate, visible
+// context column so the DM campaign's total cost is never hidden, even
+// though only Sonya's product-share of it feeds her Total Cost/Net/ROAS.
+const DM_TOTAL_COST_QUERY = `
+  SELECT COALESCE(SUM(cp.cost), 0) AS cost
+  FROM google_ads.campaign_performance cp
+  WHERE cp.campaign_id = ${DM_CAMPAIGN_ID}
+    AND to_char(cp.date, 'YYYY-MM') = $1
+`;
+
 // 2026-08 is the current live month (never snapshotted, mirrors
 // CURRENT_LIVE_MONTHS in salesuk.js) — always queried live.
 const CURRENT_LIVE_MONTHS = ['2026-08'];
@@ -69,6 +102,22 @@ async function queryCostForMonth(month) {
     const result = await client.query(COST_QUERY, [month]);
     const cost = result.rows[0] && result.rows[0].cost != null ? Number(result.rows[0].cost) : 0;
     return Math.round(cost * 100) / 100;
+  } finally {
+    client.release();
+  }
+}
+
+async function queryDmCostsForMonth(month) {
+  const client = await getPool().connect();
+  try {
+    const sonyaIds = Array.from(SONYA_PRODUCT_IDS_UK);
+    const [sonyaShareResult, dmTotalResult] = await Promise.all([
+      client.query(DM_SONYA_PRODUCT_COST_QUERY, [sonyaIds, month]),
+      client.query(DM_TOTAL_COST_QUERY, [month]),
+    ]);
+    const dmSonyaProductCost = Math.round(Number(sonyaShareResult.rows[0].cost) * 100) / 100;
+    const dmTotalCost = Math.round(Number(dmTotalResult.rows[0].cost) * 100) / 100;
+    return { dmSonyaProductCost, dmTotalCost };
   } finally {
     client.release();
   }
@@ -88,19 +137,33 @@ module.exports = async function handler(req, res) {
     const staticPath = path.join(__dirname, 'data', `muguntha-sonya-${month}.json`);
     if (fs.existsSync(staticPath)) {
       const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
-      res.status(200).json({ ...staticData, meta: { ...(staticData.meta || {}), cacheStatus: 'static-snapshot' } });
-      return;
+      // Snapshots written before the DM-cost fields were added (2026-08-04)
+      // don't have them — fall through to a live query rather than serving
+      // an incomplete row.
+      if (staticData.dmSonyaProductCost != null && staticData.dmTotalCost != null) {
+        res.status(200).json({ ...staticData, meta: { ...(staticData.meta || {}), cacheStatus: 'static-snapshot' } });
+        return;
+      }
     }
   }
 
   try {
-    const cost = await queryCostForMonth(month);
+    const [cost, dmCosts] = await Promise.all([
+      queryCostForMonth(month),
+      queryDmCostsForMonth(month),
+    ]);
+    const totalCost = Math.round((cost + dmCosts.dmSonyaProductCost) * 100) / 100;
     res.status(200).json({
       success: true,
       employee: 'sonya',
       month,
       cost,
+      dmSonyaProductCost: dmCosts.dmSonyaProductCost,
+      dmTotalCost: dmCosts.dmTotalCost,
+      totalCost,
       source: SOURCE_LABEL,
+      dmSource: DM_SOURCE_LABEL,
+      dmTotalSource: DM_TOTAL_SOURCE_LABEL,
       meta: { cacheStatus: 'live', generatedAt: new Date().toISOString() },
     });
   } catch (err) {
