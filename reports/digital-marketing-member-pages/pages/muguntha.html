@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEDSone — Management: Employee Performance (Sonya)</title>
+<title>LEDSone — DM Dashboard: Employee Performance</title>
 <style>
 :root{--navy:#0c1a30;--navy2:#0e2143;--gold:#c9a227;--sidebar-text:#aab4c8;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--good-soft:#e6f6ec;--bad:#c62828;--bad-soft:#fdecea;--warn:#b7791f;--warn-soft:#fdf3e0;--na:#9aa3b2;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -94,7 +94,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
 <aside class="sidebar">
   <div class="brand">
     <div class="mark">L</div>
-    <div class="txt"><b>LEDSone</b><span>Digital Marketing</span></div>
+    <div class="txt"><b>LEDSone</b><span>DM Dashboard</span></div>
   </div>
 
   <div class="navlabel">Main</div>
@@ -139,6 +139,10 @@ tbody tr:hover td:first-child{color:var(--accent);}
       <span class="chip live" id="statusChip">Loading&hellip;</span>
       <button class="primary" id="refreshBtn">Refresh (live)</button>
     </div>
+    <div class="filters" id="sajeepanFilters" style="display:none;">
+      <span class="chip live" id="statusChip-sajeepan">Loading&hellip;</span>
+      <button class="primary" id="refreshBtn-sajeepan">Refresh (live)</button>
+    </div>
   </div>
 
   <div class="content">
@@ -174,6 +178,38 @@ tbody tr:hover td:first-child{color:var(--accent);}
       </div>
     </div>
 
+    <div id="panel-sajeepan" class="member-panel" style="display:none;">
+      <div class="cards" id="kpiCards-sajeepan"></div>
+
+      <div class="tablebox">
+        <div class="tbar">
+          <strong>Month-by-Month &mdash; Sajeepan</strong>
+          <span id="rowCount-sajeepan"></span>
+        </div>
+        <div class="scroll">
+          <table id="mainTable-sajeepan">
+            <thead>
+              <tr>
+                <th>Month</th><th>Name</th>
+                <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
+                <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
+                <th class="num">Target Achievement</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tblBody-sajeepan"><tr><td colspan="12" class="loading">Loading Sajeepan's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnotes">
+        <strong>Data sources.</strong><br>
+        Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sajeepan, fetched via the existing <code>/api/sales25?group=sajeepan&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=sajeepan&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Sajeepan tab of the UK sales pages, no new order logic written.<br>
+        2025 Total Cost and 2026 Total Cost &mdash; identical formula for both years: Sajeepan's own campaign cost (sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "SAJEEPAN" campaign group, <code>group_name='SAJEEPAN'</code>, <code>account_id=4503486236</code>) <strong>plus</strong> his product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sajeepan credit for any DM 46 order containing one of his owned products, so his share of that campaign's cost is folded into this single Total Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to his owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only his share is.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
+        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+      </div>
+    </div>
+
     <div id="panel-placeholder" class="member-panel" style="display:none;">
       <div class="comingsoon">
         <div class="comingsoon-avatar" id="csAvatar">?</div>
@@ -195,41 +231,43 @@ const LIVE_2026 = ['2026-08'];
 function fmtMoney(n){ return '£' + (Math.round((n||0)*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPct(n){ return isFinite(n) ? (Math.round(n*10000)/100).toFixed(2) + '%' : 'N/A'; }
 
-async function fetchGroupSales(endpoint, month, force){
-  const url = '/api/' + endpoint + '?group=sonya&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
+async function fetchGroupSales(endpoint, member, month, force){
+  const url = '/api/' + endpoint + '?group=' + member + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) throw new Error(data.error || (endpoint + ' failed for ' + month));
   return data.combinedSummary ? data.combinedSummary.orderTotalSum : 0;
 }
 
-async function fetchCost(month, force){
-  const url = '/api/muguntha?month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
+async function fetchCost(member, month, force){
+  const url = '/api/muguntha?employee=' + member + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) throw new Error(data.error || ('cost fetch failed for ' + month));
+  const dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
   return {
     ownCost: data.cost,
-    dmSonyaProductCost: data.dmSonyaProductCost || 0,
+    dmSonyaProductCost: dmProductCost,
     dmTotalCost: data.dmTotalCost || 0,
     totalCost: data.totalCost != null ? data.totalCost : data.cost,
   };
 }
 
-async function loadAll(force){
-  const statusChip = document.getElementById('statusChip');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const tbody = document.getElementById('tblBody');
+async function loadAll(member, idSuffix, force){
+  const statusChip = document.getElementById('statusChip' + idSuffix);
+  const refreshBtn = document.getElementById('refreshBtn' + idSuffix);
+  const tbody = document.getElementById('tblBody' + idSuffix);
+  const memberLabel = MEMBER_NAMES[member] || member;
   refreshBtn.disabled = true;
   statusChip.textContent = 'Loading…';
-  tbody.innerHTML = '<tr><td colspan="12" class="loading">Loading Sonya\'s 2025 vs 2026 performance…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="12" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
 
   try {
     const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      Promise.all(MONTHS_2025.map((m) => fetchGroupSales('sales25', m, force))),
-      Promise.all(MONTHS_2026.map((m) => fetchGroupSales('salesuk', m, force))),
-      Promise.all(MONTHS_2025.map((m) => fetchCost(m, force))),
-      Promise.all(MONTHS_2026.map((m) => fetchCost(m, force))),
+      Promise.all(MONTHS_2025.map((m) => fetchGroupSales('sales25', member, m, force))),
+      Promise.all(MONTHS_2026.map((m) => fetchGroupSales('salesuk', member, m, force))),
+      Promise.all(MONTHS_2025.map((m) => fetchCost(member, m, force))),
+      Promise.all(MONTHS_2026.map((m) => fetchCost(member, m, force))),
     ]);
 
     const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
@@ -276,8 +314,8 @@ async function loadAll(force){
       });
     }
 
-    renderTable(rows);
-    renderCards(rows);
+    renderTable(rows, memberLabel, idSuffix);
+    renderCards(rows, idSuffix);
     statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="12" class="empty">Error: ' + (err.message || err) + '</td></tr>';
@@ -287,9 +325,9 @@ async function loadAll(force){
   }
 }
 
-function renderTable(rows){
-  const tbody = document.getElementById('tblBody');
-  document.getElementById('rowCount').textContent = rows.length + ' months';
+function renderTable(rows, memberLabel, idSuffix){
+  const tbody = document.getElementById('tblBody' + idSuffix);
+  document.getElementById('rowCount' + idSuffix).textContent = rows.length + ' months';
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No data</td></tr>'; return; }
   const netCell = (v) => v != null ? ('<span class="' + (v >= 0 ? 'up' : 'down') + '">' + fmtMoney(v) + '</span>') : 'N/A';
   const roasCell = (v) => {
@@ -307,7 +345,7 @@ function renderTable(rows){
     const statusPill = r.isLive ? '<span class="pill notarchived">Not-Archived</span>' : '<span class="pill archived">Archived</span>';
     return '<tr>' +
       '<td>' + r.monthLabel + '</td>' +
-      '<td>Sonya</td>' +
+      '<td>' + memberLabel + '</td>' +
       '<td class="num">' + (r.sales2025 != null ? fmtMoney(r.sales2025) : 'N/A') + '</td>' +
       '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) + (r.ownCost2025 != null && r.dmSonya2025 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2025) + ', DM: ' + fmtMoney(r.dmSonya2025) + ')</span>' : '') : 'N/A') + '</td>' +
       '<td class="num">' + netCell(r.net2025) + '</td>' +
@@ -322,7 +360,7 @@ function renderTable(rows){
   }).join('');
 }
 
-function renderCards(rows){
+function renderCards(rows, idSuffix){
   const sum = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0);
   const totalSales2025 = sum('sales2025'), totalSales2026 = sum('sales2026');
   const totalCost2025 = sum('costVal2025'), totalCost2026 = sum('costVal2026');
@@ -341,44 +379,55 @@ function renderCards(rows){
     { label: 'Net Growth %', value: netGrowth != null ? fmtPct(netGrowth) : 'N/A', cls: netGrowth >= 0 ? 'good' : 'warn' },
     { label: 'Avg ROAS (2026)', value: avgRoas2026 != null ? fmtPct(avgRoas2026) : 'N/A' },
   ];
-  document.getElementById('kpiCards').innerHTML = cards.map((c) =>
+  document.getElementById('kpiCards' + idSuffix).innerHTML = cards.map((c) =>
     '<div class="card' + (c.cls ? ' ' + c.cls : '') + '"><div class="label">' + c.label + '</div><div class="value">' + c.value + '</div></div>'
   ).join('');
 }
 
-document.getElementById('refreshBtn').addEventListener('click', () => loadAll(true));
-loadAll(false);
-
-// ---------- Member tab switching (all members share this one page; only
-// Sonya has real data built so far — others show a "coming soon" panel in
+// ---------- Member tab switching (all members share this one page; Sonya
+// and Sajeepan have real data built; others show a "coming soon" panel in
 // place, per user instruction 2026-08-04: no standalone pages per member). ----------
 const MEMBER_NAMES = {
   sonya: 'Sonya', jefri: 'Jefri', dilaksi: 'Dilaksi', kamsi: 'Kamsi', mahima: 'Mahima',
   thasitha: 'Thasitha', sukirtha: 'Sukirtha', sajeepan: 'Sajeepan', theekshy: 'Theekshy',
   jackson: 'Jackson', hetheesha: 'Hetheesha', thivajini: 'Thivajini',
 };
-const panelSonya = document.getElementById('panel-sonya');
+// Members with a built, real-data panel (idSuffix used for their DOM IDs).
+const BUILT_MEMBERS = {
+  sonya: { idSuffix: '', panelId: 'panel-sonya', filtersId: 'sonyaFilters' },
+  sajeepan: { idSuffix: '-sajeepan', panelId: 'panel-sajeepan', filtersId: 'sajeepanFilters' },
+};
+
+document.getElementById('refreshBtn').addEventListener('click', () => loadAll('sonya', '', true));
+document.getElementById('refreshBtn-sajeepan').addEventListener('click', () => loadAll('sajeepan', '-sajeepan', true));
+loadAll('sonya', '', false);
+loadAll('sajeepan', '-sajeepan', false);
+
 const panelPlaceholder = document.getElementById('panel-placeholder');
-const sonyaFilters = document.getElementById('sonyaFilters');
 const pageTitle = document.getElementById('pageTitle');
 const pageSub = document.getElementById('pageSub');
 const csAvatar = document.getElementById('csAvatar');
 const csName = document.getElementById('csName');
+const allFilterIds = ['sonyaFilters', 'sajeepanFilters'];
+const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-placeholder'];
 
 function selectMember(key){
   document.querySelectorAll('#memberNav a').forEach((a) => a.classList.toggle('active', a.dataset.member === key));
   const name = MEMBER_NAMES[key] || key;
-  if (key === 'sonya') {
-    pageTitle.textContent = 'Employee Performance — Sonya';
-    pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on Sonya\'s campaigns &middot; Target ROAS 30%';
-    sonyaFilters.style.display = '';
-    panelSonya.style.display = '';
-    panelPlaceholder.style.display = 'none';
+  const built = BUILT_MEMBERS[key];
+
+  // Hide every filters bar and panel first, then show only the one for `key`.
+  allFilterIds.forEach((id) => { document.getElementById(id).style.display = 'none'; });
+  allPanelIds.forEach((id) => { document.getElementById(id).style.display = 'none'; });
+
+  if (built) {
+    pageTitle.textContent = 'Employee Performance — ' + name;
+    pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>' + name + '</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on ' + name + '\'s campaigns &middot; Target ROAS 30%';
+    document.getElementById(built.filtersId).style.display = '';
+    document.getElementById(built.panelId).style.display = '';
   } else {
     pageTitle.textContent = 'Employee Performance — ' + name;
     pageSub.innerHTML = 'Requested by Muguntha &middot; scoped to <strong>' + name + '</strong> &middot; not built yet';
-    sonyaFilters.style.display = 'none';
-    panelSonya.style.display = 'none';
     panelPlaceholder.style.display = '';
     csAvatar.textContent = name.charAt(0);
     csName.textContent = name;
