@@ -69,8 +69,8 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 // auto-rolled by a date check — a new month is added here explicitly when
 // it starts, keeping the list (and month-tab UI) an explicit, reviewable
 // decision rather than a silently-changing one. (Mirrors sales-kamsi.js.)
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-06';
@@ -906,8 +906,8 @@ function londonMidnightUTCMs(year, month, day) {
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-06';
@@ -1366,8 +1366,8 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 // auto-rolled by a date check — a new month is added here explicitly when
 // it starts, keeping the list (and month-tab UI) an explicit, reviewable
 // decision rather than a silently-changing one.
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-06';
@@ -2192,8 +2192,8 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 // date, with a manual Refresh button on the client. (Mirrors the Kamsi/
 // Dilaksi modules above — added 2026-07-22, this module never had July
 // wired in originally.)
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-06';
@@ -2998,8 +2998,8 @@ const GOOGLE_FAMILY_SOURCES = ['google', 'klarna', 'shoptimised', 'shoptimise', 
 // search at all under the old logic, silently dropping ~half her orders.
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-06';

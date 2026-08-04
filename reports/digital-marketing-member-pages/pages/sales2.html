@@ -125,7 +125,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <div class="reqtab" data-month="2026-04" onclick="sdoSelectMonth('2026-04')">April</div>
     <div class="reqtab" data-month="2026-05" onclick="sdoSelectMonth('2026-05')">May</div>
     <div class="reqtab" data-month="2026-06" onclick="sdoSelectMonth('2026-06')">June</div>
-    <div class="reqtab active" data-month="2026-07" onclick="sdoSelectMonth('2026-07')">July (live)</div>
+    <div class="reqtab" data-month="2026-07" onclick="sdoSelectMonth('2026-07')">July</div>
+    <div class="reqtab active" data-month="2026-08" onclick="sdoSelectMonth('2026-08')">August (live)</div>
   </div>
 
   <div class="exportbar" style="margin-bottom:14px;">
@@ -214,7 +215,8 @@ tbody tr:hover{background:var(--accent-soft);}
     <div class="reqtab" data-month="2026-04" onclick="sdeSelectMonth('2026-04')">April</div>
     <div class="reqtab" data-month="2026-05" onclick="sdeSelectMonth('2026-05')">May</div>
     <div class="reqtab" data-month="2026-06" onclick="sdeSelectMonth('2026-06')">June</div>
-    <div class="reqtab active" data-month="2026-07" onclick="sdeSelectMonth('2026-07')">July (live)</div>
+    <div class="reqtab" data-month="2026-07" onclick="sdeSelectMonth('2026-07')">July</div>
+    <div class="reqtab active" data-month="2026-08" onclick="sdeSelectMonth('2026-08')">August (live)</div>
   </div>
 
   <div class="exportbar" style="margin-bottom:14px;">
@@ -312,7 +314,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" data-month="2026-04" onclick="mSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="mSelectMonth('2026-05')">May</div>
   <div class="reqtab" data-month="2026-06" onclick="mSelectMonth('2026-06')">June</div>
-  <div class="reqtab active" data-month="2026-07" onclick="mSelectMonth('2026-07')">July (live)</div>
+  <div class="reqtab" data-month="2026-07" onclick="mSelectMonth('2026-07')">July</div>
+    <div class="reqtab active" data-month="2026-08" onclick="mSelectMonth('2026-08')">August (live)</div>
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
@@ -397,7 +400,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab active" data-month="2026-04" onclick="matSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="matSelectMonth('2026-05')">May</div>
   <div class="reqtab" data-month="2026-06" onclick="matSelectMonth('2026-06')">June</div>
-  <div class="reqtab" data-month="2026-07" onclick="matSelectMonth('2026-07')">July (live)</div>
+  <div class="reqtab" data-month="2026-07" onclick="matSelectMonth('2026-07')">July</div>
+    <div class="reqtab active" data-month="2026-08" onclick="matSelectMonth('2026-08')">August (live)</div>
 </div>
 
 <div class="cards" id="matCardsCombined" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">
@@ -487,7 +491,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" data-month="2026-04" onclick="jaSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="jaSelectMonth('2026-05')">May</div>
   <div class="reqtab" data-month="2026-06" onclick="jaSelectMonth('2026-06')">June</div>
-  <div class="reqtab active" data-month="2026-07" onclick="jaSelectMonth('2026-07')">July (live)</div>
+  <div class="reqtab" data-month="2026-07" onclick="jaSelectMonth('2026-07')">July</div>
+    <div class="reqtab active" data-month="2026-08" onclick="jaSelectMonth('2026-08')">August (live)</div>
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
@@ -754,7 +759,8 @@ tbody tr:hover{background:var(--accent-soft);}
   <div class="reqtab" data-month="2026-04" onclick="thSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="thSelectMonth('2026-05')">May</div>
   <div class="reqtab" data-month="2026-06" onclick="thSelectMonth('2026-06')">June</div>
-  <div class="reqtab active" data-month="2026-07" onclick="thSelectMonth('2026-07')">July (live)</div>
+  <div class="reqtab" data-month="2026-07" onclick="thSelectMonth('2026-07')">July</div>
+    <div class="reqtab active" data-month="2026-08" onclick="thSelectMonth('2026-08')">August (live)</div>
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
@@ -915,8 +921,8 @@ function showMahimaSub(sub){
 }
 
 // ===== Mahima tab (Organic only, mirrors Kamsi tab above, distinct M-prefixed globals/functions) =====
-let M_CURRENT_MONTH = '2026-07';
-const M_LIVE_MONTHS = ['2026-07'];
+let M_CURRENT_MONTH = '2026-08';
+const M_LIVE_MONTHS = ['2026-08'];
 function mSelectMonth(month){
   M_CURRENT_MONTH = month;
   document.querySelectorAll('#mMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -1189,7 +1195,7 @@ document.getElementById('mGroupExportCsv').addEventListener('click', mGroupExpor
 
 // ===== Mahima Google Ads (utm_term match) sub-tab, distinct MAT-prefixed globals/functions =====
 let MAT_CURRENT_MONTH = '2026-04';
-const MAT_LIVE_MONTHS = ['2026-07'];
+const MAT_LIVE_MONTHS = ['2026-08'];
 function matSelectMonth(month){
   MAT_CURRENT_MONTH = month;
   document.querySelectorAll('#matMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -1386,8 +1392,8 @@ document.getElementById('matcResetFilters').addEventListener('click', () => {
 });
 
 // ===== Jeffri tab (Google Ads only, mirrors the Mahima Ads pattern, distinct JA-prefixed globals/functions) =====
-let JA_CURRENT_MONTH = '2026-07';
-const JA_LIVE_MONTHS = ['2026-07'];
+let JA_CURRENT_MONTH = '2026-08';
+const JA_LIVE_MONTHS = ['2026-08'];
 let JA_CHANNEL = 'ads';
 const JA_CHANNEL_STAFF = { ads: 'jeffri-ads', meta: 'jeffri-meta' };
 const JA_CHANNEL_LABEL = { ads: 'Google Ads Sales', meta: 'Meta Ads Sales' };
@@ -2077,8 +2083,8 @@ function tvGroupExportCsv(){
 document.getElementById('tvGroupExportCsv').addEventListener('click', tvGroupExportCsv);
 
 // ===== Thasitha tab (Google Ads only, mirrors the Jeffri tab, distinct TH-prefixed globals/functions) =====
-let TH_CURRENT_MONTH = '2026-07';
-const TH_LIVE_MONTHS = ['2026-07'];
+let TH_CURRENT_MONTH = '2026-08';
+const TH_LIVE_MONTHS = ['2026-08'];
 function thSelectMonth(month){
   TH_CURRENT_MONTH = month;
   document.querySelectorAll('#thMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -2291,8 +2297,8 @@ document.getElementById('thGroupExportCsv').addEventListener('click', thGroupExp
 // functions — verified against K_/D_/S_/SDE_ prefixed identifiers for zero
 // collisions. Includes the July-live-month + Refresh-button pattern from
 // day one (mirrors K_LIVE_MONTHS / kLoad). =====
-let SDO_CURRENT_MONTH = '2026-07';
-const SDO_LIVE_MONTHS = ['2026-07'];
+let SDO_CURRENT_MONTH = '2026-08';
+const SDO_LIVE_MONTHS = ['2026-08'];
 function sdoSelectMonth(month){
   SDO_CURRENT_MONTH = month;
   document.querySelectorAll('#sdoMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
@@ -2557,8 +2563,8 @@ document.getElementById('sdoGroupExportCsv').addEventListener('click', sdoGroupE
 // globals/functions — verified against K_/D_/S_/SDO_ prefixed identifiers
 // for zero collisions. Includes the July-live-month + Refresh-button
 // pattern from day one. =====
-let SDE_CURRENT_MONTH = '2026-07';
-const SDE_LIVE_MONTHS = ['2026-07'];
+let SDE_CURRENT_MONTH = '2026-08';
+const SDE_LIVE_MONTHS = ['2026-08'];
 function sdeSelectMonth(month){
   SDE_CURRENT_MONTH = month;
   document.querySelectorAll('#sdeMonthTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-month') === month));
