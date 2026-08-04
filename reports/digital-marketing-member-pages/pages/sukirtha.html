@@ -2135,7 +2135,7 @@ function r6render(){
       '<tr class="detailrow" style="display:' + (isOpen ? '' : 'none') + ';"><td colspan="7"><div class="detailwrap">' +
       '<div class="detailhead"><span class="dtitle">Product Detail</span></div>' +
       '<div class="detailtblbox"><table class="detailtbl"><thead><tr><th>Page URL</th><th>Meta Title</th><th>Meta Description</th></tr></thead><tbody>' +
-      '<tr><td>' + esc(r.url) + '</td><td>' + esc(r.metaTitle || '(blank)') + ' <span style="color:var(--muted);">(' + r.metaTitleLength + ' chars)</span></td><td>' + esc(r.metaDescription || '(blank)') + ' <span style="color:var(--muted);">(' + r.metaDescriptionLength + ' chars)</span></td></tr>' +
+      '<tr><td><a href="https://ledsone.de' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.url) + '</a></td><td>' + esc(r.metaTitle || '(blank)') + ' <span style="color:var(--muted);">(' + r.metaTitleLength + ' chars)</span></td><td>' + esc(r.metaDescription || '(blank)') + ' <span style="color:var(--muted);">(' + r.metaDescriptionLength + ' chars)</span></td></tr>' +
       '</tbody></table></div></div></td></tr>'
     );
   }).join('');
