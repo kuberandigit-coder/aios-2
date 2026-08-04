@@ -458,15 +458,14 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 </div>
 
 <div class="t1-cards">
-  <div class="t1-card"><div class="l">Overlapping SKUs</div><div class="v" id="r3kpiTotal">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Critical</div><div class="v" id="r3kpiCritical">&ndash;</div></div>
-  <div class="t1-card"><div class="l">High</div><div class="v" id="r3kpiHigh">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Moderate</div><div class="v" id="r3kpiModerate">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Low</div><div class="v" id="r3kpiLow">&ndash;</div></div>
-  <div class="t1-card"><div class="l">CPC Deflation</div><div class="v" id="r3kpiDeflation">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Data Check Required</div><div class="v" id="r3kpiDatacheck">&ndash;</div></div>
-  <div class="t1-card"><div class="l">No Overlap</div><div class="v" id="r3kpiNoOverlap">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Overlapping SKUs (all-time)</div><div class="v" id="r3kpiTotal">&ndash;</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Products that have ever run in Thasitha's campaign AND another campaign</div></div>
+  <div class="t1-card"><div class="l">Currently Overlapping</div><div class="v" id="r3kpiOverlapNow" style="color:#c62828;">&ndash;</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Other campaign is live right now — real conflict</div></div>
+  <div class="t1-card"><div class="l">Not Overlapping Right Now</div><div class="v" id="r3kpiNoOverlap" style="color:#0a7d4f;">&ndash;</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Other campaign is paused/ended — no live conflict</div></div>
 </div>
+
+<div class="t1-cards" id="r3ByCampaignCards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+</div>
+<div style="font-size:11px;color:var(--muted);margin:-8px 0 14px;">&#9432; "Currently Overlapping" per Thasitha campaign, above &mdash; how many of that campaign's products are also live in someone else's campaign right now.</div>
 
 <div class="t1-filterbox">
   <div class="t1-row">
@@ -1751,14 +1750,35 @@ function renderR3(){
 
   const counts = {CRITICAL:0,HIGH:0,MODERATE:0,LOW:0,'CPC DEFLATION':0,'DATA CHECK REQUIRED':0,'NO OVERLAP':0};
   rows.forEach(function(o){ counts[o.risk]++; });
+  const overlapNow = rows.length - counts['NO OVERLAP'];
   document.getElementById('r3kpiTotal').textContent = rows.length.toLocaleString();
-  document.getElementById('r3kpiCritical').textContent = counts.CRITICAL.toLocaleString();
-  document.getElementById('r3kpiHigh').textContent = counts.HIGH.toLocaleString();
-  document.getElementById('r3kpiModerate').textContent = counts.MODERATE.toLocaleString();
-  document.getElementById('r3kpiLow').textContent = counts.LOW.toLocaleString();
-  document.getElementById('r3kpiDeflation').textContent = counts['CPC DEFLATION'].toLocaleString();
-  document.getElementById('r3kpiDatacheck').textContent = counts['DATA CHECK REQUIRED'].toLocaleString();
+  document.getElementById('r3kpiOverlapNow').textContent = overlapNow.toLocaleString();
   document.getElementById('r3kpiNoOverlap').textContent = counts['NO OVERLAP'].toLocaleString();
+
+  // Per-Thasitha-campaign breakdown — how many of THAT campaign's products
+  // are currently overlapping with someone else's live campaign. Plain
+  // counts only, no CPC-tier jargon (2026-08-04 simplification per request).
+  function r3ThasiShort(name){
+    if(!name) return 'Unknown';
+    if(name.indexOf('SUMT')!==-1) return 'SUMT (Klarna NewProduct)';
+    if(name.indexOf('THT')!==-1) return 'THT (Shoptimised NewProduct)';
+    if(name.indexOf('MT')!==-1) return 'MT (Shoptimised Metal)';
+    return name;
+  }
+  const byCampaign = new Map();
+  rows.forEach(function(o){
+    const ownCamp = o.camps[0]; // campaign1 in r3ComputeRow — always Thasitha's own, highest-cost
+    const label = r3ThasiShort(ownCamp ? ownCamp.cname : null);
+    if(!byCampaign.has(label)) byCampaign.set(label, {total:0, overlapping:0});
+    const entry = byCampaign.get(label);
+    entry.total++;
+    if(o.hasOverlap) entry.overlapping++;
+  });
+  const campCardsEl = document.getElementById('r3ByCampaignCards');
+  campCardsEl.innerHTML = [...byCampaign.entries()].map(function(entry){
+    const label = entry[0], stats = entry[1];
+    return '<div class="t1-card"><div class="l">'+esc(label)+'</div><div class="v">'+stats.overlapping+' <span style="font-size:13px;color:var(--muted);font-weight:400;">overlapping / '+stats.total+' total</span></div></div>';
+  }).join('') || '<div class="t1-card"><div class="l">No data</div><div class="v">&ndash;</div></div>';
 }
 
 ['r3Search','r3InflationMin','r3InflationMax'].forEach(function(id){
