@@ -87,7 +87,7 @@ tbody tr:hover{background:var(--accent-soft);}
 <div class="footnotes">
   <strong>Data sources.</strong><br>
   Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
-  ADS Cost &mdash; sum of <code>google_ads.campaign_performance.cost</code> for every Google Ads campaign whose name contains "Sonya" (verified against <code>google_ads.campaigns</code>, 21 distinct campaigns across the UK/US/Ireland/Spain accounts), via the new read-only endpoint <code>/api/muguntha?months=...</code>.<br>
+  ADS Cost &mdash; sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "Sonya" campaign group (<code>group_name='Sonya'</code>, <code>account_id=4503486236</code> &mdash; matches "Campaign group: Sonya" in the Google Ads UI), via the new read-only endpoint <code>/api/muguntha?months=...</code>. Scoped to this one account only &mdash; a separate, unrelated Google Ads account also has a group internally named "Sonya" and is deliberately excluded.<br>
   Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
   Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
 </div>

@@ -31,16 +31,21 @@ function getPool() {
   return pool;
 }
 
-// Real Google Ads campaign names all contain "Sonya" (verified against
-// google_ads.campaigns, 21 distinct campaigns across UK/US/Ireland/Spain
-// accounts, 2026-08-04) — unlike the short UTM-slug codes used for order
-// attribution in api/sales25.js / api/salesuk.js (those identify which
-// *order* is Sonya's, not which Google Ads *campaign spend* is hers).
+// Scoped to the LEDSone Google Ads account's "Sonya" campaign group
+// (google_ads.campaigns.group_name = 'Sonya', account_id 4503486236 —
+// matches the "Campaign group: Sonya" filter in the Google Ads UI).
+// IMPORTANT: campaign_name ILIKE '%sonya%' alone is NOT safe — a completely
+// unrelated Google Ads account ("Vintagelite", account_id 3278683670) also
+// has an internal group named "Sonya" (different campaigns, e.g. "Suki |
+// PMax..."), which inflated Jan-2025 cost from the true £422.23 to
+// £675.66 when both accounts were summed together (caught 2026-08-04 by
+// cross-checking against the Google Ads UI screenshot for Jan 1-31, 2025).
+const LEDSONE_ACCOUNT_ID = 4503486236;
 const COST_QUERY = `
   SELECT to_char(cp.date, 'YYYY-MM') AS month, SUM(cp.cost) AS cost
   FROM google_ads.campaign_performance cp
   JOIN google_ads.campaigns c ON c.campaign_id = cp.campaign_id
-  WHERE c.campaign_name ILIKE '%sonya%'
+  WHERE c.group_name = 'Sonya' AND c.account_id = ${LEDSONE_ACCOUNT_ID}
     AND to_char(cp.date, 'YYYY-MM') = ANY($1::text[])
   GROUP BY 1
 `;
@@ -65,7 +70,7 @@ module.exports = async function handler(req, res) {
     const cost = {};
     for (const m of months) cost[m] = 0;
     for (const r of rows) cost[r.month] = Math.round(Number(r.cost) * 100) / 100;
-    res.status(200).json({ success: true, employee: 'sonya', source: 'google_ads.campaign_performance JOIN google_ads.campaigns (campaign_name ILIKE %sonya%)', cost });
+    res.status(200).json({ success: true, employee: 'sonya', source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='Sonya' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only)`, cost });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
   }
