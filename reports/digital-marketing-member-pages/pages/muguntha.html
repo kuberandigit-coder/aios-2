@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEDSone — Management: Employee Performance (Sonya)</title>
+<style>
+:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;}
+.wrap{max-width:1500px;margin:0 auto;}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+h1{font-size:22px;letter-spacing:.2px;}
+.sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;}
+.chip.live{background:#eef7ee;color:var(--good);}
+.filters button.primary{background:var(--accent);color:#fff;border-color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;}
+.filters button.primary:hover{background:#1749cc;}
+.filters button.primary:disabled{opacity:.6;cursor:wait;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.card .value{font-size:22px;font-weight:700;margin-top:6px;}
+.card.warn .value{color:var(--bad);}
+.card.good .value{color:var(--good);}
+.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.tbar{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.scroll{overflow-x:auto;max-height:70vh;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1400px;}
+thead th{background:#f0f3f8;text-align:left;padding:11px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:2;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4;white-space:nowrap;}
+tbody tr:nth-child(even){background:#fafbfd;}
+tbody tr:hover{background:var(--accent-soft);}
+.pill{display:inline-block;border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;white-space:nowrap;color:#fff;}
+.pill.archived{background:#616e85;}
+.pill.notarchived{background:#0a7d4f;}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+.footnotes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:12.5px;color:var(--muted);line-height:1.65;}
+.footnotes strong{color:var(--ink);}
+.loading{padding:60px 20px;text-align:center;color:var(--muted);}
+.up{color:var(--good);font-weight:700;}
+.down{color:var(--bad);font-weight:700;}
+@media(max-width:700px){h1{font-size:18px;}.card .value{font-size:18px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+<span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Kuberan</span>
+</div>
+<a href="../home.html" class="back">&larr; Back to dashboard</a>
+<header>
+  <h1>Management — Employee Performance Analysis (2025 vs 2026)</h1>
+  <div class="sub">Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on Sonya's campaigns &middot; Target ROAS 30%</div>
+  <div class="filters">
+    <span class="chip live" id="statusChip">Loading&hellip;</span>
+    <button class="primary" id="refreshBtn">Refresh (live)</button>
+  </div>
+</header>
+
+<div class="cards" id="kpiCards"></div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <strong>Month-by-Month — Sonya</strong>
+    <span id="rowCount"></span>
+  </div>
+  <div class="scroll">
+    <table id="mainTable">
+      <thead>
+        <tr>
+          <th>Month</th><th>Name</th>
+          <th class="num">2025 Sales</th><th class="num">2025 Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
+          <th class="num">2026 Sales</th><th class="num">2026 Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
+          <th class="num">Target Achievement</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tblBody"><tr><td colspan="12" class="loading">Loading Sonya's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Data sources.</strong><br>
+  Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
+  ADS Cost &mdash; sum of <code>google_ads.campaign_performance.cost</code> for every Google Ads campaign whose name contains "Sonya" (verified against <code>google_ads.campaigns</code>, 21 distinct campaigns across the UK/US/Ireland/Spain accounts), via the new read-only endpoint <code>/api/muguntha?months=...</code>.<br>
+  Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
+  Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+</div>
+</div>
+
+<script>
+const TARGET_ROAS = 0.30;
+const MONTHS_2025 = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06'];
+const MONTHS_2026 = ['2026-06','2026-07','2026-08'];
+const MONTH_NAME = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August'};
+const LIVE_2026 = ['2026-08'];
+
+function fmtMoney(n){ return '£' + (Math.round((n||0)*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtPct(n){ return isFinite(n) ? (Math.round(n*10000)/100).toFixed(2) + '%' : 'N/A'; }
+
+async function fetchGroupSales(endpoint, month, force){
+  const url = '/api/' + endpoint + '?group=sonya&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || (endpoint + ' failed for ' + month));
+  return data.combinedSummary ? data.combinedSummary.orderTotalSum : 0;
+}
+
+async function fetchCost(months){
+  const res = await fetch('/api/muguntha?months=' + months.join(','));
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'cost fetch failed');
+  return data.cost;
+}
+
+async function loadAll(force){
+  const statusChip = document.getElementById('statusChip');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const tbody = document.getElementById('tblBody');
+  refreshBtn.disabled = true;
+  statusChip.textContent = 'Loading…';
+  tbody.innerHTML = '<tr><td colspan="12" class="loading">Loading Sonya\'s 2025 vs 2026 performance…</td></tr>';
+
+  try {
+    const [sales25Arr, sales26Arr, cost25, cost26] = await Promise.all([
+      Promise.all(MONTHS_2025.map((m) => fetchGroupSales('sales25', m, force))),
+      Promise.all(MONTHS_2026.map((m) => fetchGroupSales('salesuk', m, force))),
+      fetchCost(MONTHS_2025),
+      fetchCost(MONTHS_2026),
+    ]);
+
+    const rows = [];
+    const maxLen = Math.max(MONTHS_2025.length, MONTHS_2026.length);
+    for (let i = 0; i < maxLen; i++) {
+      const m25 = MONTHS_2025[i], m26 = MONTHS_2026[i];
+      const sales2025 = m25 ? sales25Arr[i] : null;
+      const costVal2025 = m25 ? (cost25[m25] || 0) : null;
+      const sales2026 = m26 ? sales26Arr[i] : null;
+      const costVal2026 = m26 ? (cost26[m26] || 0) : null;
+      const net2025 = sales2025 != null ? sales2025 - costVal2025 : null;
+      const roas2025 = sales2025 != null && costVal2025 > 0 ? sales2025 / costVal2025 : null;
+      const net2026 = sales2026 != null ? sales2026 - costVal2026 : null;
+      const roas2026 = sales2026 != null && costVal2026 > 0 ? sales2026 / costVal2026 : null;
+      const monthLabel = m26 ? MONTH_NAME[m26.slice(5)] : (m25 ? MONTH_NAME[m25.slice(5)] : '');
+      const targetAch = roas2026 != null ? roas2026 / TARGET_ROAS : (roas2025 != null ? roas2025 / TARGET_ROAS : null);
+      const isLive = m26 && LIVE_2026.includes(m26);
+      rows.push({ monthLabel, m25, m26, sales2025, costVal2025, net2025, roas2025, sales2026, costVal2026, net2026, roas2026, targetAch, isLive });
+    }
+
+    renderTable(rows);
+    renderCards(rows);
+    statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty">Error: ' + (err.message || err) + '</td></tr>';
+    statusChip.textContent = 'Error';
+  } finally {
+    refreshBtn.disabled = false;
+  }
+}
+
+function renderTable(rows){
+  const tbody = document.getElementById('tblBody');
+  document.getElementById('rowCount').textContent = rows.length + ' months';
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No data</td></tr>'; return; }
+  tbody.innerHTML = rows.map((r) => {
+    const statusPill = r.isLive ? '<span class="pill notarchived">Not-Archived</span>' : '<span class="pill archived">Archived</span>';
+    return '<tr>' +
+      '<td>' + r.monthLabel + '</td>' +
+      '<td>Sonya</td>' +
+      '<td class="num">' + (r.sales2025 != null ? fmtMoney(r.sales2025) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.net2025 != null ? fmtMoney(r.net2025) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.roas2025 != null ? fmtPct(r.roas2025) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.sales2026 != null ? fmtMoney(r.sales2026) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.costVal2026 != null ? fmtMoney(r.costVal2026) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.net2026 != null ? fmtMoney(r.net2026) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.roas2026 != null ? fmtPct(r.roas2026) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.targetAch != null ? fmtPct(r.targetAch) : 'N/A') + '</td>' +
+      '<td>' + statusPill + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderCards(rows){
+  const sum = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0);
+  const totalSales2025 = sum('sales2025'), totalSales2026 = sum('sales2026');
+  const totalCost2025 = sum('costVal2025'), totalCost2026 = sum('costVal2026');
+  const totalNet2025 = totalSales2025 - totalCost2025, totalNet2026 = totalSales2026 - totalCost2026;
+  const salesGrowth = totalSales2025 > 0 ? (totalSales2026 - totalSales2025) / totalSales2025 : null;
+  const costGrowth = totalCost2025 > 0 ? (totalCost2026 - totalCost2025) / totalCost2025 : null;
+  const netGrowth = totalNet2025 > 0 ? (totalNet2026 - totalNet2025) / totalNet2025 : null;
+  const avgRoas2026 = totalCost2026 > 0 ? totalSales2026 / totalCost2026 : null;
+
+  const cards = [
+    { label: 'Total Employees', value: '1 (Sonya)' },
+    { label: '2025 Sales', value: fmtMoney(totalSales2025) },
+    { label: '2026 Sales', value: fmtMoney(totalSales2026) },
+    { label: 'Sales Growth %', value: salesGrowth != null ? fmtPct(salesGrowth) : 'N/A', cls: salesGrowth >= 0 ? 'good' : 'warn' },
+    { label: '2025 Cost', value: fmtMoney(totalCost2025) },
+    { label: '2026 Cost', value: fmtMoney(totalCost2026) },
+    { label: 'Cost Growth %', value: costGrowth != null ? fmtPct(costGrowth) : 'N/A' },
+    { label: '2025 Net Profit', value: fmtMoney(totalNet2025) },
+    { label: '2026 Net Profit', value: fmtMoney(totalNet2026) },
+    { label: 'Net Growth %', value: netGrowth != null ? fmtPct(netGrowth) : 'N/A', cls: netGrowth >= 0 ? 'good' : 'warn' },
+    { label: 'Avg ROAS (2026)', value: avgRoas2026 != null ? fmtPct(avgRoas2026) : 'N/A' },
+    { label: 'Target ROAS', value: fmtPct(TARGET_ROAS) },
+  ];
+  document.getElementById('kpiCards').innerHTML = cards.map((c) =>
+    '<div class="card' + (c.cls ? ' ' + c.cls : '') + '"><div class="label">' + c.label + '</div><div class="value">' + c.value + '</div></div>'
+  ).join('');
+}
+
+document.getElementById('refreshBtn').addEventListener('click', () => loadAll(true));
+loadAll(false);
+</script>
+</body>
+</html>

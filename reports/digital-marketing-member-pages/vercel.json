@@ -5,6 +5,7 @@
     "api/salesuk.js": { "maxDuration": 300 },
     "api/sales25.js": { "maxDuration": 300 },
     "api/assign-order.js": { "maxDuration": 30 },
-    "api/salesde25.js": { "maxDuration": 300 }
+    "api/salesde25.js": { "maxDuration": 300 },
+    "api/muguntha.js": { "maxDuration": 60 }
   }
 }
