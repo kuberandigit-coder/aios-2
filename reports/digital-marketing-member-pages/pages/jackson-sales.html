@@ -86,7 +86,8 @@ tbody tr.totalrow{background:#eef2fb;font-weight:700;}
   <div class="reqtab" data-month="2026-04" onclick="jSelectMonth('2026-04')">April</div>
   <div class="reqtab" data-month="2026-05" onclick="jSelectMonth('2026-05')">May</div>
   <div class="reqtab" data-month="2026-06" onclick="jSelectMonth('2026-06')">June</div>
-  <div class="reqtab active" data-month="2026-07" onclick="jSelectMonth('2026-07')">July (live)</div>
+  <div class="reqtab" data-month="2026-07" onclick="jSelectMonth('2026-07')">July</div>
+  <div class="reqtab active" data-month="2026-08" onclick="jSelectMonth('2026-08')">August (live)</div>
 </div>
 
 <div class="exportbar" style="margin-bottom:14px;">
@@ -159,8 +160,8 @@ function esc(s){ return (s === null || s === undefined) ? '' : String(s).replace
 function money(n){ return (n === null || n === undefined) ? '–' : '£' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function num(n){ return (n === null || n === undefined) ? '–' : Number(n).toLocaleString(); }
 
-const J_LIVE_MONTHS = ['2026-07'];
-let J_CURRENT_MONTH = '2026-07';
+const J_LIVE_MONTHS = ['2026-08'];
+let J_CURRENT_MONTH = '2026-08';
 let J_DATA = null;
 let jLoading = false;
 let jAbortController = null;

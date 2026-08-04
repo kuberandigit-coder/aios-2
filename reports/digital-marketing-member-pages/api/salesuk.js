@@ -37,8 +37,8 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 // the current LIVE month (mirrors sales.html's convention) — never gets a
 // permanent static snapshot, always reflects month-to-date data. Add more
 // months here as this page grows the same way sales.html did.
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 function resolveReportMonth(monthParam) {
   const month = SUPPORTED_MONTHS.includes(monthParam) ? monthParam : '2026-01';
