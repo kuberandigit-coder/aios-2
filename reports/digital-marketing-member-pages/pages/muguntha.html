@@ -155,7 +155,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
             <thead>
               <tr>
                 <th>Month</th><th>Name</th>
-                <th class="num">2025 Sales</th><th class="num">2025 Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
+                <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
                 <th class="num">Target Achievement</th><th>Status</th>
               </tr>
@@ -168,8 +168,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
       <div class="footnotes">
         <strong>Data sources.</strong><br>
         Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
-        2025 Cost &mdash; sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "Sonya" campaign group (<code>group_name='Sonya'</code>, <code>account_id=4503486236</code>) only. The DM 46 campaign is not factored into 2025 at all.<br>
-        2026 Total Cost &mdash; Sonya's own campaign cost (as above) <strong>plus</strong> her product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sonya credit for any DM 46 order containing one of her owned products, so her share of that campaign's cost is folded into this single 2026 Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to her owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only her share is.<br>
+        2025 Total Cost and 2026 Total Cost &mdash; identical formula for both years: Sonya's own campaign cost (sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "Sonya" campaign group, <code>group_name='Sonya'</code>, <code>account_id=4503486236</code>) <strong>plus</strong> her product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sonya credit for any DM 46 order containing one of her owned products, so her share of that campaign's cost is folded into this single Total Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to her owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only her share is. (Updated 2026-08-04 &mdash; 2025 previously excluded DM cost entirely; now matches 2026's treatment.)<br>
         Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
         Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
       </div>
@@ -188,9 +187,9 @@ tbody tr:hover td:first-child{color:var(--accent);}
 
 <script>
 const TARGET_ROAS = 0.30;
-const MONTHS_2025 = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08'];
+const MONTHS_2025 = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12'];
 const MONTHS_2026 = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08'];
-const MONTH_NAME = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August'};
+const MONTH_NAME = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'};
 const LIVE_2026 = ['2026-08'];
 
 function fmtMoney(n){ return '£' + (Math.round((n||0)*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -250,13 +249,14 @@ async function loadAll(force){
       const sales2026 = m26 ? sales26ByMonth[m26] : null;
       const c26 = m26 ? cost26[m26] : null;
 
-      // 2025 does not consider the DM campaign at all — Cost is Sonya's own
-      // campaign cost only (per user instruction 2026-08-04).
-      const costVal2025 = c25 ? c25.ownCost : null;
-      // 2026 Total Cost = Sonya's own campaign cost + her product-share of
-      // the DM 46 campaign's spend, folded into one number, with the DM
-      // portion shown in brackets alongside it (per user instruction
-      // 2026-08-04).
+      // 2025 and 2026 Total Cost both = Sonya's own campaign cost + her
+      // product-share of the DM 46 campaign's spend, folded into one number,
+      // with the DM portion shown in brackets alongside it — identical
+      // treatment for both years (per user instruction 2026-08-04, reversing
+      // the earlier 2025-excludes-DM rule).
+      const costVal2025 = c25 ? c25.totalCost : null;
+      const ownCost2025 = c25 ? c25.ownCost : null;
+      const dmSonya2025 = c25 ? c25.dmSonyaProductCost : null;
       const costVal2026 = c26 ? c26.totalCost : null;
       const ownCost2026 = c26 ? c26.ownCost : null;
       const dmSonya2026 = c26 ? c26.dmSonyaProductCost : null;
@@ -270,7 +270,7 @@ async function loadAll(force){
       const isLive = m26 && LIVE_2026.includes(m26);
       rows.push({
         monthLabel, m25, m26,
-        sales2025, costVal2025, net2025, roas2025,
+        sales2025, costVal2025, ownCost2025, dmSonya2025, net2025, roas2025,
         sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
         targetAch, isLive,
       });
@@ -309,7 +309,7 @@ function renderTable(rows){
       '<td>' + r.monthLabel + '</td>' +
       '<td>Sonya</td>' +
       '<td class="num">' + (r.sales2025 != null ? fmtMoney(r.sales2025) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) + (r.ownCost2025 != null && r.dmSonya2025 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2025) + ', DM: ' + fmtMoney(r.dmSonya2025) + ')</span>' : '') : 'N/A') + '</td>' +
       '<td class="num">' + netCell(r.net2025) + '</td>' +
       '<td class="num">' + roasCell(r.roas2025) + '</td>' +
       '<td class="num">' + (r.sales2026 != null ? fmtMoney(r.sales2026) : 'N/A') + '</td>' +
