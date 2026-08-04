@@ -1800,7 +1800,13 @@ function applyR3LiveData(data, isRestored){
   if (data.latestDate) {
     R3_LATEST_DATE = data.latestDate;
     const d = new Date(R3_LATEST_DATE + 'T00:00:00Z');
-    d.setUTCDate(d.getUTCDate() - 1);
+    // Widened from "yesterday only" (-1 day) to a 7-day window (2026-08-04
+    // fix) — a 1-day window meant a campaign with a 2-3 day reporting lag
+    // (normal for Google Ads) was wrongly treated as "not currently active,"
+    // pushing every overlap candidate into NO OVERLAP regardless of real
+    // conflict status. 7 days is a more realistic definition of "still
+    // running" while still excluding genuinely paused/ended campaigns.
+    d.setUTCDate(d.getUTCDate() - 7);
     R3_ACTIVE_THRESHOLD = d.toISOString().slice(0, 10);
   }
   r3Loaded = true;
