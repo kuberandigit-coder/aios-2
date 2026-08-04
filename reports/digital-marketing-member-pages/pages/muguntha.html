@@ -134,19 +134,27 @@ async function loadAll(force){
       fetchCost(MONTHS_2026),
     ]);
 
+    const sales25ByMonth = {}, sales26ByMonth = {};
+    MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; });
+    MONTHS_2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; });
+
+    // Align by calendar month number (MM), not by array position — 2025 runs
+    // Jan-Jun and 2026 runs Jun-Aug, so a positional zip would pair e.g.
+    // 2025-01 with 2026-06 under a single mislabeled "June" row.
+    const allMonthNums = [...new Set([...MONTHS_2025, ...MONTHS_2026].map((m) => m.slice(5)))].sort();
     const rows = [];
-    const maxLen = Math.max(MONTHS_2025.length, MONTHS_2026.length);
-    for (let i = 0; i < maxLen; i++) {
-      const m25 = MONTHS_2025[i], m26 = MONTHS_2026[i];
-      const sales2025 = m25 ? sales25Arr[i] : null;
+    for (const mm of allMonthNums) {
+      const m25 = MONTHS_2025.find((m) => m.slice(5) === mm) || null;
+      const m26 = MONTHS_2026.find((m) => m.slice(5) === mm) || null;
+      const sales2025 = m25 ? sales25ByMonth[m25] : null;
       const costVal2025 = m25 ? (cost25[m25] || 0) : null;
-      const sales2026 = m26 ? sales26Arr[i] : null;
+      const sales2026 = m26 ? sales26ByMonth[m26] : null;
       const costVal2026 = m26 ? (cost26[m26] || 0) : null;
       const net2025 = sales2025 != null ? sales2025 - costVal2025 : null;
       const roas2025 = sales2025 != null && costVal2025 > 0 ? sales2025 / costVal2025 : null;
       const net2026 = sales2026 != null ? sales2026 - costVal2026 : null;
       const roas2026 = sales2026 != null && costVal2026 > 0 ? sales2026 / costVal2026 : null;
-      const monthLabel = m26 ? MONTH_NAME[m26.slice(5)] : (m25 ? MONTH_NAME[m25.slice(5)] : '');
+      const monthLabel = MONTH_NAME[mm];
       const targetAch = roas2026 != null ? roas2026 / TARGET_ROAS : (roas2025 != null ? roas2025 / TARGET_ROAS : null);
       const isLive = m26 && LIVE_2026.includes(m26);
       rows.push({ monthLabel, m25, m26, sales2025, costVal2025, net2025, roas2025, sales2026, costVal2026, net2026, roas2026, targetAch, isLive });
