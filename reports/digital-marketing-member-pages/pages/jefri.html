@@ -181,6 +181,9 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 <div class="tablebox">
   <div class="tbar">
     <input type="text" id="r2q" placeholder="Search term or match type…">
+    <label>Campaign <select id="r2f_campaign">
+      <option value="">All campaigns</option>
+    </select></label>
     <label>Tag <select id="r2f_tag">
       <option value="">All tags (includes untagged)</option>
       <option value="Hero">🏆 Hero</option>
@@ -191,11 +194,22 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
     <button id="r2ExportCsv" type="button">Export CSV</button>
     <span id="r2cnt" style="margin-left:auto;">&ndash;</span>
   </div>
+  <div class="tablebox" id="r2CampaignSummaryBox" style="margin-bottom:14px;padding:0;border:none;">
+    <div class="scroll" style="max-height:none;overflow-y:visible;">
+      <table style="min-width:700px;">
+        <thead><tr>
+          <th>Campaign</th><th class="num">Terms</th><th class="num">🏆 Heroes</th><th class="num">🩸 Villains</th><th class="num">🧟 Zombies</th><th class="num">🥷 Sidekicks</th>
+        </tr></thead>
+        <tbody id="r2CampaignSummaryBody"><tr><td colspan="6" class="loading">Loading&hellip;</td></tr></tbody>
+      </table>
+    </div>
+  </div>
   <div class="scroll" style="max-height:640px;overflow-y:auto;">
     <table>
       <thead style="position:sticky;top:0;z-index:5;"><tr>
         <th data-k="searchTerm">Search Term</th>
         <th data-k="matchType">Match Type</th>
+        <th data-k="campaignName">Campaign</th>
         <th class="num" data-k="clicks">Clicks</th>
         <th class="num" data-k="impressions">Impressions</th>
         <th class="num" data-k="ctr">CTR</th>
@@ -207,7 +221,7 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
         <th class="num" data-k="roas">ROAS</th>
         <th data-k="tag">Tag</th>
       </tr></thead>
-      <tbody id="r2tbody"><tr><td colspan="12" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+      <tbody id="r2tbody"><tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r2empty" style="display:none;">No search terms match the current filters.</div>
@@ -611,6 +625,35 @@ function applyReq2Data(data, isRestored){
   document.getElementById('r2cVillain').textContent = num(data.summary.villain);
   document.getElementById('r2cZombie').textContent = num(data.summary.zombie);
   document.getElementById('r2cSidekick').textContent = num(data.summary.sidekick);
+
+  const campaignSel = document.getElementById('r2f_campaign');
+  const prevVal = campaignSel.value;
+  campaignSel.innerHTML = '<option value="">All campaigns</option>';
+  (data.campaignList || []).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    campaignSel.appendChild(opt);
+  });
+  campaignSel.value = prevVal;
+
+  const csBody = document.getElementById('r2CampaignSummaryBody');
+  const cs = data.campaignSummary || [];
+  if (!cs.length) {
+    csBody.innerHTML = '<tr><td colspan="6" class="loading">No campaign data.</td></tr>';
+  } else {
+    csBody.innerHTML = cs.map(c => (
+      '<tr>' +
+      '<td>'+esc(c.campaignName)+'</td>' +
+      '<td class="num">'+num(c.totalTerms)+'</td>' +
+      '<td class="num">'+num(c.hero)+'</td>' +
+      '<td class="num">'+num(c.villain)+'</td>' +
+      '<td class="num">'+num(c.zombie)+'</td>' +
+      '<td class="num">'+num(c.sidekick)+'</td>' +
+      '</tr>'
+    )).join('');
+  }
+
   r2pg = 1;
   r2Render();
   r2RestoredTs = new Date(data.meta.generatedAt).getTime();
@@ -624,7 +667,7 @@ async function r2Load(force){
   if (force || !R2_ALL.length) {
     document.getElementById('r2LiveChip').textContent = 'Fetching live from PostgreSQL…';
     document.getElementById('r2LiveChip').className = 'chip';
-    document.getElementById('r2tbody').innerHTML = '<tr><td colspan="12" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
+    document.getElementById('r2tbody').innerHTML = '<tr><td colspan="13" class="loading">Loading live data from PostgreSQL&hellip;</td></tr>';
   }
   try {
     const res = await fetch('/api/requirement?fn=jefri-search-terms' + (force ? '&refresh=1' : ''));
@@ -651,10 +694,12 @@ async function r2Load(force){
 function r2FilteredRows(){
   const q = document.getElementById('r2q').value.trim().toLowerCase();
   const tagF = document.getElementById('r2f_tag').value;
+  const campaignF = document.getElementById('r2f_campaign').value;
   let rows = R2_ALL.filter(r => {
     const textHit = !q || (r.searchTerm||'').toLowerCase().includes(q) || (r.matchType||'').toLowerCase().includes(q);
     const tagHit = !tagF || r.tag === tagF;
-    return textHit && tagHit;
+    const campaignHit = !campaignF || r.campaignId === campaignF;
+    return textHit && tagHit && campaignHit;
   });
   rows.sort((a,b) => {
     let av = a[r2SortKey], bv = b[r2SortKey];
@@ -695,6 +740,7 @@ function r2Render(){
     '<tr>' +
     '<td>'+esc(r.searchTerm)+'</td>' +
     '<td>'+esc(r.matchType)+'</td>' +
+    '<td>'+esc(r.campaignName)+'</td>' +
     '<td class="num">'+num(r.clicks)+'</td>' +
     '<td class="num">'+num(r.impressions)+'</td>' +
     '<td class="num">'+r2Pct(r.ctr)+'</td>' +
@@ -712,7 +758,7 @@ function r2Render(){
 
 function r2ExportCsv(){
   const rows = r2FilteredRows();
-  const header = ['Search Term','Match Type','Clicks','Impressions','CTR','Avg CPC','Cost','Conv. Value','Conversions','Cost / Conversion','ROAS','Tag'];
+  const header = ['Search Term','Match Type','Campaign','Clicks','Impressions','CTR','Avg CPC','Cost','Conv. Value','Conversions','Cost / Conversion','ROAS','Tag'];
   const csvSafe = (v) => {
     if (v === null || v === undefined) return '';
     let s = String(v);
@@ -721,7 +767,7 @@ function r2ExportCsv(){
   };
   const lines = [header.join(',')];
   rows.forEach(r => {
-    lines.push([r.searchTerm, r.matchType, r.clicks, r.impressions, r.ctr, r.avgCpc, r.cost, r.conversionValue, r.conversions, r.costPerConversion, r.roas, r.tag].map(csvSafe).join(','));
+    lines.push([r.searchTerm, r.matchType, r.campaignName, r.clicks, r.impressions, r.ctr, r.avgCpc, r.cost, r.conversionValue, r.conversions, r.costPerConversion, r.roas, r.tag].map(csvSafe).join(','));
   });
   const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -737,6 +783,7 @@ function r2ExportCsv(){
 document.getElementById('r2RefreshBtn').addEventListener('click', () => r2Load(true));
 document.getElementById('r2q').addEventListener('input', () => { r2pg=1; r2Render(); });
 document.getElementById('r2f_tag').addEventListener('change', () => { r2pg=1; r2Render(); });
+document.getElementById('r2f_campaign').addEventListener('change', () => { r2pg=1; r2Render(); });
 document.getElementById('r2psize').addEventListener('change', () => { r2pg=1; r2Render(); });
 document.getElementById('r2ExportCsv').addEventListener('click', r2ExportCsv);
 document.getElementById('r2pgFirst').addEventListener('click', () => { r2pg=1; r2Render(); });

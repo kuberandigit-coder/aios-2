@@ -60,7 +60,13 @@ function getPool() {
       // "The server does not support SSL connections") — using plain TCP per
       // the requirement's own documented fallback. Not a security downgrade
       // decision made casually; this is what the server itself requires.
-      ssl: false,
+      // SSL requirement varies by host (the original server didn't support
+      // it; the current one requires it) — controlled by PGSSL=require env
+      // var rather than hardcoded, so switching DB hosts doesn't need a
+      // code change. rejectUnauthorized:false accepts the server's cert
+      // without a locally-trusted CA chain, matching the connection details
+      // provided for the current host.
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
       connectionTimeoutMillis: 8000,
       statement_timeout: 20000,
       max: 3,
@@ -1371,31 +1377,43 @@ function getPool2() {
       database: connectionString ? undefined : process.env.PGDATABASE,
       user: connectionString ? undefined : process.env.PGUSER,
       password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
     });
   }
   return pool2;
 }
 
-const JEFRI_CAMPAIGN_IDS_R2 = ['23141810147', '23411228109', '22539594891', '23473840779', '23340277562'];
+// Local copy of Req1's JEFRI_CAMPAIGNS (that one is private to
+// jefriProductStatusHandlerModule's own closure, not accessible here) — same
+// 5 campaigns/names, kept in sync manually since this module is intentionally
+// isolated from Req1's code.
+const JEFRI_CAMPAIGNS = [
+  { id: '23141810147', name: 'Pmax | Jeff | Klarna | NEWALL | All Products | MCV | DE -16/10' },
+  { id: '23411228109', name: 'Pmax | Jeff | Shoparize | ALL | All Products | MCV | DE-01/01/26' },
+  { id: '22539594891', name: 'Shopping | Jeff | Shoptimised | AOVU15 | TROAS | DE -12/05' },
+  { id: '23473840779', name: 'Pmax | Jeff | Shoparize | FTJ | FinetunedProducts | TROAS | DE-20.01' },
+  { id: '23340277562', name: 'Pmax | Jeff | Shoparize | IT | Italy | TROAS | IT-08/12' },
+];
+const JEFRI_CAMPAIGN_IDS_R2 = JEFRI_CAMPAIGNS.map((c) => c.id);
 
 const QUERY_R2 = `
-  SELECT search_term, match_type,
+  SELECT search_term, match_type, campaign_id,
          SUM(clicks)::bigint AS clicks,
          SUM(impressions)::bigint AS impressions,
          SUM(cost)::numeric AS cost,
          SUM(conversions)::numeric AS conversions,
          SUM(conversions_value)::numeric AS conv_value
   FROM (
-    SELECT search_term, match_type, clicks, impressions, cost, conversions, conversions_value
+    SELECT search_term, match_type, campaign_id, clicks, impressions, cost, conversions, conversions_value
     FROM google_ads.campaign_search_term_data
     WHERE campaign_id = ANY($1) AND date >= CURRENT_DATE - INTERVAL '90 days'
     UNION ALL
-    SELECT search_term, match_type, clicks, impressions, cost, conversions, conversions_value
+    SELECT search_term, match_type, campaign_id, clicks, impressions, cost, conversions, conversions_value
     FROM google_ads.pmax_campaign_search_term_data
     WHERE campaign_id = ANY($1) AND date >= CURRENT_DATE - INTERVAL '90 days'
   ) t
   WHERE search_term IS NOT NULL
-  GROUP BY search_term, match_type
+  GROUP BY search_term, match_type, campaign_id
 `;
 
 // Tagging rules (Jefri Req2, updated 2026-07-22 per revised business rules
@@ -1465,6 +1483,7 @@ async function jefriSearchTermsHandler(req, res) {
 
   try {
     const result = await client.query(QUERY_R2, [JEFRI_CAMPAIGN_IDS_R2]);
+    const campaignNameById = new Map(JEFRI_CAMPAIGNS.map((c) => [c.id, c.name]));
     const rows = result.rows.map((r) => {
       const clicks = Number(r.clicks) || 0;
       const impressions = Number(r.impressions) || 0;
@@ -1476,9 +1495,12 @@ async function jefriSearchTermsHandler(req, res) {
       const costPerConversion = conversions > 0 ? round2(cost / conversions) : null;
       const roas = cost > 0 ? round2((convValue / cost) * 100) : 0;
       const tag = classifyTag(clicks, impressions, cost, conversions, roas);
+      const campaignId = String(r.campaign_id);
       return {
         searchTerm: r.search_term,
         matchType: r.match_type,
+        campaignId,
+        campaignName: campaignNameById.get(campaignId) || campaignId,
         clicks, impressions, ctr, avgCpc, cost,
         conversionValue: round2(convValue),
         conversions: round2(conversions),
@@ -1487,6 +1509,20 @@ async function jefriSearchTermsHandler(req, res) {
         tag,
       };
     });
+
+    const campaignSummaryMap = new Map();
+    for (const r of rows) {
+      if (!campaignSummaryMap.has(r.campaignId)) {
+        campaignSummaryMap.set(r.campaignId, { campaignId: r.campaignId, campaignName: r.campaignName, totalTerms: 0, hero: 0, villain: 0, zombie: 0, sidekick: 0 });
+      }
+      const cs = campaignSummaryMap.get(r.campaignId);
+      cs.totalTerms++;
+      if (r.tag === 'Hero') cs.hero++;
+      else if (r.tag === 'Villain') cs.villain++;
+      else if (r.tag === 'Zombie') cs.zombie++;
+      else if (r.tag === 'Sidekick') cs.sidekick++;
+    }
+    const campaignSummary = [...campaignSummaryMap.values()].sort((a, b) => b.totalTerms - a.totalTerms);
 
     const payload = {
       success: true,
@@ -1503,6 +1539,8 @@ async function jefriSearchTermsHandler(req, res) {
         zombie: rows.filter((r) => r.tag === 'Zombie').length,
         sidekick: rows.filter((r) => r.tag === 'Sidekick').length,
       },
+      campaignList: JEFRI_CAMPAIGNS.filter((c) => campaignSummaryMap.has(c.id)),
+      campaignSummary,
       rows,
       meta: { generatedAt: new Date().toISOString() },
     };
@@ -1553,6 +1591,7 @@ function getPool3() {
       database: connectionString ? undefined : process.env.PGDATABASE,
       user: connectionString ? undefined : process.env.PGUSER,
       password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
     });
   }
   return pool3;
@@ -3517,7 +3556,13 @@ function getPool() {
       user: connectionString ? undefined : process.env.PGUSER,
       password: connectionString ? undefined : process.env.PGPASSWORD,
       // Same server as the Jefri endpoint above — SSL confirmed unsupported.
-      ssl: false,
+      // SSL requirement varies by host (the original server didn't support
+      // it; the current one requires it) — controlled by PGSSL=require env
+      // var rather than hardcoded, so switching DB hosts doesn't need a
+      // code change. rejectUnauthorized:false accepts the server's cert
+      // without a locally-trusted CA chain, matching the connection details
+      // provided for the current host.
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
       connectionTimeoutMillis: 8000,
       statement_timeout: 20000,
       max: 3,
@@ -3645,7 +3690,13 @@ function getPool() {
       database: connectionString ? undefined : process.env.PGDATABASE,
       user: connectionString ? undefined : process.env.PGUSER,
       password: connectionString ? undefined : process.env.PGPASSWORD,
-      ssl: false,
+      // SSL requirement varies by host (the original server didn't support
+      // it; the current one requires it) — controlled by PGSSL=require env
+      // var rather than hardcoded, so switching DB hosts doesn't need a
+      // code change. rejectUnauthorized:false accepts the server's cert
+      // without a locally-trusted CA chain, matching the connection details
+      // provided for the current host.
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
       connectionTimeoutMillis: 8000,
       // Longer than the other Thasitha/Jefri pools: this query aggregates
       // tens of thousands of product_performance rows across every campaign
@@ -3860,7 +3911,13 @@ function getPool() {
       database: connectionString ? undefined : process.env.PGDATABASE,
       user: connectionString ? undefined : process.env.PGUSER,
       password: connectionString ? undefined : process.env.PGPASSWORD,
-      ssl: false,
+      // SSL requirement varies by host (the original server didn't support
+      // it; the current one requires it) — controlled by PGSSL=require env
+      // var rather than hardcoded, so switching DB hosts doesn't need a
+      // code change. rejectUnauthorized:false accepts the server's cert
+      // without a locally-trusted CA chain, matching the connection details
+      // provided for the current host.
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
       connectionTimeoutMillis: 8000,
       statement_timeout: 30000,
       max: 3,
