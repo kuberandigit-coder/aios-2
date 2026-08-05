@@ -1486,7 +1486,10 @@ function renderR3Row(o){
   const imgCell = o.lnk
     ? '<a href="'+esc(o.lnk)+'" target="_blank" rel="noopener" title="Open product page">'+imgRaw+'</a>'
     : imgRaw;
-  const productCell = '<div style="display:flex;gap:8px;align-items:center;">'+imgCell+'<span style="font-family:monospace;font-size:11.5px;">'+esc(o.pid||o.sku)+'</span></div>';
+  const productCell = '<div style="display:flex;gap:8px;align-items:center;">'+imgCell+'<div style="font-family:monospace;font-size:11.5px;line-height:1.5;">'
+    + '<div>ID: '+esc(o.pid||'&mdash;')+'</div>'
+    + '<div style="color:var(--muted);">SKU: '+esc(o.sku||'&mdash;')+'</div>'
+    + '</div></div>';
 
   const yourCampHtml = '<div class="r3-camp-cell">'+campNameHtml(camps[0])+'</div>';
 
