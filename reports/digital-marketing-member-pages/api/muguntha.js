@@ -96,9 +96,30 @@ const EMPLOYEES = {
     productIds: new Set(),
     snapshotSlug: 'kamsi',
   },
+  // Jefri runs Google Ads on the DE store (ledsone.de), a completely
+  // separate Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi's UK
+  // account (4503486236) — same 5 named campaigns already used on
+  // jefri.html's Product Status/Req3 tabs (see JEFRI_CAMPAIGN_IDS in
+  // requirement.js). No group_name lookup (his campaigns aren't tagged with
+  // one) and no DM-46-style shared-campaign product-share concept — that's
+  // a UK-account-only construct, doesn't apply here. Added 2026-08-05.
+  jefri: {
+    isJefri: true,
+    campaignIds: ['23141810147', '23411228109', '22539594891', '23473840779', '23340277562'],
+    accountId: 9031058245,
+    productIds: new Set(),
+    snapshotSlug: 'jefri',
+  },
 };
 
 function buildSourceLabels(cfg) {
+  if (cfg.isJefri) {
+    return {
+      source: `google_ads.campaign_performance WHERE campaign_id IN (${cfg.campaignIds.join(',')}) (Jefri's 5 named DE campaigns, account_id=${cfg.accountId})`,
+      dmSource: 'not applicable — the DM 46 shared-campaign product-share concept is a UK-account-only construct',
+      dmTotalSource: 'not applicable',
+    };
+  }
   return {
     source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only)`,
     dmSource: `google_ads.product_performance WHERE campaign_id=${DM_CAMPAIGN_ID} (DM 46 campaign), filtered to ${cfg.groupName}'s owned product IDs (same list salesuk.js uses for sales attribution)`,
@@ -154,15 +175,28 @@ function ownCostQuery(groupName) {
   `;
 }
 
+// Jefri's campaigns are given directly by ID (no group_name tag), so no
+// join against google_ads.campaigns is needed.
+function ownCostQueryByCampaignIds(campaignIds) {
+  return `
+    SELECT SUM(cp.cost) AS cost
+    FROM google_ads.campaign_performance cp
+    WHERE cp.campaign_id = ANY($3::bigint[])
+      AND cp.date >= $1 AND cp.date < $2
+  `;
+}
+
 // 2026-08 is the current live month (never snapshotted, mirrors
 // CURRENT_LIVE_MONTHS in salesuk.js) — always queried live.
 const CURRENT_LIVE_MONTHS = ['2026-08'];
 
-async function queryCostForMonth(groupName, month) {
+async function queryCostForMonth(cfg, month) {
   const { start, end } = monthRange(month);
   const client = await getPool().connect();
   try {
-    const result = await client.query(ownCostQuery(groupName), [start, end]);
+    const result = cfg.isJefri
+      ? await client.query(ownCostQueryByCampaignIds(cfg.campaignIds), [start, end, cfg.campaignIds])
+      : await client.query(ownCostQuery(cfg.groupName), [start, end]);
     const cost = result.rows[0] && result.rows[0].cost != null ? Number(result.rows[0].cost) : 0;
     return Math.round(cost * 100) / 100;
   } finally {
@@ -228,8 +262,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const [cost, dmCosts] = await Promise.all([
-      queryCostForMonth(cfg.groupName, month),
-      queryDmCostsForMonth(cfg.productIds, month),
+      queryCostForMonth(cfg, month),
+      cfg.isJefri ? Promise.resolve({ dmProductCost: 0, dmTotalCost: 0 }) : queryDmCostsForMonth(cfg.productIds, month),
     ]);
     const totalCost = Math.round((cost + dmCosts.dmProductCost) * 100) / 100;
     res.status(200).json({
