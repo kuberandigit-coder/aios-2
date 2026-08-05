@@ -106,15 +106,31 @@ function buildSourceLabels(cfg) {
   };
 }
 
-// product_item_id format is "shopify_gb_{productId}_{variantId}" — split_part
-// index 3 pulls out {productId} to match against the employee's Shopify
-// product IDs.
-const DM_PRODUCT_COST_QUERY = `
-  SELECT COALESCE(SUM(pp.cost), 0) AS cost
+// product_item_id format is "shopify_gb_{productId}_{variantId}". Filtering
+// used to run split_part(product_item_id,'_',3) = ANY($1::text[]) AND
+// to_char(date,'YYYY-MM') = $2 directly in SQL — both wrap the columns in
+// functions, so Postgres couldn't use any index and fell back to a parallel
+// seq scan of the full 10M+ row table (~1.3s, and scaling with the size of
+// the employee's product-ID list — this is what caused the "statement
+// timeout" / "timeout exceeded when trying to connect" errors on the Sonya
+// and Kamsi tabs, 2026-08-05). Fixed by filtering campaign_id + a plain date
+// range in SQL (uses product_performance_date_campaign_adgroup_product_unique,
+// confirmed via EXPLAIN ANALYZE: 1287ms -> 52ms), then doing the
+// per-product-ID match in JS on the much smaller (~13k row) result set.
+function monthRange(month) {
+  const [y, m] = month.split('-').map(Number);
+  const start = `${month}-01`;
+  const endY = m === 12 ? y + 1 : y;
+  const endM = m === 12 ? 1 : m + 1;
+  const end = `${endY}-${String(endM).padStart(2, '0')}-01`;
+  return { start, end };
+}
+
+const DM_PRODUCT_ROWS_QUERY = `
+  SELECT pp.product_item_id, pp.cost
   FROM google_ads.product_performance pp
   WHERE pp.campaign_id = ${DM_CAMPAIGN_ID}
-    AND split_part(pp.product_item_id, '_', 3) = ANY($1::text[])
-    AND to_char(pp.date, 'YYYY-MM') = $2
+    AND pp.date >= $1 AND pp.date < $2
 `;
 
 // Full DM campaign spend (all products + any unattributed "other" traffic
@@ -125,7 +141,7 @@ const DM_TOTAL_COST_QUERY = `
   SELECT COALESCE(SUM(cp.cost), 0) AS cost
   FROM google_ads.campaign_performance cp
   WHERE cp.campaign_id = ${DM_CAMPAIGN_ID}
-    AND to_char(cp.date, 'YYYY-MM') = $1
+    AND cp.date >= $1 AND cp.date < $2
 `;
 
 function ownCostQuery(groupName) {
@@ -134,7 +150,7 @@ function ownCostQuery(groupName) {
     FROM google_ads.campaign_performance cp
     JOIN google_ads.campaigns c ON c.campaign_id = cp.campaign_id
     WHERE c.group_name = '${groupName}' AND c.account_id = ${LEDSONE_ACCOUNT_ID}
-      AND to_char(cp.date, 'YYYY-MM') = $1
+      AND cp.date >= $1 AND cp.date < $2
   `;
 }
 
@@ -143,9 +159,10 @@ function ownCostQuery(groupName) {
 const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 async function queryCostForMonth(groupName, month) {
+  const { start, end } = monthRange(month);
   const client = await getPool().connect();
   try {
-    const result = await client.query(ownCostQuery(groupName), [month]);
+    const result = await client.query(ownCostQuery(groupName), [start, end]);
     const cost = result.rows[0] && result.rows[0].cost != null ? Number(result.rows[0].cost) : 0;
     return Math.round(cost * 100) / 100;
   } finally {
@@ -154,14 +171,21 @@ async function queryCostForMonth(groupName, month) {
 }
 
 async function queryDmCostsForMonth(productIds, month) {
+  const { start, end } = monthRange(month);
   const client = await getPool().connect();
   try {
-    const ids = Array.from(productIds);
-    const [shareResult, dmTotalResult] = await Promise.all([
-      client.query(DM_PRODUCT_COST_QUERY, [ids, month]),
-      client.query(DM_TOTAL_COST_QUERY, [month]),
+    const [rowsResult, dmTotalResult] = await Promise.all([
+      client.query(DM_PRODUCT_ROWS_QUERY, [start, end]),
+      client.query(DM_TOTAL_COST_QUERY, [start, end]),
     ]);
-    const dmProductCost = Math.round(Number(shareResult.rows[0].cost) * 100) / 100;
+    let dmProductCost = 0;
+    if (productIds.size > 0) {
+      for (const row of rowsResult.rows) {
+        const productId = String(row.product_item_id).split('_')[2];
+        if (productIds.has(productId)) dmProductCost += Number(row.cost);
+      }
+    }
+    dmProductCost = Math.round(dmProductCost * 100) / 100;
     const dmTotalCost = Math.round(Number(dmTotalResult.rows[0].cost) * 100) / 100;
     return { dmProductCost, dmTotalCost };
   } finally {
