@@ -80,6 +80,22 @@ const EMPLOYEES = {
     productIds: SAJEEPAN_PRODUCT_IDS_UK,
     snapshotSlug: 'sajeepan',
   },
+  // Kamsi is SEO/Organic (department "Organic (product-scoped)" in
+  // salesuk.js/sales25.js's attribution rules), not a paid-ads role like
+  // Sonya/Sajeepan — confirmed no Google Ads campaign group exists for her
+  // in this account (`SELECT DISTINCT group_name FROM google_ads.campaigns
+  // WHERE account_id=4503486236` never returns "Kamsi"), and her Sales
+  // attribution rule never routes an order to her via the DM 46 campaign
+  // (only organic/pure-direct channels). groupName '' and an empty
+  // productIds Set make both queries below naturally return £0 — no special
+  // zero-cost branch needed, the existing SQL just matches nothing. Added
+  // 2026-08-05 per explicit user choice (keep the same table shape as
+  // Sonya/Sajeepan rather than a Sales-only panel).
+  kamsi: {
+    groupName: '',
+    productIds: new Set(),
+    snapshotSlug: 'kamsi',
+  },
 };
 
 function buildSourceLabels(cfg) {
