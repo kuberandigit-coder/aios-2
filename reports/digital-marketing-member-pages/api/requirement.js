@@ -3748,8 +3748,13 @@ daily AS (
   GROUP BY pp.product_item_id, pp.campaign_id, pp.date
 ),
 last_active AS (
+  -- Only count days with real activity (cost/clicks/conversions > 0) — Google
+  -- Ads still writes zero-value placeholder rows for products that have had
+  -- no actual activity in months, which previously made stale/removed
+  -- products look "currently active" just because a $0 row existed.
   SELECT product_item_id, campaign_id, MAX(date) AS last_active
   FROM daily
+  WHERE cost > 0 OR clicks > 0 OR conversions > 0
   GROUP BY product_item_id, campaign_id
 ),
 resolved_ids AS (
