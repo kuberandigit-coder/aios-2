@@ -96,6 +96,18 @@ const EMPLOYEES = {
     productIds: new Set(),
     snapshotSlug: 'kamsi',
   },
+  // Dilaksi is also SEO/Organic (product-scoped), same as Kamsi — confirmed
+  // no "Dilaksi" group_name exists in google_ads.campaigns for this account
+  // (SELECT DISTINCT group_name ... returns DM/DUSHAN/MD Task/O.M/SAJEEPAN/
+  // Sonya/Susain/Thanishtika/Tharshan/Theekshi/null — no Dilaksi), and her
+  // Sales attribution (salesuk.js/sales25.js) only routes orders to her via
+  // organic/pure-direct channels, never the paid DM 46 campaign. Added
+  // 2026-08-05, same reasoning as Kamsi.
+  dilaksi: {
+    groupName: '',
+    productIds: new Set(),
+    snapshotSlug: 'dilaksi',
+  },
   // Jefri runs Google Ads on the DE store (ledsone.de), a completely
   // separate Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi's UK
   // account (4503486236) — same 5 named campaigns already used on

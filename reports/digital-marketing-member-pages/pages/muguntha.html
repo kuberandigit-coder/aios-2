@@ -151,6 +151,10 @@ tbody tr:hover td:first-child{color:var(--accent);}
       <span class="chip live" id="statusChip-jefri">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-jefri">Refresh (live)</button>
     </div>
+    <div class="filters" id="dilaksiFilters" style="display:none;">
+      <span class="chip live" id="statusChip-dilaksi">Loading&hellip;</span>
+      <button class="primary" id="refreshBtn-dilaksi">Refresh (live)</button>
+    </div>
   </div>
 
   <div class="content">
@@ -279,6 +283,38 @@ tbody tr:hover td:first-child{color:var(--accent);}
         Sales (incl. tax + shipping) &mdash; <code>combinedSummary.orderTotalSum</code>, the order total for every order whose first-session <code>utm_term</code> matches "jeff"/"Jeichitom_Maara" (or, with no utm_term, <code>utm_medium=SMARKETER_sale</code>) &mdash; the same confirmed rule already used on the Jefri Ads tab of sales.html (2026, live <code>/api/sales?staff=jeffri-ads</code>) and 2025DE.html (2025, <code>/api/salesde25?staff=jeffri-ads</code>). Store-wide, not product-scoped.<br>
         <strong>2025 coverage limit:</strong> the 2025 DE endpoint only supports Jan&ndash;Jun 2025 (<code>salesde25.js</code> was never backfilled past June) &mdash; Jul&ndash;Dec 2025 show as N/A rather than guessing.<br>
         2025/2026 Total Cost &mdash; <code>SUM(google_ads.campaign_performance.cost)</code> for Jefri's 5 named DE campaigns (<code>account_id=9031058245</code>, the same 5 campaigns used on jefri.html's Product Status/Req3 tabs), for the month. No DM-style shared-campaign product-share concept applies here &mdash; that's a UK-account-only construct.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
+        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+      </div>
+    </div>
+
+    <div id="panel-dilaksi" class="member-panel" style="display:none;">
+      <div class="cards" id="kpiCards-dilaksi"></div>
+
+      <div class="tablebox">
+        <div class="tbar">
+          <strong>Month-by-Month &mdash; Dilaksi</strong>
+          <span id="rowCount-dilaksi"></span>
+        </div>
+        <div class="scroll">
+          <table id="mainTable-dilaksi">
+            <thead>
+              <tr>
+                <th>Month</th><th>Name</th>
+                <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
+                <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
+                <th class="num">Target Achievement</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tblBody-dilaksi"><tr><td colspan="12" class="loading">Loading Dilaksi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnotes">
+        <strong>Data sources.</strong><br>
+        Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Dilaksi, fetched via the existing <code>/api/sales25?group=dilaksi&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=dilaksi&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Dilaksi tab of the UK sales pages, no new order logic written.<br>
+        2025 Total Cost and 2026 Total Cost &mdash; Dilaksi is <strong>SEO &amp; Organic</strong> (product-scoped), same as Kamsi &mdash; she has no Google Ads campaign group in this account, and her Sales attribution never routes an order to her through the shared "DM 46" paid campaign (only through organic/pure-direct channels). So both her own campaign cost and her DM 46 product-share are always &pound;0.00 by design &mdash; the table keeps the same shape as Sonya's/Sajeepan's for consistency, but Cost/Net=Sales/ROAS=N/A (no ad spend to divide by) reflect that she isn't a paid channel.<br>
         Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
         Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
       </div>
@@ -519,12 +555,14 @@ const BUILT_MEMBERS = {
   sajeepan: { idSuffix: '-sajeepan', panelId: 'panel-sajeepan', filtersId: 'sajeepanFilters' },
   kamsi: { idSuffix: '-kamsi', panelId: 'panel-kamsi', filtersId: 'kamsiFilters' },
   jefri: { idSuffix: '-jefri', panelId: 'panel-jefri', filtersId: 'jefriFilters' },
+  dilaksi: { idSuffix: '-dilaksi', panelId: 'panel-dilaksi', filtersId: 'dilaksiFilters' },
 };
 
 document.getElementById('refreshBtn').addEventListener('click', () => loadAll('sonya', '', true));
 document.getElementById('refreshBtn-sajeepan').addEventListener('click', () => loadAll('sajeepan', '-sajeepan', true));
 document.getElementById('refreshBtn-kamsi').addEventListener('click', () => loadAll('kamsi', '-kamsi', true));
 document.getElementById('refreshBtn-jefri').addEventListener('click', () => loadAll('jefri', '-jefri', true));
+document.getElementById('refreshBtn-dilaksi').addEventListener('click', () => loadAll('dilaksi', '-dilaksi', true));
 // Lazy-load: only fetch the tab that's actually visible. Each loadAll()
 // fires 20 months x 2 (sales+cost) = 40 requests; loading all 3 built
 // members on every page load (120 requests) was the real cause of slow
@@ -541,8 +579,8 @@ const pageTitle = document.getElementById('pageTitle');
 const pageSub = document.getElementById('pageSub');
 const csAvatar = document.getElementById('csAvatar');
 const csName = document.getElementById('csName');
-const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters'];
-const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-placeholder'];
+const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters', 'dilaksiFilters'];
+const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-placeholder'];
 
 function selectMember(key){
   document.querySelectorAll('#memberNav a').forEach((a) => a.classList.toggle('active', a.dataset.member === key));
