@@ -1494,6 +1494,7 @@ function renderR3Row(o){
     : imgRaw;
   const productCell = '<div style="display:flex;gap:8px;align-items:center;">'+imgCell+'<div style="font-family:monospace;font-size:11.5px;line-height:1.5;">'
     + '<div>ID: '+esc(o.pid||'&mdash;')+'</div>'
+    + '<div>'+esc(o.sku||'&mdash;')+'</div>'
     + '</div></div>';
 
   const yourCampHtml = '<div class="r3-camp-cell">'+campNameHtml(camps[0])+'</div>';
