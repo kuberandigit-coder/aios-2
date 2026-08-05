@@ -299,11 +299,18 @@ async function loadAll(member, idSuffix, force){
   tbody.innerHTML = '<tr><td colspan="12" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
 
   try {
+    // Only the live/current month (2026-08) is ever force-refreshed. Closed
+    // historical months already have a static snapshot that never changes —
+    // forcing refresh=1 on all 20 months at once (previous behaviour) fired
+    // ~80 concurrent live requests at Shopify + Postgres on every "Refresh
+    // (live)" click, which is what caused the Shopify throttling
+    // ("exceeded retries") and Postgres connection-pool timeouts. Fixed
+    // 2026-08-05.
     const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      Promise.all(MONTHS_2025.map((m) => fetchGroupSales('sales25', member, m, force))),
-      Promise.all(MONTHS_2026.map((m) => fetchGroupSales('salesuk', member, m, force))),
-      Promise.all(MONTHS_2025.map((m) => fetchCost(member, m, force))),
-      Promise.all(MONTHS_2026.map((m) => fetchCost(member, m, force))),
+      Promise.all(MONTHS_2025.map((m) => fetchGroupSales('sales25', member, m, false))),
+      Promise.all(MONTHS_2026.map((m) => fetchGroupSales('salesuk', member, m, force && LIVE_2026.includes(m)))),
+      Promise.all(MONTHS_2025.map((m) => fetchCost(member, m, false))),
+      Promise.all(MONTHS_2026.map((m) => fetchCost(member, m, force && LIVE_2026.includes(m)))),
     ]);
 
     const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
