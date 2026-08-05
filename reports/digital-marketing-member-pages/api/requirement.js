@@ -3781,6 +3781,17 @@ resolved_listing AS (
   LEFT JOIN child_fallback cf ON cf.parent_listing_id = sl.id
   LEFT JOIN listings.shopify_listings child_sl ON child_sl.id = cf.child_listing_id
   WHERE sl.channel = 'LEDSone DE'
+),
+feed_membership AS (
+  -- Whether a product is still present in the specific merchant feed a
+  -- campaign actually pulls from. A product can have real historical spend
+  -- in a campaign yet have since been removed/re-classified out of that
+  -- feed entirely (confirmed case: product still shows recent spend rows,
+  -- but Google Ads' live Products tab shows nothing because it dropped out
+  -- of the merchant account's feed) — that's undetectable from spend
+  -- history alone, so we check current feed membership directly.
+  SELECT DISTINCT product_id, merchant_id
+  FROM google_ads.merchant_products
 )
 SELECT
   d.product_item_id, d.campaign_id, to_char(d.date, 'YYYY-MM-DD') AS date,
@@ -3788,11 +3799,13 @@ SELECT
   c.campaign_name, c.campaign_type, c.campaign_status,
   (c.campaign_id IN (SELECT campaign_id FROM thasi_campaigns)) AS is_thasi,
   to_char(la.last_active, 'YYYY-MM-DD') AS last_active,
+  (fm.product_id IS NOT NULL) AS still_in_feed,
   rl.sku, rl.title, rl.image, rl.url,
   to_char((SELECT max_date FROM latest), 'YYYY-MM-DD') AS latest_date
 FROM daily d
 JOIN google_ads.campaigns c ON c.campaign_id = d.campaign_id
 JOIN last_active la ON la.product_item_id = d.product_item_id AND la.campaign_id = d.campaign_id
+LEFT JOIN feed_membership fm ON fm.product_id = d.product_item_id AND fm.merchant_id = c.merchant_id
 JOIN resolved_ids ri ON ri.product_item_id = d.product_item_id
 LEFT JOIN resolved_listing rl ON rl.item_id = ri.shopify_id
 ORDER BY d.product_item_id, d.campaign_id, d.date;
@@ -3847,6 +3860,7 @@ async function handleThasithaReq3(req, res) {
           cstatus: r.campaign_status,
           isThasi: !!r.is_thasi,
           lastActive: r.last_active,
+          stillInFeed: !!r.still_in_feed,
           daily: [],
         });
       }

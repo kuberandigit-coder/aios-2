@@ -1459,13 +1459,19 @@ function r3ComputeRow(o, start, end){
     cost = Math.round(cost*100)/100; cv = Math.round(cv*100)/100; conv = Math.round(conv*100)/100;
     return {
       cid:c.cid, cname:c.cname, ctype:c.ctype, cstatus:c.cstatus, isThasi:c.isThasi,
-      cost:cost, clk:clk, conv:conv, cv:cv, lastActive:c.lastActive,
+      cost:cost, clk:clk, conv:conv, cv:cv, lastActive:c.lastActive, stillInFeed:c.stillInFeed,
       isCurrentlyActive: !!(c.lastActive && c.lastActive>=R3_ACTIVE_THRESHOLD)
     };
   }).filter(function(c){ return c.cost>0 || c.clk>0 || c.conv>0; });
 
   const thasiCamps = camps.filter(function(c){ return c.isThasi; }).sort(function(a,b){ return b.cost-a.cost; });
-  const otherCamps = camps.filter(function(c){ return !c.isThasi && c.isCurrentlyActive; }).sort(function(a,b){ return b.cost-a.cost; });
+  // "Currently overlapping" requires BOTH recent spend activity AND the
+  // product still being present in that campaign's merchant feed right now —
+  // a product can have real historical spend yet have since been removed
+  // from the feed entirely, which recency alone can't detect (confirmed
+  // 2026-08-05: product showed spend as of Jul 29 but was already gone from
+  // Google Ads' live Products tab because it dropped out of the feed).
+  const otherCamps = camps.filter(function(c){ return !c.isThasi && c.isCurrentlyActive && c.stillInFeed; }).sort(function(a,b){ return b.cost-a.cost; });
   if(!thasiCamps.length) return null; // Product has no activity in Thasitha's own campaign at all - nothing to show
 
   const campaign1 = thasiCamps[0];
