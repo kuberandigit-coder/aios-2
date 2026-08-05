@@ -1674,7 +1674,10 @@ function applyR3LiveData(data, isRestored){
   const endEl = document.getElementById('r3RangeEnd');
   startEl.max = R3_LATEST_DATE; endEl.max = R3_LATEST_DATE;
   if (!startEl.value) startEl.value = R3_MIN_DATE;
-  if (!endEl.value) endEl.value = R3_LATEST_DATE;
+  // Always snap the end date to the true latest live date on load — the
+  // markup ships with a stale hardcoded value ('2026-07-16') so it can
+  // never be empty, meaning it would otherwise never pick up fresh data.
+  if (!isRestored || endEl.value === '2026-07-16') endEl.value = R3_LATEST_DATE;
 
   r3Pg = 1;
   renderR3();
