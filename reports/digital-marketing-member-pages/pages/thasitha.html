@@ -189,7 +189,7 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 <div class="tabbar">
   <button class="tabbtn on" id="tabBtnR1">Requirement 1 &middot; Campaign ROAS</button>
   <button class="tabbtn" id="tabBtnR2">Requirement 2 &middot; PMax Product Zero-Performance</button>
-  <button class="tabbtn" id="tabBtnR3">Requirement 3 &middot; SKU Overlap &amp; CPC Inflation</button>
+  <button class="tabbtn" id="tabBtnR3">Requirement 3 &middot; Campaign Product Overlap</button>
   <button class="tabbtn" id="tabBtnR4">Requirement 4 &middot; Shopify vs Ads Orders</button>
   <button class="tabbtn" id="tabBtnR5">Requirement 5 &middot; Multichannel YoY Sales</button>
 </div>
@@ -472,14 +472,9 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
     <label class="t1-field" style="flex:2.5;min-width:260px;">Global Search
       <input id="r3Search" type="text" placeholder="Product ID, product name, or campaign name&hellip;">
     </label>
-    <label class="t1-field">Campaign
+    <label class="t1-field">Your Campaign
       <select id="r3CampaignFilter">
         <option value="all">All Campaigns</option>
-      </select>
-    </label>
-    <label class="t1-field">Campaign Type
-      <select id="r3TypeFilter">
-        <option value="all">All Types</option>
       </select>
     </label>
     <label class="t1-field">Overlap Count
@@ -492,42 +487,13 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
     </label>
     <label class="t1-field">Overlap Status
       <select id="r3OverlapFilter">
-        <option value="all">All (Overlapping + No Overlap)</option>
+        <option value="all">All (Overlapping + Not Overlapping)</option>
         <option value="overlap">Currently Overlapping Only</option>
-        <option value="none">No Overlap Only</option>
-      </select>
-    </label>
-  </div>
-  <div class="t1-row">
-    <label class="t1-field">Auction Conflict Risk
-      <select id="r3RiskFilter">
-        <option value="all">All Risk Levels</option>
-        <option value="CRITICAL">Critical</option>
-        <option value="HIGH">High</option>
-        <option value="MODERATE">Moderate</option>
-        <option value="LOW">Low</option>
-        <option value="CPC DEFLATION">CPC Deflation</option>
-        <option value="DATA CHECK REQUIRED">Data Check Required</option>
-      </select>
-    </label>
-    <label class="t1-field">Est. CPC Inflation Min %
-      <input id="r3InflationMin" type="number" placeholder="e.g. 0" step="1">
-    </label>
-    <label class="t1-field">Est. CPC Inflation Max %
-      <input id="r3InflationMax" type="number" placeholder="e.g. 100" step="1">
-    </label>
-    <label class="t1-field">Action Status
-      <select id="r3ActionFilter">
-        <option value="all">All Actions</option>
-        <option value="keep">Has KEEP/REMOVE Recommendation</option>
-        <option value="review">Business Review Required</option>
+        <option value="none">Not Overlapping Only</option>
       </select>
     </label>
     <label class="t1-field">Sort By
       <select id="r3Sort">
-        <option value="inflation_desc">CPC Inflation (High &rarr; Low)</option>
-        <option value="inflation_asc">CPC Inflation (Low &rarr; High)</option>
-        <option value="risk">Risk (Critical first)</option>
         <option value="campaigns_desc">Overlap Count (High &rarr; Low)</option>
         <option value="cv_desc">Lifetime Conv. Value (High &rarr; Low)</option>
         <option value="roas_desc">Lifetime ROAS (High &rarr; Low)</option>
@@ -542,42 +508,23 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
     <label class="t1-field">Date Range &mdash; End
       <input id="r3RangeEnd" type="date" min="2026-04-20" max="2026-07-16" value="2026-07-16">
     </label>
-    <span class="t1-field" style="justify-content:flex-end;font-weight:500;text-transform:none;letter-spacing:normal;color:var(--muted);">Defaults to campaign start (2026-04-20) through today &mdash; Baseline/Inflated CPC, inflation %, risk, and Overlap Data all recompute live for whatever range you pick.</span>
-  </div>
-</div>
-
-<div class="t1-legend">
-  <strong>Auction Conflict Risk (Est. CPC Inflation = ((Inflated CPC / Baseline CPC) &minus; 1) &times; 100)</strong>
-  <div class="lg-row">
-  <span class="lg-item"><span class="r3-risk risk-critical">CRITICAL</span> 30%+ Inflation</span>
-  <span class="lg-item"><span class="r3-risk risk-high">HIGH</span> 15% &ndash; 30% Inflation</span>
-  <span class="lg-item"><span class="r3-risk risk-moderate">MODERATE</span> 5% &ndash; 15% Inflation</span>
-  <span class="lg-item"><span class="r3-risk risk-low">LOW</span> 0% &ndash; 5% Inflation</span>
-  <span class="lg-item"><span class="r3-risk risk-deflation">CPC DEFLATION</span> Negative inflation</span>
-  <span class="lg-item"><span class="r3-risk risk-datacheck">DATA CHECK REQUIRED</span> Baseline/Inflated CPC unavailable</span>
-  <span class="lg-item"><span class="r3-risk risk-datacheck">NO OVERLAP</span> in Thasitha's scope, but no other campaign currently active for this SKU</span>
+    <span class="t1-field" style="justify-content:flex-end;font-weight:500;text-transform:none;letter-spacing:normal;color:var(--muted);">Defaults to campaign start through today &mdash; the table recomputes live for whatever range you pick.</span>
   </div>
 </div>
 
 <div class="t1-tablewrap">
 <table class="t1-table" id="r3Table">
 <thead><tr>
-  <th>ID</th>
-  <th>Name</th>
-  <th>Camp. 1</th>
-  <th>Camp. 2</th>
-  <th>Camp. 3</th>
-  <th>Camp. 4</th>
-  <th class="num">Base CPC</th>
-  <th class="num">Infl. CPC</th>
-  <th class="sortable num" data-sort="inflation">CPC Infl.</th>
-  <th>Risk</th>
-  <th>Overlap Data</th>
+  <th>Product</th>
+  <th>Your Campaign</th>
+  <th>Overlapping With</th>
+  <th class="num">Overlap Count</th>
+  <th>Overlap Campaign Data</th>
   <th>Action</th>
 </tr></thead>
 <tbody id="r3Tbody"></tbody>
 </table>
-<div class="t1-empty" id="r3Empty" style="display:none;">No current campaign overlaps found for the selected filters.</div>
+<div class="t1-empty" id="r3Empty" style="display:none;">No campaign overlaps found for the selected filters.</div>
 <div class="pager" id="r3Pager">
   <span class="info" id="r3PageInfo"></span>
   <span style="display:flex;gap:8px;align-items:center;">
@@ -593,14 +540,11 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 </div>
 
 <div class="t1-statusnote">
-  <strong>Overlap definition used:</strong> a SKU (Google Ads <code>product_item_id</code>) counts as overlapping <strong>only</strong> when it has performance history in Thasitha's PMax campaign(s) <em>and</em> at least one <strong>other (non-Thasitha)</strong> ledsone.de campaign, per <code>google_ads.product_performance</code> &mdash; <strong>restricted to campaigns with <code>campaign_status = ENABLED</code> only, on both sides.</strong> SKUs that only run in Thasitha's own two campaigns (no external overlap at all) are shown with a "NO OVERLAP" status and blank Campaign 2+/CPC/Overlap Data/Action fields &mdash; use the <strong>Overlap Status</strong> filter above to show only currently-overlapping SKUs, only no-overlap SKUs, or both (default). Paused and removed campaigns are excluded entirely, both from the overlap count and from Campaign 1/2/3/4/+more &mdash; a SKU that only historically overlapped with a now-paused/removed campaign will not appear here or will show fewer campaigns than an all-time view would. This still isn't a strictly "currently assigned/eligible" feed (no such per-product source exists for PMax in this database, documented in <code>evidence/thasitha/2026-07-15_requirement-3-discovery.md</code>) &mdash; it means "has recorded performance while the campaign is active," which is the closest available proxy for a live auction conflict.<br>
-  <strong>Campaign 1</strong> is Thasitha's own campaign for that SKU (highest-cost one, if the SKU is in both her campaigns). <strong>Campaign 2/3/4/+more</strong> are every other, currently-ENABLED campaign (any owner) that has served that same SKU.<br>
-  <strong>Baseline CPC</strong> = Campaign 1's aggregate CPC (total cost &divide; total clicks) <strong>within the selected date range above</strong>. <strong>Inflated CPC</strong> = the combined aggregate CPC of all other overlapping campaigns together (total cost &divide; total clicks across Campaign 2+) within that same range. Everything on this page &mdash; Baseline/Inflated CPC, inflation %, risk, Overlap Data, KEEP/REMOVE action &mdash; recomputes live in your browser the moment you change the date range, no page reload.<br>
-  <strong>Currently active only:</strong> an external (non-Thasitha) campaign only counts toward overlap if it has actually shown an impression on 2026-07-15 or 2026-07-16 (the latest available Ads data) &mdash; not just "had some cost/clicks somewhere in the selected range." A campaign that went quiet weeks ago no longer counts, even if the date range covers a period when it was active. Each Campaign 2+/3/4 card shows its exact last-active date so you can verify this yourself.<br>
-  <strong>Est. CPC Inflation</strong> = ((Inflated CPC &divide; Baseline CPC) &minus; 1) &times; 100 &mdash; the standard formula. A positive value means the other overlapping campaigns' combined CPC is higher relative to Campaign 1's baseline; a negative value is shown as CPC Deflation.<br>
-  <strong>Overlap Campaign-wise Data</strong> lists every campaign that has served the SKU (Campaign 1, 2, 3, and beyond) with that campaign's own Conversion Value, ROAS, Cost, and Conversions &mdash; all campaigns are always shown here, never truncated, even when more than three exist (see the expandable +more panel for full metrics).<br>
-  <strong>Action</strong> recommends keeping the SKU in whichever campaign (among all listed, not just the first three shown) has the highest Conversion Value <strong>within the selected date range</strong>, tie-broken by ROAS, then conversions, then lower cost. A SKU only gets a KEEP/REMOVE recommendation if it still qualifies (has activity in both her own campaign and an external one) within the chosen range &mdash; otherwise it drops out of the table entirely, or shows "Business Review Required" when evidence is too thin to declare a winner. This is <strong>advisory only</strong> &mdash; recommendations are based on available product-level performance in the selected range and require PPC review before any campaign changes. Nothing on this page is executed automatically.<br>
-  <strong>Data source:</strong> PostgreSQL (read-only) <code>google_ads.product_performance</code> (active/ENABLED campaigns only, all ledsone.de) joined to <code>google_ads.campaigns</code>, <code>google_ads.merchant_products</code>, and <code>listings.shopify_listings</code> (fallback, including parent-product rows). With the default date range (campaign start through today), 75 SKUs qualify as currently-overlapping &mdash; lower than an unbounded all-time count (231) because it only counts overlap that occurred during Thasitha's own campaign lifetime, not historical overlap from before her campaign started. Changing the date range recalculates this count live.
+  <strong>Overlap definition:</strong> a product counts as overlapping when it has performance history in Thasitha's own PMax campaign(s) <em>and</em> at least one other (non-Thasitha) ledsone.de campaign, per <code>google_ads.product_performance</code> &mdash; restricted to <code>campaign_status = ENABLED</code> campaigns on both sides.<br>
+  <strong>Your Campaign</strong> is Thasitha's own campaign for that product. <strong>Overlapping With</strong> lists every other, currently-active campaign (any owner) serving the same product right now &mdash; "currently active" means that campaign has shown activity within the last 7 days.<br>
+  <strong>Overlap Campaign Data</strong> shows each overlapping campaign's own Conversion Value, ROAS, Cost, and Conversions for this product, within the selected date range.<br>
+  <strong>Action</strong> recommends keeping the product in whichever campaign has the highest Conversion Value, tie-broken by ROAS then conversions then lower cost &mdash; advisory only, requires PPC review before any change. Shows "Business Review Required" when there's not enough evidence to pick a winner.<br>
+  <strong>Data source:</strong> PostgreSQL (read-only) <code>google_ads.product_performance</code> joined to <code>google_ads.campaigns</code>, <code>google_ads.merchant_products</code>, and <code>listings.shopify_listings</code>.
 </div>
 
 </div>
@@ -1469,15 +1413,9 @@ document.getElementById('tabBtnR3').addEventListener('click', function(){ switch
 document.getElementById('tabBtnR4').addEventListener('click', function(){ switchTab('R4'); });
 document.getElementById('tabBtnR5').addEventListener('click', function(){ switchTab('R5'); });
 
-// ===== Requirement 3: SKU Overlap & CPC Inflation =====
-let R3_DATA = []; // populated live by r3Load() below — no static fallback, per explicit fix for the stale-overlap bug
-
-const R3_RISK_META = {
-  'CRITICAL':{cls:'risk-critical'}, 'HIGH':{cls:'risk-high'}, 'MODERATE':{cls:'risk-moderate'},
-  'LOW':{cls:'risk-low'}, 'CPC DEFLATION':{cls:'risk-deflation'}, 'DATA CHECK REQUIRED':{cls:'risk-datacheck'},
-  'NO OVERLAP':{cls:'risk-datacheck'}
-};
-const RISK_ORDER = {'CRITICAL':0,'HIGH':1,'MODERATE':2,'LOW':3,'CPC DEFLATION':4,'DATA CHECK REQUIRED':5,'NO OVERLAP':6};
+// ===== Requirement 3: Campaign Product Overlap (rebuilt 2026-08-05 — fewer
+// columns, no CPC-tier jargon, per explicit request) =====
+let R3_DATA = []; // populated live by r3Load() below — no static fallback
 
 function r3BestCampaign(camps){
   const withData = camps.filter(function(c){ return c.cv>0 || c.cost>0; });
@@ -1528,135 +1466,68 @@ function r3ComputeRow(o, start, end){
 
   const thasiCamps = camps.filter(function(c){ return c.isThasi; }).sort(function(a,b){ return b.cost-a.cost; });
   const otherCamps = camps.filter(function(c){ return !c.isThasi && c.isCurrentlyActive; }).sort(function(a,b){ return b.cost-a.cost; });
-  if(!thasiCamps.length) return null; // SKU has no activity in Thasitha's own campaign at all - nothing to show
+  if(!thasiCamps.length) return null; // Product has no activity in Thasitha's own campaign at all - nothing to show
 
   const campaign1 = thasiCamps[0];
 
   if(!otherCamps.length){
     // No currently-active external overlap. Still return the row (so a direct
-    // SKU search always finds it) but leave every overlap-dependent field blank.
-    return {
-      sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:false,
-      camps:[campaign1], baselineCpc:null, inflatedCpc:null, inflationPct:null, risk:'NO OVERLAP'
-    };
+    // search always finds it) but with an empty overlap list.
+    return { sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:false, camps:[campaign1] };
   }
 
-  const orderedCamps = [campaign1].concat(otherCamps);
-
-  const baselineCpc = campaign1.clk>0 ? Math.round((campaign1.cost/campaign1.clk)*1000)/1000 : null;
-  const totalOtherCost = otherCamps.reduce(function(s,c){ return s+c.cost; }, 0);
-  const totalOtherClk = otherCamps.reduce(function(s,c){ return s+c.clk; }, 0);
-  const inflatedCpc = totalOtherClk>0 ? Math.round((totalOtherCost/totalOtherClk)*1000)/1000 : null;
-
-  let inflationPct = null, risk = 'DATA CHECK REQUIRED';
-  if(baselineCpc!=null && inflatedCpc!=null){
-    inflationPct = Math.round(((inflatedCpc/baselineCpc)-1)*10000)/100;
-    if(inflationPct<0) risk='CPC DEFLATION';
-    else if(inflationPct>=30) risk='CRITICAL';
-    else if(inflationPct>=15) risk='HIGH';
-    else if(inflationPct>=5) risk='MODERATE';
-    else risk='LOW';
-  }
-
-  return {
-    sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:true,
-    camps:orderedCamps, baselineCpc:baselineCpc, inflatedCpc:inflatedCpc, inflationPct:inflationPct, risk:risk
-  };
+  return { sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:true, camps:[campaign1].concat(otherCamps) };
 }
 
 function renderR3Row(o){
   const camps = o.camps;
-  const c1 = camps[0], c2 = camps[1], c3 = camps[2], c4 = camps[3];
-  const extra = camps.length>4 ? camps.length-4 : 0;
   const campNameHtml = function(c){ return c.isThasi ? r4CampShort(c.cname) : r3TwoLineSplit(esc(c.cname)); };
-  const campCell = function(c){
-    if(!c) return '<span class="t1-na">&mdash;</span>';
-    if(c.isThasi) return '<div class="r3-camp-cell">'+r4CampShort(c.cname)+'<br><span style="color:var(--good);font-size:9.5px;">&#9679; Active '+esc(c.lastActive)+'</span></div>';
-    return '<div class="r3-camp-cell">'+r3TwoLineSplit(esc(c.cname))+'<br><span style="color:var(--muted);">'+esc(c.ctype)+' &middot; '+esc(c.cstatus)+'</span><br><span style="color:var(--good);font-size:9.5px;">&#9679; Active '+esc(c.lastActive)+'</span></div>';
-  };
   const imgCell = o.img ? '<img class="t2-thumb" src="'+esc(o.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">' : '<div class="t2-thumb na">N/A</div>';
-  const meta = R3_RISK_META[o.risk];
-  const baselineTxt = o.baselineCpc!=null ? eur(o.baselineCpc) : '<span class="t1-na">N/A</span>';
-  const inflatedTxt = o.inflatedCpc!=null ? eur(o.inflatedCpc) : '<span class="t1-na">N/A</span>';
-  const inflationTxt = o.inflationPct!=null ? (o.inflationPct>=0?'+':'')+o.inflationPct.toFixed(2)+'%' : 'N/A';
+  const titleCell = o.lnk
+    ? '<a class="t2-title-link" href="'+esc(o.lnk)+'" target="_blank" rel="noopener" title="Open product page">'+esc(o.title||('Product '+o.sku))+'</a>'
+    : esc(o.title||('Product '+o.sku));
+  const productCell = '<div style="display:flex;gap:8px;align-items:center;">'+imgCell+'<div>'+titleCell+'<br><span style="color:var(--muted);font-size:10.5px;">'+esc(o.sku)+'</span></div></div>';
 
-  const decision = o.hasOverlap ? r3BestCampaign(camps) : {winner:null};
-  let actionHtml;
+  const yourCampHtml = '<div class="r3-camp-cell">'+campNameHtml(camps[0])+'</div>';
+
+  const others = camps.slice(1);
   if(!o.hasOverlap){
-    actionHtml = '<span class="t1-na">No current overlap &mdash; nothing to compare</span>';
-  } else if(!decision.winner){
+    const emptyCell = '<span class="t1-na">&mdash; Not currently overlapping &mdash;</span>';
+    return '<tr><td class="t2-title">'+productCell+'</td><td>'+yourCampHtml+'</td><td>'+emptyCell+'</td><td class="num">0</td><td>'+emptyCell+'</td><td>'+emptyCell+'</td></tr>';
+  }
+
+  const overlappingWithHtml = others.map(function(c){
+    return '<div style="margin-bottom:6px;">'+r3TwoLineSplit(esc(c.cname))+'<br><span style="color:var(--muted);font-size:10px;">'+esc(c.ctype)+' &middot; Active '+esc(c.lastActive)+'</span></div>';
+  }).join('');
+
+  const dataHtml = camps.map(function(c){
+    return '<div style="margin-bottom:6px;"><strong>'+campNameHtml(c)+':</strong> Conv. Value '+eur(c.cv)+' &middot; ROAS '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost '+eur(c.cost)+' &middot; Conv. '+c.conv+'</div>';
+  }).join('');
+
+  const decision = r3BestCampaign(camps);
+  let actionHtml;
+  if(!decision.winner){
     actionHtml = '<div class="r3-review-badge">'
       + '<span class="r3-review-tag">&#9888; BUSINESS REVIEW REQUIRED</span>'
-      + '<div class="r3-review-sub">Insufficient conversion evidence across '+camps.length+' campaign(s) to recommend KEEP/REMOVE.</div>'
+      + '<div class="r3-review-sub">Not enough conversion evidence across '+camps.length+' campaign(s) to recommend.</div>'
       + '</div>';
   } else {
     const best = decision.winner;
     const losers = camps.filter(function(c){ return c!==best; });
     actionHtml = '<div class="r3-keep-box">'
       + '<span class="r3-keep-tag">KEEP: '+campNameHtml(best)+'</span><br>'
-      + 'Lifetime Conv. Value: '+eur(best.cv)+' &middot; ROAS: '+(r3RoasPct(best)!=null?r3RoasPct(best)+'%':'N/A')+'<br>'
       + (losers.length? '<span class="remove">REMOVE FROM:</span><br>'+losers.map(function(c){return '&bull; '+campNameHtml(c);}).join('<br>') : '')
       + '</div>';
   }
 
-  const rowId = 'r3row_'+o.sku;
-  const ocId = 'r3oc_'+o.sku;
-  const ocBlock = function(c){
-    return '<div class="oc"><div class="ocname">'+campNameHtml(c)+'</div>'
-      + '<div class="ocmetrics">Conv. Value: '+eur(c.cv)+' &middot; ROAS: '+(r3RoasPct(c)!=null?r3RoasPct(c)+'%':'N/A')+' &middot; Cost: '+eur(c.cost)+' &middot; Conv.: '+c.conv+'</div></div>';
-  };
-  const ocRest = camps.slice(1);
-  const overlapDataHtml = !o.hasOverlap
-    ? '<span class="t1-na">&mdash;</span>'
-    : '<div class="r3-overlap-data">'
-      + ocBlock(camps[0])
-      + (ocRest.length ? '<button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+ocId+'\')">+'+ocRest.length+' more &darr;</button>' : '')
-      + '</div>';
-
-  const extraCamps = camps.slice(4);
-  const detailCampCells = extraCamps.map(function(c, i){
-    return '<div class="r3-more-col">'
-      + '<div class="r3-more-label">Campaign '+(i+5)+'</div>'
-      + campCell(c)
-      + '</div>';
-  }).join('');
-  const ocExtraCells = ocRest.map(function(c, i){
-    return '<div class="r3-more-col">'
-      + '<div class="r3-more-label">Campaign '+(i+2)+'</div>'
-      + ocBlock(c)
-      + '</div>';
-  }).join('');
-
-  const hasCampPanel = extra>0;
-  const hasOcPanel = ocRest.length>0;
-  const campPanelHtml = hasCampPanel
-    ? '<div class="r3-sub-panel" id="'+rowId+'"><div class="r3-detail-title">+'+extraCamps.length+' additional overlapping campaign(s) for this SKU</div><div class="r3-more-grid">'+detailCampCells+'</div></div>'
-    : '';
-  const ocPanelHtml = hasOcPanel
-    ? '<div class="r3-sub-panel r3-align-oc" id="'+ocId+'"><div class="r3-detail-title">Overlap Campaign-wise Data &mdash; all '+camps.length+' campaigns for this SKU</div><div class="r3-more-stack">'+ocExtraCells+'</div></div>'
-    : '';
-
-  const titleCell = o.lnk
-    ? '<a class="t2-title-link" href="'+esc(o.lnk)+'" target="_blank" rel="noopener" title="Open product page">'+esc(o.title||('Product '+o.sku))+'</a>'
-    : esc(o.title||('Product '+o.sku));
-  const mainRow = '<tr>'
-    + '<td class="t2-sku">'+esc(o.sku)+'</td>'
-    + '<td class="t2-title">'+imgCell+' '+titleCell+'</td>'
-    + '<td>'+campCell(c1)+'</td>'
-    + '<td>'+campCell(c2)+'</td>'
-    + '<td>'+campCell(c3)+'</td>'
-    + '<td>'+campCell(c4)+(extra>0?'<br><button class="r3-more-btn" style="margin-top:4px;" onclick="r3Toggle(\''+rowId+'\')">+'+extra+' more &darr;</button>':'')+'</td>'
-    + '<td class="num">'+baselineTxt+'</td>'
-    + '<td class="num">'+inflatedTxt+'</td>'
-    + '<td class="num">'+inflationTxt+'</td>'
-    + '<td><span class="r3-risk '+meta.cls+'">'+o.risk+'</span></td>'
-    + '<td>'+overlapDataHtml+'</td>'
+  return '<tr>'
+    + '<td class="t2-title">'+productCell+'</td>'
+    + '<td>'+yourCampHtml+'</td>'
+    + '<td>'+overlappingWithHtml+'</td>'
+    + '<td class="num">'+others.length+'</td>'
+    + '<td>'+dataHtml+'</td>'
     + '<td class="r3-action">'+actionHtml+'</td>'
     + '</tr>';
-  const detailRow = (hasCampPanel||hasOcPanel)
-    ? '<tr class="r3-detail-row"><td colspan="12"><div class="r3-detail-wrap">'+campPanelHtml+ocPanelHtml+'</div></td></tr>'
-    : '';
-  return mainRow+detailRow;
 }
 
 window.r3Toggle = function(id){
@@ -1664,8 +1535,8 @@ window.r3Toggle = function(id){
 };
 
 function initR3Filters(){
-  const campNames = new Set(), campTypes = new Set();
-  R3_DATA.forEach(function(o){ o.camps.forEach(function(c){ campNames.add(c.cname); campTypes.add(c.ctype); }); });
+  const campNames = new Set();
+  R3_DATA.forEach(function(o){ o.camps.forEach(function(c){ campNames.add(c.cname); }); });
   const campSel = document.getElementById('r3CampaignFilter');
   const prevCamp = campSel.value;
   campSel.querySelectorAll('option:not([value="all"])').forEach(function(o){ o.remove(); });
@@ -1673,13 +1544,6 @@ function initR3Filters(){
     const opt = document.createElement('option'); opt.value = n; opt.textContent = n; campSel.appendChild(opt);
   });
   if ([...campSel.options].some(function(o){ return o.value===prevCamp; })) campSel.value = prevCamp;
-  const typeSel = document.getElementById('r3TypeFilter');
-  const prevType = typeSel.value;
-  typeSel.querySelectorAll('option:not([value="all"])').forEach(function(o){ o.remove(); });
-  Array.from(campTypes).sort().forEach(function(t){
-    const opt = document.createElement('option'); opt.value = t; opt.textContent = t; typeSel.appendChild(opt);
-  });
-  if ([...typeSel.options].some(function(o){ return o.value===prevType; })) typeSel.value = prevType;
 }
 initR3Filters();
 
@@ -1693,43 +1557,30 @@ function r3MaxPg(len, ps){
 
 function renderR3(){
   const q = document.getElementById('r3Search').value.trim().toLowerCase();
-  const rf = document.getElementById('r3RiskFilter').value;
   const campFilter = document.getElementById('r3CampaignFilter').value;
-  const typeFilter = document.getElementById('r3TypeFilter').value;
   const countFilter = document.getElementById('r3CountFilter').value;
-  const actionFilter = document.getElementById('r3ActionFilter').value;
   const overlapFilter = document.getElementById('r3OverlapFilter').value;
-  const infMin = parseFloat(document.getElementById('r3InflationMin').value);
-  const infMax = parseFloat(document.getElementById('r3InflationMax').value);
   const sort = document.getElementById('r3Sort').value;
   const rangeStart = document.getElementById('r3RangeStart').value || '2026-04-20';
   const rangeEnd = document.getElementById('r3RangeEnd').value || '2026-07-16';
 
   let rows = R3_DATA.map(function(o){ return r3ComputeRow(o, rangeStart, rangeEnd); }).filter(Boolean).filter(function(o){
     const textHit = !q || o.sku.includes(q) || (o.title||'').toLowerCase().includes(q) || o.camps.some(function(c){return c.cname.toLowerCase().includes(q);});
-    const riskHit = rf==='all' || o.risk===rf;
     const campHit = campFilter==='all' || o.camps.some(function(c){return c.cname===campFilter;});
-    const typeHit = typeFilter==='all' || o.camps.some(function(c){return c.ctype===typeFilter;});
-    const n = o.camps.length;
+    const n = o.camps.length - 1;
     const countHit = countFilter==='all' || (countFilter==='4+' ? n>=4 : n===parseInt(countFilter,10));
-    const hasWinner = !!r3BestCampaign(o.camps).winner;
-    const actionHit = actionFilter==='all' || (actionFilter==='keep' ? hasWinner : !hasWinner);
-    const infHit = (isNaN(infMin) || (o.inflationPct!=null && o.inflationPct>=infMin)) && (isNaN(infMax) || (o.inflationPct!=null && o.inflationPct<=infMax));
     const overlapHit = overlapFilter==='all' || (overlapFilter==='overlap' ? o.hasOverlap : !o.hasOverlap);
-    return overlapHit && textHit && riskHit && campHit && typeHit && countHit && actionHit && infHit;
+    return overlapHit && textHit && campHit && countHit;
   });
 
   function bestCv(o){ const b=r3BestCampaign(o.camps).winner; return b?b.cv:-1; }
   function bestRoas(o){ const b=r3BestCampaign(o.camps).winner; return b?(r3RoasPct(b)??-1):-1; }
   const sortMap = {
-    inflation_desc:function(a,b){ return (b.inflationPct??-999)-(a.inflationPct??-999); },
-    inflation_asc:function(a,b){ return (a.inflationPct??999)-(b.inflationPct??999); },
-    risk:function(a,b){ return RISK_ORDER[a.risk]-RISK_ORDER[b.risk]; },
     campaigns_desc:function(a,b){ return b.camps.length-a.camps.length; },
     cv_desc:function(a,b){ return bestCv(b)-bestCv(a); },
     roas_desc:function(a,b){ return bestRoas(b)-bestRoas(a); }
   };
-  rows.sort(sortMap[sort]||sortMap.inflation_desc);
+  rows.sort(sortMap[sort]||sortMap.campaigns_desc);
 
   const tbody = document.getElementById('r3Tbody');
   const emptyEl = document.getElementById('r3Empty');
@@ -1748,12 +1599,11 @@ function renderR3(){
     ? ('Rows '+(start+1).toLocaleString()+'-'+Math.min(start+ps,rows.length).toLocaleString()+' of '+rows.length.toLocaleString()+' | page '+r3Pg+' / '+r3MaxPg(rows.length,ps))
     : 'No rows match';
 
-  const counts = {CRITICAL:0,HIGH:0,MODERATE:0,LOW:0,'CPC DEFLATION':0,'DATA CHECK REQUIRED':0,'NO OVERLAP':0};
-  rows.forEach(function(o){ counts[o.risk]++; });
-  const overlapNow = rows.length - counts['NO OVERLAP'];
+  const overlapNow = rows.filter(function(o){ return o.hasOverlap; }).length;
+  const noOverlap = rows.length - overlapNow;
   document.getElementById('r3kpiTotal').textContent = rows.length.toLocaleString();
   document.getElementById('r3kpiOverlapNow').textContent = overlapNow.toLocaleString();
-  document.getElementById('r3kpiNoOverlap').textContent = counts['NO OVERLAP'].toLocaleString();
+  document.getElementById('r3kpiNoOverlap').textContent = noOverlap.toLocaleString();
 
   // Per-Thasitha-campaign breakdown — how many of THAT campaign's products
   // are currently overlapping with someone else's live campaign. Plain
@@ -1781,34 +1631,20 @@ function renderR3(){
   }).join('') || '<div class="t1-card"><div class="l">No data</div><div class="v">&ndash;</div></div>';
 }
 
-['r3Search','r3InflationMin','r3InflationMax'].forEach(function(id){
-  document.getElementById(id).addEventListener('input', function(){ r3Pg=1; renderR3(); });
-});
-['r3RiskFilter','r3CampaignFilter','r3TypeFilter','r3CountFilter','r3ActionFilter','r3OverlapFilter','r3Sort','r3RangeStart','r3RangeEnd'].forEach(function(id){
+document.getElementById('r3Search').addEventListener('input', function(){ r3Pg=1; renderR3(); });
+['r3CampaignFilter','r3CountFilter','r3OverlapFilter','r3Sort','r3RangeStart','r3RangeEnd'].forEach(function(id){
   document.getElementById(id).addEventListener('change', function(){ r3Pg=1; renderR3(); });
 });
 document.getElementById('r3ClearFilters').addEventListener('click', function(){
   document.getElementById('r3Search').value='';
-  document.getElementById('r3RiskFilter').value='all';
   document.getElementById('r3CampaignFilter').value='all';
-  document.getElementById('r3TypeFilter').value='all';
   document.getElementById('r3CountFilter').value='all';
   document.getElementById('r3OverlapFilter').value='all';
-  document.getElementById('r3ActionFilter').value='all';
-  document.getElementById('r3InflationMin').value='';
-  document.getElementById('r3InflationMax').value='';
-  document.getElementById('r3Sort').value='inflation_desc';
+  document.getElementById('r3Sort').value='campaigns_desc';
   document.getElementById('r3RangeStart').value = R3_MIN_DATE;
   document.getElementById('r3RangeEnd').value = R3_LATEST_DATE;
   r3Pg=1;
   renderR3();
-});
-document.querySelectorAll('#r3Table th.sortable').forEach(function(th){
-  th.addEventListener('click', function(){
-    const sortSel = document.getElementById('r3Sort');
-    sortSel.value = (sortSel.value==='inflation_desc') ? 'inflation_asc' : 'inflation_desc';
-    renderR3();
-  });
 });
 
 let r3Loaded = false;
