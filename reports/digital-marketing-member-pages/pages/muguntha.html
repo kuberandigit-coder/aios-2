@@ -133,7 +133,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
   <div class="topbar">
     <div>
       <h1 id="pageTitle">Employee Performance &mdash; Sonya</h1>
-      <div class="sub" id="pageSub">Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on Sonya's campaigns &middot; Target ROAS 30%</div>
+      <div class="sub" id="pageSub">Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales excludes tax, shipping, discounts & refunds (net sales) &middot; ADS Cost is Google Ads spend on Sonya's campaigns &middot; Target ROAS 30%</div>
     </div>
     <div class="filters" id="sonyaFilters">
       <span class="chip live" id="statusChip">Loading&hellip;</span>
@@ -175,7 +175,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
 
       <div class="footnotes">
         <strong>Data sources.</strong><br>
-        Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
+        Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
         2025 Total Cost and 2026 Total Cost &mdash; identical formula for both years: Sonya's own campaign cost (sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "Sonya" campaign group, <code>group_name='Sonya'</code>, <code>account_id=4503486236</code>) <strong>plus</strong> her product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sonya credit for any DM 46 order containing one of her owned products, so her share of that campaign's cost is folded into this single Total Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to her owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only her share is. (Updated 2026-08-04 &mdash; 2025 previously excluded DM cost entirely; now matches 2026's treatment.)<br>
         Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
         Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
@@ -207,7 +207,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
 
       <div class="footnotes">
         <strong>Data sources.</strong><br>
-        Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Sajeepan, fetched via the existing <code>/api/sales25?group=sajeepan&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=sajeepan&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Sajeepan tab of the UK sales pages, no new order logic written.<br>
+        Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Sajeepan, fetched via the existing <code>/api/sales25?group=sajeepan&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=sajeepan&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Sajeepan tab of the UK sales pages, no new order logic written.<br>
         2025 Total Cost and 2026 Total Cost &mdash; identical formula for both years: Sajeepan's own campaign cost (sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "SAJEEPAN" campaign group, <code>group_name='SAJEEPAN'</code>, <code>account_id=4503486236</code>) <strong>plus</strong> his product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sajeepan credit for any DM 46 order containing one of his owned products, so his share of that campaign's cost is folded into this single Total Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to his owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only his share is.<br>
         Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
         Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
@@ -239,7 +239,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
 
       <div class="footnotes">
         <strong>Data sources.</strong><br>
-        Sales (incl. tax + shipping) &mdash; the order total (<code>currentTotalPriceSet</code> summed as <code>orderTotalSum</code>) for every order Shopify's customer-journey data attributes to Kamsi, fetched via the existing <code>/api/sales25?group=kamsi&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=kamsi&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Kamsi tab of the UK sales pages, no new order logic written.<br>
+        Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Kamsi, fetched via the existing <code>/api/sales25?group=kamsi&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=kamsi&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Kamsi tab of the UK sales pages, no new order logic written.<br>
         2025 Total Cost and 2026 Total Cost &mdash; Kamsi is <strong>SEO &amp; Organic</strong> (department "Organic (product-scoped)" in the attribution rules), not a paid-ads role like Sonya/Sajeepan &mdash; she has no Google Ads campaign group in this account, and her Sales attribution never routes an order to her through the shared "DM 46" paid campaign (only through organic/pure-direct channels). So both her own campaign cost and her DM 46 product-share are always &pound;0.00 by design &mdash; the table keeps the same shape as Sonya's/Sajeepan's for consistency, but Cost/Net=Sales/ROAS=N/A (no ad spend to divide by) reflect that she isn't a paid channel.<br>
         Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement = ROAS / 30% target.<br>
         Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
@@ -272,7 +272,11 @@ async function fetchGroupSales(endpoint, member, month, force){
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) throw new Error(data.error || (endpoint + ' failed for ' + month));
-  return data.combinedSummary ? data.combinedSummary.orderTotalSum : 0;
+  // netSales (gross sales minus discounts minus refunds, tax + shipping
+  // excluded) instead of orderTotalSum (incl. tax+shipping) — matches the
+  // "Net Sales" figure already shown on salesuk.html, per user request
+  // 2026-08-05.
+  return data.combinedSummary ? data.combinedSummary.netSales : 0;
 }
 
 async function fetchCost(member, month, force){
@@ -468,7 +472,7 @@ function selectMember(key){
 
   if (built) {
     pageTitle.textContent = 'Employee Performance — ' + name;
-    pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>' + name + '</strong> &middot; Sales includes tax + shipping (order total) &middot; ADS Cost is Google Ads spend on ' + name + '\'s campaigns &middot; Target ROAS 30%';
+    pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>' + name + '</strong> &middot; Sales excludes tax, shipping, discounts & refunds (net sales) &middot; ADS Cost is Google Ads spend on ' + name + '\'s campaigns &middot; Target ROAS 30%';
     document.getElementById(built.filtersId).style.display = '';
     document.getElementById(built.panelId).style.display = '';
   } else {
