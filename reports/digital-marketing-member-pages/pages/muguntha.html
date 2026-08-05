@@ -449,9 +449,16 @@ const BUILT_MEMBERS = {
 document.getElementById('refreshBtn').addEventListener('click', () => loadAll('sonya', '', true));
 document.getElementById('refreshBtn-sajeepan').addEventListener('click', () => loadAll('sajeepan', '-sajeepan', true));
 document.getElementById('refreshBtn-kamsi').addEventListener('click', () => loadAll('kamsi', '-kamsi', true));
+// Lazy-load: only fetch the tab that's actually visible. Each loadAll()
+// fires 20 months x 2 (sales+cost) = 40 requests; loading all 3 built
+// members on every page load (120 requests) was the real cause of slow
+// perceived load time, even though every individual request was already
+// snapshot-backed and fast (~0.5-1.9s each) — 120 requests competing at
+// once still queues up. Fixed 2026-08-05: load only Sonya (the default
+// active tab) up front, and load Sajeepan/Kamsi the first time their tab
+// is opened (loadedMembers guards against re-fetching on every click).
+const loadedMembers = new Set(['sonya']);
 loadAll('sonya', '', false);
-loadAll('sajeepan', '-sajeepan', false);
-loadAll('kamsi', '-kamsi', false);
 
 const panelPlaceholder = document.getElementById('panel-placeholder');
 const pageTitle = document.getElementById('pageTitle');
@@ -475,6 +482,10 @@ function selectMember(key){
     pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>' + name + '</strong> &middot; Sales excludes tax, shipping, discounts & refunds (net sales) &middot; ADS Cost is Google Ads spend on ' + name + '\'s campaigns &middot; Target ROAS 30%';
     document.getElementById(built.filtersId).style.display = '';
     document.getElementById(built.panelId).style.display = '';
+    if (!loadedMembers.has(key)) {
+      loadedMembers.add(key);
+      loadAll(key, built.idSuffix, false);
+    }
   } else {
     pageTitle.textContent = 'Employee Performance — ' + name;
     pageSub.innerHTML = 'Requested by Muguntha &middot; scoped to <strong>' + name + '</strong> &middot; not built yet';
