@@ -3826,6 +3826,7 @@ async function handleThasithaReq3(req, res) {
       if (!productMap.has(r.product_item_id)) {
         productMap.set(r.product_item_id, {
           sku: r.sku || r.product_item_id,
+          pid: r.product_item_id,
           title: r.title || null,
           img: r.image || null,
           lnk: r.url || null,
@@ -3855,6 +3856,7 @@ async function handleThasithaReq3(req, res) {
 
     const products = [...productMap.values()].map((p) => ({
       sku: p.sku,
+      pid: p.pid,
       title: p.title,
       img: p.img,
       lnk: p.lnk,

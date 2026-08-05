@@ -515,7 +515,7 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 <div class="t1-tablewrap">
 <table class="t1-table" id="r3Table">
 <thead><tr>
-  <th>Product</th>
+  <th>Product ID</th>
   <th>Your Campaign</th>
   <th>Overlapping With</th>
   <th class="num">Overlap Count</th>
@@ -1473,20 +1473,20 @@ function r3ComputeRow(o, start, end){
   if(!otherCamps.length){
     // No currently-active external overlap. Still return the row (so a direct
     // search always finds it) but with an empty overlap list.
-    return { sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:false, camps:[campaign1] };
+    return { sku:o.sku, pid:o.pid, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:false, camps:[campaign1] };
   }
 
-  return { sku:o.sku, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:true, camps:[campaign1].concat(otherCamps) };
+  return { sku:o.sku, pid:o.pid, title:o.title, img:o.img, lnk:o.lnk, hasOverlap:true, camps:[campaign1].concat(otherCamps) };
 }
 
 function renderR3Row(o){
   const camps = o.camps;
   const campNameHtml = function(c){ return c.isThasi ? r4CampShort(c.cname) : r3TwoLineSplit(esc(c.cname)); };
-  const imgCell = o.img ? '<img class="t2-thumb" src="'+esc(o.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">' : '<div class="t2-thumb na">N/A</div>';
-  const titleCell = o.lnk
-    ? '<a class="t2-title-link" href="'+esc(o.lnk)+'" target="_blank" rel="noopener" title="Open product page">'+esc(o.title||('Product '+o.sku))+'</a>'
-    : esc(o.title||('Product '+o.sku));
-  const productCell = '<div style="display:flex;gap:8px;align-items:center;">'+imgCell+'<div>'+titleCell+'<br><span style="color:var(--muted);font-size:10.5px;">'+esc(o.sku)+'</span></div></div>';
+  const imgRaw = o.img ? '<img class="t2-thumb" src="'+esc(o.img)+'" alt="" loading="lazy" onerror="this.style.opacity=&#39;0.15&#39;;">' : '<div class="t2-thumb na">N/A</div>';
+  const imgCell = o.lnk
+    ? '<a href="'+esc(o.lnk)+'" target="_blank" rel="noopener" title="Open product page">'+imgRaw+'</a>'
+    : imgRaw;
+  const productCell = '<div style="display:flex;gap:8px;align-items:center;">'+imgCell+'<span style="font-family:monospace;font-size:11.5px;">'+esc(o.pid||o.sku)+'</span></div>';
 
   const yourCampHtml = '<div class="r3-camp-cell">'+campNameHtml(camps[0])+'</div>';
 
@@ -1565,7 +1565,7 @@ function renderR3(){
   const rangeEnd = document.getElementById('r3RangeEnd').value || '2026-07-16';
 
   let rows = R3_DATA.map(function(o){ return r3ComputeRow(o, rangeStart, rangeEnd); }).filter(Boolean).filter(function(o){
-    const textHit = !q || o.sku.includes(q) || (o.title||'').toLowerCase().includes(q) || o.camps.some(function(c){return c.cname.toLowerCase().includes(q);});
+    const textHit = !q || o.sku.includes(q) || (o.pid||'').toLowerCase().includes(q) || (o.title||'').toLowerCase().includes(q) || o.camps.some(function(c){return c.cname.toLowerCase().includes(q);});
     const campHit = campFilter==='all' || o.camps.some(function(c){return c.cname===campFilter;});
     const n = o.camps.length - 1;
     const countHit = countFilter==='all' || (countFilter==='4+' ? n>=4 : n===parseInt(countFilter,10));
