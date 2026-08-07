@@ -89,15 +89,31 @@ const EMPLOYEES = {
   // WHERE account_id=4503486236` never returns "Kamsi"), and her Sales
   // attribution rule never routes an order to her via the DM 46 campaign
   // (only organic/pure-direct channels). groupName '' and an empty
-  // productIds Set make both queries below naturally return £0 — no special
-  // zero-cost branch needed, the existing SQL just matches nothing. Added
-  // 2026-08-05 per explicit user choice (keep the same table shape as
+  // productIds Set make both ad-spend queries naturally return £0 — no
+  // special zero-cost branch needed, the existing SQL just matches nothing.
+  // Added 2026-08-05 per explicit user choice (keep the same table shape as
   // Sonya/Sajeepan rather than a Sales-only panel).
+  //
+  // SEO tool cost added 2026-08-05, confirmed split:
+  // 2025 — Semrush £265.62/month total, split 50% ledsone.de / 50% ledsone
+  // UK. The UK 50% share (£132.81/mo) is split between the UK SEO staff who
+  // actually existed that month: 3-way (Kamsi/Dilaksi/Sukirtha) Jan-Oct 2025
+  // = £44.27/mo each, then 4-way (adding Hetheesha) Nov-Dec 2025 = £33.20/mo
+  // each — Hetheesha joined the split from November. Sukirtha and
+  // Hetheesha's own cost rows are NOT added to this dashboard yet (held per
+  // explicit instruction — no muguntha.html panel for them yet); only
+  // Kamsi's and Dilaksi's shares are reflected here, using the correct
+  // 3-way/4-way per-person amount even though the other two aren't shown.
+  // 2026 — Semrush + Arrow AI combined £149/month total, split 40% UK /
+  // 40% DE / 20% FR; the UK 40% share (£59.60/mo) is split evenly between
+  // Kamsi and Dilaksi only (unchanged, not part of the above correction) —
+  // £29.80/mo each.
   kamsi: {
     groupName: '',
     productIds: new Set(),
     snapshotSlug: 'kamsi',
     hasDm: false,
+    toolCost: { uk2025Share3: 44.27, uk2025Share4: 33.20, uk2026Share2: 29.80 },
   },
   // Dilaksi is also SEO/Organic (product-scoped), same as Kamsi — confirmed
   // no "Dilaksi" group_name exists in google_ads.campaigns for this account
@@ -105,12 +121,14 @@ const EMPLOYEES = {
   // Sonya/Susain/Thanishtika/Tharshan/Theekshi/null — no Dilaksi), and her
   // Sales attribution (salesuk.js/sales25.js) only routes orders to her via
   // organic/pure-direct channels, never the paid DM 46 campaign. Added
-  // 2026-08-05, same reasoning as Kamsi.
+  // 2026-08-05, same reasoning as Kamsi — including the SEO tool cost split
+  // (see Kamsi's comment above for the full breakdown).
   dilaksi: {
     groupName: '',
     productIds: new Set(),
     snapshotSlug: 'dilaksi',
     hasDm: false,
+    toolCost: { uk2025Share3: 44.27, uk2025Share4: 33.20, uk2026Share2: 29.80 },
   },
   // Jefri runs Google Ads on the DE store (ledsone.de), a completely
   // separate Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi's UK
@@ -145,8 +163,11 @@ function buildSourceLabels(cfg) {
     };
   }
   if (!cfg.hasDm) {
+    const toolNote = cfg.toolCost
+      ? ` Cost also includes a fixed monthly SEO tool-cost share: 2025 = Semrush £265.62/mo total, split 50% ledsone.de / 50% ledsone UK, with the UK 50% share (£132.81/mo) split 3-way between Kamsi/Dilaksi/Sukirtha Jan-Oct 2025 (£44.27/mo each) and 4-way after Hetheesha joins the split Nov-Dec 2025 (£33.20/mo each) — only Kamsi's and Dilaksi's shares are reflected on this dashboard, Sukirtha/Hetheesha have no cost row here yet; 2026 = Semrush + Arrow AI combined £149/mo total, split 40% UK / 40% DE / 20% FR, with the UK 40% share (£59.60/mo) split evenly between Kamsi and Dilaksi only (£29.80/mo each). No Google Ads spend applies (SEO/Organic role) — Cost is tool-cost share only.`
+      : '';
     return {
-      source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only)`,
+      source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only, always £0 — no ads role).${toolNote}`,
       dmSource: 'not applicable — only Sonya and Sajeepan (the LEDSone UK paid-ads staff) get a DM 46 product-share; SEO/Organic staff never receive DM-attributed sales, so no DM cost is queried or added for them',
       dmTotalSource: 'not applicable',
     };
@@ -213,16 +234,32 @@ function ownCostQuery(groupName, accountId) {
 // CURRENT_LIVE_MONTHS in salesuk.js) — always queried live.
 const CURRENT_LIVE_MONTHS = ['2026-08'];
 
+// 2025 Jan-Oct = 3-way UK Semrush split (Kamsi/Dilaksi/Sukirtha); Nov-Dec =
+// 4-way (Hetheesha joins). 2026 = 2-way UK Semrush+Arrow AI split
+// (Kamsi/Dilaksi only). See the Kamsi config comment for the full math.
+function getToolCost(cfg, month) {
+  if (!cfg.toolCost) return 0;
+  const year = month.slice(0, 4);
+  if (year === '2025') {
+    const isNovDec = month === '2025-11' || month === '2025-12';
+    return isNovDec ? cfg.toolCost.uk2025Share4 : cfg.toolCost.uk2025Share3;
+  }
+  if (year === '2026') return cfg.toolCost.uk2026Share2 || 0;
+  return 0;
+}
+
 async function queryCostForMonth(cfg, month) {
   const { start, end } = monthRange(month);
   const client = await getPool().connect();
+  let adSpend;
   try {
     const result = await client.query(ownCostQuery(cfg.groupName, cfg.accountId || LEDSONE_ACCOUNT_ID), [start, end]);
-    const cost = result.rows[0] && result.rows[0].cost != null ? Number(result.rows[0].cost) : 0;
-    return Math.round(cost * 100) / 100;
+    adSpend = result.rows[0] && result.rows[0].cost != null ? Number(result.rows[0].cost) : 0;
   } finally {
     client.release();
   }
+  const toolCost = getToolCost(cfg, month);
+  return Math.round((adSpend + toolCost) * 100) / 100;
 }
 
 async function queryDmCostsForMonth(productIds, month) {
