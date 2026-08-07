@@ -199,6 +199,10 @@ async function mapLimit(items, limit, fn) {
 }
 
 let currentMember = 'sonya';
+// Per-member cache of rendered rows — switching tabs re-renders instantly
+// from cache instead of re-fetching 20 months x 2 endpoints every click.
+// Only "Refresh (live)" or first-ever visit to a tab triggers a real fetch.
+const memberCache = {};
 
 async function loadAll(member, force){
   currentMember = member;
@@ -206,6 +210,13 @@ async function loadAll(member, force){
   const refreshBtn = document.getElementById('refreshBtn');
   const tbody = document.getElementById('tblBody');
   const label = MEMBER_NAMES[member];
+
+  if (!force && memberCache[member]) {
+    renderTable(memberCache[member].rows, label);
+    statusChip.textContent = 'Loaded · ' + memberCache[member].loadedAt;
+    return;
+  }
+
   refreshBtn.disabled = true;
   statusChip.textContent = 'Loading…';
   tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading ' + label + '\'s cost breakdown…</td></tr>';
@@ -241,7 +252,9 @@ async function loadAll(member, force){
     });
 
     renderTable(rows, label);
-    statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
+    const loadedAt = new Date().toLocaleString();
+    memberCache[member] = { rows, loadedAt };
+    statusChip.textContent = 'Live · updated ' + loadedAt;
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="13" class="empty">Error: ' + (err.message || err) + '</td></tr>';
     statusChip.textContent = 'Error';
