@@ -114,14 +114,22 @@ const EMPLOYEES = {
   },
   // Jefri runs Google Ads on the DE store (ledsone.de), a completely
   // separate Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi's UK
-  // account (4503486236) — same 5 named campaigns already used on
-  // jefri.html's Product Status/Req3 tabs (see JEFRI_CAMPAIGN_IDS in
-  // requirement.js). No group_name lookup (his campaigns aren't tagged with
-  // one) and no DM-46-style shared-campaign product-share concept — that's
-  // a UK-account-only construct, doesn't apply here. Added 2026-08-05.
+  // account (4503486236). No DM-46-style shared-campaign product-share
+  // concept applies here — that's a UK-account-only construct.
+  //
+  // FIXED 2026-08-05: was previously scoped to only 5 hardcoded campaign IDs
+  // (the ones used on jefri.html's Product Status/Req3 tabs), which silently
+  // showed £0.00 cost for Jan-Apr 2025 — those 5 campaigns didn't exist yet
+  // that early. Confirmed via Google Ads UI: his actual "Jefri" campaign
+  // group (Campaign group filter) has 61 campaigns, and
+  // `google_ads.campaigns WHERE group_name='Jefri' AND account_id=9031058245`
+  // matches all 61 — same group_name-tagging pattern already used for Sonya/
+  // Sajeepan, just on the DE account instead of the UK one. Verified: Jan
+  // 2025 cost via this query = €1,894.73, matching the Google Ads UI's
+  // "Custom Jan 1-31, 2025" campaign-group total (€1.89K) exactly.
   jefri: {
     isJefri: true,
-    campaignIds: ['23141810147', '23411228109', '22539594891', '23473840779', '23340277562'],
+    groupName: 'Jefri',
     accountId: 9031058245,
     productIds: new Set(),
     snapshotSlug: 'jefri',
@@ -131,7 +139,7 @@ const EMPLOYEES = {
 function buildSourceLabels(cfg) {
   if (cfg.isJefri) {
     return {
-      source: `google_ads.campaign_performance WHERE campaign_id IN (${cfg.campaignIds.join(',')}) (Jefri's 5 named DE campaigns, account_id=${cfg.accountId})`,
+      source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${cfg.accountId} (all of Jefri's DE campaigns, current + historical — matches the "Jefri" Campaign group filter in the Google Ads UI, 61 campaigns as of 2026-08-05)`,
       dmSource: 'not applicable — the DM 46 shared-campaign product-share concept is a UK-account-only construct',
       dmTotalSource: 'not applicable',
     };
@@ -188,23 +196,15 @@ const DM_TOTAL_COST_QUERY = `
     AND cp.date >= $1 AND cp.date < $2
 `;
 
-function ownCostQuery(groupName) {
+// accountId defaults to the LEDSone UK account; Jefri passes his DE account
+// ID explicitly (9031058245) — same group_name-tagging pattern, different
+// account, since group_name isn't unique across Google Ads accounts.
+function ownCostQuery(groupName, accountId) {
   return `
     SELECT SUM(cp.cost) AS cost
     FROM google_ads.campaign_performance cp
     JOIN google_ads.campaigns c ON c.campaign_id = cp.campaign_id
-    WHERE c.group_name = '${groupName}' AND c.account_id = ${LEDSONE_ACCOUNT_ID}
-      AND cp.date >= $1 AND cp.date < $2
-  `;
-}
-
-// Jefri's campaigns are given directly by ID (no group_name tag), so no
-// join against google_ads.campaigns is needed.
-function ownCostQueryByCampaignIds(campaignIds) {
-  return `
-    SELECT SUM(cp.cost) AS cost
-    FROM google_ads.campaign_performance cp
-    WHERE cp.campaign_id = ANY($3::bigint[])
+    WHERE c.group_name = '${groupName}' AND c.account_id = ${accountId}
       AND cp.date >= $1 AND cp.date < $2
   `;
 }
@@ -217,9 +217,7 @@ async function queryCostForMonth(cfg, month) {
   const { start, end } = monthRange(month);
   const client = await getPool().connect();
   try {
-    const result = cfg.isJefri
-      ? await client.query(ownCostQueryByCampaignIds(cfg.campaignIds), [start, end, cfg.campaignIds])
-      : await client.query(ownCostQuery(cfg.groupName), [start, end]);
+    const result = await client.query(ownCostQuery(cfg.groupName, cfg.accountId || LEDSONE_ACCOUNT_ID), [start, end]);
     const cost = result.rows[0] && result.rows[0].cost != null ? Number(result.rows[0].cost) : 0;
     return Math.round(cost * 100) / 100;
   } finally {
