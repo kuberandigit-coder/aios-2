@@ -104,8 +104,8 @@ td.na{color:var(--na);font-style:italic;}
   <div class="content">
     <div class="avail-banner">
       <b>Data availability (Phase 1 audit, 2026-08-07):</b><br>
-      <span class="dot ok"></span><b>Available &amp; shown:</b> Sales, VAT, Ads/SEO Cost, Transaction Fee, Discount, Refund.<br>
-      <span class="dot na"></span><b>Not available anywhere in this system — shown as N/A:</b> Product Cost (no per-order-line COGS source confirmed), CSS cost (Klarna/Shoptimized/Shoprize exist only as campaign-name text, never a billed cost), Meta Ads Cost (no Meta/Facebook Ads integration exists), Subscription Fee beyond the SEO tools already counted in Kamsi/Dilaksi's Ads/SEO Cost column.<br>
+      <span class="dot ok"></span><b>Available &amp; shown:</b> Sales, VAT, Ads/SEO Cost, Transaction Fee, Discount, Refund, Product Cost (20% of Gross Sales — confirmed business rule, 2026-08-07).<br>
+      <span class="dot na"></span><b>Not available anywhere in this system — shown as N/A:</b> CSS cost (Klarna/Shoptimized/Shoprize exist only as campaign-name text, never a billed cost), Meta Ads Cost (no Meta/Facebook Ads integration exists), Subscription Fee beyond the SEO tools already counted in Kamsi/Dilaksi's Ads/SEO Cost column.<br>
       "Available Cost Total" and "Net" below only ever sum the columns marked available — they are <b>not</b> a full P&amp;L until the N/A columns get a real source.
     </div>
 
@@ -125,7 +125,7 @@ td.na{color:var(--na);font-style:italic;}
               <th class="num">Transaction Fee</th>
               <th class="num">Discount</th>
               <th class="num">Refund</th>
-              <th class="num na-col">Product Cost</th>
+              <th class="num">Product Cost</th>
               <th class="num na-col">CSS Cost</th>
               <th class="num na-col">Meta Cost</th>
               <th class="num na-col">Subscription Fee</th>
@@ -163,12 +163,17 @@ async function fetchSales(year, member, month, force){
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || (endpoint + ' failed for ' + month));
   const cs = data.combinedSummary || {};
+  // Product Cost = 20% of Gross Sales (before discounts/refunds) — confirmed
+  // business rule, 2026-08-07. grossSales was already computed server-side,
+  // just not previously surfaced on this page.
+  const productCost = cs.grossSales != null ? Math.round(cs.grossSales * 0.20 * 100) / 100 : null;
   return {
     sales: cs.netSales != null ? cs.netSales : null,
     vat: cs.vat != null ? cs.vat : null, // undefined on snapshots generated before 2026-08-07 — shows N/A until that month's snapshot is regenerated
     discount: cs.discounts != null ? cs.discounts : null,
     refund: cs.refunds != null ? cs.refunds : null,
     transactionFee: cs.transactionFee !== undefined ? cs.transactionFee : null,
+    productCost,
   };
 }
 
@@ -222,15 +227,15 @@ async function loadAll(member, force){
     const rows = allMonths.map((m, i) => {
       const s = salesResults[i] || {};
       const ads = adsResults[i];
-      const availableTotal = [s.vat, ads, s.transactionFee, s.discount, s.refund]
-        .filter(v => v != null)
-        .reduce((a,b) => a+b, 0);
-      const anyMissing = [s.vat, ads, s.transactionFee, s.discount, s.refund].some(v => v == null);
+      const parts = [s.vat, ads, s.transactionFee, s.discount, s.refund, s.productCost];
+      const availableTotal = parts.filter(v => v != null).reduce((a,b) => a+b, 0);
+      const anyMissing = parts.some(v => v == null);
       const net = s.sales != null ? s.sales - availableTotal : null;
       const isLive = m.slice(0,4) === '2026' && LIVE_2026.includes(m);
       return {
         month: m, monthLabel: MONTH_NAME[m.slice(5)] + ' ' + m.slice(0,4),
         sales: s.sales, vat: s.vat, ads, transactionFee: s.transactionFee, discount: s.discount, refund: s.refund,
+        productCost: s.productCost,
         availableTotal, anyMissing, net, isLive,
       };
     });
@@ -261,7 +266,7 @@ function renderTable(rows, label){
       '<td class="num">' + cell(r.transactionFee) + '</td>' +
       '<td class="num">' + cell(r.discount) + '</td>' +
       '<td class="num">' + cell(r.refund) + '</td>' +
-      '<td class="num na">N/A</td>' +
+      '<td class="num">' + cell(r.productCost) + '</td>' +
       '<td class="num na">N/A</td>' +
       '<td class="num na">N/A</td>' +
       '<td class="num na">' + ((currentMember==='kamsi'||currentMember==='dilaksi') ? 'see Ads/SEO Cost' : 'N/A') + '</td>' +
@@ -295,7 +300,8 @@ function updateFootnotes(key){
     '<strong>Data sources.</strong><br>' +
     'Sales (net), VAT, Discount, Refund, Transaction Fee — <code>/api/sales25?group=' + key + '</code> (2025) / <code>/api/salesuk?group=' + key + '</code> (2026), reusing the exact same Shopify order data already fetched for the Employee Performance page. VAT is the sum of per-line-item <code>taxLines</code> (customer-charged VAT only — not business-expense VAT on ad/subscription invoices). Transaction Fee is <code>accounting.shopify_transactions.fee</code> summed for exactly this member\'s attributed orders (Shopify Payments processing fee, UK store only).<br>' +
     adsExplain + '<br>' +
-    '<strong>N/A columns are not zero — they are unavailable.</strong> Product Cost has no confirmed per-order COGS source (a supplier-invoice-based source exists but needs a join that hasn\'t been built or verified). CSS cost (Klarna/Shoptimized/Shoprize) and Meta Ads Cost have no billed-cost source anywhere in this system — see the Phase 1 discovery report for details.<br>' +
+    'Product Cost = 20% of Gross Sales (before discounts/refunds) — confirmed business rule, 2026-08-07. Computed client-side from the same <code>grossSales</code> figure the Sales endpoints already return.<br>' +
+    '<strong>N/A columns are not zero — they are unavailable.</strong> CSS cost (Klarna/Shoptimized/Shoprize) and Meta Ads Cost have no billed-cost source anywhere in this system — see the Phase 1 discovery report for details.<br>' +
     'Some 2025/2026 months may show VAT/Transaction Fee as "verify — see note" if their static snapshot predates the 2026-08-07 fix that added these fields — click Refresh (live) on that month\'s tab to backfill it.';
 }
 
