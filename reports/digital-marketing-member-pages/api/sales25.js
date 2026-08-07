@@ -15,6 +15,54 @@ const API_VERSION_UK = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
 const TOKEN_UK = process.env.SHOPIFY_UK_ADMIN_TOKEN;
 const fs = require('fs');
 const path = require('path');
+const { Pool } = require('pg');
+
+// Transaction Fee support (added 2026-08-07 for the Cost dashboard audit) —
+// accounting.shopify_transactions.fee is a real, order-linked Shopify
+// Payments processing-fee record. sub_source=104 is the ledsone (UK) store
+// (confirmed via order_management.sub_source), same for 2025 as 2026 — it's
+// the same Shopify store historically. Read-only, same getPool() pattern as
+// api/muguntha.js.
+const UK_SUB_SOURCE = 104;
+let pgPool;
+function getPgPool() {
+  if (!pgPool) {
+    const connectionString = process.env.DATABASE_URL;
+    pgPool = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 8000,
+      statement_timeout: 15000,
+      max: 3,
+    });
+  }
+  return pgPool;
+}
+async function sumTransactionFees(orderLegacyIds) {
+  const ids = [...new Set((orderLegacyIds || []).filter(Boolean).map(String))];
+  if (!ids.length) return 0;
+  let client;
+  try {
+    client = await getPgPool().connect();
+    const result = await client.query(
+      `SELECT COALESCE(SUM(fee), 0) AS total_fee
+       FROM accounting.shopify_transactions
+       WHERE sub_source = $1 AND type = 'charge' AND shopify_order_id = ANY($2::bigint[])`,
+      [UK_SUB_SOURCE, ids]
+    );
+    return Math.round(Number(result.rows[0].total_fee) * 100) / 100;
+  } catch (err) {
+    console.error('[sales25] transaction fee lookup failed:', err && err.message);
+    return null;
+  } finally {
+    if (client) client.release();
+  }
+}
 
 // ---------- Europe/London month boundaries, DST-aware ----------
 function londonOffsetMinutesAt(utcGuessMs) {
@@ -319,6 +367,7 @@ function buildOrderRow(order, journey) {
     currency: ccy(order.currentTotalPriceSet),
     orderTotal: amt(order.currentTotalPriceSet),
     grossSales, discounts, refunds, netSales,
+    tax: round2(lineItemTax), // customer-charged VAT — exposed 2026-08-07 for the Cost dashboard, previously computed but discarded
     firstVisitSource: utm.source || (fv && fv.source) || null,
     firstVisitMedium: utm.medium || null,
     firstVisitCampaign: utm.campaign || null,
@@ -345,23 +394,25 @@ function buildOrderRow(order, journey) {
 }
 
 function summarizeOrderRows(rows) {
-  let grossSales = 0, discounts = 0, refunds = 0, orderTotalSum = 0;
+  let grossSales = 0, discounts = 0, refunds = 0, orderTotalSum = 0, vat = 0;
   const currencies = new Set();
   for (const row of rows) {
     grossSales += row.grossSales;
     discounts += row.discounts;
     refunds += row.refunds;
     orderTotalSum += row.orderTotal || 0;
+    vat += row.tax || 0;
     if (row.currency) currencies.add(row.currency);
   }
   grossSales = round2(grossSales);
   discounts = round2(discounts);
   refunds = round2(refunds);
   orderTotalSum = round2(orderTotalSum);
+  vat = round2(vat);
   const netSales = round2(grossSales - discounts - refunds);
   const currency = currencies.size === 1 ? [...currencies][0] : (currencies.size === 0 ? 'GBP' : 'MIXED');
   return {
-    ordersCount: rows.length, grossSales, discounts, refunds, netSales, orderTotalSum,
+    ordersCount: rows.length, grossSales, discounts, refunds, netSales, orderTotalSum, vat,
     averageRevenuePerOrder: rows.length ? round2(netSales / rows.length) : 0,
     currency, multiCurrencyWarning: currencies.size > 1 ? [...currencies] : null,
   };
@@ -2441,6 +2492,7 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     .sort((a, b) => b.ordersCount - a.ordersCount);
 
   const combinedSummary = summarizeOrderRows(rows);
+  combinedSummary.transactionFee = await sumTransactionFees(rows.map(r => r.orderLegacyId));
 
   const payload = {
     success: true,

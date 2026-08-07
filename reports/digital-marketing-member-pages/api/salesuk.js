@@ -14,6 +14,56 @@ const API_VERSION_UK = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
 const TOKEN_UK = process.env.SHOPIFY_UK_ADMIN_TOKEN;
 const fs = require('fs');
 const path = require('path');
+const { Pool } = require('pg');
+
+// Transaction Fee support (added 2026-08-07 for the Cost dashboard audit) —
+// accounting.shopify_transactions.fee is a real, order-linked Shopify
+// Payments processing-fee record. sub_source=104 is the ledsone (UK) store
+// (confirmed via order_management.sub_source). Read-only, same getPool()
+// pattern as api/muguntha.js.
+const UK_SUB_SOURCE = 104;
+let pgPool;
+function getPgPool() {
+  if (!pgPool) {
+    const connectionString = process.env.DATABASE_URL;
+    pgPool = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 8000,
+      statement_timeout: 15000,
+      max: 3,
+    });
+  }
+  return pgPool;
+}
+// Sums Shopify Payments processing fees for exactly the given set of order
+// IDs — used to attribute Transaction Fee to whichever staff group those
+// orders already belong to, with zero risk of pulling in unrelated orders.
+async function sumTransactionFees(orderLegacyIds) {
+  const ids = [...new Set((orderLegacyIds || []).filter(Boolean).map(String))];
+  if (!ids.length) return 0;
+  let client;
+  try {
+    client = await getPgPool().connect();
+    const result = await client.query(
+      `SELECT COALESCE(SUM(fee), 0) AS total_fee
+       FROM accounting.shopify_transactions
+       WHERE sub_source = $1 AND type = 'charge' AND shopify_order_id = ANY($2::bigint[])`,
+      [UK_SUB_SOURCE, ids]
+    );
+    return Math.round(Number(result.rows[0].total_fee) * 100) / 100;
+  } catch (err) {
+    console.error('[salesuk] transaction fee lookup failed:', err && err.message);
+    return null; // null = "could not verify", distinct from 0 = "verified zero"
+  } finally {
+    if (client) client.release();
+  }
+}
 
 // ---------- Europe/London month boundaries, DST-aware ----------
 function londonOffsetMinutesAt(utcGuessMs) {
@@ -317,6 +367,7 @@ function buildOrderRow(order, journey) {
     currency: ccy(order.currentTotalPriceSet),
     orderTotal: amt(order.currentTotalPriceSet),
     grossSales, discounts, refunds, netSales,
+    tax: round2(lineItemTax), // customer-charged VAT — exposed 2026-08-07 for the Cost dashboard, previously computed but discarded
     firstVisitSource: utm.source || (fv && fv.source) || null,
     firstVisitMedium: utm.medium || null,
     firstVisitCampaign: utm.campaign || null,
@@ -344,23 +395,25 @@ function buildOrderRow(order, journey) {
 
 function summarizeOrderRows(rows) {
   let unitsPlaceholder = 0; // not tracked at order-level (no line items requested)
-  let grossSales = 0, discounts = 0, refunds = 0, orderTotalSum = 0;
+  let grossSales = 0, discounts = 0, refunds = 0, orderTotalSum = 0, vat = 0;
   const currencies = new Set();
   for (const row of rows) {
     grossSales += row.grossSales;
     discounts += row.discounts;
     refunds += row.refunds;
     orderTotalSum += row.orderTotal || 0;
+    vat += row.tax || 0;
     if (row.currency) currencies.add(row.currency);
   }
   grossSales = round2(grossSales);
   discounts = round2(discounts);
   refunds = round2(refunds);
   orderTotalSum = round2(orderTotalSum);
+  vat = round2(vat);
   const netSales = round2(grossSales - discounts - refunds);
   const currency = currencies.size === 1 ? [...currencies][0] : (currencies.size === 0 ? 'GBP' : 'MIXED');
   return {
-    ordersCount: rows.length, grossSales, discounts, refunds, netSales, orderTotalSum,
+    ordersCount: rows.length, grossSales, discounts, refunds, netSales, orderTotalSum, vat,
     averageRevenuePerOrder: rows.length ? round2(netSales / rows.length) : 0,
     currency, multiCurrencyWarning: currencies.size > 1 ? [...currencies] : null,
   };
@@ -2157,6 +2210,108 @@ function orderHasDilaksiProduct(order) {
   });
 }
 
+// Theekshy product-ID ownership for untraceable-campaign orders (added
+// 2026-08-07, per user-supplied list "My Fainal - Sheet37.csv", 413 product
+// IDs). Sonya's catch-all rule ("no campaign anywhere in the journey AND
+// first-session utm_medium is google_ads") previously claimed EVERY such
+// untraceable order regardless of product. Now: if that untraceable order
+// contains one of Theekshy's owned product IDs, it goes to Theekshy instead
+// of Sonya. Applies to all months (Sonya's rule text already says
+// "PERMANENT... including future live-month updates"); March and April 2026
+// snapshots were regenerated immediately after this change per user request.
+const THEEKSHY_PRODUCT_IDS_UK = new Set([
+  '8175032697082', '6751883428001', '4417260486752', '6024708358305', '5304784879777',
+  '5661715398817', '6748528214177', '7652493558010', '7984494149882', '6869509832865',
+  '7849817800954', '4417259077728', '4553269117024', '8152114168058', '5244587507873',
+  '7438038040826', '4538255671392', '7689220030714', '8150225977594', '7469127205114',
+  '7984475570426', '4417284898912', '8133926060282', '8100579639546', '4536806539360',
+  '7651376201978', '8152305729786', '4417259339872', '8205362462970', '7469126549754',
+  '4448092389472', '4626541674592', '6885550129313', '8009169993978', '6754368880801',
+  '8010485137658', '7928119132410', '4495624175712', '6987584077985', '8172737265914',
+  '5343065211041', '8160598720762', '4590559723616', '5450415538337', '6842694795425',
+  '4417280770144', '8006161662202', '8651552686330', '14872929468802', '14872946311554',
+  '5661711302817', '14892327797122', '14893024969090', '8652600606970', '7987072368890',
+  '4417280409696', '4417264812128', '4417266155616', '4417282080864', '8010954113274',
+  '6008904220833', '4417278115936', '4417267859552', '4417267761248', '4417280901216',
+  '4417277788256', '4417267925088', '4417281228896', '8005741805818', '4417277558880',
+  '8011831148794', '8011831509242', '6008907530401', '6008905466017', '4417278574688',
+  '14921113305474', '14925001392514', '14874527138178', '14932298039682', '14932339097986',
+  '14934484713858', '14935996924290', '4478838505568', '14951646364034', '14927394275714',
+  '14958817739138', '14958851326338', '14959226257794', '14960132718978', '14960152248706',
+  '14961264918914', '14964936671618', '14970788643202', '14971719352706', '14975891964290',
+  '14983390134658', '14886272434562', '6024709537953', '4490902339680', '15019527602562',
+  '4417270579296', '15026397249922', '15047001506178', '15066724598146', '15072898941314',
+  '5313902313633', '15075268002178', '15075287925122', '15094923297154', '15100091007362',
+  '15100100215170', '15141041439106', '15141924766082', '15143404306818', '15143562445186',
+  '15145927999874', '15145932718466', '15167355453826', '15260954100098', '15145639412098',
+  '8010558406906', '4490901160032', '6024708980897', '5661709729953', '6024708587681',
+  '7982678343930', '7773202841850', '7983292743930', '8108243058938', '7487958614266',
+  '7977117647098', '6761797845153', '8004464607482', '8009525919994', '7984493789434',
+  '4448091177056', '8004049928442', '8320735346938', '5791484641441', '8156748087546',
+  '8017447452922', '4448092979296', '7062445424801', '8229599871226', '4417255768160',
+  '4460365545568', '8445628678394', '5877380513953', '4528321396832', '5536371114145',
+  '6634014900385', '5991592853665', '5971602014369', '6749409804449', '4490901422176',
+  '7470951792890', '4417270743136', '4417290305632', '5991593836705', '4417290698848',
+  '4523827331168', '5991593312417', '8062989926650', '6856649277601', '8162932785402',
+  '7982621065466', '6751750226081', '5758489100449', '4417285816416', '8113198203130',
+  '8222129258746', '8017498210554', '7986302681338', '4553369649248', '4417257570400',
+  '8137813524730', '8167753285882', '8174343815418', '8163100819706', '5321025585313',
+  '4417283981408', '4524553240672', '7983940436218', '5245842096289', '4524553732192',
+  '7982358102266', '4536806637664', '7865877463290', '7516401336570', '6846014521505',
+  '6798976221345', '7516400976122', '6934040510625', '8004348412154', '8034949103866',
+  '8136410923258', '8448372211962', '7910311657722', '4417286733920', '4417272512608',
+  '7455207850234', '8060683256058', '8104621244666', '4417295646816', '6883367977121',
+  '8166938509562', '7983916187898', '6912420348065', '7592071168250', '7816214053114',
+  '7694648639738', '7694648901882', '5928567898273', '4417259405408', '8412700180730',
+  '6826628677793', '4495624274016', '7993906987258', '7588462330106', '4448093077600',
+  '4448092192864', '4448093241440', '4448093339744', '4448093372512', '4502516334688',
+  '7816203698426', '7711793545466', '5244461908129', '7452903080186', '7452902424826',
+  '5911744643233', '5244462137505', '8037522997498', '8010962698490', '7982088519930',
+  '8009128804602', '8021606301946', '7455209980154', '4626542231648', '8475653898490',
+  '7986325455098', '7986321621242', '4551406649440', '4417269792864', '6898555617441',
+  '8100968825082', '4417269858400', '8448263323898', '8175814902010', '8010020192506',
+  '8161672069370', '8175728492794', '6069693841569', '4536806178912', '7982366392570',
+  '7516401139962', '7691129946362', '4595341688928', '8062202544378', '4495624437856',
+  '7053633487009', '4417274970208', '4417296302176', '7467514495226', '6967074783393',
+  '6026303078561', '4417284046944', '8122668679418', '8078034567418', '4460365185120',
+  '4460364890208', '7515292926202', '7989035303162', '8026793443578', '6024709636257',
+  '8014153646330', '5500547104929', '7609246777594', '7985978048762', '7019566006433',
+  '7480767774970', '5814731964577', '4498513231968', '5239482908833', '4468593262688',
+  '6061344522401', '7542184640762', '8060501229818', '5329136124065', '7568355164410',
+  '6909809688737', '5500547661985', '4528320741472', '5887546818721', '5313903001761',
+  '8173365297402', '8021519794426', '7470952251642', '6894988951713', '8169463316730',
+  '8167120535802', '5770426417313', '6751753371809', '4487760216160', '8564695040250',
+  '8566034071802', '8612312482042', '8623377907962', '8623658926330', '8564462420218',
+  '8523781210362', '8631162994938', '14872907350402', '14873353945474', '14875076755842',
+  '14875138687362', '8647150108922', '8647147454714', '8647143981306', '14877081502082',
+  '14877086089602', '14877120692610', '14883163767170', '14883197059458', '14883497214338',
+  '14888894071170', '4417283489888', '4417268547680', '4417278836832', '6008903827617',
+  '14922498343298', '14925054837122', '14925604225410', '4417285455968', '14928396386690',
+  '14928444981634', '14928466018690', '14929147527554', '14930634768770', '14930682184066',
+  '14932109656450', '14932127809922', '14933888237954', '14934424977794', '14934485369218',
+  '14934538977666', '14934470721922', '14937995084162', '8010989863162', '14944163266946',
+  '14951542096258', '8009491218682', '14952939094402', '14952982872450', '14953877307778',
+  '14953903227266', '14953949299074', '14954008248706', '14955551785346', '14957740786050',
+  '14958021968258', '14958813446530', '14958852374914', '14958855913858', '14958858142082',
+  '6024708849825', '14961233101186', '6956180275361', '14965085438338', '14967008002434',
+  '14968030396802', '14970640007554', '14971728200066', '14973874569602', '14975504843138',
+  '14975509266818', '14992420143490', '14992559145346', '8566021325050', '14998206972290',
+  '15005018423682', '15024538747266', '15026377589122', '15026390532482', '15048202125698',
+  '15051985715586', '15053406634370', '15065709740418', '15069598351746', '15070133158274',
+  '15070155440514', '15071739019650', '15071747178882', '15071766774146', '15083428675970',
+  '15086799847810', '15099971568002', '15102976950658', '15105582006658', '15141903466882',
+  '15143365509506', '15148633915778', '15155226902914', '15167325143426', '15187829752194',
+  '8010558341370', '15214598324610', '15266961359234', '15269217599874', '15274724262274',
+  '8071288324346',
+]);
+function orderHasTheekshyProduct(order) {
+  if (!order || !order.lineItems) return false;
+  return order.lineItems.edges.some((e) => {
+    const pid = e.node.variant && e.node.variant.product ? e.node.variant.product.legacyResourceId : null;
+    return pid && THEEKSHY_PRODUCT_IDS_UK.has(String(pid));
+  });
+}
+
 const GROUPS = [
   {
     key: 'dm-ad',
@@ -2178,7 +2333,7 @@ const GROUPS = [
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27), OR (no campaign anywhere in the journey AND first-session utm_medium is "google_ads", unless the last session traces to a Sajeepan campaign — confirmed by the user, 2026-07-28, as a PERMANENT rule covering all months, including future live-month updates), OR the order contains one of Sonya\'s owned product IDs and would otherwise have matched DM-Ad\'s campaign rule (product-ID split added 2026-07-30, per user request to split DM Campaigns sales by product ownership). Checked only after DM-Ad and Meta.',
+    scope: 'first-session utm_campaign exactly matches "Klarna_Sonya_kl-pmx-all", "Sonya_PendantLight" or "SH_Wall_Light", OR utm_term exactly matches one of her 6 confirmed values ("Sonya", "ninc", "glow_up", "SonyaIreland", "SonyaSpian", "SonyTopEuropeEngEU{_adgroup}"), OR (first session has no campaign/term AND the 2nd OR LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all" — confirmed by the user, 2026-07-27), OR (no campaign anywhere in the journey AND first-session utm_medium is "google_ads", unless the last session traces to a Sajeepan campaign, OR the order contains one of Theekshy\'s owned product IDs — that goes to Theekshy instead, added 2026-08-07 — confirmed by the user, 2026-07-28, as a PERMANENT rule covering all months, including future live-month updates), OR the order contains one of Sonya\'s owned product IDs and would otherwise have matched DM-Ad\'s campaign rule (product-ID split added 2026-07-30, per user request to split DM Campaigns sales by product ownership). Checked only after DM-Ad and Meta.',
     match: (utm, fv, journey, month, order) => {
       if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
       if (!utm.campaign && !utm.term && (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' || lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all')) return true;
@@ -2186,8 +2341,10 @@ const GROUPS = [
         const medium = (utm.medium || '').toString().toLowerCase();
         // Don't blanket-claim if the last session traces to a known
         // Sajeepan campaign — let that fall through to Sajeepan instead
-        // (checked after Sonya in GROUPS priority order).
-        if (medium === 'google_ads' && !isSajeepanCampaignUk(lastSessionCampaign(journey))) return true;
+        // (checked after Sonya in GROUPS priority order). Same for orders
+        // containing a Theekshy-owned product ID — those fall through to
+        // Theekshy (checked much later in GROUPS priority order).
+        if (medium === 'google_ads' && !isSajeepanCampaignUk(lastSessionCampaign(journey)) && !orderHasTheekshyProduct(order)) return true;
       }
       if ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSonyaProduct(order)) return true;
       if (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSonyaProduct(order)) return true;
@@ -2306,9 +2463,16 @@ const GROUPS = [
     key: 'theekshy',
     name: 'Theekshy',
     department: 'Google Ads (Paid Search)',
-    scope: 'first-session utm_campaign contains "theekshy" (case-insensitive) — covers "Pmax_UK_Theekshy_Shoptimised_THEE_NS_MCV_UK" (found May), "Pmax_Theekshy_Shoptimised_THEE_MYSTERY_Non_Converting_MCV_UK" (found July), and any future variant. Confirmed by the user, 2026-07-27/28. Checked last — an order already claimed by any earlier group never lands here.',
-    match: (utm) => (utm.campaign || '').toString().toLowerCase().includes('theekshy'),
-    matchValue: (utm) => utm.campaign,
+    scope: 'first-session utm_campaign contains "theekshy" (case-insensitive) — covers "Pmax_UK_Theekshy_Shoptimised_THEE_NS_MCV_UK" (found May), "Pmax_Theekshy_Shoptimised_THEE_MYSTERY_Non_Converting_MCV_UK" (found July), and any future variant. Confirmed by the user, 2026-07-27/28. OR (no campaign anywhere in the journey AND first-session utm_medium is "google_ads" AND the order contains one of Theekshy\'s owned product IDs, from the user-supplied "My Fainal - Sheet37.csv" list, 413 product IDs — untraceable-campaign product-ID split added 2026-08-07, per user request; previously these all fell to Sonya\'s catch-all rule). Checked last — an order already claimed by any earlier group never lands here.',
+    match: (utm, fv, journey, month, order) => {
+      if ((utm.campaign || '').toString().toLowerCase().includes('theekshy')) return true;
+      if (!utm.campaign && !utm.term) {
+        const medium = (utm.medium || '').toString().toLowerCase();
+        if (medium === 'google_ads' && orderHasTheekshyProduct(order)) return true;
+      }
+      return false;
+    },
+    matchValue: (utm) => utm.campaign || 'google_ads (untraceable campaign, owned product)',
   },
   {
     key: 'thanishtika',
@@ -2582,6 +2746,7 @@ async function handleGroup(req, res, monthConfig, forceRefresh, groupDef) {
     .sort((a, b) => b.ordersCount - a.ordersCount);
 
   const combinedSummary = summarizeOrderRows(rows);
+  combinedSummary.transactionFee = await sumTransactionFees(rows.map(r => r.orderLegacyId));
 
   const payload = {
     success: true,
@@ -2639,3 +2804,4 @@ module.exports = async function handler(req, res) {
 // same product IDs, without duplicating this ~370-entry list (added 2026-08-04).
 module.exports.SONYA_PRODUCT_IDS_UK = SONYA_PRODUCT_IDS_UK;
 module.exports.SAJEEPAN_PRODUCT_IDS_UK = SAJEEPAN_PRODUCT_IDS_UK;
+module.exports.THEEKSHY_PRODUCT_IDS_UK = THEEKSHY_PRODUCT_IDS_UK;

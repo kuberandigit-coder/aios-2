@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEDSone — Cost Dashboard (Available Data)</title>
+<style>
+:root{--navy:#0c1a30;--navy2:#0e2143;--gold:#c9a227;--sidebar-text:#aab4c8;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--good-soft:#e6f6ec;--bad:#c62828;--bad-soft:#fdecea;--warn:#b7791f;--warn-soft:#fdf3e0;--na:#9aa3b2;--na-soft:#f1f2f5;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh;}
+
+.sidebar{width:250px;flex-shrink:0;background:var(--navy);color:var(--sidebar-text);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;}
+.brand .mark{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
+.brand .txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;}
+.brand .txt span{display:block;font-size:10.5px;color:#7f8bab;letter-spacing:.8px;text-transform:uppercase;margin-top:2px;}
+.navlabel{font-size:10.5px;color:#5e6b8a;text-transform:uppercase;letter-spacing:.8px;font-weight:700;padding:16px 10px 8px;}
+.navlist{list-style:none;display:flex;flex-direction:column;gap:2px;}
+.navlist a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;color:var(--sidebar-text);text-decoration:none;font-size:13.5px;font-weight:600;transition:background .18s ease,color .18s ease,transform .15s ease;}
+.navlist a .ic{width:22px;height:22px;flex-shrink:0;border-radius:7px;background:rgba(255,255,255,.07);display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;opacity:.9;}
+.navlist a:hover{background:rgba(255,255,255,.07);color:#fff;transform:translateX(3px);}
+.navlist a.active{background:rgba(31,94,255,.18);color:#fff;box-shadow:inset 3px 0 0 var(--accent);}
+.navlist a.active .ic{background:var(--accent);opacity:1;}
+.sidebar-spacer{flex:1;}
+.back-btn{display:block;text-align:center;background:rgba(255,255,255,.06);color:#dfe4ee;text-decoration:none;font-size:13px;font-weight:700;padding:10px;border-radius:9px;}
+.back-btn:hover{background:rgba(255,255,255,.12);}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{background:var(--navy2);color:#fff;padding:26px 34px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;border-bottom:3px solid var(--gold);}
+.topbar h1{font-size:24px;font-weight:800;}
+.topbar .sub{color:#9fb0d1;font-size:12.5px;margin-top:8px;max-width:760px;line-height:1.6;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.chip{background:rgba(255,255,255,.08);color:#dfe4ee;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;}
+.chip.live{background:var(--good-soft);color:var(--good);}
+.filters button.primary{background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:9px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+.filters button.primary:disabled{opacity:.6;cursor:wait;}
+
+.content{padding:26px 34px 40px;flex:1;}
+
+.avail-banner{background:var(--warn-soft);border:1px solid #f0d9a8;color:#7a5a12;border-radius:12px;padding:14px 18px;font-size:12.5px;line-height:1.7;margin-bottom:20px;}
+.avail-banner b{color:#5c4409;}
+.avail-banner .dot{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:6px;}
+.dot.ok{background:var(--good);}
+.dot.na{background:var(--na);}
+
+.tablebox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,.05);}
+.tbar{padding:16px 22px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fbfcfe,#f7f8fb);}
+.tbar strong{color:var(--navy);font-size:17px;font-weight:800;}
+.scroll{overflow-x:auto;max-height:72vh;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1500px;font-variant-numeric:tabular-nums;}
+thead th{background:var(--navy);text-align:left;padding:12px 13px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;color:#c3cce3;border-bottom:2px solid var(--gold);white-space:nowrap;position:sticky;top:0;z-index:2;}
+thead th.num,td.num{text-align:right;}
+thead th.na-col{color:#8b93ad;}
+tbody td{padding:12px 13px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;font-size:12.5px;}
+tbody td:first-child{font-weight:700;color:var(--navy);}
+tbody tr:nth-child(even){background:#f9fafc;}
+tbody tr:hover{background:var(--accent-soft);}
+td.na{color:var(--na);font-style:italic;}
+.up{color:var(--good);font-weight:700;}
+.down{color:var(--bad);font-weight:700;}
+.loading,.empty{padding:40px 20px;text-align:center;color:var(--muted);}
+.footnotes{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px;font-size:12.5px;color:var(--muted);line-height:1.75;}
+.footnotes strong{color:var(--ink);}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="mark">L</div>
+    <div class="txt"><b>LEDSone</b><span>Cost Dashboard</span></div>
+  </div>
+
+  <div class="navlabel">Main</div>
+  <ul class="navlist">
+    <li><a href="../home.html"><span class="ic">&#9635;</span> Overview</a></li>
+    <li><a href="./muguntha.html"><span class="ic">&#128200;</span> Employee Performance</a></li>
+  </ul>
+
+  <div class="navlabel">Cost — Available Data</div>
+  <ul class="navlist" id="memberNav">
+    <li><a href="#" data-member="sonya" class="active"><span class="ic">S</span> Sonya</a></li>
+    <li><a href="#" data-member="sajeepan"><span class="ic">S</span> Sajeepan</a></li>
+    <li><a href="#" data-member="kamsi"><span class="ic">K</span> Kamsi</a></li>
+    <li><a href="#" data-member="dilaksi"><span class="ic">D</span> Dilaksi</a></li>
+  </ul>
+
+  <div class="sidebar-spacer"></div>
+  <a class="back-btn" href="./muguntha.html">&larr; Back to Employee Performance</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1 id="pageTitle">Cost Dashboard — Sonya</h1>
+      <div class="sub" id="pageSub">Shows only cost categories with a real, verified data source — see the availability note below. Nothing on this page is estimated or assumed.</div>
+    </div>
+    <div class="filters">
+      <span class="chip live" id="statusChip">Loading&hellip;</span>
+      <button class="primary" id="refreshBtn">Refresh (live)</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="avail-banner">
+      <b>Data availability (Phase 1 audit, 2026-08-07):</b><br>
+      <span class="dot ok"></span><b>Available &amp; shown:</b> Sales, VAT, Ads/SEO Cost, Transaction Fee, Discount, Refund.<br>
+      <span class="dot na"></span><b>Not available anywhere in this system — shown as N/A:</b> Product Cost (no per-order-line COGS source confirmed), CSS cost (Klarna/Shoptimized/Shoprize exist only as campaign-name text, never a billed cost), Meta Ads Cost (no Meta/Facebook Ads integration exists), Subscription Fee beyond the SEO tools already counted in Kamsi/Dilaksi's Ads/SEO Cost column.<br>
+      "Available Cost Total" and "Net" below only ever sum the columns marked available — they are <b>not</b> a full P&amp;L until the N/A columns get a real source.
+    </div>
+
+    <div class="tablebox">
+      <div class="tbar">
+        <strong id="tbarTitle">Sonya — Monthly Cost Breakdown</strong>
+        <span id="rowCount"></span>
+      </div>
+      <div class="scroll">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="num">Sales</th>
+              <th class="num">VAT</th>
+              <th class="num" id="adsColHeader">Ads Cost</th>
+              <th class="num">Transaction Fee</th>
+              <th class="num">Discount</th>
+              <th class="num">Refund</th>
+              <th class="num na-col">Product Cost</th>
+              <th class="num na-col">CSS Cost</th>
+              <th class="num na-col">Meta Cost</th>
+              <th class="num na-col">Subscription Fee</th>
+              <th class="num">Available Cost Total</th>
+              <th class="num">Net (available)</th>
+            </tr>
+          </thead>
+          <tbody id="tblBody"><tr><td colspan="13" class="loading">Loading&hellip;</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footnotes" id="footnotes">
+      <strong>Data sources.</strong><br>
+      Loading&hellip;
+    </div>
+  </div>
+</div>
+
+<script>
+const TAX_MONTHS_2025 = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12'];
+const MONTHS_2026 = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08'];
+const MONTH_NAME = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'};
+const LIVE_2026 = ['2026-08'];
+
+function fmtMoney(n){ return n==null ? 'N/A' : '£' + (Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+const MEMBER_NAMES = { sonya:'Sonya', sajeepan:'Sajeepan', kamsi:'Kamsi', dilaksi:'Dilaksi' };
+const HAS_SEO_COST = new Set(['kamsi','dilaksi']); // Ads Cost column becomes "SEO Fee" for these two
+
+async function fetchSales(year, member, month, force){
+  const endpoint = year === '2025' ? 'sales25' : 'salesuk';
+  const url = '/api/' + endpoint + '?group=' + member + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || (endpoint + ' failed for ' + month));
+  const cs = data.combinedSummary || {};
+  return {
+    sales: cs.netSales != null ? cs.netSales : null,
+    vat: cs.vat != null ? cs.vat : null, // undefined on snapshots generated before 2026-08-07 — shows N/A until that month's snapshot is regenerated
+    discount: cs.discounts != null ? cs.discounts : null,
+    refund: cs.refunds != null ? cs.refunds : null,
+    transactionFee: cs.transactionFee !== undefined ? cs.transactionFee : null,
+  };
+}
+
+async function fetchAdsCost(member, month, force){
+  const url = '/api/muguntha?employee=' + member + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || ('cost fetch failed for ' + month));
+  return data.totalCost != null ? data.totalCost : data.cost;
+}
+
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(new Array(Math.min(limit, items.length)).fill(0).map(worker));
+  return results;
+}
+
+let currentMember = 'sonya';
+
+async function loadAll(member, force){
+  currentMember = member;
+  const statusChip = document.getElementById('statusChip');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const tbody = document.getElementById('tblBody');
+  const label = MEMBER_NAMES[member];
+  refreshBtn.disabled = true;
+  statusChip.textContent = 'Loading…';
+  tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading ' + label + '\'s cost breakdown…</td></tr>';
+
+  try {
+    const allMonths = TAX_MONTHS_2025.concat(MONTHS_2026);
+    const [salesResults, adsResults] = await Promise.all([
+      mapLimit(allMonths, 5, (m) => {
+        const year = m.slice(0,4);
+        const isLive = year === '2026' && LIVE_2026.includes(m);
+        return fetchSales(year, member, m, force && isLive).catch(() => null);
+      }),
+      mapLimit(allMonths, 5, (m) => {
+        const isLive = m.slice(0,4) === '2026' && LIVE_2026.includes(m);
+        return fetchAdsCost(member, m, force && isLive).catch(() => null);
+      }),
+    ]);
+
+    const rows = allMonths.map((m, i) => {
+      const s = salesResults[i] || {};
+      const ads = adsResults[i];
+      const availableTotal = [s.vat, ads, s.transactionFee, s.discount, s.refund]
+        .filter(v => v != null)
+        .reduce((a,b) => a+b, 0);
+      const anyMissing = [s.vat, ads, s.transactionFee, s.discount, s.refund].some(v => v == null);
+      const net = s.sales != null ? s.sales - availableTotal : null;
+      const isLive = m.slice(0,4) === '2026' && LIVE_2026.includes(m);
+      return {
+        month: m, monthLabel: MONTH_NAME[m.slice(5)] + ' ' + m.slice(0,4),
+        sales: s.sales, vat: s.vat, ads, transactionFee: s.transactionFee, discount: s.discount, refund: s.refund,
+        availableTotal, anyMissing, net, isLive,
+      };
+    });
+
+    renderTable(rows, label);
+    statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="13" class="empty">Error: ' + (err.message || err) + '</td></tr>';
+    statusChip.textContent = 'Error';
+  } finally {
+    refreshBtn.disabled = false;
+  }
+}
+
+function renderTable(rows, label){
+  const tbody = document.getElementById('tblBody');
+  document.getElementById('rowCount').textContent = rows.length + ' months';
+  document.getElementById('tbarTitle').textContent = label + ' — Monthly Cost Breakdown';
+  const netCell = (v) => v != null ? ('<span class="' + (v >= 0 ? 'up' : 'down') + '">' + fmtMoney(v) + '</span>') : '<span class="na">N/A</span>';
+  const cell = (v) => v != null ? fmtMoney(v) : '<span class="na">verify — see note</span>';
+
+  tbody.innerHTML = rows.map((r) => {
+    return '<tr>' +
+      '<td>' + r.monthLabel + '</td>' +
+      '<td class="num">' + (r.sales != null ? fmtMoney(r.sales) : '<span class="na">N/A</span>') + '</td>' +
+      '<td class="num">' + cell(r.vat) + '</td>' +
+      '<td class="num">' + cell(r.ads) + '</td>' +
+      '<td class="num">' + cell(r.transactionFee) + '</td>' +
+      '<td class="num">' + cell(r.discount) + '</td>' +
+      '<td class="num">' + cell(r.refund) + '</td>' +
+      '<td class="num na">N/A</td>' +
+      '<td class="num na">N/A</td>' +
+      '<td class="num na">N/A</td>' +
+      '<td class="num na">' + ((currentMember==='kamsi'||currentMember==='dilaksi') ? 'see Ads/SEO Cost' : 'N/A') + '</td>' +
+      '<td class="num">' + fmtMoney(r.availableTotal) + (r.anyMissing ? ' <span class="na" style="font-style:normal;">(partial)</span>' : '') + '</td>' +
+      '<td class="num">' + netCell(r.net) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+document.getElementById('refreshBtn').addEventListener('click', () => loadAll(currentMember, true));
+
+document.getElementById('memberNav').addEventListener('click', (e) => {
+  const a = e.target.closest('a[data-member]');
+  if (!a) return;
+  e.preventDefault();
+  const key = a.dataset.member;
+  document.querySelectorAll('#memberNav a').forEach((el) => el.classList.toggle('active', el === a));
+  const name = MEMBER_NAMES[key];
+  document.getElementById('pageTitle').textContent = 'Cost Dashboard — ' + name;
+  document.getElementById('adsColHeader').textContent = HAS_SEO_COST.has(key) ? 'SEO Fee' : 'Ads Cost';
+  updateFootnotes(key);
+  loadAll(key, false);
+});
+
+function updateFootnotes(key){
+  const isSeo = HAS_SEO_COST.has(key);
+  const adsExplain = isSeo
+    ? 'SEO Fee = <code>/api/muguntha?employee=' + key + '</code> — Semrush/Arrow AI tool-cost share (see Employee Performance page footnotes for the full split math). No Google Ads spend applies (SEO/Organic role).'
+    : 'Ads Cost = <code>/api/muguntha?employee=' + key + '</code> — own Google Ads campaign-group spend plus DM 46 product-share, unchanged from the Employee Performance page.';
+  document.getElementById('footnotes').innerHTML =
+    '<strong>Data sources.</strong><br>' +
+    'Sales (net), VAT, Discount, Refund, Transaction Fee — <code>/api/sales25?group=' + key + '</code> (2025) / <code>/api/salesuk?group=' + key + '</code> (2026), reusing the exact same Shopify order data already fetched for the Employee Performance page. VAT is the sum of per-line-item <code>taxLines</code> (customer-charged VAT only — not business-expense VAT on ad/subscription invoices). Transaction Fee is <code>accounting.shopify_transactions.fee</code> summed for exactly this member\'s attributed orders (Shopify Payments processing fee, UK store only).<br>' +
+    adsExplain + '<br>' +
+    '<strong>N/A columns are not zero — they are unavailable.</strong> Product Cost has no confirmed per-order COGS source (a supplier-invoice-based source exists but needs a join that hasn\'t been built or verified). CSS cost (Klarna/Shoptimized/Shoprize) and Meta Ads Cost have no billed-cost source anywhere in this system — see the Phase 1 discovery report for details.<br>' +
+    'Some 2025/2026 months may show VAT/Transaction Fee as "verify — see note" if their static snapshot predates the 2026-08-07 fix that added these fields — click Refresh (live) on that month\'s tab to backfill it.';
+}
+
+updateFootnotes('sonya');
+loadAll('sonya', false);
+</script>
+</body>
+</html>
