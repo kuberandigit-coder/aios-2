@@ -2998,7 +2998,10 @@ const GOOGLE_FAMILY_SOURCES = ['google', 'klarna', 'shoptimised', 'shoptimise', 
 // search at all under the old logic, silently dropping ~half her orders.
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'];
+// Extended from Jan-Jun to the full year (2026-08-05, per explicit request)
+// — 2025 is entirely closed/historical, no live-month handling needed for
+// the new months; same fetch/classification logic applies unchanged.
+const SUPPORTED_MONTHS = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06', '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12'];
 const CURRENT_LIVE_MONTHS = [];
 
 function resolveReportMonth(monthParam) {

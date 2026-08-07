@@ -346,15 +346,10 @@ function fmtPct(n){ return isFinite(n) ? (Math.round(n*10000)/100).toFixed(2) + 
 // Sajeepan/Kamsi share — different query param name (staff, not group) and
 // different Sales figure (orderTotalSum, incl. tax+shipping, per explicit
 // user request 2026-08-05 — NOT netSales like the other three tabs).
-// salesde25.js only has 2025 snapshots for Jan-Jun (never backfilled
-// further), so Jul-Dec 2025 are skipped client-side (no fetch, shown as
-// N/A) rather than silently querying a month salesde25.js doesn't support
-// (it falls back to Jan's data for any unrecognized month param).
-const JEFRI_2025_SUPPORTED = new Set(['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06']);
-
+// salesde25.js was backfilled to the full Jan-Dec 2025 range 2026-08-05
+// (previously Jan-Jun only) — no more client-side month skipping needed.
 async function fetchGroupSales(year, member, month, force){
   const isJefri = member === 'jefri';
-  if (isJefri && year === '2025' && !JEFRI_2025_SUPPORTED.has(month)) return null;
   const endpoint = isJefri ? (year === '2025' ? 'salesde25' : 'sales') : (year === '2025' ? 'sales25' : 'salesuk');
   const paramName = isJefri ? 'staff' : 'group';
   const paramValue = isJefri ? 'jeffri-ads' : member;
