@@ -471,7 +471,7 @@ async function loadAll(member, idSuffix, force){
       });
     }
 
-    renderTable(rows, memberLabel, idSuffix);
+    renderTable(rows, memberLabel, idSuffix, member);
     renderCards(rows, idSuffix);
     statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
   } catch (err) {
@@ -482,10 +482,17 @@ async function loadAll(member, idSuffix, force){
   }
 }
 
-function renderTable(rows, memberLabel, idSuffix){
+// Only Sonya and Sajeepan (LEDSone UK paid-ads staff) actually get a DM 46
+// product-share added to their cost — Kamsi/Dilaksi are SEO/Organic and
+// never receive DM-attributed sales, so their cost breakdown shouldn't
+// mention DM at all, not even as "£0.00". 2026-08-05.
+const HAS_DM = new Set(['sonya', 'sajeepan']);
+
+function renderTable(rows, memberLabel, idSuffix, member){
   const tbody = document.getElementById('tblBody' + idSuffix);
   document.getElementById('rowCount' + idSuffix).textContent = rows.length + ' months';
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No data</td></tr>'; return; }
+  const showDm = HAS_DM.has(member);
   const netCell = (v) => v != null ? ('<span class="' + (v >= 0 ? 'up' : 'down') + '">' + fmtMoney(v) + '</span>') : 'N/A';
   const roasCell = (v) => {
     if (v == null) return 'N/A';
@@ -504,11 +511,11 @@ function renderTable(rows, memberLabel, idSuffix){
       '<td>' + r.monthLabel + '</td>' +
       '<td>' + memberLabel + '</td>' +
       '<td class="num">' + (r.sales2025 != null ? fmtMoney(r.sales2025) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) + (r.ownCost2025 != null && r.dmSonya2025 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2025) + ', DM: ' + fmtMoney(r.dmSonya2025) + ')</span>' : '') : 'N/A') + '</td>' +
+      '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) + (showDm && r.ownCost2025 != null && r.dmSonya2025 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2025) + ', DM: ' + fmtMoney(r.dmSonya2025) + ')</span>' : '') : 'N/A') + '</td>' +
       '<td class="num">' + netCell(r.net2025) + '</td>' +
       '<td class="num">' + roasCell(r.roas2025) + '</td>' +
       '<td class="num">' + (r.sales2026 != null ? fmtMoney(r.sales2026) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.costVal2026 != null ? fmtMoney(r.costVal2026) + (r.ownCost2026 != null && r.dmSonya2026 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2026) + ', DM: ' + fmtMoney(r.dmSonya2026) + ')</span>' : '') : 'N/A') + '</td>' +
+      '<td class="num">' + (r.costVal2026 != null ? fmtMoney(r.costVal2026) + (showDm && r.ownCost2026 != null && r.dmSonya2026 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2026) + ', DM: ' + fmtMoney(r.dmSonya2026) + ')</span>' : '') : 'N/A') + '</td>' +
       '<td class="num">' + netCell(r.net2026) + '</td>' +
       '<td class="num">' + roasCell(r.roas2026) + '</td>' +
       '<td class="num">' + targetCell(r.targetAch) + '</td>' +

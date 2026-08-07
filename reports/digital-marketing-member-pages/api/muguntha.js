@@ -74,11 +74,13 @@ const EMPLOYEES = {
     groupName: 'Sonya',
     productIds: SONYA_PRODUCT_IDS_UK,
     snapshotSlug: 'sonya',
+    hasDm: true,
   },
   sajeepan: {
     groupName: 'SAJEEPAN',
     productIds: SAJEEPAN_PRODUCT_IDS_UK,
     snapshotSlug: 'sajeepan',
+    hasDm: true,
   },
   // Kamsi is SEO/Organic (department "Organic (product-scoped)" in
   // salesuk.js/sales25.js's attribution rules), not a paid-ads role like
@@ -95,6 +97,7 @@ const EMPLOYEES = {
     groupName: '',
     productIds: new Set(),
     snapshotSlug: 'kamsi',
+    hasDm: false,
   },
   // Dilaksi is also SEO/Organic (product-scoped), same as Kamsi — confirmed
   // no "Dilaksi" group_name exists in google_ads.campaigns for this account
@@ -107,6 +110,7 @@ const EMPLOYEES = {
     groupName: '',
     productIds: new Set(),
     snapshotSlug: 'dilaksi',
+    hasDm: false,
   },
   // Jefri runs Google Ads on the DE store (ledsone.de), a completely
   // separate Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi's UK
@@ -129,6 +133,13 @@ function buildSourceLabels(cfg) {
     return {
       source: `google_ads.campaign_performance WHERE campaign_id IN (${cfg.campaignIds.join(',')}) (Jefri's 5 named DE campaigns, account_id=${cfg.accountId})`,
       dmSource: 'not applicable — the DM 46 shared-campaign product-share concept is a UK-account-only construct',
+      dmTotalSource: 'not applicable',
+    };
+  }
+  if (!cfg.hasDm) {
+    return {
+      source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only)`,
+      dmSource: 'not applicable — only Sonya and Sajeepan (the LEDSone UK paid-ads staff) get a DM 46 product-share; SEO/Organic staff never receive DM-attributed sales, so no DM cost is queried or added for them',
       dmTotalSource: 'not applicable',
     };
   }
@@ -275,7 +286,12 @@ module.exports = async function handler(req, res) {
   try {
     const [cost, dmCosts] = await Promise.all([
       queryCostForMonth(cfg, month),
-      cfg.isJefri ? Promise.resolve({ dmProductCost: 0, dmTotalCost: 0 }) : queryDmCostsForMonth(cfg.productIds, month),
+      // Only Sonya/Sajeepan get a DM 46 product-share — Kamsi/Dilaksi are
+      // SEO/Organic and never receive DM-attributed sales, so skip the DM
+      // query entirely for them rather than running it and discarding a
+      // guaranteed-zero result (per explicit instruction 2026-08-05: remove
+      // DM cost from staff who don't actually have it, not just zero it).
+      (cfg.isJefri || !cfg.hasDm) ? Promise.resolve({ dmProductCost: 0, dmTotalCost: 0 }) : queryDmCostsForMonth(cfg.productIds, month),
     ]);
     const totalCost = Math.round((cost + dmCosts.dmProductCost) * 100) / 100;
     res.status(200).json({
