@@ -2163,8 +2163,8 @@ const GROUPS = [
     key: 'dm-ad',
     name: 'DM-Ad',
     department: 'Google Ads (Paid Search)',
-    scope: 'same rule as salesuk.js: first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-46", OR utm_campaign is "sag_organic", OR (first session has no campaign/term AND the LAST session\'s campaign is "Shop_DM_PMax-46_AguAsset") (case-insensitive).',
-    match: (utm, fv, journey) => isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset'),
+    scope: 'same rule as salesuk.js: first-session utm_campaign exactly matches (or is a prefixed variant of) "Shop_DM_PMax-46_AguAsset" or "Shop_DM_PMax-46", OR utm_campaign is "sag_organic", OR (first session has no campaign/term AND the LAST session\'s campaign is "Shop_DM_PMax-46_AguAsset") (case-insensitive). EXCLUDES any order containing one of Sajeepan\'s or Sonya\'s owned product IDs (ported from salesuk.js 2026-08-07 — this exclusion existed in salesuk.js since 2026-07-30 but was missing here, silently undercounting Sonya/Sajeepan\'s 2025 Sales by however many DM-Ad orders contained their own products) — those go to their tabs instead, even though the click still carries a DM-Ad campaign.',
+    match: (utm, fv, journey, month, order) => (isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && !orderHasSajeepanProduct(order) && !orderHasSonyaProduct(order),
     matchValue: (utm, fv, journey) => utm.campaign || (lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset' ? 'Shop_DM_PMax-46_AguAsset (last session)' : null),
   },
   {
@@ -2179,7 +2179,7 @@ const GROUPS = [
     key: 'sonya',
     name: 'Sonya',
     department: 'Google Ads (Paid Search)',
-    scope: 'same rule as salesuk.js: first-session utm_campaign or utm_term matches one of Sonya\'s confirmed values, OR (first session has no campaign/term AND the 2nd/LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all"), OR (no campaign anywhere AND first-session utm_medium is "google_ads", unless the last session traces to a Sajeepan campaign).',
+    scope: 'same rule as salesuk.js: first-session utm_campaign or utm_term matches one of Sonya\'s confirmed values, OR (first session has no campaign/term AND the 2nd/LAST session\'s campaign is "Klarna_Sonya_kl-pmx-all"), OR (no campaign anywhere AND first-session utm_medium is "google_ads", unless the last session traces to a Sajeepan campaign), OR the order contains one of Sonya\'s owned product IDs and would otherwise have matched DM-Ad\'s campaign rule (ported from salesuk.js 2026-08-07, per the same product-ID DM-Ad split already applied to 2026).',
     match: (utm, fv, journey, month, order) => {
       if (isSonyaCampaign(utm.campaign) || isSonyaTerm(utm.term)) return true;
       if (!utm.campaign && !utm.term && (secondSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all' || lastSessionCampaign(journey) === 'klarna_sonya_kl-pmx-all')) return true;
@@ -2187,10 +2187,14 @@ const GROUPS = [
         const medium = (utm.medium || '').toString().toLowerCase();
         if (medium === 'google_ads' && !isSajeepanCampaignUk(lastSessionCampaign(journey))) return true;
       }
+      if ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSonyaProduct(order)) return true;
       if (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSonyaProduct(order)) return true;
       return false;
     },
     matchValue: (utm, fv, journey, month, order) => {
+      if ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSonyaProduct(order)) {
+        return (utm.campaign || 'DM-Ad campaign') + ' (product-owned, moved from DM Campaigns)';
+      }
       if (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSonyaProduct(order)) return 'Direct -> 2nd session Google Ads (product-owned)';
       if (utm.campaign) return utm.campaign;
       if (utm.term) return utm.term;
@@ -2205,9 +2209,12 @@ const GROUPS = [
     key: 'sajeepan',
     name: 'Sajeepan',
     department: 'Google Ads (Paid Search)',
-    scope: 'same rule as salesuk.js: first-session utm_campaign matches one of Sajeepan\'s confirmed campaign names, OR utm_term is "UNNAI_NAMPU" (confirmed by the user, 2026-07-29), OR (first session has no campaign/term AND the 2nd/LAST session\'s campaign is one of "Klarna_P"/"KLARNA_CSS_SJ25_PMAX"/"Shop_DM_PMax-25"), OR (Direct first session, 2nd session Google Ads paid search, AND contains a Sajeepan product — added 2026-07-30).',
-    match: (utm, fv, journey, month, order) => isSajeepanCampaignUk(utm.campaign) || isSajeepanTerm(utm.term) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(secondSessionCampaign(journey))) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(lastSessionCampaign(journey))) || (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSajeepanProduct(order)),
+    scope: 'same rule as salesuk.js: first-session utm_campaign matches one of Sajeepan\'s confirmed campaign names, OR utm_term is "UNNAI_NAMPU" (confirmed by the user, 2026-07-29), OR (first session has no campaign/term AND the 2nd/LAST session\'s campaign is one of "Klarna_P"/"KLARNA_CSS_SJ25_PMAX"/"Shop_DM_PMax-25"), OR (Direct first session, 2nd session Google Ads paid search, AND contains a Sajeepan product — added 2026-07-30), OR the order contains one of Sajeepan\'s owned product IDs and would otherwise have matched DM-Ad\'s campaign rule (ported from salesuk.js 2026-08-07, per the same product-ID DM-Ad split already applied to 2026).',
+    match: (utm, fv, journey, month, order) => isSajeepanCampaignUk(utm.campaign) || isSajeepanTerm(utm.term) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(secondSessionCampaign(journey))) || (!utm.campaign && !utm.term && isSajeepanCampaignUk(lastSessionCampaign(journey))) || ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSajeepanProduct(order)) || (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSajeepanProduct(order)),
     matchValue: (utm, fv, journey, month, order) => {
+      if ((isDmAdCampaign(utm.campaign) || (!utm.campaign && !utm.term && lastSessionCampaign(journey) === 'shop_dm_pmax-46_aguasset')) && orderHasSajeepanProduct(order)) {
+        return (utm.campaign || 'DM-Ad campaign') + ' (product-owned, moved from DM Campaigns)';
+      }
       if (deriveChannelLabel(journey) === 'Direct' && isSecondSessionPaidSearch(journey) && orderHasSajeepanProduct(order)) return 'Direct -> 2nd session Google Ads (product-owned)';
       if (utm.campaign) return utm.campaign;
       if (utm.term) return utm.term;
