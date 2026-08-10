@@ -274,7 +274,8 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
     <li><a href="#" data-tab="R3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"></circle><circle cx="15" cy="12" r="6"></circle></svg></span><span class="lbl">Campaign Product Overlap</span></a></li>
     <li><a href="#" data-tab="R4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span><span class="lbl">Shopify vs Ads Orders</span></a></li>
     <li><a href="#" data-tab="R5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span class="lbl">Multichannel YoY Sales</span></a></li>
-    <li><a href="#" data-tab="R6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Keyword to SEO Gap</span></a></li>
+    <li><a href="#" data-tab="R6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Search Terms Labels</span></a></li>
+    <li><a href="#" data-tab="R7"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span class="lbl">Product Catalog: SEO + Amazon</span></a></li>
   </ul>
 
   <div class="t-sidebar-spacer"></div>
@@ -983,6 +984,84 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
 </div>
 <!-- /tabPanelR6 -->
+
+<div class="tabpanel" id="tabPanelR7">
+
+<div class="t1-header">
+  <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;">Requirement 7</div>
+  <h1>Product Catalog: Shopify SEO + Amazon Keywords</h1>
+  <div class="sub">All of Thasitha's products &middot; Live Shopify H1/Meta Title &middot; Amazon keywords (PostgreSQL) &middot; ledsone.de</div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;">
+    <span id="r7LiveChip" style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:#eef1f6;color:#5b6577;white-space:nowrap;">Loading&hellip;</span>
+    <button class="t1-btn primary" id="r7RefreshBtn" type="button">Refresh</button>
+  </div>
+</div>
+
+<div class="t1-cards">
+  <div class="t1-card"><div class="l">Total Products</div><div class="v" id="r7kpiTotal">&ndash;</div></div>
+  <div class="t1-card"><div class="l">SKU Resolved</div><div class="v" id="r7kpiSku">&ndash;</div></div>
+  <div class="t1-card"><div class="l">H1/Meta Resolved (Live)</div><div class="v" id="r7kpiH1">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Amazon Matched</div><div class="v" id="r7kpiAmz">&ndash;</div></div>
+</div>
+
+<div class="t1-filterbox">
+  <div class="t1-row">
+    <div class="t1-field"><span>Search</span><input type="text" id="r7q" placeholder="Product ID, SKU, or Amazon keyword&hellip;"></div>
+    <div class="t1-field"><span>Campaign</span>
+      <select id="r7f_campaign"><option value="">All campaigns</option></select>
+    </div>
+    <div class="t1-field"><span>Amazon</span>
+      <select id="r7f_amz">
+        <option value="">All</option>
+        <option value="yes">Matched only</option>
+        <option value="no">Not matched</option>
+      </select>
+    </div>
+    <button class="t1-btn" id="r7ClearFilters" type="button">Clear Filters</button>
+  </div>
+</div>
+
+<div class="t1-tablewrap">
+<table class="t1-table" id="r7Table">
+<thead><tr>
+  <th>Product ID / SKU</th>
+  <th>Campaign</th>
+  <th>Current Shopify H1 Title</th>
+  <th>Current Shopify Meta Title</th>
+  <th>Amazon Keyword / Search Term</th>
+  <th class="num">Clicks</th>
+  <th class="num">Cost</th>
+  <th class="num">Conv.</th>
+  <th class="num">Conv. Value</th>
+  <th class="num">Ad Group SKU Count</th>
+</tr></thead>
+<tbody id="r7Tbody"></tbody>
+</table>
+</div>
+<div class="t1-empty" id="r7Empty" style="display:none;">No products match the current filters.</div>
+
+<div class="pager" id="r7Pager">
+  <span class="info" id="r7PageInfo"></span>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <label>Rows <select id="r7PageSize"><option>25</option><option selected>50</option><option>100</option><option>All</option></select></label>
+    <button class="t1-btn" id="r7First">&laquo;</button>
+    <button class="t1-btn" id="r7Prev">&lsaquo; Prev</button>
+    <button class="t1-btn" id="r7Next">Next &rsaquo;</button>
+    <button class="t1-btn" id="r7Last">&raquo;</button>
+  </div>
+</div>
+
+<div class="t1-statusnote">
+  <strong>Rows.</strong> Every product with real Google Ads <code>product_performance</code> history across any of Thasitha's 3 campaigns &mdash; no date cutoff, no top-N limit ("gather all", per explicit instruction).<br>
+  <strong>Product ID / SKU.</strong> <code>product_item_id</code> (Google Ads' own ID) resolved to the real Shopify SKU via <code>listings.shopify_listings</code> (same resolution used in Requirements 2/3/6) &mdash; both shown together in one column, SKU shown as N/A when unresolved.<br>
+  <strong>Campaign.</strong> Every one of Thasitha's campaigns this product has ever run in (a product can appear in more than one).<br>
+  <strong>Current H1 / Meta Title.</strong> Fetched <strong>live</strong> from the Shopify Admin GraphQL API (<code>ledsone-de.myshopify.com</code>, <code>productByHandle</code>) at request time &mdash; never read from a cached database field. H1 = the product's Title field (Shopify's Online Store 2.0 default theme renders <code>product.title</code> as the page's H1; LEDSone DE's specific theme template was not independently verified, so treat H1 as "Product Title" unless confirmed otherwise). Meta Title = the product's SEO title field.<br>
+  <strong>Amazon Keyword / Search Term.</strong> This SKU's top real Amazon search term by conversion value, last 90 days &mdash; matched via <code>amazon_campaigns.performance_data.listing_sku</code> (exact SKU string match) joined to <code>amazon_campaigns.search_term_performance_data</code> by ad group. Amazon's Search Term Report is only reported at ad-group level, not per-SKU &mdash; "Ad Group SKU Count" shows how many other SKUs share that same ad group (1 = an exact match; higher = a broader proxy signal, judge accordingly).<br>
+  <strong>Data source.</strong> Live PostgreSQL query on every load and on "Refresh" (5-minute server-side cache in between); Shopify H1/Meta fetched live on every query, never cached.
+</div>
+
+</div>
+<!-- /tabPanelR7 -->
 
 </div>
 <!-- /t1-wrap -->
@@ -1779,6 +1858,125 @@ document.getElementById('r6ExportCsv').addEventListener('click', function(){
 
 r6Load(false);
 
+// ===== Requirement 7: Product Catalog — Shopify SEO + Amazon Keywords (added 2026-08-10) =====
+let R7_DATA = [];
+let r7Pg = 1, r7LastLen = 0, r7LastPs = 1;
+
+function r7MaxPg(len, ps){
+  if(len===undefined) len = r7LastLen;
+  if(ps===undefined) ps = r7LastPs;
+  return Math.max(1, Math.ceil((len||0)/(ps||1)));
+}
+
+async function r7Load(force){
+  const btn = document.getElementById('r7RefreshBtn');
+  const chip = document.getElementById('r7LiveChip');
+  btn.disabled = true;
+  chip.textContent = 'Fetching live from PostgreSQL + Shopify… (this can take 20-40s for the full catalog)';
+  chip.style.background = '#eef1f6'; chip.style.color = '#5b6577';
+  try {
+    const url = '/api/requirement?fn=thasitha-req7' + (force ? '&refresh=1' : '');
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+    R7_DATA = data.rows || [];
+    r7PopulateCampaignFilter();
+    chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString() + ' · ' + data.meta.rowCount + ' products, ' + data.meta.resolvedH1 + ' H1 resolved, ' + data.meta.amazonMatched + ' Amazon matched';
+    chip.style.background = '#eef7ee'; chip.style.color = '#0a7d4f';
+    r7Pg = 1;
+    renderR7();
+  } catch(e) {
+    chip.textContent = 'Unable to load — ' + e.message;
+    chip.style.background = '#fdecea'; chip.style.color = '#c62828';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function r7PopulateCampaignFilter(){
+  const names = new Set();
+  R7_DATA.forEach(function(r){ (r.campaignNames||[]).forEach(function(n){ names.add(n); }); });
+  const sel = document.getElementById('r7f_campaign');
+  const prev = sel.value;
+  sel.querySelectorAll('option:not([value=""])').forEach(function(o){ o.remove(); });
+  [...names].sort().forEach(function(n){
+    const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt);
+  });
+  if([...sel.options].some(function(o){ return o.value===prev; })) sel.value = prev;
+}
+
+function renderR7Row(r){
+  const kw = r.amazonKeyword;
+  return '<tr>' +
+    '<td class="wrap">' + esc(r.productItemId) + '<br><span class="t2-sku">' + (r.sku ? esc(r.sku) : '<span class="t1-na">SKU N/A</span>') + '</span></td>' +
+    '<td class="wrap">' + (r.campaignNames && r.campaignNames.length ? r.campaignNames.map(esc).join('<br>') : '&mdash;') + '</td>' +
+    '<td class="wrap">' + (r.h1 ? esc(r.h1) : '<span class="t1-na">N/A</span>') + '</td>' +
+    '<td class="wrap">' + (r.metaTitle ? esc(r.metaTitle) : '<span class="t1-na">N/A</span>') + '</td>' +
+    '<td class="wrap">' + (kw ? esc(kw.keyword) : '<span class="t1-na">not matched</span>') + '</td>' +
+    '<td class="num">' + (kw ? num(kw.clicks) : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? eur(kw.cost).replace('&euro;','€') : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? num(kw.conversions) : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? eur(kw.convValue).replace('&euro;','€') : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? num(kw.adGroupSkuCount) : '&mdash;') + '</td>' +
+    '</tr>';
+}
+
+function renderR7(){
+  const q = document.getElementById('r7q').value.trim().toLowerCase();
+  const campaignFilter = document.getElementById('r7f_campaign').value;
+  const amzFilter = document.getElementById('r7f_amz').value;
+
+  let rows = R7_DATA.filter(function(r){
+    const qHit = !q || (r.productItemId||'').toLowerCase().includes(q) || (r.sku||'').toLowerCase().includes(q) || (r.amazonKeyword && r.amazonKeyword.keyword.toLowerCase().includes(q));
+    const campHit = !campaignFilter || (r.campaignNames||[]).includes(campaignFilter);
+    const amzHit = !amzFilter || (amzFilter==='yes' ? r.amazonMatched : !r.amazonMatched);
+    return qHit && campHit && amzHit;
+  });
+
+  const tbody = document.getElementById('r7Tbody');
+  const emptyEl = document.getElementById('r7Empty');
+  document.getElementById('r7Table').style.display = rows.length ? '' : 'none';
+  emptyEl.style.display = rows.length ? 'none' : 'block';
+  document.getElementById('r7Pager').style.display = rows.length ? '' : 'none';
+
+  const pageSizeVal = document.getElementById('r7PageSize').value;
+  const ps = pageSizeVal==='All' ? rows.length||1 : parseInt(pageSizeVal,10);
+  r7LastLen = rows.length; r7LastPs = ps;
+  if(r7Pg > r7MaxPg(rows.length, ps)) r7Pg = r7MaxPg(rows.length, ps);
+  const start = (r7Pg-1)*ps;
+  const pageRows = pageSizeVal==='All' ? rows : rows.slice(start, start+ps);
+  tbody.innerHTML = pageRows.map(renderR7Row).join('');
+  document.getElementById('r7PageInfo').textContent = rows.length
+    ? ('Rows ' + (start+1).toLocaleString() + '-' + Math.min(start+ps, rows.length).toLocaleString() + ' of ' + rows.length.toLocaleString() + ' | page ' + r7Pg + ' / ' + r7MaxPg(rows.length, ps))
+    : 'No rows match';
+
+  document.getElementById('r7kpiTotal').textContent = rows.length.toLocaleString();
+  document.getElementById('r7kpiSku').textContent = rows.filter(function(r){ return r.sku; }).length.toLocaleString();
+  document.getElementById('r7kpiH1').textContent = rows.filter(function(r){ return r.h1; }).length.toLocaleString();
+  document.getElementById('r7kpiAmz').textContent = rows.filter(function(r){ return r.amazonMatched; }).length.toLocaleString();
+}
+
+document.getElementById('r7RefreshBtn').addEventListener('click', function(){ r7Load(true); });
+['r7q'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){ r7Pg=1; renderR7(); });
+});
+['r7f_campaign','r7f_amz','r7PageSize'].forEach(function(id){
+  document.getElementById(id).addEventListener('change', function(){ r7Pg=1; renderR7(); });
+});
+document.getElementById('r7ClearFilters').addEventListener('click', function(){
+  document.getElementById('r7q').value = '';
+  document.getElementById('r7f_campaign').value = '';
+  document.getElementById('r7f_amz').value = '';
+  r7Pg = 1;
+  renderR7();
+});
+document.getElementById('r7First').addEventListener('click', function(){ r7Pg=1; renderR7(); });
+document.getElementById('r7Prev').addEventListener('click', function(){ if(r7Pg>1){ r7Pg--; renderR7(); } });
+document.getElementById('r7Next').addEventListener('click', function(){ if(r7Pg<r7MaxPg()){ r7Pg++; renderR7(); } });
+document.getElementById('r7Last').addEventListener('click', function(){ r7Pg=r7MaxPg(); renderR7(); });
+
+r7Load(false);
+
 // ===== Sidebar shell (2026-08-10 redesign) — nav clicks, collapse toggle,
 // topbar title/date sync. switchTab() itself is unchanged in signature so
 // nothing downstream (R1-R5 load functions) needed touching. =====
@@ -1788,10 +1986,11 @@ const TAB_TITLES = {
   R3: 'Requirement 3 &middot; Campaign Product Overlap',
   R4: 'Requirement 4 &middot; Shopify vs Ads Orders',
   R5: 'Requirement 5 &middot; Multichannel YoY Sales',
-  R6: 'Requirement 6 &middot; Keyword to SEO Gap Report',
+  R6: 'Requirement 6 &middot; Search Terms Labels',
+  R7: 'Requirement 7 &middot; Product Catalog: SEO + Amazon Keywords',
 };
 function switchTab(which){
-  ['R1','R2','R3','R4','R5','R6'].forEach(function(k){
+  ['R1','R2','R3','R4','R5','R6','R7'].forEach(function(k){
     document.getElementById('tabPanel'+k).classList.toggle('on', k===which);
   });
   document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){

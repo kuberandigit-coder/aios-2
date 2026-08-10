@@ -4088,6 +4088,243 @@ async function handleThasithaReq6(req, res) {
 return handleThasithaReq6;
 })();
 
+// ==================== Thasitha Requirement 7 — Product Catalog: Shopify H1/Meta + Amazon Keywords ====================
+// Added 2026-08-10. All of Thasitha's products (any product with real
+// google_ads.product_performance history across her 3 campaigns, no
+// date-range cutoff — "gather all", not a top-N subset), each resolved to
+// its Shopify SKU/handle, with LIVE Shopify H1 (Product Title) + Meta (SEO)
+// Title, and — where the same SKU also exists in Amazon's advertising data —
+// that SKU's top Amazon search term/keyword from PostgreSQL. Reuses the same
+// verified approach as Requirement 6's original discovery: live Shopify
+// fetch via productByHandle (never a cached DB field), Amazon matched via
+// amazon_campaigns.performance_data (indexed on listing_sku — the .ads
+// table has no such index and times out, confirmed directly).
+const thasithaReq7HandlerModule = (function() {
+const { Pool } = require('pg');
+
+const R7_SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
+const R7_SHOPIFY_API_VERSION = '2024-10';
+const r7Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function shopifyGraphQL(query, variables) {
+  const token = process.env.SHOPIFY_ADMIN_TOKEN;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let res;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      res = await fetch(`https://${R7_SHOPIFY_STORE_DOMAIN}/admin/api/${R7_SHOPIFY_API_VERSION}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+    } catch (e) {
+      await r7Sleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
+      await r7Sleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+    const json = await res.json();
+    const throttled = json.errors && Array.isArray(json.errors) && json.errors.some((e) => e.extensions && e.extensions.code === 'THROTTLED');
+    if (throttled) { await r7Sleep(800 * Math.pow(2, attempt)); continue; }
+    if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+    return json.data;
+  }
+  throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
+}
+
+let pool;
+function getPool() {
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString && !process.env.PGHOST) {
+      throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+    }
+    pool = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 8000,
+      statement_timeout: 30000,
+      max: 3,
+    });
+  }
+  return pool;
+}
+
+const THASI_PRODUCTS_QUERY = `
+WITH thasi_campaigns AS (
+  SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE group_name = 'Thasi'
+),
+thasi_products AS (
+  SELECT pp.product_item_id, array_agg(DISTINCT pp.campaign_id) AS campaign_ids
+  FROM google_ads.product_performance pp
+  WHERE pp.campaign_id IN (SELECT campaign_id FROM thasi_campaigns)
+  GROUP BY pp.product_item_id
+),
+resolved_ids AS (
+  SELECT product_item_id, campaign_ids,
+    CASE WHEN product_item_id LIKE 'shopify\\_%'
+         THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
+         ELSE product_item_id
+    END AS shopify_id
+  FROM thasi_products
+)
+SELECT ri.product_item_id, ri.campaign_ids, sl.sku, sl.shopify_handle
+FROM resolved_ids ri
+LEFT JOIN listings.shopify_listings sl ON sl.item_id = ri.shopify_id AND sl.channel = 'LEDSone DE'
+ORDER BY ri.product_item_id;
+`;
+
+// Same amazon_campaigns.performance_data approach proven in Req6's
+// discovery — .ads.listing_sku has no index and a full scan times out.
+const AMAZON_QUERY = `
+WITH matched AS (
+  SELECT DISTINCT ad_group_id, listing_sku
+  FROM amazon_campaigns.performance_data
+  WHERE listing_sku = ANY($1::text[])
+),
+ad_group_sizes AS (
+  SELECT ad_group_id, COUNT(DISTINCT listing_sku) AS sku_count
+  FROM amazon_campaigns.performance_data
+  WHERE ad_group_id IN (SELECT ad_group_id FROM matched)
+  GROUP BY ad_group_id
+),
+ad_group_terms AS (
+  SELECT ad_group_id, search_term,
+    SUM(clicks) AS clicks, SUM(spend) AS cost, SUM(orders) AS conversions, SUM(sales) AS conv_value
+  FROM amazon_campaigns.search_term_performance_data
+  WHERE ad_group_id IN (SELECT ad_group_id FROM matched) AND date >= CURRENT_DATE - INTERVAL '90 days'
+  GROUP BY ad_group_id, search_term
+),
+top_term AS (
+  SELECT * FROM (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY ad_group_id ORDER BY conv_value DESC NULLS LAST, clicks DESC) AS rn
+    FROM ad_group_terms
+  ) x WHERE rn = 1
+)
+SELECT m.listing_sku, m.ad_group_id, ags.sku_count,
+  tt.search_term, tt.clicks, tt.cost, tt.conversions, tt.conv_value
+FROM matched m
+JOIN ad_group_sizes ags ON ags.ad_group_id = m.ad_group_id
+LEFT JOIN top_term tt ON tt.ad_group_id = m.ad_group_id;
+`;
+
+const SHOPIFY_LIVE_QUERY_TEMPLATE = (handles) => {
+  const fields = handles.map((h, i) => `p${i}: productByHandle(handle: ${JSON.stringify(h)}) { title seo { title } }`);
+  return `query { ${fields.join('\n')} }`;
+};
+async function fetchLiveShopifyTitles(handles) {
+  const uniqueHandles = [...new Set(handles.filter(Boolean))];
+  const result = new Map();
+  const BATCH = 50;
+  for (let i = 0; i < uniqueHandles.length; i += BATCH) {
+    const batch = uniqueHandles.slice(i, i + BATCH);
+    const data = await shopifyGraphQL(SHOPIFY_LIVE_QUERY_TEMPLATE(batch));
+    batch.forEach((h, idx) => {
+      const node = data['p' + idx];
+      result.set(h, {
+        h1: node ? node.title : null,
+        metaTitle: node && node.seo ? node.seo.title : null,
+      });
+    });
+  }
+  return result;
+}
+
+const CACHE = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_KEY = 'thasitha-req7';
+
+async function handleThasithaReq7(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const forceRefresh = req.query && req.query.refresh === '1';
+
+  if (!forceRefresh) {
+    const cached = CACHE.get(CACHE_KEY);
+    if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+  }
+
+  const client = await getPool().connect().catch((err) => {
+    console.error('[thasitha/req7] DB connect failed:', err && err.message);
+    res.status(500).json({ error: 'Server not configured or database unreachable.' });
+    return null;
+  });
+  if (!client) return;
+
+  try {
+    const campResult = await client.query(`SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE group_name = 'Thasi'`);
+    const campaignNameById = new Map(campResult.rows.map((c) => [String(c.campaign_id), c.campaign_name]));
+
+    const prodResult = await client.query(THASI_PRODUCTS_QUERY);
+    const products = prodResult.rows;
+
+    const skus = [...new Set(products.map((p) => p.sku).filter(Boolean))];
+    let amazonBySku = new Map();
+    if (skus.length) {
+      const amzResult = await client.query(AMAZON_QUERY, [skus]);
+      for (const r of amzResult.rows) amazonBySku.set(r.listing_sku, r);
+    }
+
+    const handles = products.map((p) => p.shopify_handle).filter(Boolean);
+    const shopifyByHandle = await fetchLiveShopifyTitles(handles);
+
+    const rows = products.map((p) => {
+      const shop = p.shopify_handle ? shopifyByHandle.get(p.shopify_handle) : null;
+      const amz = p.sku ? amazonBySku.get(p.sku) : null;
+      const campaignNames = (p.campaign_ids || []).map((id) => campaignNameById.get(String(id)) || String(id));
+      return {
+        productItemId: p.product_item_id,
+        sku: p.sku || null,
+        campaignNames,
+        h1: shop ? shop.h1 : null,
+        metaTitle: shop ? shop.metaTitle : null,
+        amazonKeyword: amz && amz.search_term ? {
+          keyword: amz.search_term,
+          clicks: amz.clicks,
+          cost: Number(amz.cost) || 0,
+          conversions: Number(amz.conversions) || 0,
+          convValue: Number(amz.conv_value) || 0,
+          adGroupSkuCount: amz.sku_count,
+        } : null,
+        amazonMatched: !!amz,
+      };
+    });
+
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      rows,
+      meta: {
+        rowCount: rows.length,
+        resolvedSku: rows.filter((r) => r.sku).length,
+        resolvedH1: rows.filter((r) => r.h1).length,
+        amazonMatched: rows.filter((r) => r.amazonMatched).length,
+      },
+    };
+    CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+    res.status(200).json(payload);
+  } catch (err) {
+    console.error('[thasitha/req7] error:', err && err.message);
+    res.status(500).json({ error: err.message || 'Unknown error' });
+  } finally {
+    client.release();
+  }
+}
+
+return handleThasithaReq7;
+})();
+
 // ==================== Thasitha Requirement 2 — PMax Product Zero-Performance & Root-Cause ====================
 // Live PostgreSQL refresh, replacing the static R2_PRODUCTS array baked into
 // thasitha.html on 2026-07-15/16. Same live/frozen bug class as the old
@@ -4714,6 +4951,7 @@ module.exports = async (req, res) => {
   if (fn === 'thasitha-req2') return thasithaReq2HandlerModule(req, res);
   if (fn === 'thasitha-req3') return thasithaReq3HandlerModule(req, res);
   if (fn === 'thasitha-req6') return thasithaReq6HandlerModule(req, res);
+  if (fn === 'thasitha-req7') return thasithaReq7HandlerModule(req, res);
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
