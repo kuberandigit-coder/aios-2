@@ -1018,7 +1018,7 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 <div class="t1-header">
   <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;">Requirement 7</div>
   <h1>Amazon DE Search Terms (Campaign-Wise, for Thasitha's SKUs)</h1>
-  <div class="sub">Last 90 Days &middot; Amazon DE (market_place=10) &middot; Scope: every Amazon DE campaign that has advertised one of Thasitha's Google-side SKUs &mdash; same format as Requirement 6</div>
+  <div class="sub">Last 90 Days &middot; Amazon DE (market_place=10) &middot; Manual-targeting campaigns only (Auto excluded) &middot; Scope: every Amazon DE Manual campaign that has advertised one of Thasitha's Google-side SKUs &mdash; same format as Requirement 6</div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;">
     <span id="r7LiveChip" style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:#eef1f6;color:#5b6577;white-space:nowrap;">Loading&hellip;</span>
     <button class="t1-btn primary" id="r7RefreshBtn" type="button">Refresh</button>
@@ -1121,7 +1121,7 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
 <div class="t1-statusnote">
   <strong>Data source:</strong> PostgreSQL (read-only: <code>amazon_campaigns.performance_data</code>, <code>amazon_campaigns.search_term_performance_data</code>, <code>amazon_campaigns.campaigns</code>) &middot; fetched via <code>/api/requirement?fn=thasitha-req7</code>.<br>
-  <strong>Scope.</strong> Amazon has no staff/owner field on its campaigns, so Thasitha does not "own" any Amazon campaign &mdash; this is a cross-platform SKU proxy: every Amazon DE campaign (<code>market_place=10</code>) that has ever advertised one of Thasitha's Google-side SKUs (resolved the same way as Requirement 6, exact SKU string match), grouped campaign-wise, rolling last 90 days. Other Amazon marketplaces (UK/US/FR/etc.) are excluded.<br>
+  <strong>Scope.</strong> Amazon has no staff/owner field on its campaigns, so Thasitha does not "own" any Amazon campaign &mdash; this is a cross-platform SKU proxy: every Amazon DE campaign (<code>market_place=10</code>) that has ever advertised one of Thasitha's Google-side SKUs (resolved the same way as Requirement 6, exact SKU string match), grouped campaign-wise, rolling last 90 days. Other Amazon marketplaces (UK/US/FR/etc.) are excluded. <strong>Manual-targeting campaigns only</strong> (<code>amazon_campaigns.campaigns.targeting_type = 'Manual'</code>) &mdash; Auto campaigns are excluded per explicit instruction. Of the 75 DE campaigns that ever touched one of her SKUs, 23 are Manual and 52 are Auto; the Auto ones are dropped entirely from this report.<br>
   <strong>Ad Group SKU Count.</strong> Amazon's Search Term Report is reported at ad-group level, not per-SKU &mdash; this column shows how many total SKUs sit in the ad group that produced this term. 1 = a tight/near-exact signal for her SKU; higher (into the hundreds) = a broad proxy shared with many other products, judge accordingly.<br>
   <strong>ROAS:</strong> (Sales &divide; Cost) &times; 100, shown as 0% when Cost is 0.<br>
   <strong>Tag rules</strong> (identical to Requirement 6 / Jefri Req2): &#127942; Hero = Clicks &ge; 3 AND ROAS &ge; 400%. &#129656; Villain = Clicks &ge; 3 AND (ROAS &lt; 400% OR Orders = 0). &#129496; Zombie = Impressions &gt; 0 AND Clicks = 0. &#128373; Sidekick = Clicks 1&ndash;2 AND ROAS &ge; 400%. Rows matching none of these are left untagged.

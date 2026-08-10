@@ -4125,8 +4125,13 @@ return handleThasithaReq6;
 // ad-group level, not per-SKU. A term is attributed to a campaign whenever
 // it comes from an ad group that contains one of her SKUs — the "SKU count"
 // column shows how many total SKUs sit in that ad group (1 = a tight/exact
-// signal, hundreds = a broad proxy, judge accordingly). Verified live via
-// EXPLAIN ANALYZE: ~10,030 campaign+term rows, ~3s execution.
+// signal, hundreds = a broad proxy, judge accordingly).
+//
+// Scoped to Manual-targeting campaigns only (targeting_type='Manual'), per
+// explicit instruction 2026-08-10 — Auto campaigns excluded. Confirmed via
+// direct DB check: of the 75 DE campaigns that ever touched one of her SKUs,
+// 23 are Manual / 52 are Auto; restricting to Manual leaves 1,569 real
+// campaign+term rows (not empty).
 const thasithaReq7HandlerModule = (function() {
 const { Pool } = require('pg');
 
@@ -4193,7 +4198,7 @@ skus AS (
   WHERE rl.sku IS NOT NULL
 ),
 de_campaigns AS (
-  SELECT campaign_id FROM amazon_campaigns.campaigns WHERE market_place = 10
+  SELECT campaign_id FROM amazon_campaigns.campaigns WHERE market_place = 10 AND targeting_type = 'Manual'
 ),
 matched_ad_groups AS (
   SELECT DISTINCT pd.ad_group_id, pd.campaign_id
@@ -4327,7 +4332,7 @@ async function handleThasithaReq7(req, res) {
       staff: { name: 'Thasitha', department: 'Google Ads', store: 'ledsone.de' },
       reportPeriod: { label: 'Last 90 Days', days: 90 },
       source: {
-        scope: `Amazon DE campaigns (market_place=10) that have ever advertised one of Thasitha's Google-side SKUs (exact SKU string match), search terms rolling last 90 days — same shape as Requirement 6, cross-platform proxy since Amazon campaigns have no staff/owner field`,
+        scope: `Amazon DE campaigns (market_place=10, targeting_type='Manual' only — Auto campaigns excluded) that have ever advertised one of Thasitha's Google-side SKUs (exact SKU string match), search terms rolling last 90 days — same shape as Requirement 6, cross-platform proxy since Amazon campaigns have no staff/owner field`,
         tables: ['amazon_campaigns.performance_data', 'amazon_campaigns.search_term_performance_data', 'amazon_campaigns.campaigns'],
       },
       summary: {
