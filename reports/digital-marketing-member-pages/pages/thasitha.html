@@ -308,8 +308,8 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
   <div class="t-navlabel">Tools</div>
   <ul class="t-navlist">
-    <li><a href="eod/index.html" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
-    <li><a href="blog-tool/index.html" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
+    <li><a href="eod/index.html" data-tool="eod/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
+    <li><a href="blog-tool/index.html" data-tool="blog-tool/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
   </ul>
 
   <div class="t-sidebar-spacer"></div>
@@ -326,7 +326,7 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
 <div class="t-main">
   <div class="t-topcontent">
-<div class="t1-wrap">
+<div class="t1-wrap" id="tContentArea">
 
 <div class="tabpanel on" id="tabPanelR1">
 
@@ -1132,6 +1132,9 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
 </div>
 <!-- /t1-wrap -->
+<div id="tToolFrame" style="display:none;height:calc(100vh - 40px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
+  <iframe id="tToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
+</div>
   </div>
   <!-- /t-topcontent -->
 </div>
@@ -2141,6 +2144,7 @@ const TAB_TITLES = {
   R7: 'Requirement 7 &middot; Amazon DE Campaign-Wise Search Terms',
 };
 function switchTab(which){
+  tShowContent();
   ['R1','R2','R3','R4','R5','R6','R7'].forEach(function(k){
     document.getElementById('tabPanel'+k).classList.toggle('on', k===which);
   });
@@ -2152,6 +2156,27 @@ document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
   a.addEventListener('click', function(e){
     e.preventDefault();
     switchTab(a.dataset.tab);
+  });
+});
+
+function tShowTool(url){
+  document.getElementById('tContentArea').style.display = 'none';
+  var frame = document.getElementById('tToolFrame');
+  var iframe = document.getElementById('tToolFrameIframe');
+  if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
+  frame.style.display = 'block';
+}
+function tShowContent(){
+  document.getElementById('tToolFrame').style.display = 'none';
+  document.getElementById('tContentArea').style.display = '';
+}
+document.querySelectorAll('#tSidebar a[data-tool]').forEach(function(a){
+  a.addEventListener('click', function(e){
+    if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    document.querySelectorAll('#tSidebar .t-navlist a').forEach(function(x){ x.classList.remove('on'); });
+    a.classList.add('on');
+    tShowTool(a.getAttribute('data-tool'));
   });
 });
 

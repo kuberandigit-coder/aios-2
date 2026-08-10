@@ -180,8 +180,8 @@ body.sb-open .ms-main{margin-left:var(--sb-w);}
   </ul>
   <div class="ms-navlabel">Tools</div>
   <ul class="ms-navlist">
-    <li><a href="eod/index.html" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
-    <li><a href="blog-tool/index.html" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
+    <li><a href="eod/index.html" data-tool="eod/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
+    <li><a href="blog-tool/index.html" data-tool="blog-tool/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
   </ul>
 
   <div class="ms-sidebar-spacer"></div>
@@ -196,6 +196,7 @@ body.sb-open .ms-main{margin-left:var(--sb-w);}
 </aside>
 <div class="ms-main">
 <div class="ms-topcontent">
+<div id="msContentArea">
 <div class="reqtabs">
   <div class="reqtab active" id="tabBtn1" onclick="showReqTab(1)">Requirement 1 · Low CTR Blog Posts &amp; Collections</div>
   <div class="reqtab" id="tabBtn2" onclick="showReqTab(2)">Requirement 2 · Duplicate Listing &amp; Price Check</div>
@@ -2290,9 +2291,33 @@ document.getElementById('r6exportCsv').addEventListener('click', r6exportCsv);
 </script>
 </div>
 </div>
+</div>
+<div id="msToolFrame" style="display:none;height:calc(100vh - 56px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
+  <iframe id="msToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
+</div>
 <script>
 document.getElementById('msCollapseBtn').addEventListener('click', function () {
   document.body.classList.toggle('sb-open');
+});
+function msShowTool(url){
+  document.getElementById("msContentArea").style.display = "none";
+  var frame = document.getElementById("msToolFrame");
+  var iframe = document.getElementById("msToolFrameIframe");
+  if (iframe.getAttribute("src") !== url) iframe.setAttribute("src", url);
+  frame.style.display = "block";
+}
+function msShowContent(){
+  document.getElementById("msToolFrame").style.display = "none";
+  document.getElementById("msContentArea").style.display = "";
+}
+document.querySelectorAll("#msSidebar a[data-tool]").forEach(function (a) {
+  a.addEventListener("click", function (e) {
+    if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    document.querySelectorAll("#msSidebar .ms-navlist a").forEach(function (x) { x.classList.remove("on"); });
+    a.classList.add("on");
+    msShowTool(a.getAttribute("data-tool"));
+  });
 });
 document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
   e.preventDefault();
@@ -2302,7 +2327,8 @@ document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
 document.querySelectorAll('#msNavList a[data-tab]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     e.preventDefault();
-    document.querySelectorAll('#msNavList a[data-tab]').forEach(function (x) { x.classList.remove('on'); });
+    msShowContent();
+    document.querySelectorAll('#msSidebar .ms-navlist a').forEach(function (x) { x.classList.remove('on'); });
     a.classList.add('on');
     showReqTab(parseInt(a.getAttribute('data-tab'), 10));
   });

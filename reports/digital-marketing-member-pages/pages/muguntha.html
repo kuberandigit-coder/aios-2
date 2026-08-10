@@ -170,9 +170,9 @@ tbody tr:hover td:first-child{color:var(--accent);}
 
   <div class="navlabel">Tools</div>
   <ul class="navlist">
-    <li><a href="eod/index.html" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
-    <li><a href="blog-tool/index.html" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
-    <li><a href="eod/admin.html" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span class="lbl">EOD Admin</span></a></li>
+    <li><a href="eod/index.html" data-tool="eod/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
+    <li><a href="blog-tool/index.html" data-tool="blog-tool/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
+    <li><a href="eod/admin.html" data-tool="eod/admin.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span class="lbl">EOD Admin</span></a></li>
   </ul>
 
   <div class="sidebar-spacer"></div>
@@ -227,7 +227,7 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
     </div>
   </div>
 
-  <div class="content">
+  <div class="content" id="mgContentArea">
     <div id="panel-sonya" class="member-panel">
       <div class="cards" id="kpiCards"></div>
 
@@ -399,6 +399,9 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
       </div>
     </div>
   </div>
+</div>
+<div id="mgToolFrame" style="display:none;height:calc(100vh - 100px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
+  <iframe id="mgToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
 </div>
 
 <script>
@@ -674,6 +677,7 @@ const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriF
 const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-placeholder'];
 
 function selectMember(key){
+  mgShowContent();
   document.querySelectorAll('#memberNav a').forEach((a) => a.classList.toggle('active', a.dataset.member === key));
   const name = MEMBER_NAMES[key] || key;
   const built = BUILT_MEMBERS[key];
@@ -710,6 +714,27 @@ document.getElementById('memberNav').addEventListener('click', (e) => {
   if (!a) return;
   e.preventDefault();
   selectMember(a.dataset.member);
+});
+
+function mgShowTool(url){
+  document.getElementById('mgContentArea').style.display = 'none';
+  const frame = document.getElementById('mgToolFrame');
+  const iframe = document.getElementById('mgToolFrameIframe');
+  if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
+  frame.style.display = 'block';
+}
+function mgShowContent(){
+  document.getElementById('mgToolFrame').style.display = 'none';
+  document.getElementById('mgContentArea').style.display = '';
+}
+document.querySelectorAll('.sidebar a[data-tool]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    document.querySelectorAll('.sidebar .navlist a').forEach((x) => x.classList.remove('active'));
+    a.classList.add('active');
+    mgShowTool(a.getAttribute('data-tool'));
+  });
 });
 </script>
 </body>
