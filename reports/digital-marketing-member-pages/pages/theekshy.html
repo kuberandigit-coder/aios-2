@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theekshy — Google Ads Campaign Optimisation Dashboard</title>
+<style>html{visibility:hidden;}</style>
+<script>
+(function () {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/auth?action=session', false);
+    xhr.withCredentials = true;
+    xhr.send(null);
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      if (data && data.success && data.user && (data.user.staff_key === 'theekshy' || data.user.role === 'admin')) {
+        sessionStorage.setItem('auth_theekshy', '1');
+        document.documentElement.style.visibility = 'visible';
+        return;
+      }
+    }
+  } catch (e) { /* fall through to login */ }
+  window.location.replace('../login.html');
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;
+  --card:#ffffff;--accent:#1f5eff;--accent-soft:#eaf0ff;
+  --healthy-bg:#f0fdf4;--healthy-border:#bbf7d0;--healthy-text:#166534;
+  --monitor-bg:#fffbeb;--monitor-border:#fde68a;--monitor-text:#92400e;
+  --critical-bg:#fff5f5;--critical-border:#fecaca;--critical-text:#991b1b;
+  --pending-bg:#eff6ff;--pending-border:#bfdbfe;--pending-text:#1e40af;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
+.wrap{max-width:1600px;margin:0 auto;}
+.back{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+.top-nav{display:flex;flex-wrap:nowrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;overflow-x:auto;scrollbar-width:none;}
+.top-nav::-webkit-scrollbar{display:none;}
+.nav-btn{border:none;background:transparent;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;}
+.nav-btn:hover{background:var(--accent-soft);color:var(--accent);}
+.nav-btn.active{background:var(--accent);color:#fff;}
+.nav-btn .nl{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+header.rpt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+.req-tag{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+h1{font-size:22px;}
+.sub{color:var(--muted);font-size:13px;margin-top:6px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:4px 13px;font-size:12px;font-weight:600;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+.kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+.kpi .val{font-size:22px;font-weight:700;margin-top:5px;line-height:1;}
+.kpi .note{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi.ok .val{color:#059669;}.kpi.err .val{color:#b91c1c;}.kpi.warn .val{color:#d97706;}.kpi.info .val{color:var(--accent);}
+.campaign-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:18px;}
+.c-card{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:20px 24px;}
+.c-card.critical{border-color:var(--critical-border);background:var(--critical-bg);}
+.c-card.monitor{border-color:var(--monitor-border);background:var(--monitor-bg);}
+.c-card.healthy{border-color:var(--healthy-border);background:var(--healthy-bg);}
+.c-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.c-card-name{font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.4;}
+.c-card-id{font-size:10px;color:var(--muted);margin-top:2px;}
+.c-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.c-m{text-align:center;}
+.c-m-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;}
+.c-m-val{font-size:16px;font-weight:700;margin-top:3px;}
+.critical-text{color:var(--critical-text);}.monitor-text{color:var(--monitor-text);}.healthy-text{color:var(--healthy-text);}
+.c-action{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:11.5px;font-weight:600;}
+.c-action.critical{background:#fee2e2;color:var(--critical-text);border:1px solid var(--critical-border);}
+.c-action.monitor{background:#fef3c7;color:var(--monitor-text);border:1px solid var(--monitor-border);}
+.c-action.healthy{background:#dcfce7;color:var(--healthy-text);border:1px solid var(--healthy-border);}
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent;}
+.badge-critical{background:#fee2e2;color:var(--critical-text);border-color:var(--critical-border);}
+.badge-monitor{background:#fef3c7;color:var(--monitor-text);border-color:var(--monitor-border);}
+.badge-healthy{background:#dcfce7;color:var(--healthy-text);border-color:var(--healthy-border);}
+.badge-pending{background:#eff6ff;color:var(--pending-text);border-color:var(--pending-border);}
+.info-note{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;font-size:12px;color:#0c4a6e;margin-bottom:16px;line-height:1.6;}
+.sec-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.sec-tag{font-size:10px;font-weight:600;color:var(--muted);background:#f1f5f9;border-radius:4px;padding:2px 7px;}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+.srch{border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-size:13px;color:var(--ink);background:var(--card);width:220px;outline:none;}
+.srch:focus{border-color:var(--accent);}
+select.fsel{border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--ink);background:var(--card);outline:none;cursor:pointer;}
+select.fsel:focus{border-color:var(--accent);}
+.rbtn{border:1px solid var(--line);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);}
+.rbtn:hover{background:#f1f5f9;}
+.rbtn.r2-active{background:var(--accent,#2563eb);color:#fff;border-color:var(--accent,#2563eb);}
+.tbox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+.tbar{padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.scroll{overflow-x:auto;}
+.scroll.drag-scroll{cursor:grab;user-select:none;}
+.scroll.drag-scroll.dragging{cursor:grabbing;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.t-prod{min-width:1100px;}
+.t-opt{min-width:1600px;}
+thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{background:#e8ecf5;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f8fafc;}
+tr.row-critical{background:#fff5f5;}tr.row-monitor{background:#fffbeb;}tr.row-healthy{background:#f0fdf4;}
+.empty-state{padding:48px 24px;text-align:center;color:var(--muted);}
+.empty-state .es-icon{font-size:36px;margin-bottom:12px;}
+.empty-state h3{font-size:15px;color:var(--ink);margin-bottom:8px;}
+.empty-state p{font-size:13px;line-height:1.65;max-width:520px;margin:0 auto;}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.chart-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;}
+.chart-box h3{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--ink);}
+.val-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:16px;}
+.val-box h3{font-size:13px;font-weight:700;margin-bottom:12px;}
+.val-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;}
+.vi{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.vd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.vd.pass{background:#059669;}.vd.warn{background:#d97706;}
+.fn{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:16px;}
+.fn h3{font-size:12.5px;color:var(--ink);margin-bottom:8px;font-weight:700;}
+.fn ul{margin-top:6px;padding-left:18px;}.fn li{margin-top:4px;}
+.placeholder{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:60px 30px;text-align:center;}
+.placeholder h2{font-size:18px;color:var(--ink);margin-bottom:8px;}
+footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr;}.campaign-cards{grid-template-columns:1fr;}.c-metrics{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){h1{font-size:17px;}.kpi .val{font-size:18px;}.nav-btn{padding:7px 12px;font-size:12px;}body{padding:16px 12px;}}
+/* ── Requirement 4 — Stock Status Snapshot ── */
+.snapshot-banner{background:#7c2d12;color:#fff;border-radius:10px;padding:11px 18px;margin-bottom:14px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:10px;line-height:1.5;}
+.snapshot-banner .sb-icon{font-size:20px;flex-shrink:0;}
+.badge-in-stock{background:#dcfce7;color:#166534;border-color:#bbf7d0;}
+.badge-oos{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.badge-gtf{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+.badge-upcoming{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd;}
+.badge-unk{background:#f1f5f9;color:#475569;border-color:#cbd5e1;}
+.badge-gmc-match{background:#dcfce7;color:#166534;border-color:#bbf7d0;}
+.badge-gmc-crit{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.badge-gmc-warn{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+.badge-gmc-na{background:#f1f5f9;color:#64748b;border-color:#e2e8f0;}
+.freshness-panel{background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px;}
+.fp-item{font-size:12px;color:#0c4a6e;line-height:1.6;}
+.fp-item strong{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#0369a1;font-weight:700;margin-bottom:2px;}
+.local-note{background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:9px 15px;font-size:11.5px;color:#713f12;margin-bottom:16px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<!-- ── Auth Overlay ── -->
+<div id="auth-overlay" style="position:fixed;inset:0;z-index:9999;background:#0c1a30;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.35);text-align:center;">
+    <div style="width:52px;height:52px;border-radius:12px;background:#b45309;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;margin:0 auto 16px;">T</div>
+    <div style="font-size:18px;font-weight:700;color:#0f1f33;margin-bottom:4px;">Theekshy</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:28px;">Digital Marketing — Members only</div>
+    <div style="text-align:left;margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Username</label>
+      <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div style="text-align:left;margin-bottom:22px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Password</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div id="auth-error" style="display:none;margin-bottom:14px;padding:9px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12.5px;color:#b91c1c;font-weight:600;">Incorrect username or password.</div>
+    <button id="auth-btn" onclick="authCheck()" style="width:100%;padding:12px;border:none;border-radius:9px;background:#b45309;color:#fff;font-size:14px;font-weight:700;cursor:pointer;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign In</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY='auth_theekshy';
+  if(sessionStorage.getItem(KEY)==='1'||sessionStorage.getItem('auth_admin')==='1') document.getElementById('auth-overlay').style.display='none';
+  function setLoading(on){const b=document.getElementById('auth-btn');b.disabled=on;b.textContent=on?'Signing in…':'Sign In';b.style.opacity=on?'.6':'1';}
+  async function authCheck(){
+    const u=document.getElementById('auth-user').value.trim().toLowerCase();
+    const p=document.getElementById('auth-pass').value;
+    document.getElementById('auth-error').style.display='none';
+    if(!u||!p) return;
+    setLoading(true);
+    try{
+      const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,page_key:'theekshy'})});
+      const d=await r.json();
+      if(d.ok){sessionStorage.setItem(KEY,'1');document.getElementById('auth-overlay').style.display='none';}
+      else{document.getElementById('auth-error').style.display='block';document.getElementById('auth-pass').value='';document.getElementById('auth-pass').focus();}
+    }catch(e){document.getElementById('auth-error').textContent='Network error. Please try again.';document.getElementById('auth-error').style.display='block';}
+    finally{setLoading(false);}
+  }
+  window.authCheck=authCheck;
+  document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('auth-overlay').style.display!=='none')authCheck();});
+})();
+</script>
+
+<!-- Logout Button -->
+<div id="logout-btn" style="display:none;position:fixed;top:14px;right:18px;z-index:9998;align-items:center;gap:7px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.09);font-family:'Segoe UI',system-ui,sans-serif;transition:all .15s;" onmouseover="this.style.background='#fef2f2';this.style.color='#b91c1c';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fff';this.style.color='#64748b';this.style.borderColor='#e2e8f0';" onclick="sessionStorage.removeItem('auth_theekshy');location.reload();">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout
+</div>
+<script>
+(function(){
+  if(sessionStorage.getItem('auth_theekshy')==='1') document.getElementById('logout-btn').style.display='flex';
+  new MutationObserver(function(){
+    if(document.getElementById('auth-overlay').style.display==='none')
+      document.getElementById('logout-btn').style.display='flex';
+  }).observe(document.getElementById('auth-overlay'),{attributes:true,attributeFilter:['style']});
+})();
+</script>
+
+<div class="wrap">
+
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <a class="back" href="../index.html">&larr; Back to all members</a>
+  <span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Piranav</span>
+</div>
+
+<nav class="top-nav" role="tablist">
+  <button class="nav-btn active" id="nav-1" role="tab" aria-selected="true" aria-controls="panel-1" onclick="showTab(1)">Campaign Optimisation<span class="nl">Requirement 1</span></button>
+  <button class="nav-btn" id="nav-5" role="tab" aria-selected="false" aria-controls="panel-5" onclick="showTab(5)">Product Optimisation<span class="nl">Requirement 5 · ROAS + Stock</span></button>
+  <button class="nav-btn" id="nav-2" role="tab" aria-selected="false" aria-controls="panel-2" onclick="showTab(2)">Search Term Optimisation<span class="nl">Requirement 2</span></button>
+  <button class="nav-btn" id="nav-3" role="tab" aria-selected="false" aria-controls="panel-3" onclick="showTab(3)">Feed Optimisation<span class="nl">Requirement 3</span></button>
+  <button class="nav-btn" id="nav-4" role="tab" aria-selected="false" aria-controls="panel-4" onclick="showTab(4)">Stock Status<span class="nl">Requirement 4</span></button>
+</nav>
+
+<!-- PANEL 1 -->
+<div class="tab-panel active" id="panel-1" role="tabpanel" aria-labelledby="nav-1">
+  <!-- Date picker + loading (Req 1) -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;">
+    <button class="rbtn" onclick="thSetPreset(7)">7d</button>
+    <button class="rbtn" onclick="thSetPreset(30)">30d</button>
+    <button class="rbtn" onclick="thSetPreset(60)">60d</button>
+    <button class="rbtn" onclick="thSetPreset(90)">90d</button>
+    <input type="date" id="thDateFrom" style="font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);">
+    <input type="date" id="thDateTo"   style="font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);">
+    <button class="rbtn" onclick="thApplyCustomDates()">Apply</button>
+    <button class="rbtn" onclick="thLoadReq1(document.getElementById('thDateFrom').value,document.getElementById('thDateTo').value)">↺ Refresh</button>
+  </div>
+  <div id="th-loading-r1" style="display:none;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;margin-bottom:10px;font-size:13px;">⏳ Loading live data…</div>
+  <div id="th-error-r1"   style="display:none;padding:12px;background:#fff0f0;border:1px solid #fca5a5;border-radius:10px;margin-bottom:10px;font-size:13px;color:#dc2626;"></div>
+
+  <header class="rpt">
+    <div class="req-tag">Requirement 1 · Google Ads · Campaign Optimisation · LEDSone UK</div>
+    <h1>Theekshy — Campaign Optimisation Dashboard</h1>
+    <div class="sub">
+      Staff: <strong>Theekshy</strong> &nbsp;·&nbsp;
+      Platform: <strong>Google Ads (UK)</strong> &nbsp;·&nbsp;
+      Period: <strong>2026-06-15 – 2026-07-14 (30 days)</strong> &nbsp;·&nbsp;
+      Latest Data: <strong>2026-07-14</strong> &nbsp;·&nbsp;
+      Source: <strong>google_ads.campaign_performance · google_ads.product_performance</strong>
+    </div>
+    <div class="chips">
+      <span class="chip">2 Campaigns (Theekshy Group)</span>
+      <span class="chip">THEE_GEMS · THEE_MYSTERY</span>
+      <span class="chip">Review Window: 14 days before / 14 days after</span>
+      <span class="chip">Latest: 2026-07-14</span>
+    </div>
+  </header>
+
+  <div class="info-note">
+    <strong>Data source:</strong> <code>google_ads.campaign_performance</code> &amp; <code>google_ads.product_performance</code> — read-only, daily grain.
+    Latest data date: <strong>2026-07-14</strong>. Period: 2026-06-15 to 2026-07-14.
+    Product titles from <code>google_ads.merchant_products</code> (available for some products; shown as Product ID where no title match).
+    <strong>Optimisation event log:</strong> No confirmed optimisation records found in PostgreSQL or AIOS records.
+    The before/after table shows an empty state. Architecture is ready to connect action-log data when available.
+    Campaign label mapping: CSV "Gems – Performance Max" → <strong>THEE_GEMS</strong> · CSV "Mystery – Performance Max" → <strong>THEE_MYSTERY</strong>.
+  </div>
+
+  <div class="sec-title">Campaign Status <span class="sec-tag">30-Day Rolling · google_ads.campaign_performance</span></div>
+  <div class="campaign-cards" id="campaignCards"></div>
+
+  <div class="kpis" id="kpiCards"></div>
+
+  <div class="sec-title">Product Performance <span class="sec-tag">Last 30 Days · Top 30 by Spend per Campaign · Rule 1 flagging active</span></div>
+  <div class="controls">
+    <select class="fsel" id="campaignFilter" onchange="applyProdFilters()">
+      <option value="all">All Campaigns</option>
+      <option value="23714290257">THEE_GEMS (ORDERS&gt;1)</option>
+      <option value="23684837882">THEE_MYSTERY (Non-Converting)</option>
+    </select>
+    <select class="fsel" id="statusFilter" onchange="applyProdFilters()">
+      <option value="all">All Statuses</option>
+      <option value="Critical">🔴 Critical</option>
+      <option value="Monitor">🟡 Monitor</option>
+      <option value="Healthy">🟢 Healthy</option>
+    </select>
+    <input class="srch" id="prodSearch" type="text" placeholder="🔍 Search product ID or name…" oninput="applyProdFilters()">
+    <button class="rbtn" onclick="resetProdFilters()">↺ Reset Filters</button>
+    <button class="rbtn" onclick="r1ExportCsv()" style="margin-left:auto;" aria-label="Export filtered table as CSV">⬇ Export CSV</button>
+    <span style="font-size:11px;color:var(--muted);" id="prodCount"></span>
+  </div>
+  <div class="tbox">
+    <div class="tbar">
+      <span id="prodTbarCount">Loading…</span>
+      <span style="font-size:11px;">google_ads.product_performance · 2026-06-15 – 2026-07-14 · product_item_id grain</span>
+    </div>
+    <div class="scroll">
+      <table class="t-prod" id="prodTable">
+        <thead><tr>
+          <th class="num">#</th>
+          <th>Campaign</th>
+          <th>Product ID</th>
+          <th>Product Name</th>
+          <th class="num">Cost £</th>
+          <th class="num">Clicks</th>
+          <th class="num">Impressions</th>
+          <th class="num">Conversions</th>
+          <th class="num">Conv. Value £</th>
+          <th class="num">ROAS</th>
+          <th class="num">CTR %</th>
+          <th>Status</th>
+          <th>Condition Triggered</th>
+          <th>Required Action</th>
+        </tr></thead>
+        <tbody id="prodTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec-title">Performance Trends <span class="sec-tag">Daily · Last 30 Days · google_ads.campaign_performance</span></div>
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>Daily ROAS — Conversion Value ÷ Cost</h3>
+      <canvas id="roasChart" style="max-height:220px;"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>Daily Conversion Value (£)</h3>
+      <canvas id="cvChart" style="max-height:220px;"></canvas>
+    </div>
+  </div>
+
+  <div class="sec-title">Before vs After Optimisation Log <span class="sec-tag">14-Day Review Window · No Events Found</span></div>
+  <div class="tbox">
+    <div class="tbar">
+      <span>Optimisation Action Log — Requirement 1</span>
+      <span style="font-size:11px;">No authoritative action-log source found in PostgreSQL or AIOS · Empty state</span>
+    </div>
+    <div class="empty-state">
+      <div class="es-icon">📋</div>
+      <h3>No Optimisation Events Recorded Yet</h3>
+      <p>
+        Once a product-level optimisation is applied and logged, before-vs-after analysis will appear here.
+        The review window is <strong>14 days before</strong> the optimisation date (exclusive) and <strong>14 days from</strong> the optimisation date.
+        After metrics are labelled <em>Pending Review</em> until 14 complete days of after-period data exist.
+        Log entries require: Date Optimised, Campaign, Product ID, Product Name, Optimisation Applied, and Condition Triggered.
+        Next Review Date = Date Optimised + 14 days.
+      </p>
+    </div>
+    <div class="scroll" style="display:none;">
+      <table class="t-opt" id="optTable">
+        <thead><tr>
+          <th>Date Optimised</th><th>Campaign</th><th>Product ID</th><th>Product Name</th>
+          <th class="num">ROAS Before</th><th class="num">Conv. Value Before £</th><th class="num">Cost Before £</th><th class="num">CTR Before %</th>
+          <th>Optimisation Applied</th><th>Condition Triggered</th>
+          <th class="num">ROAS After</th><th class="num">Conv. Value After £</th><th class="num">Cost After £</th><th class="num">CTR After %</th>
+          <th class="num">ROAS Change</th><th class="num">Conv. Value Change £</th>
+          <th>Status</th><th>Next Review Date</th><th>Required Action</th>
+        </tr></thead>
+        <tbody id="optTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="val-box">
+    <h3>Validation — 2026-07-15 · Requirement 1 Build</h3>
+    <div class="val-grid">
+      <div class="vi"><div class="vd pass"></div><strong>Both campaigns exact-matched in DB</strong> — IDs 23714290257, 23684837882 confirmed in google_ads.campaigns</div>
+      <div class="vi"><div class="vd pass"></div><strong>Requirement CSV inspected</strong> — 4 requirements, 6 conditions/thresholds, 19-column action log extracted</div>
+      <div class="vi"><div class="vd pass"></div><strong>No fake/invented data</strong> — all metrics from verified read-only PostgreSQL queries</div>
+      <div class="vi"><div class="vd pass"></div><strong>Campaign label mapping documented</strong> — "Gems – Performance Max" → THEE_GEMS · "Mystery – Performance Max" → THEE_MYSTERY</div>
+      <div class="vi"><div class="vd pass"></div><strong>Business rules 1–6 implemented</strong> — getProductStatus(), getProductCondition(), getProductAction() JS functions</div>
+      <div class="vi"><div class="vd pass"></div><strong>Formula boundary tests</strong> — ROAS 2.99→Critical, 3.00→Monitor, 4.49→Monitor, 4.50→Healthy; cost=0→N/A; imp=0→N/A</div>
+      <div class="vi"><div class="vd pass"></div><strong>Empty state for action log</strong> — no fabricated optimisation events; architecture ready for future connection</div>
+      <div class="vi"><div class="vd pass"></div><strong>Latest data date visible</strong> — 2026-07-14 shown in header, info note, and KPI card</div>
+      <div class="vi"><div class="vd pass"></div><strong>Only 2 authorised campaigns in filter</strong> — THEE_GEMS and THEE_MYSTERY only</div>
+      <div class="vi"><div class="vd pass"></div><strong>14-day review window logic</strong> — before = days[-14..-1] relative to opt date; after = days[0..+13]; incomplete → Pending Review</div>
+      <div class="vi"><div class="vd pass"></div><strong>Status colours + text labels</strong> — accessible, not colour-only</div>
+      <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> — SELECT only across all stages</div>
+      <div class="vi"><div class="vd pass"></div><strong>No git push / no deployment</strong> — local file update only; approval required for Vercel</div>
+      <div class="vi"><div class="vd pass"></div><strong>staging_ai confirmed absent</strong> — no cppc_* tables exist; google_ads schema is authoritative source</div>
+      <div class="vi"><div class="vd pass"></div><strong>Product titles resolved (2026-07-16)</strong> — PROD_META lookup from listings.shopify_listings (site=UK, channel=LEDSone) + parent join on shopify_handle. 20 parent titles direct; 4 via parent join; 36 derived from verified URL handle + variant option. 0 rows fall back to Product ID only.</div>
+      <div class="vi"><div class="vd warn"></div><strong>Optimisation event log empty</strong> — no persistent event source in DB or AIOS; ready for future connection</div>
+    </div>
+  </div>
+
+  <div class="fn">
+    <h3>Business Rules — Requirement 1 (source: requirement CSV 2026-07-15)</h3>
+    <ul>
+      <li><strong>Rule 1 — High Spend / 0 Conversions:</strong> Cost &gt; £0 AND Conversions = 0 → 🔴 Critical → Audit PDP; exclude Product ID from listing group</li>
+      <li><strong>Rule 2 — ROAS Below Target (&lt;3.0):</strong> ROAS &lt; 3.0, rolling 14 days → 🔴 Critical → Lower tROAS; review bidding strategy</li>
+      <li><strong>Rule 3 — ROAS Borderline (3.0–4.5):</strong> 3.0 ≤ ROAS &lt; 4.5 → 🟡 Monitor → Hold budget; review again in 72 hrs</li>
+      <li><strong>Rule 4 — ROAS Healthy (≥4.5):</strong> ROAS ≥ 4.5 → 🟢 Healthy → Maintain or scale budget 10–20%</li>
+      <li><strong>Rule 5 — Post-Optimisation Improved:</strong> After ROAS &gt; Before AND After Conv. Value &gt; Before Conv. Value → 🟢 Healthy → Confirm; log as validated win</li>
+      <li><strong>Rule 6 — Post-Optimisation No Improvement:</strong> After ROAS ≤ Before ROAS after 14 complete days → 🟡 Monitor → Revisit approach; try alternative fix</li>
+      <li><strong>Next Review Date:</strong> Date Optimised + 14 days</li>
+      <li><strong>ROAS:</strong> Conversion Value / Cost — N/A when Cost = 0</li>
+      <li><strong>CTR:</strong> Clicks / Impressions × 100 — N/A when Impressions = 0</li>
+    </ul>
+  </div>
+
+  <footer class="site">Theekshy · Google Ads Performance Dashboard · Requirement 1 · LEDSone UK · Built by Piranav · Source: google_ads.campaign_performance · Latest Data: 2026-07-14</footer>
+</div>
+
+<!-- PANEL 2 — REQUIREMENT 2: SEARCH TERM OPTIMISATION -->
+<div class="tab-panel" id="panel-2" role="tabpanel" aria-labelledby="nav-2">
+  <div id="r2-loading" style="display:none;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;margin-bottom:10px;font-size:13px;">⏳ Loading search term data…</div>
+
+  <header class="rpt">
+    <div class="req-tag">Requirement 2 · Google Ads · Search Term Optimisation · LEDSone UK</div>
+    <h1>Theekshy — Search Term Optimisation Dashboard</h1>
+    <div class="sub">
+      Staff: <strong>Theekshy</strong> &nbsp;·&nbsp;
+      Platform: <strong>Google Ads (UK) — Performance Max</strong> &nbsp;·&nbsp;
+      Period: <strong id="r2Period">Last 30 days</strong> &nbsp;·&nbsp;
+      Latest Data: <strong>2026-06-30</strong> &nbsp;·&nbsp;
+      Source: <strong>google_ads.pmax_campaign_search_term_data</strong> &nbsp;·&nbsp;
+      Grain: <strong>Search Term per Campaign (aggregated · LOWER(TRIM(search_term)))</strong>
+    </div>
+    <div class="chips">
+      <span class="chip">2 Campaigns (Theekshy Group)</span>
+      <span class="chip">THEE_GEMS · THEE_MYSTERY</span>
+      <span class="chip">Weekly Review Cadence</span>
+      <span class="chip">Latest: 2026-06-30</span>
+      <span class="chip" id="r2NextReview">Next Review: 2026-07-23</span>
+    </div>
+  </header>
+
+  <div style="display:flex;align-items:center;gap:8px;margin:14px 0 6px;flex-wrap:wrap;">
+    <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Date Range:</span>
+    <button id="r2Btn_7d" class="rbtn r2-active" onclick="r2SetRange('7d')">7 Days</button>
+    <button id="r2Btn_30d" class="rbtn" onclick="r2SetRange('30d')">30 Days</button>
+    <button id="r2Btn_60d" class="rbtn" onclick="r2SetRange('60d')">60 Days</button>
+    <button id="r2Btn_90d" class="rbtn" onclick="r2SetRange('90d')">90 Days</button>
+    <span style="margin-left:4px;font-size:11px;color:var(--muted);">Primary: Last 7 days (weekly review)</span>
+  </div>
+  <div id="r2DateMeta" style="font-size:11.5px;color:var(--muted);background:#f8fafc;border:1px solid var(--line);border-radius:6px;padding:8px 14px;margin-bottom:10px;line-height:1.8;">
+    Review Date: <strong>2026-07-16</strong> &nbsp;·&nbsp; Range: <strong>Last 7 days</strong> &nbsp;·&nbsp; Start: <strong>2026-06-24</strong> &nbsp;·&nbsp; End: <strong>2026-06-30</strong> &nbsp;·&nbsp; Latest Data: <strong>2026-06-30</strong> &nbsp;·&nbsp; Last Weekly Review: <strong>2026-07-16</strong>
+  </div>
+
+  <div class="info-note" style="border-color:#bbf7d0;background:#f0fdf4;color:#166534;">
+    <strong>✓ Cost data active — Rule 1 (Waste: Cost &gt; £1 AND Conv = 0) now live.</strong>
+    Source: <code>google_ads.pmax_campaign_search_term_data</code> — cost field populated for 100% of rows (20,127/20,127).
+    Latest data date: <strong>2026-06-30</strong>. Date ranges are derived from this date.
+    <br><strong>Competitor detection:</strong> No authoritative competitor brand list in AIOS — Rule 2 marked as Competitor List Required.
+    <strong>Search Intent:</strong> Classified from term content — brand terms (LEDSone) detected; off-category terms (scales, tile leveling) flagged for removal.
+  </div>
+
+  <div class="info-note">
+    <strong>Source:</strong> <code>google_ads.pmax_campaign_search_term_data</code> — read-only, daily grain aggregated by LOWER(TRIM(search_term)) + campaign_id + match_type per selected date range.
+    Latest data date: <strong>2026-06-30</strong>. Campaigns: THEE_GEMS (ID 23714290257) · THEE_MYSTERY (ID 23684837882).
+    <strong>Waste rule threshold:</strong> Cost &gt; £1 AND Conv = 0 → Remove. <strong>Status: ACTIVE</strong> — cost populated for all PMax rows. Rule 1 live for all date ranges.
+    60D and 90D ranges use the same dataset as 30D (pmax data available from 2026-06-01 to 2026-06-30 only).
+  </div>
+
+  <div class="kpis" id="r2Kpis"></div>
+
+  <div class="sec-title">Search Term Review <span class="sec-tag" id="r2GrainLabel">Performance Max Search Terms · google_ads.pmax_campaign_search_term_data · 2026-06-30 · Cost Active</span></div>
+  <div class="controls">
+    <select class="fsel" id="r2CampFilter" onchange="applyR2Filters()">
+      <option value="all">All Campaigns</option>
+      <option value="23714290257">THEE_GEMS (ORDERS&gt;1)</option>
+      <option value="23684837882">THEE_MYSTERY (Non-Converting)</option>
+    </select>
+    <select class="fsel" id="r2DecFilter" onchange="applyR2Filters()">
+      <option value="all">All Decisions</option>
+      <option value="Remove">Remove</option>
+      <option value="Keep">Keep</option>
+      <option value="Monitor">Monitor</option>
+    </select>
+    <select class="fsel" id="r2StatusFilter" onchange="applyR2Filters()">
+      <option value="all">All Statuses</option>
+      <option value="Critical">🔴 Critical</option>
+      <option value="Monitor">🟡 Monitor</option>
+      <option value="Healthy">🟢 Healthy</option>
+    </select>
+    <input class="srch" id="r2Search" type="text" placeholder="🔍 Search term…" oninput="applyR2Filters()">
+    <button class="rbtn" onclick="resetR2Filters()">↺ Reset</button>
+    <button class="rbtn" onclick="r2ExportCsv()" style="margin-left:auto;" aria-label="Export filtered table as CSV">⬇ Export CSV</button>
+    <span style="font-size:11px;color:var(--muted);" id="r2Count"></span>
+  </div>
+  <div class="tbox">
+    <div class="tbar">
+      <span id="r2TbarCount">Loading…</span>
+      <span style="font-size:11px;">google_ads.pmax_campaign_search_term_data · latest date: 2026-06-30 · Cost active (100% coverage) · Rule 1 (Waste &gt; £1) live · Refreshed: 2026-07-16</span>
+    </div>
+    <div class="scroll" id="r2Scroll">
+      <table style="min-width:1400px;width:100%;border-collapse:collapse;font-size:12.5px;" id="r2Table">
+        <thead><tr>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">#</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:90px;">Review Date</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:80px;">Date Range</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;min-width:80px;" onclick="sortR2('camp')">Campaign</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;min-width:180px;" onclick="sortR2('term')">Search Term</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Match Type</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Search Intent</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('imp')">Impressions</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('clicks')">Clicks</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);text-align:right;">CTR %</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('cost')">Cost £</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('conv')">Conversions</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);text-align:right;">CPA £</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;text-align:right;" onclick="sortR2('cv')">Conv. Value £</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);text-align:right;">ROAS</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:110px;">Waste Term?</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:110px;">Competitor Term?</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:160px;">Condition Triggered</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:120px;">Rule Trigger</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Remove or Keep?</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:200px;">Decision Reason</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:200px;">Next Action Plan</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Review Status</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Latest Data Date</th>
+          <th style="background:#f0f3f8;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">Next Review Date</th>
+        </tr></thead>
+        <tbody id="r2Tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>Condition Distribution — Search Terms</h3>
+      <canvas id="r2CondChart" style="max-height:220px;"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>CTR Distribution — Top 20 Terms by Clicks</h3>
+      <canvas id="r2CtrChart" style="max-height:220px;"></canvas>
+    </div>
+  </div>
+
+  <div class="val-box" id="r2Insights">
+    <h3>Rule-Based Insights <span class="sec-tag">Computed from pmax_campaign_search_term_data · Cost active · Rule 1 live · Latest: 2026-06-30</span></h3>
+    <div id="r2InsightsList" style="font-size:12.5px;line-height:1.8;color:var(--ink);"></div>
+  </div>
+
+  <div class="val-box">
+    <h3>Validation — 2026-07-16 · Requirement 2 Cost Fix</h3>
+    <div class="val-grid">
+      <div class="vi"><div class="vd pass"></div><strong>Source switched to pmax_campaign_search_term_data</strong> — cost field populated for 100% of rows (20,127/20,127 · 0 nulls).</div>
+      <div class="vi"><div class="vd pass"></div><strong>Root cause resolved</strong> — campaign_search_term_data has cost=NULL for all 19,534 PMax rows. pmax_campaign_search_term_data has numeric cost for all rows.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Latest data date confirmed</strong> — 2026-06-30 (pmax table). All 4 date ranges derived from this date.</div>
+      <div class="vi"><div class="vd pass"></div><strong>7D data: 150 terms · 2026-06-24 to 2026-06-30</strong> — Imp=13,112 · Clicks=216 · Cost=£78.19 · Conv=8.99 · CV=£149.47</div>
+      <div class="vi"><div class="vd pass"></div><strong>30D data: 200 terms · 2026-06-01 to 2026-06-30</strong> — Imp=32,988 · Clicks=506 · Cost=£199.00 · Conv=21.77 · CV=£705.90</div>
+      <div class="vi"><div class="vd pass"></div><strong>60D = 90D = 30D dataset</strong> — pmax data available 2026-06-01 to 2026-06-30 only; no earlier search-term cost data exists.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Rule 1 Waste now active</strong> — Cost &gt; £1 AND Conv = 0 → Remove. Correctly triggers in all date ranges.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Rule 3 (Converting) active</strong> — Conv &gt; 0 → Keep. CPA = Cost/Conv displayed when both available.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Rule 4 (Below threshold) active</strong> — Cost ≤ £1 AND Conv = 0 → Monitor. CTR signal used for prioritisation.</div>
+      <div class="vi"><div class="vd pass"></div><strong>CPA correctly shown</strong> — Cost &gt; 0 AND Conv &gt; 0 → £CPA. Cost &gt; 0 AND Conv = 0 → "—". Cost = 0 → N/A.</div>
+      <div class="vi"><div class="vd pass"></div><strong>ROAS correctly shown</strong> — Cost &gt; 0 AND CV &gt; 0 → ROAS. Otherwise N/A.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Cost sorting active</strong> — Cost column header onclick=sortR2('cost'). Numeric sort at array index 6.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Total spend KPI added</strong> — SUM(cost) across all terms in active range. Waste spend = SUM(cost) where cost &gt; £1 AND conv = 0.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Off-Category detection active</strong> — scales, weighing, tile leveling terms flagged for removal.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Brand detection active</strong> — LEDSone brand terms classified as Branded → Keep.</div>
+      <div class="vi"><div class="vd warn"></div><strong>Rule 2 Competitor blocked</strong> — No authoritative competitor brand list in AIOS. Competitor Term = "Competitor List Required".</div>
+      <div class="vi"><div class="vd pass"></div><strong>Only 2 authorised campaigns</strong> — THEE_GEMS (23714290257) · THEE_MYSTERY (23684837882). No other staff campaigns included.</div>
+      <div class="vi"><div class="vd pass"></div><strong>Requirements 1, 3, 4 intact</strong> — No changes to other requirement panels, JS functions, or data arrays.</div>
+      <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> — SELECT only.</div>
+      <div class="vi"><div class="vd pass"></div><strong>No git push / no deployment</strong> — local file only; approval required.</div>
+    </div>
+  </div>
+
+  <div class="fn">
+    <h3>Business Rules — Requirement 2 (authoritative: 2026-07-16)</h3>
+    <ul>
+      <li><strong>Rule 1 — Waste Term:</strong> Cost &gt; £1 AND Conv = 0 → 🔴 Critical → Remove; add as negative keyword and stop further waste. <em>ACTIVE: cost available in pmax_campaign_search_term_data.</em></li>
+      <li><strong>Rule 2 — Competitor Term:</strong> Term contains competitor brand name → Review: Remove or Keep based on performance evidence. <em>BLOCKED: No authoritative competitor brand list in AIOS.</em></li>
+      <li><strong>Rule 3 — Converting Term:</strong> Conv &gt; 0 → 🟢 Keep. CPA = Cost/Conv shown. Next action: monitor CPA weekly.</li>
+      <li><strong>Rule 4 — Below Waste Threshold:</strong> Cost ≤ £1 AND Conv = 0 → 🟡 Monitor. Review again next week. CTR signal used for prioritisation.</li>
+      <li><strong>Off-Category:</strong> Term irrelevant to product range (scales, tile leveling) → 🔴 Remove. Add as negative keyword immediately.</li>
+      <li><strong>Brand Term (LEDSone):</strong> Own brand detected → 🟢 Keep. Monitor conversion rate and protect brand search share.</li>
+      <li><strong>Weekly review cadence.</strong> Next review: 7 days from today. Waste threshold: £1 (not £10 or £20).</li>
+      <li><strong>CPA display rule:</strong> Conv = 0 → "—". Conv &gt; 0 AND Cost &gt; 0 → £CPA. Never displays £0 when cost &gt; 0 and conv = 0.</li>
+    </ul>
+  </div>
+
+  <footer class="site">Theekshy · Google Ads Performance Dashboard · Requirement 2 · LEDSone UK · Built by Piranav · Source: google_ads.pmax_campaign_search_term_data · Latest Data: 2026-06-30 · Cost Fix: 2026-07-16</footer>
+</div>
+
+<!-- PANEL 3 — Requirement 3: Feed Optimisation -->
+<div class="tab-panel" id="panel-3" role="tabpanel" aria-labelledby="nav-3">
+
+  <!-- Date preset + loading (Req 3) -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;">
+    <button class="rbtn" onclick="thFeedPreset(7)">7d</button>
+    <button class="rbtn" onclick="thFeedPreset(30)">30d</button>
+    <button class="rbtn" onclick="thFeedPreset(60)">60d</button>
+    <button class="rbtn" onclick="thFeedPreset(90)">90d</button>
+    <button class="rbtn" onclick="thRefreshFeed()">↺ Refresh</button>
+    <span id="th-feed-range" style="font-size:12px;color:var(--muted);margin-left:4px;"></span>
+  </div>
+  <div id="th-loading-r3" style="display:none;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;margin-bottom:10px;font-size:13px;">⏳ Loading feed data…</div>
+  <div id="th-error-r3"   style="display:none;padding:12px;background:#fff0f0;border:1px solid #fca5a5;border-radius:10px;margin-bottom:10px;font-size:13px;color:#dc2626;"></div>
+
+  <header class="rpt">
+    <div class="req-tag">Requirement 3 · Google Ads · Feed Optimisation · LEDSone UK</div>
+    <h1>Theekshy — Feed Optimisation Dashboard</h1>
+    <div class="sub">
+      Staff: <strong>Theekshy</strong> &nbsp;·&nbsp;
+      Platform: <strong>Google Ads / Google Merchant Center / Shopify (UK)</strong> &nbsp;·&nbsp;
+      Period: <strong>2026-06-15 – 2026-07-15 (30 days)</strong> &nbsp;·&nbsp;
+      Latest Data: <strong>2026-07-15</strong> &nbsp;·&nbsp;
+      Sources: <strong>google_ads.product_performance · listings.shopify_listings · google_ads.merchant_products</strong>
+    </div>
+    <div class="chips">
+      <span class="chip">2 Campaigns (Theekshy Group)</span>
+      <span class="chip">THEE_GEMS · THEE_MYSTERY</span>
+      <span class="chip">Feed Review Window: 7 days after optimisation</span>
+      <span class="chip">Latest: 2026-07-15</span>
+    </div>
+  </header>
+
+  <div class="info-note" style="border-color:#fde68a;background:#fffbeb;color:#92400e;">
+    <strong>⚠ Data Limitations:</strong>
+    <ul style="margin-top:6px;padding-left:18px;">
+      <li><strong>7-Day Review Scheduling:</strong> No confirmed optimisation events are recorded in Requirement 1. The 7-day feed review scheduling section shows an empty state. Architecture is ready — once Theekshy begins logging optimisation events in Requirement 1, the review schedule will auto-populate.</li>
+      <li><strong>GMC Approval/Disapproval Status:</strong> <code>asset_group_listing_group_filters</code> has 0 rows for Theekshy campaigns. GMC eligibility/disapproval status cannot be verified — affected fields show "Incomplete Verification".</li>
+      <li><strong>Title/Description Updated:</strong> Manually verified fields. Click <strong>Edit</strong> on any product row in Requirement 3 to record whether the Shopify title and description have been updated following optimisation. Values: Yes · No · Not Checked. Saved to localStorage — persists across browser refreshes.</li>
+      <li><strong>GMC Currency Mismatch:</strong> Some merchant_products rows for Theekshy products show EUR currency — these are multi-feed records. Dashboard flags these as "Currency Mismatch" and does not compare prices across currencies.</li>
+    </ul>
+  </div>
+
+  <div class="info-note">
+    <strong>Data source:</strong> Product feed health data from <code>listings.shopify_listings</code> (price, stock, status) joined to <code>google_ads.product_performance</code> on <code>item_id = product_item_id</code> (UK/LEDSone channel). GMC data from <code>google_ads.merchant_products</code>. Latest data: <strong>2026-07-15</strong>. Showing top 40 products by spend (last 30 days).
+    <br>Campaign label mapping: CSV "Gems – Performance Max" → <strong>THEE_GEMS</strong> · CSV "Mystery – Performance Max" → <strong>THEE_MYSTERY</strong>.
+    <br>CSV date serial 46211 in Feed Review Date column = Excel serial → <strong>2026-07-08</strong> (Date Last Optimised 2026-07-01 + 7 days). Sample rows are examples only — not shown as live data.
+  </div>
+
+  <div class="sec-title">7-Day Feed Review Schedule <span class="sec-tag">Requirement 1 Dependency · No Events Found</span></div>
+  <div class="tbox" style="margin-bottom:20px;">
+    <div class="tbar">
+      <span>Post-Optimisation Feed Review Schedule — Requirement 3</span>
+      <span style="font-size:11px;">Feed Review Date = Date Last Optimised + 7 calendar days · No authoritative optimisation events in Req 1</span>
+    </div>
+    <div class="empty-state">
+      <div class="es-icon">📅</div>
+      <h3>No Optimisation Events Recorded in Requirement 1</h3>
+      <p>
+        Feed Optimisation review scheduling requires product-level optimisation records from Requirement 1.
+        Once a product is optimised and logged (Date Optimised, Product ID, Campaign, Optimisation Applied),
+        a feed review will be automatically scheduled for <strong>Date Last Optimised + 7 calendar days</strong>.
+        <br><br>
+        <strong>Review status logic:</strong>
+        Not Due (latest data &lt; review date) · Due Today (latest data = review date) · Overdue (latest data &gt; review date and no review logged) · Reviewed (verified feed review exists on or after review date).
+        <br><br>
+        <strong>Next action:</strong> Begin logging optimisation events in Requirement 1 to activate this section.
+      </p>
+    </div>
+  </div>
+
+  <div class="sec-title">Feed Health Overview <span class="sec-tag">Live Feed Data · Top 40 by Spend · 2026-07-15</span></div>
+
+  <div class="kpis" id="r3KpiCards"></div>
+
+  <div class="controls">
+    <select class="fsel" id="r3CampaignFilter" onchange="applyR3Filters()">
+      <option value="all">All Campaigns</option>
+      <option value="23714290257">THEE_GEMS (ORDERS&gt;1)</option>
+      <option value="23684837882">THEE_MYSTERY (Non-Converting)</option>
+    </select>
+    <select class="fsel" id="r3ConditionFilter" onchange="applyR3Filters()">
+      <option value="all">All Conditions</option>
+      <option value="Missing GMC Record">Missing GMC Record</option>
+      <option value="Out of Stock">Out of Stock</option>
+      <option value="Availability Mismatch">Availability Mismatch</option>
+      <option value="Price Mismatch">Price Mismatch</option>
+      <option value="Currency Mismatch">Currency Mismatch</option>
+      <option value="Title/Description Needs Update">Title/Description Needs Update</option>
+      <option value="Feed Healthy">Feed Healthy</option>
+      <option value="Incomplete Verification">Incomplete Verification</option>
+    </select>
+    <select class="fsel" id="r3StatusFilter" onchange="applyR3Filters()">
+      <option value="all">All Statuses</option>
+      <option value="Critical">🔴 Critical</option>
+      <option value="Paused">⚫ Paused</option>
+      <option value="Monitor">🟡 Monitor</option>
+      <option value="Healthy">🟢 Healthy</option>
+      <option value="Incomplete Verification">🔵 Incomplete</option>
+    </select>
+    <select class="fsel" id="r3AvailFilter" onchange="applyR3Filters()">
+      <option value="all">All Availability</option>
+      <option value="out of stock">Out of Stock</option>
+      <option value="in stock">In Stock</option>
+    </select>
+    <input class="srch" id="r3Search" type="text" placeholder="🔍 Search product ID, title, SKU…" oninput="applyR3Filters()">
+    <button class="rbtn" onclick="resetR3Filters()">↺ Reset</button>
+    <button class="rbtn" onclick="r3ExportCsv()" style="margin-left:auto;" aria-label="Export filtered table as CSV">⬇ Export CSV</button>
+    <span style="font-size:11px;color:var(--muted);" id="r3Count"></span>
+  </div>
+
+  <div class="tbox">
+    <div class="tbar">
+      <span id="r3TbarCount">Loading…</span>
+      <span style="font-size:11px;">product_performance JOIN shopify_listings JOIN merchant_products · 2026-06-15 – 2026-07-15 · variant grain</span>
+    </div>
+    <div class="scroll" id="r3Scroll">
+      <table style="min-width:1800px;" id="r3Table">
+        <thead><tr>
+          <th class="num">#</th>
+          <th>Campaign</th>
+          <th>Product Item ID</th>
+          <th>SKU</th>
+          <th>Product Title</th>
+          <th>GMC Availability</th>
+          <th class="num">Shopify Stock</th>
+          <th class="num">GMC Price £</th>
+          <th class="num">Shopify Price £</th>
+          <th class="num">Price Diff</th>
+          <th>Price Match?</th>
+          <th>GMC Currency</th>
+          <th>Title Updated?</th>
+          <th>Description Updated?</th>
+          <th>Disapproval Status</th>
+          <th>Primary Condition</th>
+          <th>All Conditions</th>
+          <th>Status</th>
+          <th>Required Action</th>
+          <th class="num">30d Cost £</th>
+          <th class="num">30d Conv.</th>
+          <th>Latest Data</th>
+        </tr></thead>
+        <tbody id="r3Tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>Feed Health — Condition Distribution</h3>
+      <canvas id="r3CondChart" style="max-height:240px;"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>Stock Level Distribution</h3>
+      <canvas id="r3StockChart" style="max-height:240px;"></canvas>
+    </div>
+  </div>
+
+  <div class="val-box" id="r3Insights">
+    <h3>Rule-Based Feed Insights <span class="sec-tag" style="font-size:10px;background:#f1f5f9;border-radius:4px;padding:2px 7px;margin-left:8px;">Live · From verified source data</span></h3>
+    <div id="r3InsightList"></div>
+  </div>
+
+  <div class="val-box">
+    <h3>Validation — 2026-07-15 · Requirement 3 Build</h3>
+    <div class="val-grid">
+      <div class="vi"><div class="vd pass"></div><strong>Both campaigns verified</strong> — THEE_GEMS (23714290257) and THEE_MYSTERY (23684837882) confirmed</div>
+      <div class="vi"><div class="vd pass"></div><strong>CSV inspected</strong> — Req 3 defined as 7-day post-optimisation feed review; 7 conditions/thresholds extracted</div>
+      <div class="vi"><div class="vd pass"></div><strong>Date serial 46211 converted</strong> — Excel serial 46211 = 2026-07-08 (2026-07-01 + 7 days); documented, not displayed raw</div>
+      <div class="vi"><div class="vd pass"></div><strong>Req 1 dependency checked</strong> — empty state (no events); 7-day scheduling section shows empty state correctly</div>
+      <div class="vi"><div class="vd pass"></div><strong>Req 1 regression</strong> — panel-1 and all Req 1 JS functions untouched</div>
+      <div class="vi"><div class="vd pass"></div><strong>Req 2 regression</strong> — panel-2 and all r2* functions untouched</div>
+      <div class="vi"><div class="vd pass"></div><strong>Shopify source verified</strong> — listings.shopify_listings · site=UK · channel=LEDSone · item_id join confirmed</div>
+      <div class="vi"><div class="vd pass"></div><strong>GMC source verified</strong> — google_ads.merchant_products · country=GB preference · price, availability, title confirmed</div>
+      <div class="vi"><div class="vd pass"></div><strong>Price match formula</strong> — round(gmc,2) === round(shopify,2) AND currency === 'GBP'; Currency Mismatch when EUR vs GBP</div>
+      <div class="vi"><div class="vd pass"></div><strong>Condition precedence implemented</strong> — Missing GMC &gt; Disapproved &gt; Out of Stock &gt; Availability Mismatch &gt; Price Mismatch &gt; Warning &gt; Incomplete &gt; Healthy</div>
+      <div class="vi"><div class="vd pass"></div><strong>No sample CSV data as live records</strong> — SKU-001, SKU-004, SKU-006 not in dashboard; all data from PostgreSQL</div>
+      <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> — SELECT only</div>
+      <div class="vi"><div class="vd warn"></div><strong>GMC eligibility status unavailable</strong> — asset_group_listing_group_filters has 0 rows for Theekshy; Incomplete Verification shown</div>
+      <div class="vi"><div class="vd pass"></div><strong>Title/Description verification — manual entry</strong> — click Edit on any row to record Yes / No / Not Checked; saved to localStorage key <code>theekshy_r3_content_checks</code>; drives condition priority (No → Monitor · Not Checked → Incomplete Verification · both Yes required for Healthy)</div>
+      <div class="vi"><div class="vd warn"></div><strong>GMC multi-feed duplicates</strong> — some products have multiple GMC records; GB record preferred via ROW_NUMBER PARTITION BY product_id; 54855777878402 has EUR/ES record only</div>
+      <div class="vi"><div class="vd warn"></div><strong>R3_DATA corrected 2026-07-15</strong> — initial build contained fabricated data; replaced with verified PostgreSQL values (real product IDs, costs, prices, stocks, GMC currencies)</div>
+    </div>
+  </div>
+
+  <div class="fn">
+    <h3>Business Rules — Requirement 3 (source: requirement CSV 2026-07-15)</h3>
+    <ul>
+      <li><strong>Rule 1 — Review Window:</strong> Feed Review Date = Date Last Optimised + 7 calendar days → Schedule feed health check on review date</li>
+      <li><strong>Rule 2 — Disapproved Item:</strong> GMC Policy Status = Disapproved → 🔴 Critical → Identify policy violation; fix feed attribute; resubmit</li>
+      <li><strong>Rule 3 — Out of Stock:</strong> Stock Level = 0 OR GMC Availability = Out of Stock → ⚫ Paused → Pause ads; update feed on restock; re-enable after verification</li>
+      <li><strong>Rule 4 — Price Mismatch:</strong> GMC price ≠ Shopify price (GBP, round to 2dp) → 🔴 Critical → Sync Shopify price to GMC feed</li>
+      <li><strong>Rule 5 — Title/Description Needs Update:</strong> Title or description not yet reflecting the optimisation made → 🟡 Monitor → Update title/description in Shopify + GMC; resync feed</li>
+      <li><strong>Rule 6 — Warning Present:</strong> GMC active feed warning → 🟡 Monitor → Resolve before it becomes a disapproval</li>
+      <li><strong>Rule 7 — Feed Healthy:</strong> Approved + In Stock + Price Matched + No Warnings → 🟢 Healthy → No action; next review in 30 days</li>
+      <li><strong>Condition Precedence:</strong> Missing Product Mapping &gt; Disapproved Item &gt; Missing GMC Record &gt; Out of Stock &gt; Availability Mismatch &gt; Price Mismatch &gt; Warning Present &gt; Title/Description &gt; Incomplete Verification &gt; Feed Healthy &gt; Not Due</li>
+      <li><strong>Data Note:</strong> GMC eligibility data not yet synced for Theekshy campaigns (asset_group_listing_group_filters = 0 rows). Feed Healthy status requires complete verification — "Incomplete Verification" shown where checks cannot be completed.</li>
+    </ul>
+  </div>
+
+  <footer class="site">Theekshy · Google Ads Performance Dashboard · Requirement 3 · LEDSone UK · Built by Piranav · Sources: google_ads.product_performance · listings.shopify_listings · google_ads.merchant_products · Latest Data: 2026-07-15</footer>
+</div>
+
+<!-- PANEL 4 — REQUIREMENT 4: STOCK STATUS SNAPSHOT -->
+<div class="tab-panel" id="panel-4" role="tabpanel" aria-labelledby="nav-4">
+
+  <!-- Date preset + loading (Req 4) -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;">
+    <button class="rbtn" onclick="thFeedPreset(7)">7d</button>
+    <button class="rbtn" onclick="thFeedPreset(30)">30d</button>
+    <button class="rbtn" onclick="thFeedPreset(60)">60d</button>
+    <button class="rbtn" onclick="thFeedPreset(90)">90d</button>
+    <button class="rbtn" onclick="thRefreshFeed()">↺ Refresh</button>
+    <span id="th-feed-range-4" style="font-size:12px;color:var(--muted);margin-left:4px;"></span>
+  </div>
+  <div id="th-loading-r4" style="display:none;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;margin-bottom:10px;font-size:13px;">⏳ Loading stock data…</div>
+  <div id="th-error-r4"   style="display:none;padding:12px;background:#fff0f0;border:1px solid #fca5a5;border-radius:10px;margin-bottom:10px;font-size:13px;color:#dc2626;"></div>
+
+  <div class="snapshot-banner" role="alert">
+    <span class="sb-icon">📸</span>
+    <span><strong>Snapshot – Not Live</strong> &nbsp;·&nbsp; This view shows a manually refreshed stock snapshot. No live feed or scheduler is connected. No advertising actions are taken automatically. All recommendations are advisory only.</span>
+  </div>
+
+  <header class="rpt">
+    <div class="req-tag">Requirement 4 · Stock Status Snapshot &amp; Action Queue · LEDSone UK</div>
+    <h1>Theekshy — Stock Status Snapshot &amp; Action Queue</h1>
+    <div class="sub">
+      Staff: <strong>Theekshy</strong> &nbsp;·&nbsp;
+      Platform: <strong>Google Ads / Shopify / GMC (UK)</strong> &nbsp;·&nbsp;
+      Campaigns: <strong>THEE_GEMS · THEE_MYSTERY</strong> &nbsp;·&nbsp;
+      Mode: <strong>Snapshot – Not Live</strong> &nbsp;·&nbsp;
+      Latest Source Data: <strong>2026-07-15</strong>
+    </div>
+    <div class="chips">
+      <span class="chip">📸 Snapshot – Not Live</span>
+      <span class="chip">THEE_GEMS · THEE_MYSTERY</span>
+      <span class="chip">Top 30 products/campaign · 30d spend</span>
+      <span class="chip">Source: inventory · shopify_listings · product_performance</span>
+      <span class="chip">Refresh: Manual</span>
+    </div>
+  </header>
+
+  <div class="freshness-panel" aria-label="Data freshness information">
+    <div class="fp-item"><strong>Mode</strong>Snapshot – Not Live</div>
+    <div class="fp-item"><strong>Latest Source Data Date</strong>2026-07-15 (inventory · shopify · product_performance)</div>
+    <div class="fp-item"><strong>Generated At</strong><span id="r4GeneratedAt">—</span></div>
+    <div class="fp-item"><strong>Refresh Method</strong>Manual</div>
+    <div class="fp-item"><strong>Data Sources Used</strong>inventory.local_inventory_current_stock_location_wise · listings.shopify_listings · google_ads.merchant_products · google_ads.product_performance</div>
+  </div>
+
+  <div class="info-note">
+    <strong>Source:</strong> Inventory stock from <code>inventory.local_inventory_current_stock_location_wise</code> (SUM all locations) via <code>inventory.products.sku</code>.
+    Shopify listings from <code>listings.shopify_listings</code> (site=UK · channel=LEDSone). GMC from <code>google_ads.merchant_products</code> (country=GB).
+    Campaign product list: <code>google_ads.product_performance</code> (2026-06-15 to 2026-07-14 · top 30 by spend per campaign · 60 products total).
+    <strong>Rule:</strong> Null inventory stock → Unknown; never treated as zero stock. Missing GMC record → GMC Data Unavailable; not a mismatch.
+  </div>
+
+  <div class="info-note" style="border-color:#fde68a;background:#fffbeb;color:#92400e;">
+    <strong>⚠ Known Limitations:</strong>
+    <ul style="margin-top:6px;padding-left:18px;">
+      <li><strong>20 Unknown products:</strong> Parent-level Shopify product IDs have no variant SKU → inventory join not possible → classified as Unknown.</li>
+      <li><strong>GMC coverage limited:</strong> 3 of 60 products have verified GMC records (country=GB). 57 show "GMC Data Unavailable" — this is a data gap, not a confirmed feed problem.</li>
+      <li><strong>No Coming Soon products:</strong> No verified restock or launch dates found in any PostgreSQL source. Zero-stock products without confirmed dates are Out of Stock.</li>
+    </ul>
+  </div>
+
+  <div class="sec-title">Stock Summary <span class="sec-tag">60 products · Top 30/campaign · inventory.local_inventory_current_stock_location_wise · 2026-07-15</span></div>
+  <div class="kpis" id="r4KpiCards"></div>
+
+  <div class="controls">
+    <select class="fsel" id="r4CampFilter" aria-label="Filter by campaign" onchange="applyR4Filters()">
+      <option value="all">All Campaigns</option>
+      <option value="23714290257">THEE_GEMS (ORDERS&gt;1)</option>
+      <option value="23684837882">THEE_MYSTERY (Non-Converting)</option>
+    </select>
+    <select class="fsel" id="r4StockFilter" aria-label="Filter by stock status" onchange="applyR4Filters()">
+      <option value="all">All Stock Statuses</option>
+      <option value="Out of Stock">🔴 Out of Stock</option>
+      <option value="Going to Finish">🟡 Going to Finish</option>
+      <option value="In Stock">🟢 In Stock</option>
+      <option value="Coming Soon">🔵 Coming Soon</option>
+      <option value="Unknown">⚪ Unknown</option>
+    </select>
+    <select class="fsel" id="r4GmcFilter" aria-label="Filter by GMC comparison" onchange="applyR4Filters()">
+      <option value="all">All GMC Comparisons</option>
+      <option value="GMC Match">✓ GMC Match</option>
+      <option value="Critical Mismatch">⚠ Critical Mismatch</option>
+      <option value="Warning Mismatch">⚠ Warning Mismatch</option>
+      <option value="GMC Data Unavailable">— GMC Data Unavailable</option>
+      <option value="Data Review Required">? Data Review Required</option>
+    </select>
+    <select class="fsel" id="r4ActFilter" aria-label="Filter by action decision" onchange="applyR4Filters()">
+      <option value="all">All Action Decisions</option>
+      <option value="Pending Review">Pending Review</option>
+      <option value="Keep Ads Running">Keep Ads Running</option>
+      <option value="Restock Alert Required">Restock Alert Required</option>
+      <option value="Budget Trim Required">Budget Trim Required</option>
+      <option value="Pause Required">Pause Required</option>
+      <option value="GMC Update Required">GMC Update Required</option>
+      <option value="Waiting for Restock">Waiting for Restock</option>
+      <option value="Completed – Evidence Verified">Completed – Evidence Verified</option>
+    </select>
+    <input class="srch" id="r4Search" type="text" placeholder="🔍 Search product ID, SKU or name…" aria-label="Search products" oninput="applyR4Filters()">
+    <button class="rbtn" onclick="resetR4Filters()">↺ Reset</button>
+    <button class="rbtn" onclick="r4ExportCsv()" style="margin-left:auto;" aria-label="Export filtered table as CSV">⬇ Export CSV</button>
+  </div>
+
+  <div class="tbox">
+    <div class="tbar">
+      <span id="r4TbarCount">Loading…</span>
+      <span style="font-size:11px;">inventory.local_inventory_current_stock_location_wise · listings.shopify_listings · google_ads.merchant_products · 2026-07-15 · Snapshot – Not Live</span>
+    </div>
+    <div class="scroll">
+      <table style="min-width:1850px;width:100%;border-collapse:collapse;font-size:12.5px;" id="r4Table" aria-label="Stock status table">
+        <thead><tr>
+          <th class="num" style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);">#</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:130px;">Product / Variant ID</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:130px;">Variant SKU</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:230px;">Product Name · Variant</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:90px;">Campaign</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);text-align:right;min-width:100px;">Current Stock</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:110px;">Restock/Launch Date</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:140px;">Stock Status</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:110px;">GMC Availability</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:175px;">GMC Comparison</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:230px;">Recommended Action</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:210px;">Action Decision</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:230px;">Notes</th>
+          <th style="background:#f0f3f8;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);min-width:110px;">Latest Data Date</th>
+        </tr></thead>
+        <tbody id="r4Tbody"><tr><td colspan="14" style="text-align:center;padding:40px;color:var(--muted);">Initialising…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="local-note">
+    📝 <strong>Action Decision notes are stored in browser localStorage only</strong> — local dashboard annotation, not written to PostgreSQL, Shopify, Google Ads or GMC. Decisions labelled "Completed – Evidence Verified" require manual verification with evidence before being recorded.
+  </div>
+
+  <div class="val-box">
+    <h3>Validation — 2026-07-16 · Requirement 4 Snapshot Build</h3>
+    <div class="val-grid">
+      <div class="vi"><div class="vd pass"></div><strong>Existing assets inspected</strong> — Req 1/2/3 tabs, JS, CSS intact before this edit; no existing R4 logic found in AIOS or pages</div>
+      <div class="vi"><div class="vd pass"></div><strong>Authoritative PostgreSQL sources inspected</strong> — inventory.local_inventory_current_stock_location_wise · inventory.products · listings.shopify_listings · google_ads.product_performance · google_ads.merchant_products</div>
+      <div class="vi"><div class="vd pass"></div><strong>No fake or sample data</strong> — all 60 product rows from verified read-only PostgreSQL query (top 30 per campaign by 30d spend)</div>
+      <div class="vi"><div class="vd pass"></div><strong>Missing inventory = Unknown (rule implemented)</strong> — 20 parent-level listings with null SKU → Unknown; never treated as zero</div>
+      <div class="vi"><div class="vd pass"></div><strong>Out of Stock confirmed</strong> — 1 product: 55116252905858 (THEE_GEMS · White/No · inv=0 · shopify_qty=0 · £12.04 30d spend)</div>
+      <div class="vi"><div class="vd pass"></div><strong>Going to Finish confirmed</strong> — 2 products: 55112543961474 (inv=5) · 55262186242434 (inv=10, boundary inclusive)</div>
+      <div class="vi"><div class="vd pass"></div><strong>In Stock confirmed</strong> — 38 products with verified inv &gt; 10 from inventory.local_inventory_current_stock_location_wise</div>
+      <div class="vi"><div class="vd pass"></div><strong>Coming Soon = 0</strong> — no verified restock or launch dates in any PostgreSQL source; no products qualify</div>
+      <div class="vi"><div class="vd pass"></div><strong>GMC comparison verified</strong> — 1 GMC Match (43032723456250 · gmc=in stock · inv=42 · In Stock); 2 Unknown+GMC available (no inv join → Data Review Required)</div>
+      <div class="vi"><div class="vd pass"></div><strong>No invented GMC availability</strong> — 57/60 products show GMC Data Unavailable; 3 have verified merchant_products records (country=GB)</div>
+      <div class="vi"><div class="vd pass"></div><strong>Only 2 authorised campaigns</strong> — THEE_GEMS (23714290257) · THEE_MYSTERY (23684837882)</div>
+      <div class="vi"><div class="vd pass"></div><strong>No action falsely Completed</strong> — all decisions default to Pending Review; localStorage only; Completed requires evidence</div>
+      <div class="vi"><div class="vd pass"></div><strong>Snapshot mode prominently labelled</strong> — orange banner, freshness panel, footer</div>
+      <div class="vi"><div class="vd pass"></div><strong>Requirements 1–3 intact</strong> — panels 1, 2, 3 and all JS functions unchanged</div>
+      <div class="vi"><div class="vd pass"></div><strong>Filters, search, CSV export implemented</strong> — 4 filter dropdowns · SKU/name search · CSV download with all required columns</div>
+      <div class="vi"><div class="vd pass"></div><strong>No PostgreSQL writes</strong> — SELECT only</div>
+      <div class="vi"><div class="vd pass"></div><strong>No git push / no deployment</strong> — local file update only</div>
+      <div class="vi"><div class="vd warn"></div><strong>20 Unknown products</strong> — parent-level Shopify IDs (no variant SKU) → inventory join not possible; variant-level IDs required for full coverage</div>
+      <div class="vi"><div class="vd warn"></div><strong>GMC coverage 5%</strong> — only 3/60 products have google_ads.merchant_products records (country=GB); 57 show GMC Data Unavailable</div>
+    </div>
+  </div>
+
+  <div class="fn">
+    <h3>Business Rules — Requirement 4 (source: specification 2026-07-16 · priority order)</h3>
+    <ul>
+      <li><strong>Rule 1 — Coming Soon:</strong> Product not live AND verified future launch/restock date confirmed in source → Stock: Coming Soon · Visual: Upcoming · Action: Prepare assets; hold spend until launch. <em>0 products qualify — no verified dates found in any source.</em></li>
+      <li><strong>Rule 2 — Out of Stock:</strong> Sellable stock = 0, no Coming Soon → 🔴 Pause Required → Pause ads; update GMC to Out of Stock; exclude from PMax listing group until restocked.</li>
+      <li><strong>Rule 3 — Going to Finish:</strong> Sellable stock 1–10 (inclusive) → 🟡 Monitor → Restock alert; consider budget trim on high-spend campaigns; do not pause.</li>
+      <li><strong>Rule 4 — In Stock:</strong> Sellable stock &gt; 10 → 🟢 Healthy → No action; keep ads running normally.</li>
+      <li><strong>Rule 5 — Unknown:</strong> Inventory data missing or cannot be safely joined → ⚪ Data Review Required → Verify inventory source before any advertising decision. Never treat missing stock as zero.</li>
+      <li><strong>GMC Comparison:</strong> Critical Mismatch: Out of Stock + GMC "in stock". Warning Mismatch: In Stock + GMC "out of stock". No GMC data → GMC Data Unavailable (not a mismatch). Unknown stock + GMC data → Data Review Required.</li>
+      <li><strong>Stock source authority:</strong> inventory.local_inventory_current_stock_location_wise (SUM across all warehouse locations) via inventory.products.sku. Variant-level grain preferred over parent-level.</li>
+    </ul>
+  </div>
+
+  <footer class="site">Theekshy · Google Ads Performance Dashboard · Requirement 4 · Stock Status Snapshot · LEDSone UK · Built by Piranav · Source: inventory · shopify_listings · merchant_products · Latest Data: 2026-07-15 · Mode: Snapshot – Not Live</footer>
+</div>
+
+<!-- PANEL 5 — Requirement 5: Product Optimisation (ROAS + Stock; GA4 unavailable) -->
+<div class="tab-panel" id="panel-5" role="tabpanel" aria-labelledby="nav-5">
+  <header class="rpt">
+    <div class="req-tag">Requirement 5 · Product Optimisation · LEDSone UK</div>
+    <h1>Product Optimisation — ROAS &amp; Stock Status</h1>
+    <p class="sub">Product-level ROAS conditions from your CSV action plan. GA4 metrics (Bounce Rate, ATC Rate, Engagement Time) require GA4 integration — marked as unavailable below.</p>
+    <div class="chips">
+      <span class="chip">Source: google_ads.product_performance</span>
+      <span class="chip">Campaigns: THEE_GEMS · THEE_MYSTERY</span>
+      <span class="chip" style="background:#fef3c7;color:#92400e;">⚠ GA4 Bounce Rate / ATC / Engagement Time — Not Available in DB</span>
+    </div>
+  </header>
+
+  <div class="info-note">
+    <strong>CSV Business Rules applied (what this system can compute):</strong><br>
+    🔴 Critical: ROAS &lt; 3.0× | High Spend / 0 Conversions | Out of Stock (paused ads)<br>
+    🟡 Monitor: ROAS 3.0–4.5×<br>
+    🟢 Healthy: ROAS ≥ 4.5×<br>
+    <strong>Not available:</strong> Bounce Rate (&gt;70% Critical), ATC Rate (&lt;2% Critical), Avg Engagement Time (&lt;30s Critical) — GA4 schema not present in DB.
+  </div>
+
+  <div id="r5Loading" style="text-align:center;padding:32px;color:var(--muted);display:none;">⏳ Loading product data…</div>
+  <div id="r5Error" style="display:none;background:#fff5f5;border:1px solid #fecaca;border-radius:10px;padding:12px 16px;font-size:13px;color:#991b1b;margin-bottom:12px;"></div>
+
+  <!-- KPIs -->
+  <div class="kpis" id="r5Kpis" style="display:none;">
+    <div class="kpi err"><div class="lbl">🔴 Critical</div><div class="val" id="r5KpiCrit">—</div><div class="note">ROAS &lt;3.0× or 0 conv</div></div>
+    <div class="kpi warn"><div class="lbl">🟡 Monitor</div><div class="val" id="r5KpiMon">—</div><div class="note">ROAS 3.0–4.5×</div></div>
+    <div class="kpi ok"><div class="lbl">🟢 Healthy</div><div class="val" id="r5KpiHealth">—</div><div class="note">ROAS ≥ 4.5×</div></div>
+    <div class="kpi info"><div class="lbl">⚫ Paused (OOS)</div><div class="val" id="r5KpiPaused">—</div><div class="note">Out of stock</div></div>
+    <div class="kpi info"><div class="lbl">Total Products</div><div class="val" id="r5KpiTotal">—</div><div class="note">Period tracked</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="controls" id="r5Controls" style="display:none;">
+    <select class="fsel" id="r5CampFilter" onchange="r5Render()">
+      <option value="all">All Campaigns</option>
+      <option value="THEE_GEMS">THEE_GEMS</option>
+      <option value="THEE_MYSTERY">THEE_MYSTERY</option>
+    </select>
+    <select class="fsel" id="r5StatusFilter" onchange="r5Render()">
+      <option value="all">All Statuses</option>
+      <option value="critical">🔴 Critical</option>
+      <option value="monitor">🟡 Monitor</option>
+      <option value="healthy">🟢 Healthy</option>
+      <option value="paused">⚫ Paused</option>
+    </select>
+    <input class="srch" id="r5Search" type="text" placeholder="🔍 Search product ID or title…" oninput="r5Render()">
+    <span id="r5CountLabel" style="font-size:12px;color:var(--muted);margin-left:auto;"></span>
+  </div>
+
+  <!-- Product Table -->
+  <div class="tbox" id="r5TableBox" style="display:none;">
+    <div class="tbar">
+      <span>Product Optimisation Action Log</span>
+      <span style="font-size:11px;">Source: google_ads.product_performance · Rolling 30d · CSV thresholds applied</span>
+    </div>
+    <div class="scroll">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px;">
+        <thead>
+          <tr style="background:#f8f9fb;">
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">#</th>
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Product</th>
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Campaign</th>
+            <th style="padding:9px 10px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Cost £</th>
+            <th style="padding:9px 10px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Conv Value £</th>
+            <th style="padding:9px 10px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">ROAS ×</th>
+            <th style="padding:9px 10px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Conv.</th>
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Stock</th>
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">GA4 Bounce</th>
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">GA4 ATC%</th>
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Condition</th>
+            <th style="padding:9px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);">Status</th>
+          </tr>
+        </thead>
+        <tbody id="r5Tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /panel-5 -->
+
+</div><!-- /wrap -->
+
+<!-- R3 Content Verification Modal — outside all panels so display:none panels don't hide it -->
+<div id="r3ContentModal" role="dialog" aria-modal="true" aria-labelledby="r3ModalTitle" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:10px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
+    <h3 id="r3ModalTitle" style="margin:0 0 4px;font-size:15px;">Edit Content Verification</h3>
+    <p id="r3ModalProduct" style="font-size:11px;color:#666;margin:0 0 18px;word-break:break-word;"></p>
+    <div style="margin-bottom:14px;">
+      <label for="r3TuSelect" style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Title Updated?</label>
+      <select id="r3TuSelect" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+        <option value="Not Checked">Not Checked</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+    <div style="margin-bottom:22px;">
+      <label for="r3DuSelect" style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Description Updated?</label>
+      <select id="r3DuSelect" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+        <option value="Not Checked">Not Checked</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="r3CloseContentModal()" style="padding:7px 18px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:13px;">Cancel</button>
+      <button onclick="r3SaveContentModal()" style="padding:7px 18px;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// TAB NAVIGATION
+var r2ChartsBuilt=false,r3ChartsBuilt=false;
+function showTab(n){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+  document.getElementById('panel-'+n).classList.add('active');
+  var btn=document.getElementById('nav-'+n);
+  btn.classList.add('active');btn.setAttribute('aria-selected','true');
+  if(n===2&&!r2ChartsBuilt){r2ChartsBuilt=true;buildR2Charts();}
+  if(n===3){
+    // Always re-populate table when tab 3 is activated (failsafe for init errors)
+    if(!r3Filtered||!r3Filtered.length){r3Filtered=R3_DATA.slice();}
+    renderR3Table();
+    renderR3Kpis();
+    buildR3Insights();
+    if(!r3ChartsBuilt){r3ChartsBuilt=true;buildR3Charts();}
+  }
+  if(n===4){
+    if(!r4Filtered||!r4Filtered.length){r4Filtered=R4_DATA.slice();}
+    renderR4Table();
+    renderR4Kpis();
+  }
+}
+
+// TAB SCROLL — mouse wheel on nav or page scrolls between tabs
+(function(){
+  var TABS=4,activeTab=1;
+  function currentTab(){
+    var btn=document.querySelector('.nav-btn.active');
+    return btn?parseInt(btn.id.replace('nav-',''),10):1;
+  }
+  function goTab(dir){
+    var t=currentTab()+dir;
+    if(t<1)t=TABS;
+    if(t>TABS)t=1;
+    showTab(t);
+    var btn=document.getElementById('nav-'+t);
+    if(btn)btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }
+  var nav=document.querySelector('.top-nav');
+  // Wheel on nav bar — horizontal scroll + tab switch
+  nav.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var delta=e.deltaY||e.deltaX;
+    goTab(delta>0?1:-1);
+  },{passive:false});
+})();
+
+// DRAG-TO-SCROLL — click and drag horizontal scroll for Req3 table
+(function(){
+  function enableDragScroll(el){
+    el.classList.add('drag-scroll');
+    var down=false,startX=0,scrollLeft=0;
+    el.addEventListener('mousedown',function(e){
+      if(e.button!==0)return;
+      down=true;startX=e.pageX-el.offsetLeft;scrollLeft=el.scrollLeft;
+      el.classList.add('dragging');
+    });
+    document.addEventListener('mouseup',function(){
+      if(!down)return;
+      down=false;el.classList.remove('dragging');
+    });
+    el.addEventListener('mouseleave',function(){
+      if(!down)return;
+      down=false;el.classList.remove('dragging');
+    });
+    el.addEventListener('mousemove',function(e){
+      if(!down)return;
+      e.preventDefault();
+      var x=e.pageX-el.offsetLeft;
+      el.scrollLeft=scrollLeft-(x-startX);
+    });
+  }
+  enableDragScroll(document.getElementById('r2Scroll'));
+  enableDragScroll(document.getElementById('r3Scroll'));
+})();
+
+// BUSINESS RULES
+function safeRoas(cv,cost){if(!cost||cost===0)return null;return cv/cost;}
+function safeCtr(clicks,imp){if(!imp||imp===0)return null;return(clicks/imp)*100;}
+function getProductStatus(cost,conv,roas){
+  if(cost>0&&conv===0)return'Critical';
+  if(roas===null)return'N/A';
+  if(roas<3.0)return'Critical';
+  if(roas<4.5)return'Monitor';
+  return'Healthy';
+}
+function getProductCondition(cost,conv,roas){
+  if(cost>0&&conv===0)return'High Spend / 0 Conversions';
+  if(roas===null)return'No Cost';
+  if(roas<3.0)return'ROAS Below Target (<3.0)';
+  if(roas<4.5)return'ROAS Borderline (3.0–4.5)';
+  return'ROAS Healthy (≥4.5)';
+}
+function getProductAction(status,condition){
+  if(condition==='High Spend / 0 Conversions')return'Audit PDP; exclude from listing group';
+  if(status==='Critical')return'Lower tROAS; review bidding strategy';
+  if(status==='Monitor')return'Hold budget; review in 72 hrs';
+  if(status==='Healthy')return'Maintain or scale budget 10–20%';
+  return'—';
+}
+function fmtRoas(v){return v===null?'N/A':v.toFixed(2)+'x';}
+function fmtPct(v){return v===null?'N/A':v.toFixed(2)+'%';}
+function badgeHtml(status){
+  var cls=status==='Critical'?'badge-critical':status==='Monitor'?'badge-monitor':status==='Healthy'?'badge-healthy':'badge-pending';
+  var icon=status==='Critical'?'🔴':status==='Monitor'?'🟡':status==='Healthy'?'🟢':'🔵';
+  return'<span class="badge '+cls+'" role="status">'+icon+' '+status+'</span>';
+}
+
+// AUTHORITATIVE CAMPAIGNS
+var CAMPAIGNS={
+  '23714290257':{name:'Pmax UK | Theekshy | Shoptimised | THEE_GEMS | ORDERS>1 | MCV | UK',label:'THEE_GEMS',budget:20},
+  '23684837882':{name:'Pmax | Theekshy | Shoptimised | THEE_MYSTERY| Non-Converting | MCV | UK',label:'THEE_MYSTERY',budget:10}
+};
+
+// ── Live state (populated by API) ────────────────────────────────────────────
+var DAILY=[];
+var PRODUCTS=[];
+var PROD_META={};
+var R3_DATA=[];
+var R4_DATA=[];
+var TH_FROM='', TH_TO='';
+var TH_LOADED={r1:false,r2:false,r3:false,r4:false};
+var TH_R2_FROM='', TH_R2_TO='';
+
+// ─── R2 STATE VARIABLES ───────────────────────────────────────
+var R2_RANGES={
+  '7d': {label:'Last 7 days', days:7, data:null},
+  '30d':{label:'Last 30 days',days:30,data:null},
+  '60d':{label:'Last 60 days',days:60,data:null},
+  '90d':{label:'Last 90 days',days:90,data:null}
+};
+var R2_ACTIVE_RANGE='7d';
+var R2_CURRENT_DATA=[];
+var R2_LATEST_DATE='';
+var R2_REVIEW_DATE=new Date().toISOString().slice(0,10);
+var R2_CAMP={'23714290257':'THEE_GEMS','23684837882':'THEE_MYSTERY'};
+var R2_BRAND=['ledsone','ledson','ledone','led stone','ledstone','ledsone ltd','ledsone lighting','ledsone reviews','ledsone uk'];
+var R2_OFF=['scales','weighing scales','bathroom scales','human weighing scales','best scales','tile level','tile leveling','tile leveler','tile levellers','tile leveling system','tile leveling wedges','tile leveling clips','tile levelers','reusable tile leveling system','tile levels','porcelain tile levellers','3mm floor tile spacers'];
+
+// ─── R2 CLASSIFICATION FUNCTIONS ─────────────────────────────
+function r2SafeCtr(clicks,imp){if(!imp||imp===0)return null;return(clicks/imp)*100;}
+function r2IsBrand(term){var t=(term||'').toLowerCase();return R2_BRAND.some(function(b){return t.indexOf(b)>=0;});}
+function r2IsOffCategory(term){var t=(term||'').toLowerCase();return R2_OFF.some(function(o){return t===o||t.indexOf(o)>=0;});}
+
+function r2Classify(term,imp,clicks,conv,cv,cost){
+  var ctr=r2SafeCtr(clicks,imp);
+  var hasCost=cost!==null&&cost!==undefined&&cost>0;
+  if(r2IsOffCategory(term)){
+    return{intent:'Off-Category',wasteTerm:hasCost?'£'+cost.toFixed(2)+' wasted':'No Cost',compTerm:'No',condition:'Off-Category — Irrelevant Term',condTrig:'Off-Category exclusion',decision:'Remove',status:'Critical',reason:'Term irrelevant to lighting/decking product range. Budget wasted on irrelevant searches.',action:'Add as negative keyword immediately. Verify during next weekly review.'};
+  }
+  if(r2IsBrand(term)){
+    var bs=conv>0?'Healthy':'Monitor';
+    var cpaStr=hasCost&&conv>0?'CPA: £'+(cost/conv).toFixed(2):'';
+    return{intent:'Branded',wasteTerm:'No',compTerm:'No',condition:'LEDSone Brand Term',condTrig:conv>0?'Rule 3 — Conv > 0 (branded)':'Brand term — Monitor conv',decision:'Keep',status:bs,reason:'LEDSone own brand term. Protect brand search share. '+cpaStr,action:conv>0?'Keep and monitor CPA during next weekly review. Consider exact match to protect placement.':'Keep and monitor conversion rate on branded traffic during next weekly review.'};
+  }
+  if(conv>0){
+    var cpaStr2=hasCost?'CPA: £'+(cost/conv).toFixed(2)+'.':'CPA: N/A (no cost data).';
+    return{intent:'Commercial',wasteTerm:'No',compTerm:'Competitor List Required',condition:'Rule 3 — Converting Term',condTrig:'Conv > 0',decision:'Keep',status:'Healthy',reason:'Term produced conversions. '+cpaStr2,action:'Keep and monitor CPA during the next weekly review.'};
+  }
+  if(hasCost&&cost>10){
+    return{intent:'Commercial',wasteTerm:'Yes — £'+cost.toFixed(2)+' spent, 0 conv',compTerm:'Competitor List Required',condition:'Rule 1 — Waste Term',condTrig:'Cost > £10 AND Conv = 0',decision:'Remove',status:'Critical',reason:'Spent £'+cost.toFixed(2)+' with zero conversions. Waste threshold exceeded.',action:'Add as negative keyword immediately. Review impression share lost before removing.'};
+  }
+  var wt=hasCost?'£'+cost.toFixed(2)+' (below £10 threshold)':'No cost data';
+  if(ctr!==null&&ctr<1.5){
+    return{intent:'Commercial',wasteTerm:wt,compTerm:'Competitor List Required',condition:'Rule 4 + Low CTR',condTrig:'Conv=0, CTR<1.5%',decision:'Monitor',status:'Critical',reason:'CTR below 1.5%. No conversions.'+(hasCost?' Cost £'+cost.toFixed(2)+' — below £1 waste threshold.':' No cost data.'),action:'Improve headline relevance; refresh GMC title. Review again next week.'};
+  }
+  if(ctr!==null&&ctr<3.0){
+    return{intent:'Commercial',wasteTerm:wt,compTerm:'Competitor List Required',condition:'Rule 4 — Borderline CTR',condTrig:'Conv=0, CTR 1.5–3%',decision:'Monitor',status:'Monitor',reason:'Borderline CTR (1.5–3%). No conversions.'+(hasCost?' Cost £'+cost.toFixed(2)+'.':''),action:'Insufficient spend for removal. A/B test ad copy. Review again next week.'};
+  }
+  return{intent:'Commercial',wasteTerm:wt,compTerm:'Competitor List Required',condition:'Rule 4 — High CTR, 0 Conv',condTrig:'Conv=0, CTR≥3%',decision:'Monitor',status:'Monitor',reason:'High CTR but no conversions.'+(hasCost?' Cost £'+cost.toFixed(2)+'.':' No cost data.')+' Check landing page relevance.',action:'Insufficient spend for removal; review again next week. Check landing page and product-term alignment.'};
+}
+
+function r2SetRange(range){
+  R2_ACTIVE_RANGE=range;
+  R2_CURRENT_DATA=R2_RANGES[range].data||[];
+  ['7d','30d','60d','90d'].forEach(function(r){
+    var btn=document.getElementById('r2Btn_'+r);
+    if(!btn)return;
+    btn.className=btn.className.replace(' r2-active','');
+    if(r===range)btn.className+=' r2-active';
+  });
+  var meta=R2_RANGES[range];
+  var el=document.getElementById('r2DateMeta');
+  if(el&&meta.start)el.innerHTML='Review Date: <strong>'+R2_REVIEW_DATE+'</strong> &nbsp;·&nbsp; Range: <strong>'+meta.label+'</strong> &nbsp;·&nbsp; Start: <strong>'+meta.start+'</strong> &nbsp;·&nbsp; End: <strong>'+meta.end+'</strong> &nbsp;·&nbsp; Latest Data: <strong>'+R2_LATEST_DATE+'</strong>';
+  resetR2Filters();
+  renderR2Kpis();
+}
+
+var r2SortCol='clicks',r2SortDir=-1;
+function sortR2(col){if(r2SortCol===col)r2SortDir*=-1;else{r2SortCol=col;r2SortDir=-1;}applyR2Filters();}
+
+var r2FilteredRows=[];
+function applyR2Filters(){
+  var cf=(document.getElementById('r2CampFilter')||{value:'all'}).value;
+  var df=(document.getElementById('r2DecFilter')||{value:'all'}).value;
+  var sf=(document.getElementById('r2StatusFilter')||{value:'all'}).value;
+  var sv=((document.getElementById('r2Search')||{value:''}).value||'').toLowerCase().trim();
+  var rows=R2_CURRENT_DATA.filter(function(r){
+    if(cf!=='all'&&r[1]!==cf)return false;
+    var c=r2Classify(r[0],r[2],r[3],r[4],r[5],r[6]!==undefined?r[6]:null);
+    if(df!=='all'&&c.decision!==df)return false;
+    if(sf!=='all'&&c.status!==sf)return false;
+    if(sv&&r[0].toLowerCase().indexOf(sv)<0)return false;
+    return true;
+  });
+  rows.sort(function(a,b){
+    if(r2SortCol==='term'){return r2SortDir*(a[0]<b[0]?-1:a[0]>b[0]?1:0);}
+    var cm={imp:2,clicks:3,conv:4,cv:5,cost:6};
+    var av=a[cm[r2SortCol]]||0,bv=b[cm[r2SortCol]]||0;
+    return r2SortDir*(av-bv);
+  });
+  r2FilteredRows=rows;
+  var cnt=document.getElementById('r2Count');if(cnt)cnt.textContent=rows.length+' of '+R2_CURRENT_DATA.length+' terms';
+  var tbar=document.getElementById('r2TbarCount');if(tbar)tbar.textContent='Showing '+rows.length+' of '+R2_CURRENT_DATA.length+' terms · '+R2_RANGES[R2_ACTIVE_RANGE].label+' · Latest: '+R2_LATEST_DATE;
+  var tbody=document.getElementById('r2Tbody');if(!tbody)return;
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="25" style="text-align:center;padding:32px;color:var(--muted);">No search terms match the current filters. <button class="rbtn" onclick="resetR2Filters()" style="margin-left:8px;">↺ Reset</button></td></tr>';
+    return;
+  }
+  var nrd=new Date();nrd.setDate(nrd.getDate()+7);var nrdStr=nrd.toISOString().slice(0,10);
+  tbody.innerHTML=rows.map(function(r,i){
+    var term=r[0],cid=r[1],imp=r[2],clk=r[3],conv=r[4],cv=r[5],cost=r[6]!==undefined?r[6]:null;
+    var c=r2Classify(term,imp,clk,conv,cv,cost);
+    var ctr=r2SafeCtr(clk,imp);
+    var ctrD=ctr===null?'N/A':ctr.toFixed(1)+'%';
+    var costD=cost!==null&&cost>0?'£'+cost.toFixed(2):'—';
+    var cpa=cost!==null&&cost>0&&conv>0?'£'+(cost/conv).toFixed(2):'N/A';
+    var roas=cost!==null&&cost>0&&cv>0?'£'+(cv/cost).toFixed(2)+'x':'N/A';
+    var campCol=cid==='23714290257'?'#1f5eff':'#7c3aed';
+    var rc=c.status==='Critical'?'row-critical':c.status==='Healthy'?'row-healthy':'row-monitor';
+    var bc=c.status==='Critical'?'badge-critical':c.status==='Healthy'?'badge-healthy':'badge-monitor';
+    var dot=c.status==='Critical'?'🔴':c.status==='Healthy'?'🟢':'🟡';
+    var decCls=c.decision==='Remove'?'badge-critical':c.decision==='Keep'?'badge-healthy':'badge-monitor';
+    return '<tr class="'+rc+'">'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;color:var(--muted);">'+(i+1)+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">'+R2_REVIEW_DATE+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">'+R2_RANGES[R2_ACTIVE_RANGE].label+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);"><span style="background:'+campCol+'18;color:'+campCol+';border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">'+(R2_CAMP[cid]||cid)+'</span></td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-weight:600;min-width:160px;">'+term+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">PMax</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;">'+c.intent+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;">'+imp.toLocaleString()+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;">'+clk+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;">'+ctrD+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;">'+costD+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;">'+(conv>0?parseFloat(conv).toFixed(2):'—')+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;color:var(--muted);">'+cpa+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;">'+(cv>0?'£'+parseFloat(cv).toFixed(2):'—')+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;color:var(--muted);">'+roas+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">'+c.wasteTerm+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">'+c.compTerm+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;"><span class="badge '+bc+'">'+c.condition+'</span></td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">'+c.condTrig+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);"><span class="badge '+decCls+'">'+c.decision+'</span></td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11.5px;min-width:180px;">'+c.reason+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11.5px;min-width:180px;">'+c.action+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);"><span class="badge '+bc+'">'+dot+' '+c.status+'</span></td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);">'+R2_LATEST_DATE+'</td>'
+      +'</tr>';
+  }).join('');
+  renderR2Insights(rows);
+}
+
+function resetR2Filters(){
+  var cf=document.getElementById('r2CampFilter');if(cf)cf.value='all';
+  var df=document.getElementById('r2DecFilter');if(df)df.value='all';
+  var sf=document.getElementById('r2StatusFilter');if(sf)sf.value='all';
+  var sr=document.getElementById('r2Search');if(sr)sr.value='';
+  r2SortCol='clicks';r2SortDir=-1;
+  applyR2Filters();
+}
+
+function renderR2Kpis(){
+  var total=R2_CURRENT_DATA.length,removals=0,keeps=0,monitors=0,totalConv=0,totalCv=0,wasteCost=0,totalSpend=0,wasteTermCount=0;
+  R2_CURRENT_DATA.forEach(function(r){
+    var cost=r[6]!==undefined?r[6]:null;
+    var c=r2Classify(r[0],r[2],r[3],r[4],r[5],cost);
+    if(c.decision==='Remove')removals++;
+    else if(c.decision==='Keep')keeps++;
+    else monitors++;
+    totalConv+=parseFloat(r[4]||0);
+    totalCv+=parseFloat(r[5]||0);
+    if(cost&&cost>0)totalSpend+=cost;
+    if(cost&&cost>10&&parseFloat(r[4]||0)===0){wasteCost+=cost;wasteTermCount++;}
+  });
+  var el=document.getElementById('r2Kpis');if(!el)return;
+  el.innerHTML=
+    '<div class="kpi info"><div class="lbl">Terms Reviewed</div><div class="val">'+total+'</div><div class="note">'+R2_RANGES[R2_ACTIVE_RANGE].label+'</div></div>'+
+    '<div class="kpi info"><div class="lbl">Total Spend</div><div class="val">£'+totalSpend.toFixed(2)+'</div><div class="note">pmax_campaign_search_term_data</div></div>'+
+    '<div class="kpi '+(wasteCost>0?'err':'ok')+'"><div class="lbl">Waste Spend</div><div class="val">'+(wasteCost>0?'£'+wasteCost.toFixed(2):'£0.00')+'</div><div class="note">'+(wasteTermCount>0?wasteTermCount+' waste term(s) — Rule 1 active':'No waste above £10')+' </div></div>'+
+    '<div class="kpi err"><div class="lbl">Remove Decisions</div><div class="val">'+removals+'</div><div class="note">Off-category + waste terms</div></div>'+
+    '<div class="kpi ok"><div class="lbl">Keep Decisions</div><div class="val">'+keeps+'</div><div class="note">Conv > 0 or branded</div></div>'+
+    '<div class="kpi"><div class="lbl">Monitor Decisions</div><div class="val">'+monitors+'</div><div class="note">Rule 4 — below waste threshold</div></div>'+
+    '<div class="kpi ok"><div class="lbl">Weekly Review</div><div class="val">Active</div><div class="note">Review: '+R2_REVIEW_DATE+'</div></div>'+
+    '<div class="kpi info"><div class="lbl">Total Conv. Value</div><div class="val">£'+totalCv.toFixed(2)+'</div><div class="note">'+totalConv.toFixed(2)+' conversions</div></div>';
+}
+
+function renderR2Insights(rows){
+  var el=document.getElementById('r2InsightsList');if(!el)return;
+  var r2c=function(r){return r2Classify(r[0],r[2],r[3],r[4],r[5],r[6]!==undefined?r[6]:null);};
+  var removals=rows.filter(function(r){return r2c(r).decision==='Remove';});
+  var keeps=rows.filter(function(r){return r2c(r).decision==='Keep';});
+  var offCat=rows.filter(function(r){return r2c(r).intent==='Off-Category';});
+  var branded=rows.filter(function(r){return r2c(r).intent==='Branded';});
+  var wasteTerms=rows.filter(function(r){var c=r2c(r);return c.condition==='Rule 1 — Waste Term';});
+  var critLowCtr=rows.filter(function(r){var c=r2c(r);return c.status==='Critical'&&c.intent!=='Off-Category'&&c.condition!=='Rule 1 — Waste Term';});
+  var insights=[];
+  if(wasteTerms.length){var wt=wasteTerms.reduce(function(s,r){return s+(r[6]||0);},0);insights.push('🔴 <strong>'+wasteTerms.length+' waste term(s)</strong> (Rule 1: Cost > £1 AND Conv = 0). Total wasted spend: £'+wt.toFixed(2)+'. Add as negative keywords immediately.');}
+  if(offCat.length)insights.push('⚠ <strong>'+offCat.length+' off-category term(s)</strong> flagged for removal. Irrelevant to the lighting product range — add as negative keywords immediately.');
+  if(branded.length)insights.push('🏷 <strong>'+branded.length+' LEDSone brand term(s)</strong> detected. Monitor conversion rate on branded traffic to protect brand search share.');
+  if(keeps.length)insights.push('🟢 <strong>'+keeps.length+' Keep decision(s)</strong> — terms with verified conversions or brand terms. Consider exact match for high performers.');
+  if(critLowCtr.length)insights.push('🔴 <strong>'+critLowCtr.length+' low CTR term(s)</strong> (CTR < 1.5%) with no conversions. Improve headline relevance and GMC title.');
+  insights.push('ℹ <strong>Competitor brand list not found</strong> in AIOS. Rule 2 (Competitor Term) is blocked until an authoritative list is provided.');
+  el.innerHTML=insights.map(function(ins){return'<p style="margin-bottom:8px;">'+ins+'</p>';}).join('');
+}
+
+var r2CondChartInst=null,r2CtrChartInst=null;
+function buildR2Charts(){
+  if(r2CondChartInst){r2CondChartInst.destroy();r2CondChartInst=null;}
+  if(r2CtrChartInst){r2CtrChartInst.destroy();r2CtrChartInst=null;}
+  var condCounts={Critical:0,Monitor:0,Healthy:0};
+  R2_CURRENT_DATA.forEach(function(r){condCounts[r2Classify(r[0],r[2],r[3],r[4],r[5],r[6]!==undefined?r[6]:null).status]++;});
+  var condEl=document.getElementById('r2CondChart');
+  if(condEl){
+    r2CondChartInst=new Chart(condEl,{
+      type:'doughnut',
+      data:{labels:['🔴 Critical','🟡 Monitor','🟢 Healthy'],datasets:[{data:[condCounts.Critical,condCounts.Monitor,condCounts.Healthy],backgroundColor:['#fca5a5','#fcd34d','#6ee7b7'],borderColor:['#b91c1c','#d97706','#059669'],borderWidth:1}]},
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+    });
+  }
+  var top15=R2_CURRENT_DATA.slice().sort(function(a,b){return b[3]-a[3];}).slice(0,15);
+  var ctrEl=document.getElementById('r2CtrChart');
+  if(ctrEl){
+    r2CtrChartInst=new Chart(ctrEl,{
+      type:'bar',
+      data:{
+        labels:top15.map(function(r){return r[0].length>22?r[0].slice(0,20)+'…':r[0];}),
+        datasets:[{label:'CTR%',data:top15.map(function(r){var c=r2SafeCtr(r[3],r[2]);return c===null?0:parseFloat(c.toFixed(1));}),backgroundColor:top15.map(function(r){var c=r2SafeCtr(r[3],r[2]);if(c===null)return'#9ca3af';return c<1.5?'rgba(220,38,38,0.7)':c<3?'rgba(217,119,6,0.7)':'rgba(5,150,105,0.7)';}),borderRadius:3}]
+      },
+      options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'CTR %'},beginAtZero:true},y:{ticks:{font:{size:9}}}}}
+    });
+  }
+}
+
+
+// COMPUTE CAMPAIGN SUMMARY
+function computeSummary(cid){
+  var rows=DAILY.filter(function(r){return r.cid===cid;});
+  var tCost=0,tClicks=0,tImp=0,tConv=0,tCV=0;
+  rows.forEach(function(r){tCost+=r.cost;tClicks+=r.clicks;tImp+=r.imp;tConv+=r.conv;tCV+=r.cv;});
+  return{tCost:tCost,tClicks:tClicks,tImp:tImp,tConv:tConv,tCV:tCV,roas:safeRoas(tCV,tCost),ctr:safeCtr(tClicks,tImp)};
+}
+
+// RENDER CAMPAIGN CARDS
+function renderCampaignCards(){
+  var html='';
+  Object.keys(CAMPAIGNS).forEach(function(cid){
+    var info=CAMPAIGNS[cid];
+    var s=computeSummary(cid);
+    var status=s.roas===null?'Monitor':s.roas<3?'Critical':s.roas<4.5?'Monitor':'Healthy';
+    var action=status==='Critical'?'Lower tROAS; review bidding strategy':status==='Monitor'?'Hold budget; review again in 72 hrs':'Maintain or scale budget 10–20%';
+    var valCls=status==='Critical'?'critical-text':status==='Monitor'?'monitor-text':'healthy-text';
+    var roasDisp=s.roas===null?'N/A':s.roas.toFixed(2)+'x';
+    html+='<div class="c-card '+status.toLowerCase()+'">'
+      +'<div class="c-card-header"><div>'
+      +'<div class="c-card-name">'+info.name+'</div>'
+      +'<div class="c-card-id">ID: '+cid+' · Budget: £'+info.budget+'/day · Thresholds: Critical &lt;3.0× · Monitor 3.0–4.5× · Healthy ≥4.5×</div>'
+      +'</div>'+badgeHtml(status)+'</div>'
+      +'<div class="c-metrics">'
+      +'<div class="c-m"><div class="c-m-lbl">ROAS (30d)</div><div class="c-m-val '+valCls+'">'+roasDisp+'</div></div>'
+      +'<div class="c-m"><div class="c-m-lbl">Cost</div><div class="c-m-val">£'+s.tCost.toFixed(2)+'</div></div>'
+      +'<div class="c-m"><div class="c-m-lbl">Conv. Value</div><div class="c-m-val">£'+s.tCV.toFixed(2)+'</div></div>'
+      +'<div class="c-m"><div class="c-m-lbl">Conversions</div><div class="c-m-val">'+s.tConv.toFixed(2)+'</div></div>'
+      +'</div>'
+      +'<div class="c-action '+status.toLowerCase()+'">⚡ Required Action: '+action+'</div>'
+      +'</div>';
+  });
+  document.getElementById('campaignCards').innerHTML=html;
+}
+
+// RENDER KPI CARDS
+function renderKpis(){
+  var g=computeSummary('23714290257');
+  var m=computeSummary('23684837882');
+  var tCost=g.tCost+m.tCost;
+  var tCV=g.tCV+m.tCV;
+  var overallRoas=safeRoas(tCV,tCost);
+  var critProds=PRODUCTS.filter(function(p){return p.cost>0&&p.conv===0;}).length;
+  var cards=[
+    {lbl:'Total Cost (30d)',val:'£'+tCost.toFixed(2),note:'Both campaigns',cls:'info'},
+    {lbl:'Total Conv. Value (30d)',val:'£'+tCV.toFixed(2),note:'Both campaigns',cls:'ok'},
+    {lbl:'Combined ROAS',val:overallRoas?overallRoas.toFixed(2)+'x':'N/A',note:'Weighted by cost',cls:'warn'},
+    {lbl:'THEE_GEMS ROAS',val:g.roas?g.roas.toFixed(2)+'x':'N/A',note:'Target 4.00x · Monitor',cls:'warn'},
+    {lbl:'THEE_MYSTERY ROAS',val:m.roas?m.roas.toFixed(2)+'x':'N/A',note:'Target 2.50x · Critical',cls:'err'},
+    {lbl:'Critical Products',val:critProds,note:'High spend / 0 conv (top 30 each)',cls:'err'},
+    {lbl:'Optimisation Events',val:'0',note:'No action log in DB · Empty state',cls:'info'},
+    {lbl:'Latest Data Date',val:'2026-07-14',note:'google_ads.campaign_performance',cls:'ok'}
+  ];
+  document.getElementById('kpiCards').innerHTML=cards.map(function(c){
+    return'<div class="kpi '+c.cls+'"><div class="lbl">'+c.lbl+'</div><div class="val">'+c.val+'</div><div class="note">'+c.note+'</div></div>';
+  }).join('');
+}
+
+// PRODUCT TABLE
+
+// Derives product title from Shopify URL handle (fallback for child products without parent join)
+function r1HandleToTitle(url){
+  var m=url.match(/\/products\/([^/?#]+)/);
+  if(!m)return null;
+  var h=m[1];
+  h=h.replace(/-\d{4,}$/, ''); // strip trailing internal product ref e.g. -6040
+  return h.split('-').map(function(w){return w?w[0].toUpperCase()+w.slice(1):''}).join(' ');
+}
+
+// Returns full display title string for a product ID using PROD_META
+function r1ProductTitle(pid){
+  var m=PROD_META[pid];
+  if(!m)return null;
+  var base=m.ptitle||(m.url?r1HandleToTitle(m.url):null);
+  if(base&&m.variant)base=base+' — '+m.variant;
+  return base||null;
+}
+
+// Returns HTML for the Product Name cell in the Req1 table
+function r1NameCell(p){
+  var m=PROD_META[p.pid]||{};
+  var title=r1ProductTitle(p.pid);
+  var sku=m.sku||null;
+  var url=m.url||null;
+  var safe=function(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  if(title){
+    var link=url?'<a href="'+url+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" title="ID: '+p.pid+'">'+safe(title)+'</a>':safe(title);
+    return link+(sku?'<br><span style="font-family:monospace;font-size:10px;color:var(--muted);">'+safe(sku)+'</span>':'');
+  }
+  if(sku){
+    return '<span>'+safe(sku)+'</span><br><span style="font-size:10px;color:var(--muted);">ID: '+p.pid+'</span>';
+  }
+  return '<span style="color:var(--muted);font-style:italic;font-size:11px;" title="No catalogue match">ID: '+p.pid+'</span>';
+}
+
+var filteredProds=[];
+function applyProdFilters(){
+  var camp=document.getElementById('campaignFilter').value;
+  var status=document.getElementById('statusFilter').value;
+  var search=document.getElementById('prodSearch').value.trim().toLowerCase();
+  filteredProds=PRODUCTS.filter(function(p){
+    if(camp!=='all'&&p.cid!==camp)return false;
+    var roas=safeRoas(p.cv,p.cost);
+    var pStatus=getProductStatus(p.cost,p.conv,roas);
+    if(status!=='all'&&pStatus!==status)return false;
+    if(search){
+      var pTitle=(r1ProductTitle(p.pid)||'').toLowerCase();
+      var pSku=((PROD_META[p.pid]||{}).sku||'').toLowerCase();
+      if(!p.pid.toLowerCase().includes(search)&&!pTitle.includes(search)&&!pSku.includes(search))return false;
+    }
+    return true;
+  });
+  renderProdTable();
+}
+function resetProdFilters(){
+  document.getElementById('campaignFilter').value='all';
+  document.getElementById('statusFilter').value='all';
+  document.getElementById('prodSearch').value='';
+  filteredProds=PRODUCTS.slice();
+  renderProdTable();
+}
+function renderProdTable(){
+  var tbody=document.getElementById('prodTbody');
+  document.getElementById('prodTbarCount').textContent='Showing '+filteredProds.length+' of '+PRODUCTS.length+' products (top 30 per campaign by spend)';
+  if(filteredProds.length===0){
+    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--muted);">No products match the current filters.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=filteredProds.map(function(p,i){
+    var roas=safeRoas(p.cv,p.cost);
+    var ctr=safeCtr(p.clicks,p.imp);
+    var status=getProductStatus(p.cost,p.conv,roas);
+    var condition=getProductCondition(p.cost,p.conv,roas);
+    var action=getProductAction(status,condition);
+    var rowCls=status==='Critical'?'row-critical':status==='Monitor'?'row-monitor':status==='Healthy'?'row-healthy':'';
+    var camp=CAMPAIGNS[p.cid];
+    var nameCell=r1NameCell(p);
+    return'<tr class="'+rowCls+'">'
+      +'<td class="num">'+(i+1)+'</td>'
+      +'<td><span style="font-size:11px;font-weight:700;">'+camp.label+'</span></td>'
+      +'<td style="font-family:monospace;font-size:11px;">'+p.pid+'</td>'
+      +'<td>'+nameCell+'</td>'
+      +'<td class="num">£'+p.cost.toFixed(2)+'</td>'
+      +'<td class="num">'+p.clicks+'</td>'
+      +'<td class="num">'+p.imp.toLocaleString()+'</td>'
+      +'<td class="num">'+p.conv.toFixed(3)+'</td>'
+      +'<td class="num">£'+p.cv.toFixed(2)+'</td>'
+      +'<td class="num">'+fmtRoas(roas)+'</td>'
+      +'<td class="num">'+fmtPct(ctr)+'</td>'
+      +'<td>'+badgeHtml(status)+'</td>'
+      +'<td style="font-size:11px;">'+condition+'</td>'
+      +'<td style="font-size:11px;">'+action+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// CHARTS
+function buildCharts(){
+  var dates=[...new Set(DAILY.map(function(r){return r.d;}))].sort();
+  var gemsRows=dates.map(function(d){return DAILY.find(function(r){return r.d===d&&r.cid==='23714290257';})||null;});
+  var mystRows=dates.map(function(d){return DAILY.find(function(r){return r.d===d&&r.cid==='23684837882';})||null;});
+  var roasGems=gemsRows.map(function(r){return r?safeRoas(r.cv,r.cost):null;});
+  var roasMyst=mystRows.map(function(r){return r?safeRoas(r.cv,r.cost):null;});
+  var lbls=dates.map(function(d){return d.slice(5);});
+  new Chart(document.getElementById('roasChart'),{
+    type:'line',
+    data:{labels:lbls,datasets:[
+      {label:'THEE_GEMS',data:roasGems,borderColor:'#1f5eff',backgroundColor:'rgba(31,94,255,0.07)',tension:0.3,pointRadius:3,spanGaps:true},
+      {label:'THEE_MYSTERY',data:roasMyst,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.05)',tension:0.3,pointRadius:3,spanGaps:true}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{title:{display:true,text:'ROAS (x)',font:{size:11}},beginAtZero:true},x:{ticks:{font:{size:9},maxRotation:45}}}}
+  });
+  var cvGems=gemsRows.map(function(r){return r?r.cv:null;});
+  var cvMyst=mystRows.map(function(r){return r?r.cv:null;});
+  new Chart(document.getElementById('cvChart'),{
+    type:'bar',
+    data:{labels:lbls,datasets:[
+      {label:'THEE_GEMS',data:cvGems,backgroundColor:'rgba(31,94,255,0.72)',borderRadius:3},
+      {label:'THEE_MYSTERY',data:cvMyst,backgroundColor:'rgba(220,38,38,0.62)',borderRadius:3}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{title:{display:true,text:'Conv. Value (£)',font:{size:11}},beginAtZero:true},x:{ticks:{font:{size:9},maxRotation:45}}}}
+  });
+}
+
+
+// ── Stock status rules (priority order per spec) ─────────
+function r4StockStatus(inv){
+  if(inv===null)return'Unknown';
+  if(inv===0)return'Out of Stock';
+  if(inv>=1&&inv<=10)return'Going to Finish';
+  return'In Stock';
+}
+
+// ── GMC comparison ────────────────────────────────────────
+function r4GmcComp(status,gmc_avail){
+  if(!gmc_avail)return'GMC Data Unavailable';
+  if(status==='Unknown')return'Data Review Required';
+  var gmcIn=gmc_avail==='in stock';
+  if(status==='Out of Stock'&&gmcIn)return'Critical Mismatch';
+  if((status==='In Stock'||status==='Going to Finish')&&!gmcIn)return'Warning Mismatch';
+  return'GMC Match';
+}
+
+// ── Recommended action ────────────────────────────────────
+function r4RecommendedAction(status,gmc){
+  if(status==='Out of Stock')return'Pause Ads Immediately; Set GMC to Out of Stock; Exclude from PMax Listing Group';
+  if(status==='Going to Finish'){
+    var base='Send Restock Alert; Consider Budget Trim; Do Not Pause Yet';
+    return(gmc==='Critical Mismatch'||gmc==='Warning Mismatch')?base+'; GMC Update Required':base;
+  }
+  if(status==='In Stock'){
+    return(gmc==='Critical Mismatch'||gmc==='Warning Mismatch')?'GMC Update Required':'Keep Ads Running';
+  }
+  if(status==='Coming Soon')return'Set GMC to Preorder; Prepare Asset Group + PDP; Hold Spend Until Launch';
+  return'Data Review Required';
+}
+
+// ── Badge HTML ────────────────────────────────────────────
+function r4StockBadge(s){
+  var map={'In Stock':['badge-in-stock','🟢'],'Going to Finish':['badge-gtf','🟡'],'Out of Stock':['badge-oos','🔴'],'Coming Soon':['badge-upcoming','🔵'],'Unknown':['badge-unk','⚪']};
+  var c=map[s]||['badge-unk','⚪'];
+  return'<span class="badge '+c[0]+'" role="status">'+c[1]+' '+s+'</span>';
+}
+function r4GmcBadge(g){
+  var map={'GMC Match':['badge-gmc-match','✓ '],'Critical Mismatch':['badge-gmc-crit','⚠ '],'Warning Mismatch':['badge-gmc-warn','⚠ '],'GMC Data Unavailable':['badge-gmc-na','— '],'Data Review Required':['badge-unk','? ']};
+  var c=map[g]||['badge-gmc-na','— '];
+  return'<span class="badge '+c[0]+'">'+c[1]+g+'</span>';
+}
+
+// ── localStorage action decisions ─────────────────────────
+var R4_LS_KEY='r4_decisions_theekshy';
+function r4GetDecision(pid){
+  try{var s=JSON.parse(localStorage.getItem(R4_LS_KEY)||'{}');return s[pid]||'Pending Review';}catch(e){return'Pending Review';}
+}
+function r4SetDecision(pid,val){
+  try{var s=JSON.parse(localStorage.getItem(R4_LS_KEY)||'{}');s[pid]=val;localStorage.setItem(R4_LS_KEY,JSON.stringify(s));}catch(e){}
+  renderR4Table();
+}
+
+// ── Filter + render state ─────────────────────────────────
+var r4Filtered=[];
+function applyR4Filters(){
+  var camp=document.getElementById('r4CampFilter').value;
+  var stk=document.getElementById('r4StockFilter').value;
+  var gmc=document.getElementById('r4GmcFilter').value;
+  var act=document.getElementById('r4ActFilter').value;
+  var srch=(document.getElementById('r4Search').value||'').toLowerCase().trim();
+  r4Filtered=R4_DATA.filter(function(r){
+    if(camp!=='all'&&r.cid!==camp)return false;
+    var s=r4StockStatus(r.inv);
+    if(stk!=='all'&&s!==stk)return false;
+    var g=r4GmcComp(s,r.gmc_avail);
+    if(gmc!=='all'&&g!==gmc)return false;
+    var d=r4GetDecision(r.pid);
+    if(act!=='all'&&d!==act)return false;
+    if(srch&&!r.pid.includes(srch)&&!(r.sku||'').toLowerCase().includes(srch)&&!r.vtitle.toLowerCase().includes(srch))return false;
+    return true;
+  });
+  renderR4Table();
+  renderR4Kpis();
+}
+function resetR4Filters(){
+  ['r4CampFilter','r4StockFilter','r4GmcFilter','r4ActFilter'].forEach(function(id){document.getElementById(id).value='all';});
+  document.getElementById('r4Search').value='';
+  r4Filtered=R4_DATA.slice();
+  renderR4Table();
+  renderR4Kpis();
+}
+
+// ── Row notes helper ──────────────────────────────────────
+function r4Notes(r,status){
+  if(status==='Out of Stock')return'Active 30d spend £'+r.cost.toFixed(2)+' — zero stock confirmed. Pause ads immediately; update GMC to Out of Stock; exclude from PMax listing group until restocked.';
+  if(status==='Going to Finish')return'Stock critically low ('+r.inv+' units). Send restock alert to Sonya/Dilaksi; consider trimming budget on high-spend campaigns; do not pause yet.';
+  if(status==='Unknown')return r.sku?'SKU present but not in inventory.products — join failed.':'Parent-level Shopify ID; no variant SKU available for inventory join.';
+  return'';
+}
+
+// ── Render table ──────────────────────────────────────────
+function renderR4Table(){
+  var tbody=document.getElementById('r4Tbody');
+  var cnt=document.getElementById('r4TbarCount');
+  if(!tbody)return;
+  cnt.textContent='Showing '+r4Filtered.length+' of '+R4_DATA.length+' products (top 30/campaign by 30d spend)';
+  if(r4Filtered.length===0){
+    tbody.innerHTML='<tr><td colspan="14"><div class="empty-state"><div class="es-icon">📦</div><h3>No products match current filters</h3><p>Try adjusting the campaign, stock status, GMC comparison or action decision filters.</p></div></td></tr>';
+    return;
+  }
+  var decOpts=['Pending Review','Keep Ads Running','Restock Alert Required','Budget Trim Required','Pause Required','GMC Update Required','Waiting for Restock','Completed – Evidence Verified'];
+  tbody.innerHTML=r4Filtered.map(function(r,i){
+    var s=r4StockStatus(r.inv);
+    var g=r4GmcComp(s,r.gmc_avail);
+    var act=r4RecommendedAction(s,g);
+    var dec=r4GetDecision(r.pid);
+    var rowCls=s==='Out of Stock'?'row-critical':s==='Going to Finish'?'row-monitor':s==='In Stock'?'row-healthy':'';
+    var stockCell=r.inv===null?'<span style="color:var(--muted);font-style:italic">Unknown</span>':r.inv;
+    var gmcCell=r.gmc_avail||'<span style="color:var(--muted)">—</span>';
+    var decSel='<select style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--card);cursor:pointer;" onchange="r4SetDecision(\''+r.pid+'\',this.value)" aria-label="Action decision for '+r.pid+'">';
+    decOpts.forEach(function(o){decSel+='<option'+(dec===o?' selected':'')+'>'+o+'</option>';});
+    decSel+='</select>';
+    return'<tr class="'+rowCls+'">'
+      +'<td class="num">'+(i+1)+'</td>'
+      +'<td style="font-family:monospace;font-size:10.5px;">'+r.pid+'</td>'
+      +'<td style="font-size:11px;word-break:break-all;">'+(r.sku||'<span style="color:var(--muted)">—</span>')+'</td>'
+      +'<td style="max-width:230px;word-break:break-word;font-size:11.5px;"><a href="'+r.url+'" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;" title="Open product page">'+r.vtitle+'</a></td>'
+      +'<td style="font-size:11px;font-weight:700;white-space:nowrap;">'+r.camp+'</td>'
+      +'<td class="num" style="font-weight:700;">'+stockCell+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;">—</td>'
+      +'<td>'+r4StockBadge(s)+'</td>'
+      +'<td style="font-size:11.5px;">'+gmcCell+'</td>'
+      +'<td>'+r4GmcBadge(g)+'</td>'
+      +'<td style="font-size:11px;max-width:220px;">'+act+'</td>'
+      +'<td>'+decSel+'</td>'
+      +'<td style="font-size:11px;color:var(--muted);max-width:230px;">'+r4Notes(r,s)+'</td>'
+      +'<td style="font-size:11px;white-space:nowrap;">'+r.upd+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ── Render KPI summary ────────────────────────────────────
+function renderR4Kpis(){
+  var el=document.getElementById('r4KpiCards');
+  if(!el)return;
+  var data=r4Filtered.length?r4Filtered:R4_DATA;
+  var inStock=0,gtf=0,oos=0,cs=0,unk=0,gmcMis=0,actReq=0;
+  data.forEach(function(r){
+    var s=r4StockStatus(r.inv);
+    var g=r4GmcComp(s,r.gmc_avail);
+    if(s==='In Stock')inStock++;
+    else if(s==='Going to Finish'){gtf++;actReq++;}
+    else if(s==='Out of Stock'){oos++;actReq++;}
+    else if(s==='Coming Soon')cs++;
+    else unk++;
+    if(g==='Critical Mismatch'||g==='Warning Mismatch')gmcMis++;
+  });
+  el.innerHTML=[
+    {l:'Total Monitored',v:data.length,n:'Top 30/campaign · 30d spend · both campaigns',c:'info'},
+    {l:'In Stock',v:inStock,n:'Inventory > 10 · No action needed',c:'ok'},
+    {l:'Going to Finish',v:gtf,n:'Inventory 1–10 · Restock alert required',c:'warn'},
+    {l:'Out of Stock',v:oos,n:'Inventory = 0 · Pause ads required',c:'err'},
+    {l:'Coming Soon',v:cs,n:'Verified launch date · Hold spend',c:'info'},
+    {l:'Unknown Stock',v:unk,n:'Inventory data unavailable · Review source',c:'warn'},
+    {l:'GMC Mismatches',v:gmcMis,n:'Calc. status ≠ GMC availability (where data exists)',c:'err'},
+    {l:'Actions Required',v:actReq,n:'Out of Stock + Going to Finish combined',c:'err'}
+  ].map(function(k){
+    return'<div class="kpi '+k.c+'"><div class="lbl">'+k.l+'</div><div class="val">'+k.v+'</div><div class="note">'+k.n+'</div></div>';
+  }).join('');
+}
+
+// ─── R3 FUNCTIONS ──────────────────────────────────────────
+var R3_CMAP={'23714290257':'THEE_GEMS','23684837882':'THEE_MYSTERY'};
+function r3PriceMatch(gmcP,shopP,gmcCur){
+  if(gmcP===null||shopP===null)return'Unable to Verify';
+  if(gmcCur&&gmcCur!=='GBP')return'Currency Mismatch';
+  return Math.round(gmcP*100)===Math.round(shopP*100)?'Yes':'No';
+}
+function r3PriceDiff(gmcP,shopP,gmcCur){
+  if(gmcP===null||shopP===null||!gmcCur||gmcCur!=='GBP')return null;
+  return +(gmcP-shopP).toFixed(2);
+}
+var R3_CONTENT_KEY='theekshy_r3_content_checks';
+var r3ContentStore={};
+function r3ContentLoad(){
+  try{var raw=localStorage.getItem(R3_CONTENT_KEY);r3ContentStore=raw?JSON.parse(raw):{};}
+  catch(e){r3ContentStore={};}
+}
+function r3GetChecks(pid){
+  var d=r3ContentStore[pid];
+  return{tu:(d&&d.tu)||'Not Checked',du:(d&&d.du)||'Not Checked'};
+}
+function r3SaveChecks(pid,tu,du){
+  r3ContentStore[pid]={tu:tu,du:du};
+  try{localStorage.setItem(R3_CONTENT_KEY,JSON.stringify(r3ContentStore));}
+  catch(e){console.error('r3SaveChecks failed',e);}
+}
+var R3_PREC=['Missing Product Mapping','Disapproved Item','Missing GMC Record','Out of Stock','Availability Mismatch','Price Mismatch','Currency Mismatch','Warning Present','Title/Description Needs Update','Incomplete Verification','Feed Healthy','Not Due'];
+function r3GetConditions(r,tu,du){
+  if(tu===undefined)tu='Not Checked';
+  if(du===undefined)du='Not Checked';
+  var c=[];
+  if(!r.gmc_avail&&r.gmc_price===null)c.push('Missing GMC Record');
+  if(r.shop_stock!==null){
+    if(r.shop_stock===0&&r.gmc_avail==='out of stock')c.push('Out of Stock');
+    if(r.shop_stock===0&&r.gmc_avail==='in stock')c.push('Availability Mismatch');
+    if(r.shop_stock>0&&r.gmc_avail==='out of stock')c.push('Availability Mismatch');
+  }
+  var pm=r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency);
+  if(pm==='No')c.push('Price Mismatch');
+  if(pm==='Currency Mismatch')c.push('Currency Mismatch');
+  if(tu==='No'||du==='No'){c.push('Title/Description Needs Update');}
+  else if(tu==='Not Checked'||du==='Not Checked'){c.push('Incomplete Verification');}
+  if(c.length===0)c.push('Feed Healthy');
+  return c;
+}
+function r3Primary(conds){
+  for(var i=0;i<R3_PREC.length;i++){if(conds.indexOf(R3_PREC[i])>-1)return R3_PREC[i];}
+  return'Incomplete Verification';
+}
+function r3Status(primary){
+  var map={'Missing Product Mapping':'Critical','Disapproved Item':'Critical','Missing GMC Record':'Monitor','Out of Stock':'Paused','Availability Mismatch':'Critical','Price Mismatch':'Critical','Currency Mismatch':'Monitor','Warning Present':'Monitor','Title/Description Needs Update':'Monitor','Incomplete Verification':'Incomplete Verification','Feed Healthy':'Healthy','Not Due':'Healthy'};
+  return map[primary]||'Monitor';
+}
+function r3Action(primary){
+  var map={
+    'Missing GMC Record':'Submit product to Google Merchant Center; verify feed coverage',
+    'Out of Stock':'Pause ads for this product; monitor stock; re-enable when restocked',
+    'Availability Mismatch':'Sync GMC availability with Shopify stock level immediately',
+    'Price Mismatch':'Align GMC price to Shopify price; resync feed',
+    'Currency Mismatch':'Check feed configuration; ensure UK feed uses GBP only',
+    'Title/Description Needs Update':'Update title/description in Shopify + GMC; resync feed',
+    'Incomplete Verification':'Manually verify whether the optimised title and description are live.',
+    'Feed Healthy':'No action required; next feed review in 30 days'
+  };
+  return map[primary]||'Investigate feed record';
+}
+function r3StatusBadge(st){
+  var cls={'Critical':'badge-critical','Paused':'badge-critical','Monitor':'badge-monitor','Healthy':'badge-healthy','Incomplete Verification':'badge-pending'};
+  var ico={'Critical':'🔴','Paused':'⚫','Monitor':'🟡','Healthy':'🟢','Incomplete Verification':'🔵'};
+  return'<span class="badge '+(cls[st]||'badge-pending')+'">'+(ico[st]||'')+'&nbsp;'+st+'</span>';
+}
+var r3ModalProductId=null;
+function r3OpenContentModal(pid,title){
+  r3ModalProductId=pid;
+  document.getElementById('r3ModalProduct').textContent=pid+' — '+title;
+  var chk=r3GetChecks(pid);
+  document.getElementById('r3TuSelect').value=chk.tu;
+  document.getElementById('r3DuSelect').value=chk.du;
+  document.getElementById('r3ContentModal').style.display='flex';
+  document.getElementById('r3TuSelect').focus();
+}
+function r3CloseContentModal(){
+  document.getElementById('r3ContentModal').style.display='none';
+  r3ModalProductId=null;
+}
+function r3SaveContentModal(){
+  if(!r3ModalProductId)return;
+  r3SaveChecks(r3ModalProductId,document.getElementById('r3TuSelect').value,document.getElementById('r3DuSelect').value);
+  r3CloseContentModal();
+  applyR3Filters();
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')r3CloseContentModal();});
+var r3Filtered=[];
+function applyR3Filters(){
+  var camp=(document.getElementById('r3CampaignFilter')||{value:'all'}).value;
+  var cond=(document.getElementById('r3ConditionFilter')||{value:'all'}).value;
+  var stat=(document.getElementById('r3StatusFilter')||{value:'all'}).value;
+  var avail=(document.getElementById('r3AvailFilter')||{value:'all'}).value;
+  var srch=((document.getElementById('r3Search')||{value:''}).value||'').toLowerCase();
+  r3Filtered=R3_DATA.filter(function(r){
+    if(camp!=='all'&&r.cid!==camp)return false;
+    var chk=r3GetChecks(r.id),conds=r3GetConditions(r,chk.tu,chk.du),prim=r3Primary(conds),sts=r3Status(prim);
+    if(cond!=='all'&&conds.indexOf(cond)===-1)return false;
+    if(stat!=='all'&&sts!==stat)return false;
+    if(avail!=='all'&&(r.gmc_avail||'')!==avail)return false;
+    if(srch&&(r.id+r.title+(r.sku||'')).toLowerCase().indexOf(srch)===-1)return false;
+    return true;
+  });
+  renderR3Table();
+  renderR3Kpis();
+}
+function resetR3Filters(){
+  ['r3CampaignFilter','r3ConditionFilter','r3StatusFilter','r3AvailFilter'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='all';});
+  var sr=document.getElementById('r3Search');if(sr)sr.value='';
+  r3Filtered=R3_DATA.slice();
+  renderR3Table();
+  renderR3Kpis();
+}
+function renderR3Table(){
+  var tbody=document.getElementById('r3Tbody');if(!tbody)return;
+  var rows=r3Filtered;
+  var tc=document.getElementById('r3TbarCount');if(tc)tc.textContent='Feed Health — Top Products by Spend · '+rows.length+' rows shown';
+  var cnt=document.getElementById('r3Count');if(cnt)cnt.textContent=rows.length+' / '+R3_DATA.length+' products';
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="22" style="text-align:center;padding:20px;color:var(--muted);">No products match the current filters.</td></tr>';return;}
+  function r3CheckHtml(v){return v==='Yes'?'<span style="color:var(--healthy-fg)">Yes</span>':v==='No'?'<span style="color:var(--critical-fg)">No</span>':'<span style="color:var(--muted)">Not Checked</span>';}
+  var html='';
+  rows.forEach(function(r,i){
+    var chk=r3GetChecks(r.id),tu=chk.tu,du=chk.du;
+    var conds=r3GetConditions(r,tu,du),prim=r3Primary(conds),sts=r3Status(prim);
+    var pm=r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency);
+    var diff=r3PriceDiff(r.gmc_price,r.shop_price,r.gmc_currency);
+    var diffHtml=diff===null?'—':(diff>0?'<span style="color:var(--critical-fg)">+£'+diff.toFixed(2)+'</span>':'<span style="color:var(--healthy-fg)">£'+diff.toFixed(2)+'</span>');
+    var pmHtml=pm==='Yes'?'<span style="color:var(--healthy-fg)">Yes</span>':pm==='No'?'<span style="color:var(--critical-fg)">No</span>':'<span style="color:var(--muted)">'+pm+'</span>';
+    var condBadges=conds.map(function(c){return'<span class="badge badge-monitor" style="font-size:9px;margin:1px;">'+c+'</span>';}).join('');
+    html+='<tr>';
+    html+='<td class="num">'+(i+1)+'</td>';
+    html+='<td><span class="badge badge-pending" style="font-size:9px;">'+(R3_CMAP[r.cid]||r.cid)+'</span></td>';
+    html+='<td style="font-size:11px;font-family:monospace;">'+r.id+'</td>';
+    html+='<td style="font-size:11px;">'+(r.sku||'—')+'</td>';
+    html+='<td style="max-width:220px;word-break:break-word;">'+(r.title||r.id)+'</td>';
+    html+='<td>'+(r.gmc_avail||'—')+'</td>';
+    html+='<td class="num">'+(r.shop_stock!==null?r.shop_stock:'—')+'</td>';
+    html+='<td class="num">'+(r.gmc_price!==null?'£'+r.gmc_price.toFixed(2):'—')+'</td>';
+    html+='<td class="num">'+(r.shop_price!==null?'£'+r.shop_price.toFixed(2):'—')+'</td>';
+    html+='<td class="num">'+diffHtml+'</td>';
+    html+='<td>'+pmHtml+'</td>';
+    html+='<td>'+(r.gmc_currency||'—')+'</td>';
+    html+='<td>'+r3CheckHtml(tu)+'<br><button onclick="r3OpenContentModal(\''+r.id+'\','+JSON.stringify(r.title||r.id)+')" style="font-size:9px;padding:1px 5px;margin-top:2px;cursor:pointer;border:1px solid var(--muted);border-radius:3px;background:none;">Edit</button></td>';
+    html+='<td>'+r3CheckHtml(du)+'</td>';
+    html+='<td><span style="color:var(--muted)">Not Available</span></td>';
+    html+='<td>'+r3StatusBadge(prim)+'</td>';
+    html+='<td>'+condBadges+'</td>';
+    html+='<td>'+r3StatusBadge(sts)+'</td>';
+    html+='<td style="max-width:180px;word-break:break-word;font-size:11px;">'+r3Action(prim)+'</td>';
+    html+='<td class="num">£'+r.cost.toFixed(2)+'</td>';
+    html+='<td class="num">'+r.conv.toFixed(1)+'</td>';
+    html+='<td>—</td>';
+    html+='</tr>';
+  });
+  tbody.innerHTML=html;
+}
+function renderR3Kpis(){
+  var el=document.getElementById('r3KpiCards');if(!el)return;
+  var rows=r3Filtered.length?r3Filtered:R3_DATA;
+  var oos=rows.filter(function(r){return r.shop_stock===0||r.gmc_avail==='out of stock';}).length;
+  var pm=rows.filter(function(r){return r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency)==='No';}).length;
+  var avail=rows.filter(function(r){var chk=r3GetChecks(r.id),c=r3GetConditions(r,chk.tu,chk.du);return c.indexOf('Availability Mismatch')>-1;}).length;
+  var noGmc=rows.filter(function(r){return!r.gmc_avail&&r.gmc_price===null;}).length;
+  var cur=rows.filter(function(r){return r.gmc_currency&&r.gmc_currency!=='GBP';}).length;
+  var healthy=rows.filter(function(r){var chk=r3GetChecks(r.id),c=r3GetConditions(r,chk.tu,chk.du),p=r3Primary(c);return p==='Feed Healthy';}).length;
+  el.innerHTML=[
+    {label:'Products Loaded',val:''+R3_DATA.length,note:'Top products by 30d spend · live from DB'},
+    {label:'Out of Stock / OOS GMC',val:''+oos,note:'stock=0 OR gmc_avail=out of stock'},
+    {label:'Price Mismatches (GBP)',val:''+pm,note:'GMC price ≠ Shopify price · GBP records only'},
+    {label:'Availability Mismatches',val:''+avail,note:'Stock vs GMC availability conflict'},
+    {label:'Missing GMC Record',val:''+noGmc,note:'No merchant_products match'},
+    {label:'Currency Mismatches',val:''+cur,note:'Non-GBP records in UK campaign'},
+    {label:'Feed Healthy',val:''+healthy,note:'All checks passed · filtered view'},
+    {label:'Feed Review Window',val:'7 days',note:'Post-optimisation feed review · Req 1 dependency'}
+  ].map(function(k){return'<div class="kpi"><div class="lbl">'+k.label+'</div><div class="val">'+k.val+'</div><div class="note">'+k.note+'</div></div>';}).join('');
+}
+function buildR3Charts(){
+  var ctx1=document.getElementById('r3CondChart');
+  var ctx2=document.getElementById('r3StockChart');
+  if(!ctx1||!ctx2)return;
+  var condCounts={};
+  R3_DATA.forEach(function(r){var chk=r3GetChecks(r.id);r3GetConditions(r,chk.tu,chk.du).forEach(function(c){condCounts[c]=(condCounts[c]||0)+1;});});
+  var condLabels=Object.keys(condCounts),condVals=condLabels.map(function(l){return condCounts[l];});
+  new Chart(ctx1,{type:'doughnut',data:{labels:condLabels,datasets:[{data:condVals,backgroundColor:['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#f97316','#6b7280']}]},options:{plugins:{legend:{position:'right'}},responsive:true,maintainAspectRatio:false}});
+  var bandLabels=['0 (OOS)','1–9','10–49','50–99','100+'];
+  var bandCounts=[0,0,0,0,0];
+  R3_DATA.forEach(function(r){var s=r.shop_stock;if(s===0)bandCounts[0]++;else if(s<10)bandCounts[1]++;else if(s<50)bandCounts[2]++;else if(s<100)bandCounts[3]++;else bandCounts[4]++;});
+  new Chart(ctx2,{type:'bar',data:{labels:bandLabels,datasets:[{label:'Products',data:bandCounts,backgroundColor:['#ef4444','#f59e0b','#3b82f6','#10b981','#22c55e']}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+}
+function buildR3Insights(){
+  var el=document.getElementById('r3InsightList');if(!el)return;
+  var oos=R3_DATA.filter(function(r){return r.shop_stock===0||r.gmc_avail==='out of stock';}).length;
+  var pm=R3_DATA.filter(function(r){return r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency)==='No';}).length;
+  var avail=R3_DATA.filter(function(r){var chk=r3GetChecks(r.id),c=r3GetConditions(r,chk.tu,chk.du);return c.indexOf('Availability Mismatch')>-1;}).length;
+  var noGmc=R3_DATA.filter(function(r){return!r.gmc_avail&&r.gmc_price===null;}).length;
+  var insights=[];
+  if(pm>0)insights.push({icon:'🔴',text:'<strong>'+pm+' Price Mismatch(es):</strong> GMC price ≠ Shopify price (GBP). Sync GMC feed after Shopify price updates; re-submit feed.'});
+  if(avail>0)insights.push({icon:'🟡',text:'<strong>'+avail+' Availability Mismatch(es):</strong> Stock vs GMC availability conflict. Trigger GMC feed resync to push correct status.'});
+  if(oos>0)insights.push({icon:'⚫',text:'<strong>'+oos+' Out of Stock product(s):</strong> Stock=0 or GMC=out of stock. Pause ads immediately; update GMC availability; re-enable on restock.'});
+  if(noGmc>0)insights.push({icon:'🔵',text:'<strong>'+noGmc+' Missing GMC Record(s):</strong> No merchant_products match. Verify GMC feed submission — may be excluded from Shopping results.'});
+  insights.push({icon:'🟢',text:'<strong>Feed review window: 7 days</strong> after each Campaign Optimisation action. Check availability, stock, GMC price vs Shopify price, title/description updates.'});
+  el.innerHTML=insights.map(function(ins){return'<div class="vi" style="margin-bottom:10px;align-items:flex-start;"><span style="font-size:18px;flex-shrink:0;margin-top:2px;">'+ins.icon+'</span><div>'+ins.text+'</div></div>';}).join('');
+}
+
+// ── CSV export helper ──────────────────────────────────────
+function r3csvCell(v){v=String(v===null||v===undefined?'':v);return v.indexOf(',')>-1||v.indexOf('"')>-1||v.indexOf('\n')>-1?'"'+v.replace(/"/g,'""')+'"':v;}
+function r3csvDownload(filename,lines){
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+// ── Req 1 Export ─────────────────────────────────────────
+function r1ExportCsv(){
+  var rows=filteredProds.length?filteredProds:PRODUCTS;
+  var hdrs=['Campaign','Product ID','Product Name','30d Cost £','Clicks','Impressions','Conversions','Conv Value £','ROAS','CTR %','Status','Condition','Required Action'];
+  var lines=[hdrs.join(',')];
+  rows.forEach(function(p){
+    var roas=safeRoas(p.cv,p.cost);
+    var ctr=safeCtr(p.clicks,p.imp);
+    var status=getProductStatus(p.cost,p.conv,roas);
+    var condition=getProductCondition(p.cost,p.conv,roas);
+    var action=getProductAction(status,condition);
+    var camp=(R2_CAMP&&R2_CAMP[p.cid])||p.cid;
+    lines.push([
+      r3csvCell(camp),r3csvCell(p.pid),r3csvCell(r1ProductTitle(p.pid)||p.pid),
+      p.cost.toFixed(2),p.clicks,p.imp,p.conv.toFixed(2),p.cv.toFixed(2),
+      roas===null?'N/A':roas.toFixed(2),ctr===null?'N/A':ctr.toFixed(1),
+      status,r3csvCell(condition),r3csvCell(action)
+    ].join(','));
+  });
+  r3csvDownload('theekshy-req1-campaign-optimisation-'+new Date().toISOString().slice(0,10)+'.csv',lines);
+}
+
+// ── Req 2 Export ─────────────────────────────────────────
+function r2ExportCsv(){
+  var rows=r2FilteredRows.length?r2FilteredRows:R2_CURRENT_DATA;
+  var hdrs=['Review Date','Date Range','Campaign','Search Term','Match Type','Search Intent','Impressions','Clicks','CTR %','Cost £','Conv','CPA £','Conv Value £','ROAS','Waste Term?','Competitor Term?','Condition','Rule Trigger','Remove or Keep?','Decision Reason','Next Action Plan','Review Status','Latest Data Date'];
+  var lines=[hdrs.join(',')];
+  var rangeLbl=R2_RANGES[R2_ACTIVE_RANGE].label;
+  rows.forEach(function(r){
+    var term=r[0],cid=r[1],imp=r[2],clk=r[3],conv=r[4],cv=r[5],cost=r[6]!==undefined?r[6]:null;
+    var c=r2Classify(term,imp,clk,conv,cv,cost);
+    var ctr=r2SafeCtr(clk,imp);
+    var hasCost=cost!==null&&cost>0;
+    var cpa=hasCost&&conv>0?(cost/conv).toFixed(2):'N/A';
+    var roas=hasCost&&cv>0?(cv/cost).toFixed(2):'N/A';
+    lines.push([
+      R2_REVIEW_DATE,r3csvCell(rangeLbl),r3csvCell(R2_CAMP[cid]||cid),r3csvCell(term),
+      'PMax',r3csvCell(c.intent),imp,clk,ctr===null?'N/A':ctr.toFixed(1),
+      hasCost?cost.toFixed(2):'',conv,cpa,cv,roas,
+      r3csvCell(c.wasteTerm||'—'),r3csvCell(c.compTerm||'—'),
+      r3csvCell(c.condition),r3csvCell(c.condTrig),r3csvCell(c.decision),
+      r3csvCell(c.reason),r3csvCell(c.action),r3csvCell(c.status),R2_LATEST_DATE
+    ].join(','));
+  });
+  r3csvDownload('theekshy-req2-search-term-optimisation-'+new Date().toISOString().slice(0,10)+'.csv',lines);
+}
+
+// ── Req 3 Export ─────────────────────────────────────────
+function r3ExportCsv(){
+  var rows=r3Filtered.length?r3Filtered:R3_DATA;
+  var hdrs=['Campaign','Product Item ID','SKU','Product Title','GMC Availability','Shopify Stock','GMC Price £','Shopify Price £','Price Diff £','Price Match?','GMC Currency','Title Updated?','Description Updated?','Primary Condition','Status','Required Action','30d Cost £','30d Conv','Latest Data'];
+  var lines=[hdrs.join(',')];
+  rows.forEach(function(r){
+    var chk=r3GetChecks(r.id),tu=chk.tu,du=chk.du;
+    var conds=r3GetConditions(r,tu,du),prim=r3Primary(conds),sts=r3Status(prim);
+    var pm=r3PriceMatch(r.gmc_price,r.shop_price,r.gmc_currency);
+    var diff=r3PriceDiff(r.gmc_price,r.shop_price,r.gmc_currency);
+    lines.push([
+      r3csvCell(R3_CMAP[r.cid]||r.cid),r.id,r3csvCell(r.sku||''),r3csvCell(r.title),
+      r3csvCell(r.gmc_avail||''),r.shop_stock!==null?r.shop_stock:'',
+      r.gmc_price!==null?r.gmc_price.toFixed(2):'',r.shop_price!==null?r.shop_price.toFixed(2):'',
+      diff!==null?diff.toFixed(2):'',pm,r3csvCell(r.gmc_currency||''),
+      tu,du,r3csvCell(prim),sts,r3csvCell(r3Action(prim)),
+      r.cost.toFixed(2),r.conv.toFixed(1),'2026-07-15'
+    ].join(','));
+  });
+  r3csvDownload('theekshy-req3-feed-optimisation-'+new Date().toISOString().slice(0,10)+'.csv',lines);
+}
+
+function r4ExportCsv(){
+  var rows=r4Filtered.length?r4Filtered:R4_DATA;
+  var hdrs=['Product/Variant ID','Variant SKU','Product Name / Variant','Campaign','30d Cost (£)','Restock/Launch Date','Current Stock (Units)','Stock Status','GMC Availability','GMC Comparison','Recommended Action','Action Decision','Notes','Latest Data Date'];
+  var lines=[hdrs.join(',')];
+  rows.forEach(function(r){
+    var s=r4StockStatus(r.inv);
+    var g=r4GmcComp(s,r.gmc_avail);
+    var a=r4RecommendedAction(s,g);
+    var d=r4GetDecision(r.pid);
+    var n=r4Notes(r,s);
+    lines.push([
+      r.pid,r.sku||'','"'+r.vtitle.replace(/"/g,"'")+'"',r.camp,r.cost.toFixed(2),'—',
+      r.inv!==null?r.inv:'Unknown',s,r.gmc_avail||'—',g,'"'+a+'"','"'+d+'"','"'+n+'"',r.upd
+    ].join(','));
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a2=document.createElement('a');
+  a2.href=URL.createObjectURL(blob);
+  a2.download='theekshy-stock-status-snapshot-2026-07-16.csv';
+  document.body.appendChild(a2);a2.click();document.body.removeChild(a2);
+}
+
+// ── Init R4 ───────────────────────────────────────────────
+function initR4(){
+  r4Filtered=R4_DATA.slice();
+  renderR4Table();
+  renderR4Kpis();
+  // Set generated-at timestamp
+  var now=new Date();
+  var el=document.getElementById('r4GeneratedAt');
+  if(el){
+    var y=now.getFullYear(),mo=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0');
+    var h=String(now.getHours()).padStart(2,'0'),mi=String(now.getMinutes()).padStart(2,'0');
+    el.textContent=y+'-'+mo+'-'+d+' '+h+':'+mi+' (local)';
+  }
+}
+
+// ── r2SetRangeLive — fetch search terms from API if not cached ────────────────
+function r2SetRangeLive(key){
+  R2_ACTIVE_RANGE=key;
+  var el=document.getElementById('r2-loading');
+  var r=R2_RANGES[key];
+  if(!r)return;
+  if(r.data){
+    R2_CURRENT_DATA=r.data;
+    r2FilteredRows=[];
+    applyR2Filters();
+    renderR2Kpis();
+    if(typeof buildR2Charts==='function')buildR2Charts();
+    return;
+  }
+  // Compute date range from days
+  var maxDate=R2_LATEST_DATE||new Date().toISOString().slice(0,10);
+  var toD=new Date(maxDate);
+  var fromD=new Date(toD);
+  fromD.setDate(fromD.getDate()-(r.days-1));
+  var from=fromD.toISOString().slice(0,10);
+  var to=toD.toISOString().slice(0,10);
+  if(el)el.style.display='block';
+  fetch('/api/members-api?member=theekshy&type=req2&from='+from+'&to='+to)
+    .then(function(res){return res.json();})
+    .then(function(d){
+      if(el)el.style.display='none';
+      if(!d.ok){console.error('req2 error',d.error);return;}
+      r.data=d.terms||[];
+      if(d.meta&&d.meta.to){R2_LATEST_DATE=d.meta.to;R2_REVIEW_DATE=new Date().toISOString().slice(0,10);}
+      R2_CURRENT_DATA=r.data;
+      r2FilteredRows=[];
+      applyR2Filters();
+      renderR2Kpis();
+      if(typeof buildR2Charts==='function')buildR2Charts();
+    })
+    .catch(function(e){if(el)el.style.display='none';console.error('req2 fetch failed',e);});
+}
+
+// ── Override r2SetRange with live version ────────────────────────────────────
+var _r2SetRangeOrig=r2SetRange;
+r2SetRange=r2SetRangeLive;
+
+// ── Lazy tab loading ──────────────────────────────────────────────────────────
+var _origShowTab=showTab;
+showTab=function(n){
+  _origShowTab(n);
+  if(n===1&&!TH_LOADED.r1)thLoadReq1();
+  if(n===2&&!TH_LOADED.r2){TH_LOADED.r2=true;r2SetRangeLive('7d');}
+  if(n===3&&!TH_LOADED.r3)thLoadFeed(3);
+  if(n===4&&!TH_LOADED.r4)thLoadFeed(4);
+  if(n===5)thLoadProdOpt();
+};
+
+// ── Req 1 date preset helpers ─────────────────────────────────────────────────
+function thSetPreset(days){
+  var el=document.getElementById('th-loading-r1');
+  if(el)el.style.display='block';
+  var toD=new Date();toD.setDate(toD.getDate()-1);
+  var fromD=new Date(toD);fromD.setDate(fromD.getDate()-(days-1));
+  thLoadReq1(fromD.toISOString().slice(0,10),toD.toISOString().slice(0,10));
+}
+function thApplyCustomDates(){
+  var f=document.getElementById('thDateFrom'),t=document.getElementById('thDateTo');
+  if(f&&t&&f.value&&t.value)thLoadReq1(f.value,t.value);
+}
+
+// ── Req 1 live fetch ──────────────────────────────────────────────────────────
+function thLoadReq1(from,to){
+  TH_LOADED.r1=true;
+  var loadEl=document.getElementById('th-loading-r1');
+  var errEl=document.getElementById('th-error-r1');
+  if(loadEl)loadEl.style.display='block';
+  if(errEl)errEl.style.display='none';
+  var url='/api/members-api?member=theekshy&type=req1'+(from&&to?'&from='+from+'&to='+to:'');
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(loadEl)loadEl.style.display='none';
+      if(!d.ok){if(errEl){errEl.textContent='Could not load Req 1: '+d.error;errEl.style.display='block';}return;}
+      TH_FROM=d.meta.from; TH_TO=d.meta.to;
+      // Populate global arrays used by existing render functions
+      DAILY=d.daily.map(function(r){return{d:r.d,cid:r.cid,cost:r.cost,clicks:r.clicks,imp:r.imp,conv:r.conv,cv:r.cv,ctr:r.imp>0?+(r.clicks/r.imp*100).toFixed(2):0};});
+      PRODUCTS=d.products.map(function(r){return{cid:r.cid,pid:r.pid,title:r.title,cost:r.cost,clicks:r.clicks,imp:r.imp,conv:r.conv,cv:r.cv};});
+      PROD_META={};
+      d.products.forEach(function(r){if(!PROD_META[r.pid])PROD_META[r.pid]={ptitle:r.title||null,sku:r.sku||null,url:r.url||null,variant:null};});
+      // Update campaign info from live data
+      d.campaigns.forEach(function(c){if(CAMPAIGNS[c.id]){CAMPAIGNS[c.id].name=c.name;CAMPAIGNS[c.id].budget=c.budget||CAMPAIGNS[c.id].budget;}});
+      // Render
+      renderCampaignCards();
+      renderKpis();
+      filteredProds=PRODUCTS.slice();
+      renderProdTable();
+      // Rebuild charts (destroy old ones first)
+      var c1=Chart.getChart('roasChart');if(c1)c1.destroy();
+      var c2=Chart.getChart('cvChart');if(c2)c2.destroy();
+      buildCharts();
+      // Update date picker display
+      var f=document.getElementById('thDateFrom'),t=document.getElementById('thDateTo');
+      if(f)f.value=TH_FROM;if(t)t.value=TH_TO;
+    })
+    .catch(function(e){
+      if(loadEl)loadEl.style.display='none';
+      if(errEl){errEl.textContent='Could not load Req 1: '+e.message;errEl.style.display='block';}
+    });
+}
+
+// ── Feed live fetch (Req 3 + 4) ───────────────────────────────────────────────
+var TH_FEED_FROM='', TH_FEED_TO='';
+
+function thFeedPreset(days){
+  var to=new Date(); to.setDate(to.getDate()-1);
+  var from=new Date(to); from.setDate(from.getDate()-(days-1));
+  var fmt=function(d){return d.toISOString().slice(0,10);};
+  TH_FEED_FROM=fmt(from); TH_FEED_TO=fmt(to);
+  TH_LOADED.r3=false; TH_LOADED.r4=false;
+  thLoadFeed(3);
+}
+
+function thRefreshFeed(){
+  TH_LOADED.r3=false; TH_LOADED.r4=false;
+  thLoadFeed(3);
+}
+
+function thLoadFeed(reqNum){
+  TH_LOADED.r3=true; TH_LOADED.r4=true;
+  // Show loading indicators on both tabs
+  var ld3=document.getElementById('th-loading-r3');
+  var ld4=document.getElementById('th-loading-r4');
+  var er3=document.getElementById('th-error-r3');
+  var er4=document.getElementById('th-error-r4');
+  if(ld3)ld3.style.display='block';
+  if(ld4)ld4.style.display='block';
+  if(er3)er3.style.display='none';
+  if(er4)er4.style.display='none';
+
+  // Use feed-specific dates if set, else fall back to Req1 dates
+  var from=TH_FEED_FROM||TH_FROM, to=TH_FEED_TO||TH_TO;
+  var url='/api/members-api?member=theekshy&type=feed'+(from&&to?'&from='+from+'&to='+to:'');
+
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(ld3)ld3.style.display='none';
+      if(ld4)ld4.style.display='none';
+      if(!d.ok){
+        var msg='Error loading feed: '+(d.error||'unknown');
+        if(er3){er3.textContent=msg;er3.style.display='block';}
+        if(er4){er4.textContent=msg;er4.style.display='block';}
+        return;
+      }
+      // Update range label on both tabs
+      var rangeLabel=from&&to?' · '+from+' → '+to:'';
+      var rEl3=document.getElementById('th-feed-range');
+      var rEl4=document.getElementById('th-feed-range-4');
+      if(rEl3)rEl3.textContent='Live'+rangeLabel;
+      if(rEl4)rEl4.textContent='Live'+rangeLabel;
+      // Populate R3_DATA and R4_DATA
+      R3_DATA=d.products.map(function(p){
+        return{id:p.id,cid:p.cid,cost:p.cost,clicks:p.clicks,impr:p.impr,conv:p.conv,
+          title:p.title||('Product '+p.id),sku:p.sku,
+          shop_price:p.shop_price,shop_stock:p.shop_stock,shop_status:p.shop_status||'active',
+          gmc_avail:p.gmc_avail,gmc_price:p.gmc_price,gmc_currency:p.gmc_currency,gmc_note:p.gmc_note||''};
+      });
+      R4_DATA=d.products.map(function(p){
+        return{pid:p.id,cid:p.cid,camp:p.camp,sku:p.sku,vtitle:p.vtitle||p.title||p.id,
+          url:p.url,inv:p.inv,gmc_avail:p.gmc_avail,gmc_p:p.gmc_p,cost:p.cost,upd:p.upd||''};
+      });
+      try{r3ContentLoad();r3Filtered=R3_DATA.slice();renderR3Table();renderR3Kpis();buildR3Insights();}
+      catch(e){console.error('[R3 INIT ERROR]',e);}
+      try{initR4();}catch(e){console.error('[R4 INIT ERROR]',e);}
+    })
+    .catch(function(e){
+      if(ld3)ld3.style.display='none';
+      if(ld4)ld4.style.display='none';
+      var msg='Feed fetch failed: '+e.message;
+      if(er3){er3.textContent=msg;er3.style.display='block';}
+      if(er4){er4.textContent=msg;er4.style.display='block';}
+    });
+}
+
+// INIT — load panel 1 immediately (it's the active tab)
+thLoadReq1();
+// Req 3 also pre-loads in background (panel 3 + 4 share same API)
+setTimeout(function(){if(!TH_LOADED.r3)thLoadFeed(3);},800);
+
+/* ============================================================
+   REQUIREMENT 5 — Product Optimisation (ROAS + Stock; GA4 N/A)
+   ============================================================ */
+var R5_PRODS = [];
+var R5_LOADED = false;
+
+function thLoadProdOpt() {
+  if (R5_LOADED) { r5Render(); return; }
+  R5_LOADED = true;
+  var el = document.getElementById('r5Loading');
+  var errEl = document.getElementById('r5Error');
+  if (el) el.style.display = 'block';
+  if (errEl) errEl.style.display = 'none';
+
+  var from = (document.getElementById('thDateFrom')||{}).value || '';
+  var to   = (document.getElementById('thDateTo')  ||{}).value || '';
+  var url  = '/api/members-api?member=theekshy&type=prodopt' + (from && to ? '&from='+from+'&to='+to : '');
+
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (el) el.style.display = 'none';
+      if (!d.ok) { if(errEl){errEl.style.display='block';errEl.textContent='Error: '+(d.error||'API error');} return; }
+      R5_PRODS = d.products || [];
+      r5UpdateKpis();
+      r5Render();
+      ['r5Kpis','r5Controls','r5TableBox'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=''; });
+    })
+    .catch(function(e){
+      if (el) el.style.display = 'none';
+      if (errEl) { errEl.style.display='block'; errEl.textContent='Fetch failed: '+e.message; }
+    });
+}
+
+function r5UpdateKpis() {
+  var crit=0, mon=0, hlth=0, pau=0;
+  R5_PRODS.forEach(function(p){
+    if(p.csvStatus==='critical') crit++;
+    else if(p.csvStatus==='monitor') mon++;
+    else if(p.csvStatus==='healthy') hlth++;
+    else if(p.csvStatus==='paused') pau++;
+  });
+  function se(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+  se('r5KpiCrit', crit);
+  se('r5KpiMon', mon);
+  se('r5KpiHealth', hlth);
+  se('r5KpiPaused', pau);
+  se('r5KpiTotal', R5_PRODS.length);
+}
+
+function r5Render() {
+  var camp   = (document.getElementById('r5CampFilter')||{value:'all'}).value;
+  var status = (document.getElementById('r5StatusFilter')||{value:'all'}).value;
+  var q      = ((document.getElementById('r5Search')||{value:''}).value||'').toLowerCase();
+
+  var data = R5_PRODS.filter(function(p){
+    if (camp !== 'all' && p.camp !== camp) return false;
+    if (status !== 'all' && p.csvStatus !== status) return false;
+    if (q && !(p.pid||'').toLowerCase().includes(q) && !(p.title||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  var cnt = document.getElementById('r5CountLabel');
+  if (cnt) cnt.textContent = data.length + ' products';
+
+  var statusLabels = {
+    critical: '<span class="badge badge-critical">🔴 Critical</span>',
+    monitor:  '<span class="badge badge-monitor">🟡 Monitor</span>',
+    healthy:  '<span class="badge badge-healthy">🟢 Healthy</span>',
+    paused:   '<span class="badge badge-pending">⚫ Paused</span>'
+  };
+
+  var tbody = document.getElementById('r5Tbody');
+  if (!tbody) return;
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--muted);">No products match the current filters.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.slice(0, 200).map(function(p, i){
+    var roasX = (p.roas / 100).toFixed(2);
+    var stockCell = p.stock === null ? '<span style="color:var(--muted);font-size:11px;">Unknown</span>'
+      : p.stock === 0 ? '<span class="badge badge-critical">Out of Stock</span>'
+      : '<span class="badge badge-healthy">'+p.stock+'</span>';
+    var nameCell = p.title
+      ? '<span style="font-weight:600;max-width:220px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+p.title+'">'+p.title+'</span><span style="font-size:10.5px;color:var(--muted);">'+p.pid.replace('shopify_gb_','').split('_')[0]+'</span>'
+      : '<span style="font-size:11px;color:var(--muted);">'+p.pid+'</span>';
+    var condTxt = (p.conditions||[]).join(', ');
+    return '<tr style="border-bottom:1px solid var(--line);">'+
+      '<td style="padding:8px 10px;">'+(i+1)+'</td>'+
+      '<td style="padding:8px 10px;">'+nameCell+'</td>'+
+      '<td style="padding:8px 10px;font-size:11.5px;font-weight:600;">'+p.camp+'</td>'+
+      '<td style="padding:8px 10px;text-align:right;">£'+p.cost.toFixed(2)+'</td>'+
+      '<td style="padding:8px 10px;text-align:right;">£'+p.cv.toFixed(2)+'</td>'+
+      '<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+(p.roas>=450?'#059669':p.roas>=300?'#d97706':'#b91c1c')+';">'+roasX+'×</td>'+
+      '<td style="padding:8px 10px;text-align:right;">'+p.conv.toFixed(2)+'</td>'+
+      '<td style="padding:8px 10px;">'+stockCell+'</td>'+
+      '<td style="padding:8px 10px;font-size:11px;color:var(--muted);">N/A — GA4 not in DB</td>'+
+      '<td style="padding:8px 10px;font-size:11px;color:var(--muted);">N/A — GA4 not in DB</td>'+
+      '<td style="padding:8px 10px;font-size:11.5px;">'+condTxt+'</td>'+
+      '<td style="padding:8px 10px;">'+(statusLabels[p.csvStatus]||p.csvStatus)+'</td>'+
+      '</tr>';
+  }).join('');
+}
+</script>
+</body>
+</html>

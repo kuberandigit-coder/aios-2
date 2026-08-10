@@ -88,6 +88,12 @@ const ROLE_LANDING = {
   mahima: 'pages/mahima.html',
   thasitha: 'pages/thasitha.html',
   sukirtha: 'pages/sukirtha.html',
+  sonya: 'pages/sonya.html',
+  sajeepan: 'pages/sajeepan.html',
+  theekshy: 'pages/theekshy.html',
+  thivajini: 'pages/thivajini.html',
+  hetheesha: 'pages/hetheesha.html',
+  jakshan: 'pages/jakshan.html',
 };
 
 async function readJsonBody(req) {

@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thivajini — Requirements Dashboard · LEDSone FR · Google Ads</title>
+<style>html{visibility:hidden;}</style>
+<script>
+(function () {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/auth?action=session', false);
+    xhr.withCredentials = true;
+    xhr.send(null);
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      if (data && data.success && data.user && (data.user.staff_key === 'thivajini' || data.user.role === 'admin')) {
+        sessionStorage.setItem('auth_thivajini', '1');
+        document.documentElement.style.visibility = 'visible';
+        return;
+      }
+    }
+  } catch (e) { /* fall through to login */ }
+  window.location.replace('../login.html');
+})();
+</script>
+<style>
+  :root{
+    --ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;
+    --card:#ffffff;--accent:#1f5eff;--accent-soft:#eaf0ff;
+    --good:#059669;--good-soft:#f0fdf4;
+    --warn:#d97706;--warn-soft:#fffbeb;
+    --fail:#b91c1c;--fail-soft:#fff5f5;
+    --pass-bg:#d4edda;--pass-txt:#155724;--pass-bd:#a3d9b9;
+    --review-bg:#fff3cd;--review-txt:#856404;--review-bd:#fde68a;
+    --fail-bg:#f8d7da;--fail-txt:#842029;--fail-bd:#fca5a5;
+    --nodata-bg:#e2e3e5;--nodata-txt:#383d41;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px;line-height:1.55;}
+  .wrap{max-width:1440px;margin:0 auto;}
+
+  /* Back link */
+  .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+  .back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+
+  /* Requirement tab nav */
+  .top-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
+  .nav-btn{border:none;background:transparent;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;}
+  .nav-btn:hover{background:var(--accent-soft);color:var(--accent);}
+  .nav-btn.active{background:var(--accent);color:#fff;}
+  .nav-btn:disabled{opacity:.4;cursor:default;}
+  .nav-btn:disabled:hover{background:transparent;color:var(--muted);}
+  .nav-btn .nl{display:block;font-size:11px;font-weight:400;margin-top:1px;opacity:.8;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* Section header card */
+  header.rpt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:18px;}
+  .req-tag{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+  h1{font-size:22px;font-weight:700;}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:4px 13px;font-size:12px;font-weight:600;}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+  .kpi .val{font-size:24px;font-weight:700;margin-top:5px;line-height:1;}
+  .kpi .note{font-size:11px;color:var(--muted);margin-top:4px;}
+  .kpi.ok .val{color:var(--good);}
+  .kpi.err .val{color:var(--fail);}
+  .kpi.warn .val{color:var(--warn);}
+  .kpi.info .val{color:var(--accent);}
+
+  /* Controls */
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+  .fbtn{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);transition:all .15s;}
+  .fbtn:hover,.fbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .sl{font-size:12px;color:var(--muted);font-weight:600;}
+  .exp{border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;margin-left:auto;transition:opacity .15s;}
+  .exp:hover{opacity:.85;}
+
+  /* Table box */
+  .tbox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px;}
+  .tbar{padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+  .scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;}
+  thead th.num,td.num{text-align:right;}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{filter:brightness(.97);}
+
+  /* Badges */
+  .badge{display:inline-block;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent;}
+  .badge.pass{background:var(--pass-bg);color:var(--pass-txt);border-color:var(--pass-bd);}
+  .badge.review{background:var(--review-bg);color:var(--review-txt);border-color:var(--review-bd);}
+  .badge.fail{background:var(--fail-bg);color:var(--fail-txt);border-color:var(--fail-bd);}
+  .badge.nodata{background:var(--nodata-bg);color:var(--nodata-txt);}
+  .badge.noshop{background:#dbeafe;color:#1e40af;border-color:#93c5fd;}
+  .badge.noads{background:#fce7f3;color:#9d174d;border-color:#f9a8d4;}
+
+  /* Campaign colours */
+  .camp-topsell{color:#1f5eff;font-weight:700;}
+  .camp-allproduct{color:#059669;font-weight:700;}
+  .camp-bestsell{color:#d97706;font-weight:700;}
+  .td-gap-pos{color:#059669;font-weight:700;}
+  .td-gap-neg{color:#b91c1c;font-weight:700;}
+
+  /* Info note */
+  .info-note{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;font-size:12px;color:#0c4a6e;margin-bottom:16px;line-height:1.6;}
+
+  /* Threshold row */
+  .thresh-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;}
+  .thresh{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:700;border:1px solid transparent;}
+  .thresh.pass{background:var(--pass-bg);color:var(--pass-txt);border-color:var(--pass-bd);}
+  .thresh.review{background:var(--review-bg);color:var(--review-txt);border-color:var(--review-bd);}
+  .thresh.fail{background:var(--fail-bg);color:var(--fail-txt);border-color:var(--fail-bd);}
+  .thresh-note{font-size:11px;color:var(--muted);}
+
+  /* Campaign legend */
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+  .leg-item{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;}
+  .leg-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .leg-dot.topsell{background:#1f5eff;}
+  .leg-dot.allproduct{background:#059669;}
+  .leg-dot.bestsell{background:#d97706;}
+
+  /* Notes grid */
+  .notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-bottom:16px;}
+  .fn{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;font-size:12px;color:var(--muted);line-height:1.65;}
+  .fn h3{font-size:12.5px;color:var(--ink);margin-bottom:8px;font-weight:700;}
+  .fn ul{padding-left:16px;}
+  .fn li{margin-top:4px;}
+  .fn li strong{color:var(--ink);}
+
+  /* Evidence pill list */
+  .ev-list{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .ev-list li{font-size:11.5px;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:4px 10px;}
+
+  /* Section heading */
+  .section-hd{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#42506a;margin:22px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+
+  /* Placeholder (Req 2+) */
+  .placeholder{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:60px 30px;text-align:center;}
+  .placeholder .ph-icon{font-size:38px;margin-bottom:14px;}
+  .placeholder h2{font-size:18px;color:var(--ink);margin-bottom:8px;}
+  .placeholder p{color:var(--muted);font-size:13.5px;max-width:480px;margin:0 auto 24px;}
+  .ph-badge{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:20px;padding:4px 14px;margin-bottom:18px;}
+  .ph-metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-width:600px;margin:0 auto 20px;}
+  .ph-metric{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;text-align:left;}
+  .ph-metric .pm-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+  .ph-metric .pm-val{font-size:12.5px;font-weight:700;color:var(--ink);}
+  .ph-classes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .ph-cls{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+  .ph-cls.scale{background:#d4edda;color:#155724;}
+  .ph-cls.monitor{background:#fff3cd;color:#856404;}
+  .ph-cls.exclude{background:#f8d7da;color:#842029;}
+  .ph-cls.review-cls{background:#e2e3e5;color:#383d41;}
+
+  footer.site{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;}
+  @media(max-width:700px){
+    h1{font-size:17px;}
+    .kpi .val{font-size:20px;}
+    .nav-btn{padding:7px 12px;font-size:12px;}
+    body{padding:16px 12px;}
+  }
+
+  /* Req 2 segment colours */
+  .seg-hero     {background:#f5f3ff;} .badge-hero     {background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;}
+  .seg-green    {background:#f0fdf4;} .badge-green    {background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;}
+  .seg-amber    {background:#fffbeb;} .badge-amber    {background:#fef3c7;color:#78350f;border:1px solid #fde68a;}
+  .seg-orange   {background:#fff7ed;} .badge-orange   {background:#ffedd5;color:#9a3412;border:1px solid #fdba74;}
+  .seg-hpc      {background:#fef2f2;} .badge-hpc      {background:#fee2e2;color:#7f1d1d;border:1px solid #fca5a5;}
+  .seg-bleeding {background:#fff1f2;} .badge-bleeding {background:#ffe4e6;color:#9f1239;border:1px solid #fda4af;}
+  .seg-loweng   {background:#eff6ff;} .badge-loweng   {background:#dbeafe;color:#1e3a8a;border:1px solid #93c5fd;}
+  .seg-zombie   {background:#f9fafb;} .badge-zombie   {background:#f3f4f6;color:#374151;border:1px solid #d1d5db;}
+  .seg-monitor  {background:#fffdf5;} .badge-monitor  {background:#fef9c3;color:#713f12;border:1px solid #fef08a;}
+  .r2-action {font-size:11px;color:var(--muted);}
+  .spend-alert {color:#b91c1c;font-weight:700;}
+  .r2-url {font-size:11px;color:var(--accent);text-decoration:none;white-space:nowrap;}
+  .r2-url:hover {text-decoration:underline;}
+  #r2-search {border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--ink);background:var(--card);width:220px;outline:none;}
+  #r2-search:focus{border-color:var(--accent);}
+  select.r2sel {border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;color:var(--ink);background:var(--card);outline:none;cursor:pointer;}
+  select.r2sel:focus{border-color:var(--accent);}
+
+  /* ── Req 3 Stock-Spend Tracker ── */
+  .r3-stop    {background:#fef2f2;} .badge-stop    {background:#fee2e2;color:#7f1d1d;border:1px solid #fca5a5;font-weight:700;}
+  .r3-actsoon {background:#fff7ed;} .badge-actsoon {background:#ffedd5;color:#9a3412;border:1px solid #fdba74;font-weight:700;}
+  .r3-monitor {background:#fffbeb;} .badge-monitor {background:#fef3c7;color:#78350f;border:1px solid #fde68a;}
+  .r3-ok      {background:#ffffff;} .badge-ok      {background:#f0fdf4;color:#065f46;border:1px solid #6ee7b7;}
+  .r3-waste   {color:#b91c1c;font-weight:700;}
+  .r3-url     {font-size:11px;color:var(--accent);text-decoration:none;}
+  .r3-url:hover{text-decoration:underline;}
+  .r3-mm      {font-size:10px;color:var(--muted);}
+  .r3-note    {font-size:10px;color:#d97706;font-style:italic;}
+  #r3-search  {border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--ink);background:var(--card);width:220px;outline:none;}
+  #r3-search:focus{border-color:var(--accent);}
+  select.r3sel{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;color:var(--ink);background:var(--card);outline:none;cursor:pointer;}
+  select.r3sel:focus{border-color:var(--accent);}
+
+  /* ── Req 4 Order Data ── */
+  .r4-ads-driven { background:#fff0f0; }
+  .r4-balanced   { background:#fff8e1; }
+  .r4-org-heavy  { background:#f0fff0; }
+  .r4-org-only   { background:#f0f4ff; }
+  .r4-no-orders  { background:#fafafa; }
+  .badge-ads-driven { background:#dc2626;color:#fff; }
+  .badge-balanced   { background:#d97706;color:#fff; }
+  .badge-org-heavy  { background:#16a34a;color:#fff; }
+  .badge-org-only   { background:#2563eb;color:#fff; }
+  .badge-no-orders  { background:#9ca3af;color:#fff; }
+  .r4-hi { font-weight:700;color:#dc2626; }
+  .r4-url a { color:var(--acc);font-size:11px; }
+  #r4-search { width:200px; }
+  .r4sel { font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- ── Auth Overlay ── -->
+<div id="auth-overlay" style="position:fixed;inset:0;z-index:9999;background:#0c1a30;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.35);text-align:center;">
+    <div style="width:52px;height:52px;border-radius:12px;background:#0891b2;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;margin:0 auto 16px;">T</div>
+    <div style="font-size:18px;font-weight:700;color:#0f1f33;margin-bottom:4px;">Thivajini</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:28px;">Digital Marketing — Members only</div>
+    <div style="text-align:left;margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Username</label>
+      <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div style="text-align:left;margin-bottom:22px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Password</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div id="auth-error" style="display:none;margin-bottom:14px;padding:9px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12.5px;color:#b91c1c;font-weight:600;">Incorrect username or password.</div>
+    <button id="auth-btn" onclick="authCheck()" style="width:100%;padding:12px;border:none;border-radius:9px;background:#0891b2;color:#fff;font-size:14px;font-weight:700;cursor:pointer;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign In</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY='auth_thivajini';
+  if(sessionStorage.getItem(KEY)==='1'||sessionStorage.getItem('auth_admin')==='1') document.getElementById('auth-overlay').style.display='none';
+  function setLoading(on){const b=document.getElementById('auth-btn');b.disabled=on;b.textContent=on?'Signing in…':'Sign In';b.style.opacity=on?'.6':'1';}
+  async function authCheck(){
+    const u=document.getElementById('auth-user').value.trim().toLowerCase();
+    const p=document.getElementById('auth-pass').value;
+    document.getElementById('auth-error').style.display='none';
+    if(!u||!p) return;
+    setLoading(true);
+    try{
+      const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,page_key:'thivajini'})});
+      const d=await r.json();
+      if(d.ok){sessionStorage.setItem(KEY,'1');document.getElementById('auth-overlay').style.display='none';}
+      else{document.getElementById('auth-error').style.display='block';document.getElementById('auth-pass').value='';document.getElementById('auth-pass').focus();}
+    }catch(e){document.getElementById('auth-error').textContent='Network error. Please try again.';document.getElementById('auth-error').style.display='block';}
+    finally{setLoading(false);}
+  }
+  window.authCheck=authCheck;
+  document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('auth-overlay').style.display!=='none')authCheck();});
+})();
+</script>
+
+<!-- Logout Button -->
+<div id="logout-btn" style="display:none;position:fixed;top:14px;right:18px;z-index:9998;align-items:center;gap:7px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.09);font-family:'Segoe UI',system-ui,sans-serif;transition:all .15s;" onmouseover="this.style.background='#fef2f2';this.style.color='#b91c1c';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fff';this.style.color='#64748b';this.style.borderColor='#e2e8f0';" onclick="sessionStorage.removeItem('auth_thivajini');location.reload();">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout
+</div>
+<script>
+(function(){
+  if(sessionStorage.getItem('auth_thivajini')==='1') document.getElementById('logout-btn').style.display='flex';
+  new MutationObserver(function(){
+    if(document.getElementById('auth-overlay').style.display==='none')
+      document.getElementById('logout-btn').style.display='flex';
+  }).observe(document.getElementById('auth-overlay'),{attributes:true,attributeFilter:['style']});
+})();
+</script>
+
+<div class="wrap">
+
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <a class="back" href="../index.html" style="margin-bottom:0;">&larr; Back to all members</a>
+  <span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Piranav</span>
+  </div>
+
+  <!-- ── Requirement Navigation ── -->
+  <nav class="top-nav" role="tablist">
+    <button class="nav-btn active" id="nav-1" role="tab" aria-selected="true"  aria-controls="panel-1" onclick="showTab(1)">
+      Conversion Tracking
+      <span class="nl">Requirement 1</span>
+    </button>
+    <button class="nav-btn" id="nav-2" role="tab" aria-selected="false" aria-controls="panel-2" onclick="showTab(2)">
+      Product Performance
+      <span class="nl">Requirement 2</span>
+    </button>
+    <button class="nav-btn" id="nav-3" role="tab" aria-selected="false" aria-controls="panel-3" onclick="showTab(3)">
+      Stock-Spend Tracker
+      <span class="nl">Req 3</span>
+    </button>
+    <button class="nav-btn" onclick="showTab(4)" role="tab" aria-selected="false">Order Data<span class="nl">Req 4</span></button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════
+       PANEL 1 — Conversion Tracking & Data Integrity
+       ══════════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-1" role="tabpanel">
+
+    <header class="rpt">
+      <div class="req-tag">Requirement 1 · Google Ads · LEDSone FR · Weekly Attribution Cross-Check</div>
+      <h1>Conversion Tracking &amp; Data Integrity</h1>
+      <div class="sub">
+        Staff: <strong>Thivajini</strong> &nbsp;·&nbsp;
+        Store: <strong>ledsone.fr (EUR)</strong> &nbsp;·&nbsp;
+        Period: <strong>2026-04-06 → 2026-07-08 (14 weeks)</strong> &nbsp;·&nbsp;
+        Sources: <strong>PostgreSQL (Google Ads) + Shopify Admin GraphQL API (UTM)</strong>
+      </div>
+      <div class="chips">
+        <span class="chip">3 Campaigns</span>
+        <span class="chip">sub_source_id = 233 · LEDSone FR</span>
+        <span class="chip">public.ppc_etl_performance_data</span>
+        <span class="chip">record_type = campaign · source = 3</span>
+        <span class="chip">200 Shopify orders inspected</span>
+      </div>
+    </header>
+
+    <div class="info-note">
+      <strong>Business question:</strong> Does Google Ads reported conversion value align with Shopify UTM-attributed revenue each week?
+      &nbsp;·&nbsp;
+      <strong>Method:</strong> Any-touchpoint attribution — order counted if any customer journey moment contains <code>utm_source="google_ads"</code> &amp; <code>utm_medium="cpc"</code>. Campaign assigned to last google_ads touchpoint.
+      &nbsp;·&nbsp;
+      <strong>Ratio:</strong> Google Ads Conversion Value ÷ Shopify UTM Revenue. Thresholds are proposed — pending Thivajini approval.
+    </div>
+
+    <!-- KPI Summary cards -->
+    <div class="kpis">
+      <div class="kpi info"><div class="lbl">Weeks Analysed</div><div class="val" id="r1-kpi-weeks">—</div><div class="note" id="r1-kpi-period">loading…</div></div>
+      <div class="kpi info"><div class="lbl">Campaigns Tracked</div><div class="val">3</div><div class="note">Topsell · All Products · Best Sellers</div></div>
+      <div class="kpi info"><div class="lbl">Shopify UTM Orders</div><div class="val" id="r1-kpi-shop-ord">—</div><div class="note">google_ads attributed</div></div>
+      <div class="kpi info"><div class="lbl">Shopify UTM Revenue</div><div class="val" id="r1-kpi-shop-rev">—</div><div class="note">EUR · any-touchpoint</div></div>
+      <div class="kpi ok">  <div class="lbl">PASS Rows</div><div class="val" id="r1-kpi-pass">—</div><div class="note">Ratio 0.95x – 1.05x</div></div>
+      <div class="kpi warn"><div class="lbl">REVIEW Rows</div><div class="val" id="r1-kpi-review">—</div><div class="note">Ratio 0.80x – 1.20x</div></div>
+      <div class="kpi err"> <div class="lbl">FAIL Rows</div><div class="val" id="r1-kpi-fail">—</div><div class="note">&lt;0.80x or &gt;1.20x</div></div>
+      <div class="kpi">    <div class="lbl">Incomplete Data</div><div class="val" id="r1-kpi-incomplete">—</div><div class="note">One side missing</div></div>
+    </div>
+
+    <!-- Thresholds -->
+    <div class="thresh-row">
+      <span class="sl">Proposed thresholds:</span>
+      <span class="thresh pass">✓ PASS: 0.95x – 1.05x</span>
+      <span class="thresh review">⚠ REVIEW: 0.80x – 0.95x or 1.05x – 1.20x</span>
+      <span class="thresh fail">✗ FAIL: &lt;0.80x or &gt;1.20x</span>
+      <span class="thresh-note">Pending Thivajini approval</span>
+    </div>
+
+    <!-- Campaign legend -->
+    <div class="legend">
+      <div class="leg-item"><span class="leg-dot topsell"></span><strong>Topsell</strong> &nbsp;·&nbsp; UTM: <code>tr-pmax-topsell</code> &nbsp;·&nbsp; ID: 23103582865</div>
+      <div class="leg-item"><span class="leg-dot allproduct"></span><strong>All Products</strong> &nbsp;·&nbsp; UTM: <code>pmax_allproduct</code> &nbsp;·&nbsp; ID: 23533025729</div>
+      <div class="leg-item"><span class="leg-dot bestsell"></span><strong>Best Sellers</strong> &nbsp;·&nbsp; UTM: <code>pmax_bestselling_tr</code> &nbsp;·&nbsp; ID: 23405519670</div>
+    </div>
+
+    <!-- Campaign filter + export -->
+    <div class="controls">
+      <span class="sl">Filter:</span>
+      <button class="fbtn on" onclick="filterCamp('all',this)">All Campaigns</button>
+      <button class="fbtn" onclick="filterCamp('Topsell',this)">Topsell</button>
+      <button class="fbtn" onclick="filterCamp('All Products',this)">All Products</button>
+      <button class="fbtn" onclick="filterCamp('Best Sellers',this)">Best Sellers</button>
+      <button class="exp" onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <!-- Main table -->
+    <div class="tbox">
+      <div class="tbar">
+        <span>Weekly Google Ads vs Shopify UTM Attribution Cross-Check &nbsp;·&nbsp; LEDSone FR &nbsp;·&nbsp; EUR</span>
+        <span id="row-count"></span>
+      </div>
+      <div class="scroll">
+        <table id="main-table">
+          <thead>
+            <tr>
+              <th>Week Start</th>
+              <th>Campaign</th>
+              <th class="num">Ads Conv.</th>
+              <th class="num">Ads Value (€)</th>
+              <th class="num">Shopify UTM Orders</th>
+              <th class="num">Shopify UTM Rev (€)</th>
+              <th class="num">Order Gap (Ads−Shop)</th>
+              <th class="num">Attr. Ratio</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Data source notes -->
+    <div class="section-hd">Data Sources &amp; Method</div>
+    <div class="notes-grid">
+      <div class="fn">
+        <h3>Google Ads Side (PostgreSQL)</h3>
+        <ul>
+          <li><strong>Table:</strong> public.ppc_etl_performance_data</li>
+          <li><strong>Filter:</strong> source=3, sub_source_id=233, record_type='campaign'</li>
+          <li><strong>FR Verified:</strong> campaign names "Pmax FR | Thivajini…", EUR, LSFR prefix</li>
+          <li><strong>Aggregation:</strong> DATE_TRUNC('week', date) — Monday-start ISO weeks</li>
+          <li><strong>Coverage:</strong> 2026-04-06 → 2026-07-07 (14 weeks)</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Shopify UTM Side (Shopify Admin API)</h3>
+        <ul>
+          <li><strong>Source:</strong> Shopify Admin GraphQL API · ledsone.fr · 200 orders</li>
+          <li><strong>Field:</strong> customerJourney.{firstVisit, lastVisit, moments}.utmParameters</li>
+          <li><strong>Attribution:</strong> Any-touchpoint — utm_source="google_ads" &amp; utm_medium="cpc"</li>
+          <li><strong>Campaign:</strong> Last google_ads UTM touchpoint wins</li>
+          <li><strong>Range:</strong> LSFR1303 – LSFR1488 (Apr 6 – Jul 8 2026) · EUR only</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Campaign → UTM Mapping</h3>
+        <ul>
+          <li><strong>23103582865 ↔ tr-pmax-topsell:</strong> "Topsell" in both — high confidence</li>
+          <li><strong>23405519670 ↔ pmax_bestselling_tr:</strong> "Best Sellers / bestselling" — high confidence</li>
+          <li><strong>23533025729 ↔ pmax_allproduct:</strong> Remaining campaign — inferred, not confirmed via join</li>
+          <li><strong>⚠</strong> No direct join table between campaign_id and UTM name in PostgreSQL</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Known Limitations</h3>
+        <ul>
+          <li><strong>Conversion window:</strong> Google Ads uses 30-day click window; Shopify uses session UTM — weeks will not align exactly</li>
+          <li><strong>Multi-touch:</strong> Revenue assigned to last google_ads touchpoint only</li>
+          <li><strong>Conversion counting:</strong> Google Ads may record &gt;1 conversion per order</li>
+          <li><strong>Thresholds:</strong> 0.95x–1.05x / 0.80x–1.20x — proposed, not confirmed</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-hd">Evidence Files</div>
+    <ul class="ev-list">
+      <li>evidence/Thivajini/req2-attribution-dashboard-evidence-2026-07-09.md</li>
+      <li>evidence/Thivajini/req2-kpi-discovery-evidence-2026-07-09.md</li>
+      <li>evidence/Thivajini/req1-discovery-evidence-2026-07-09.md</li>
+      <li>validation/Thivajini/req2-attribution-dashboard-validation-2026-07-09.md</li>
+      <li>handover/Thivajini/req2-handover-2026-07-09.md</li>
+    </ul>
+
+  </div>
+  <!-- /PANEL 1 -->
+
+  <div class="tab-panel" id="panel-2" role="tabpanel">
+
+    <header class="rpt">
+      <div class="req-tag">Requirement 2 &middot; Google Ads &middot; LEDSone FR &middot; Product-Level KPI &amp; Decision Dashboard</div>
+      <h1>Product-Level Performance &mdash; Winner / Loser Classification</h1>
+      <div class="sub">
+        Staff: <strong>Thivajini</strong> &nbsp;&middot;&nbsp;
+        Store: <strong>ledsone.fr (EUR)</strong> &nbsp;&middot;&nbsp;
+        Period: <strong id="r2-period">Loading…</strong> &nbsp;&middot;&nbsp;
+        Sources: <strong>google_ads.product_performance &middot; google_ads.merchant_products</strong>
+      </div>
+      <div class="chips">
+        <span class="chip" id="r2-chip-count">— Products</span>
+        <span class="chip">merchant_id=5551466539 &middot; LEDSone FR</span>
+        <span class="chip">Campaigns: Topsell · Imp_Click · Best Sellers</span>
+        <span class="chip" id="r2-chip-refresh">Last updated: loading…</span>
+      </div>
+    </header>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:600;color:var(--muted);">Date range:</label>
+      <select id="r2-days-filter" onchange="onR2RangeChange()" style="font-size:13px;padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;">
+        <option value="90">Last 90 days</option>
+        <option value="60">Last 60 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="14">Last 14 days</option>
+        <option value="7">Last 7 days</option>
+        <option value="custom">Custom range…</option>
+      </select>
+      <span id="r2-custom-wrap" style="display:none;gap:6px;align-items:center;display:none;">
+        <input type="date" id="r2-from" onchange="onR2RangeChange()" style="font-size:13px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;">
+        <span style="font-size:13px;color:var(--muted);">to</span>
+        <input type="date" id="r2-to" onchange="onR2RangeChange()" style="font-size:13px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;">
+      </span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi info"><div class="lbl">Total Products</div><div class="val" id="r2-kpi-products">—</div><div class="note">active in period</div></div>
+      <div class="kpi info"><div class="lbl">Total Spend</div><div class="val" id="r2-kpi-spend">—</div><div class="note">EUR &middot; ad spend</div></div>
+      <div class="kpi info"><div class="lbl">Total Sales</div><div class="val" id="r2-kpi-sales">—</div><div class="note">Google Ads attributed</div></div>
+      <div class="kpi warn"><div class="lbl">Avg ROAS</div><div class="val" id="r2-kpi-roas">—</div><div class="note">Sales / Spend &times; 100</div></div>
+      <div class="kpi info"><div class="lbl">Avg CTR</div><div class="val" id="r2-kpi-ctr">—</div><div class="note">Clicks / Impressions</div></div>
+      <div class="kpi info"><div class="lbl">Avg CVR</div><div class="val" id="r2-kpi-cvr">—</div><div class="note">Orders / Clicks</div></div>
+      <div class="kpi" style="background:#f5f3ff"><div class="lbl">Hero</div><div class="val" id="r2-kpi-hero" style="color:#5b21b6">—</div><div class="note">ROAS&ge;400% &amp; &ge;6 clicks</div></div>
+      <div class="kpi" style="background:#fff1f2"><div class="lbl">Bleeding</div><div class="val" id="r2-kpi-bleeding" style="color:#9f1239">—</div><div class="note">&ge;5 clicks, CVR&lt;1%, 0 orders</div></div>
+      <div class="kpi" style="background:#eff6ff"><div class="lbl">Low Engagement</div><div class="val" id="r2-kpi-loweng" style="color:#1e3a8a">—</div><div class="note">Impressions&gt;0, Clicks=0</div></div>
+    </div>
+
+    <div class="legend" style="margin-bottom:14px;">
+      <span class="badge badge-hero">Hero</span>
+      <span class="badge badge-green">Green</span>
+      <span class="badge badge-amber">Amber</span>
+      <span class="badge badge-orange">Orange</span>
+      <span class="badge badge-monitor">Monitor Cut</span>
+      <span class="badge badge-loweng">Low Engagement</span>
+      <span class="badge badge-bleeding">Bleeding</span>
+      <span class="badge badge-hpc">High Priority Cut</span>
+      <span class="badge badge-zombie">Zombie</span>
+    </div>
+
+    <div class="controls" style="flex-wrap:wrap;row-gap:8px;">
+      <input id="r2-search" type="text" placeholder="Search product..." oninput="r2Render()">
+      <select class="r2sel" id="r2-seg" onchange="r2Render()">
+        <option value="">All Segments</option>
+        <option value="Hero">Hero</option>
+        <option value="Green">Green</option>
+        <option value="Amber">Amber</option>
+        <option value="Orange">Orange</option>
+        <option value="Monitor Cut">Monitor Cut</option>
+        <option value="Low Engagement">Low Engagement</option>
+        <option value="Bleeding">Bleeding</option>
+        <option value="High Priority Cut">High Priority Cut</option>
+        <option value="Zombie">Zombie</option>
+      </select>
+      <select class="r2sel" id="r2-av" onchange="r2Render()">
+        <option value="">All Availability</option>
+        <option value="in stock">In Stock</option>
+        <option value="out of stock">Out of Stock</option>
+        <option value="unavailable">Unavailable</option>
+        <option value="not found">Not Found</option>
+        <option value="unknown">Unknown</option>
+      </select>
+      <select class="r2sel" id="r2-spend-alert" onchange="r2Render()">
+        <option value="">All Spend%</option>
+        <option value="alert">Spend Alert &gt;25%</option>
+      </select>
+      <select class="r2sel" id="r2-sort" onchange="r2Render()">
+        <option value="seg">Sort: Segment</option>
+        <option value="roas">Sort: ROAS desc</option>
+        <option value="sp">Sort: Spend desc</option>
+        <option value="sa">Sort: Sales desc</option>
+        <option value="cl">Sort: Clicks desc</option>
+        <option value="im">Sort: Impressions desc</option>
+      </select>
+      <button class="exp" onclick="r2CSV()">Export CSV</button>
+    </div>
+
+    <div class="tbox">
+      <div class="tbar">
+        <span>Product KPI Dashboard &middot; LEDSone FR &middot; <span id="r2-tbar-period">loading…</span></span>
+        <span id="r2-count"></span>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:220px;">Product</th>
+              <th>Avail.</th>
+              <th class="num">Price EUR</th>
+              <th class="num">Impr.</th>
+              <th class="num">Clicks</th>
+              <th class="num">Spend EUR</th>
+              <th class="num">Orders</th>
+              <th class="num">Sales EUR</th>
+              <th class="num">CTR %</th>
+              <th class="num">CVR %</th>
+              <th class="num">ROAS %</th>
+              <th class="num">Spend %</th>
+              <th style="min-width:120px;">Segment</th>
+              <th style="min-width:160px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="r2-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="notes-grid">
+      <div class="fn">
+        <h3>Data Sources</h3>
+        <ul>
+          <li><strong>Ads:</strong> google_ads.product_performance (merchant_id=5551466539, campaigns: Topsell · Imp_Click · Best Sellers)</li>
+          <li><strong>Products:</strong> google_ads.merchant_products + listings.shopify_listings (FR) — 5-strategy title resolution</li>
+          <li><strong>Coverage:</strong> <span id="r2-footnote-period">loading…</span></li>
+          <li><strong>Refresh:</strong> <span id="r2-footnote-refresh">loading…</span> &middot; LIVE (syncs hourly)</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Decision Rules</h3>
+        <ul>
+          <li><span class="badge badge-hero" style="font-size:10px;">Hero</span> ROAS&ge;400% AND Clicks&ge;6 &rarr; Scale aggressively</li>
+          <li><span class="badge badge-green" style="font-size:10px;">Green</span> ROAS&ge;400% AND Clicks&lt;6 &rarr; Scale</li>
+          <li><span class="badge badge-amber" style="font-size:10px;">Amber</span> ROAS 300-399% &rarr; Maintain</li>
+          <li><span class="badge badge-orange" style="font-size:10px;">Orange</span> ROAS 250-299% &rarr; Optimise</li>
+          <li><span class="badge badge-hpc" style="font-size:10px;">Hi-Cut</span> Orders&gt;0 AND ROAS&lt;250% &rarr; Review / Exclude</li>
+          <li><span class="badge badge-bleeding" style="font-size:10px;">Bleeding</span> Clicks&ge;5, CVR&lt;1%, Orders=0 &rarr; Exclude</li>
+          <li><span class="badge badge-loweng" style="font-size:10px;">Low Eng.</span> Impressions&gt;0, Clicks=0 &rarr; Improve title / image</li>
+          <li><span class="badge badge-zombie" style="font-size:10px;">Zombie</span> Impressions=0 &rarr; Check Merchant Center</li>
+          <li><span class="badge badge-monitor" style="font-size:10px;">Monitor</span> Everything else &rarr; Monitor</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>KPI Formulae</h3>
+        <ul>
+          <li><strong>CTR</strong> = (Clicks / Impressions) &times; 100</li>
+          <li><strong>CVR</strong> = (Orders / Clicks) &times; 100</li>
+          <li><strong>ROAS</strong> = (Sales / Spend) &times; 100</li>
+          <li><strong>Spend%</strong> = (Spend / COALESCE(sale_price, price)) &times; 100</li>
+          <li>Spend Alert triggered when Spend% &gt; 25%</li>
+          <li>NULLIF guards on all zero denominators</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+  <!-- /PANEL 2 -->
+
+
+    <div class="tab-panel" id="panel-3" role="tabpanel">
+
+    <header class="rpt">
+      <div class="req-tag">Requirement 3 &middot; Google Ads &middot; LEDSone FR &middot; Stock-Spend Tracker</div>
+      <h1>Stock-Spend Tracker &mdash; All Products</h1>
+      <div class="sub">
+        Staff: <strong>Thivajini</strong> &nbsp;&middot;&nbsp;
+        Store: <strong>ledsone.fr (EUR)</strong> &nbsp;&middot;&nbsp;
+        Period: <strong>Last 30 days (to 2026-07-09)</strong> &nbsp;&middot;&nbsp;
+        Sources: <strong>ppc_etl_performance_data &middot; google_merchant_products &middot; listing_data &middot; inv_final_stock</strong>
+      </div>
+      <div class="chips">
+        <span class="chip">324 Products with Spend or Impressions</span>
+        <span class="chip">sub_source_id=233 &middot; merchant_id=5551466539</span>
+        <span class="chip">Low Stock Threshold: &le;5 units</span>
+        <span class="chip">Fresh data &mdash; NOT from cppc_workbook_stock_spend_v1</span>
+      </div>
+    </header>
+
+    <!-- KPI cards -->
+    <div class="kpis">
+      <div class="kpi fail" style="background:#fef2f2"><div class="lbl">STOP &mdash; Out of Stock</div><div class="val" id="r3-stop" style="color:#7f1d1d">14</div><div class="note">Stock=0 &amp; Spend&gt;0</div></div>
+      <div class="kpi warn" style="background:#fff7ed"><div class="lbl">ACT SOON &mdash; Low Stock</div><div class="val" id="r3-actsoon" style="color:#9a3412">1</div><div class="note">Stock&le;5 &amp; Spend&gt;0</div></div>
+      <div class="kpi" style="background:#fffbeb"><div class="lbl">MONITOR</div><div class="val" id="r3-monitor" style="color:#78350f">3</div><div class="note">Stock&le;5 &amp; Spend=&euro;0</div></div>
+      <div class="kpi good" style="background:#f0fdf4"><div class="lbl">OK</div><div class="val" id="r3-ok" style="color:#065f46">306</div><div class="note">Stock&gt;5</div></div>
+      <div class="kpi info"><div class="lbl">Total Products</div><div class="val">324</div><div class="note">With 30d spend or impressions</div></div>
+      <div class="kpi fail"><div class="lbl">Total Wasted Spend</div><div class="val r3-waste">&euro;13.40</div><div class="note">STOP rows only</div></div>
+      <div class="kpi info"><div class="lbl">Product ID Match</div><div class="val">144</div><div class="note">Direct feed match</div></div>
+      <div class="kpi info"><div class="lbl">Record ID Match</div><div class="val">102</div><div class="note">Via record_id fallback</div></div>
+      <div class="kpi warn"><div class="lbl">Missing Mapping</div><div class="val">78</div><div class="note">No feed data available</div></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend" style="margin-bottom:14px;">
+      <span class="badge badge-stop">STOP &mdash; Out of Stock</span>
+      <span class="badge badge-actsoon">ACT SOON &mdash; Low Stock</span>
+      <span class="badge badge-monitor">MONITOR</span>
+      <span class="badge badge-ok">OK</span>
+    </div>
+
+    <!-- Filters -->
+    <div class="controls" style="flex-wrap:wrap;row-gap:8px;">
+      <input id="r3-search" type="text" placeholder="Search SKU / Product..." oninput="r3Render()">
+      <select class="r3sel" id="r3-flag" onchange="r3Render()">
+        <option value="">All Flags</option>
+        <option value="STOP">STOP &mdash; Out of Stock</option>
+        <option value="ACT SOON">ACT SOON &mdash; Low Stock</option>
+        <option value="MONITOR">MONITOR</option>
+        <option value="OK">OK</option>
+      </select>
+      <select class="r3sel" id="r3-camp" onchange="r3Render()">
+        <option value="">All Campaigns</option>
+        <option value="Topsell">Topsell</option>
+        <option value="Imp_Click">Imp_Click</option>
+      </select>
+      <select class="r3sel" id="r3-av" onchange="r3Render()">
+        <option value="">All Availability</option>
+        <option value="in stock">In Stock</option>
+        <option value="out of stock">Out of Stock</option>
+      </select>
+      <select class="r3sel" id="r3-mm" onchange="r3Render()">
+        <option value="">All Match Methods</option>
+        <option value="product_id match">Product ID Match</option>
+        <option value="record_id match">Record ID Match</option>
+        <option value="missing mapping">Missing Mapping</option>
+      </select>
+      <select class="r3sel" id="r3-sort" onchange="r3Render()">
+        <option value="flag">Sort: Flag (STOP first)</option>
+        <option value="spend">Sort: 30d Spend desc</option>
+        <option value="waste">Sort: Wasted Spend desc</option>
+        <option value="stock">Sort: Stock asc</option>
+        <option value="clicks">Sort: Clicks desc</option>
+      </select>
+      <button class="exp" onclick="r3CSV()">Export CSV</button>
+    </div>
+
+    <!-- Table -->
+    <div class="tbox">
+      <div class="tbar">
+        <span>Stock-Spend Tracker &middot; LEDSone FR &middot; Last 30 days</span>
+        <span id="r3-count"></span>
+      </div>
+      <div class="scroll" id="t3Scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:200px;">Product</th>
+              <th style="min-width:100px;">SKU</th>
+              <th style="min-width:120px;">Category</th>
+              <th style="min-width:130px;">Campaign</th>
+              <th>Feed Avail.</th>
+              <th class="num">Stock</th>
+              <th class="num">30d Spend</th>
+              <th class="num">Clicks</th>
+              <th class="num">Orders</th>
+              <th class="num">CVR%</th>
+              <th class="num">Avg/Day</th>
+              <th class="num">Days Left</th>
+              <th class="num">Wasted</th>
+              <th style="min-width:110px;">Flag</th>
+              <th style="min-width:200px;">Action</th>
+              <th style="min-width:110px;">Match</th>
+              <th style="min-width:120px;">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="r3-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer notes -->
+    <div class="notes-grid">
+      <div class="fn">
+        <h3>Data Sources</h3>
+        <ul>
+          <li><strong>Spend/Clicks/Orders:</strong> public.ppc_etl_performance_data (sub_source_id=233, last 30 days)</li>
+          <li><strong>Feed status:</strong> public.google_merchant_products (merchant_id=5551466539)</li>
+          <li><strong>Stock qty:</strong> public.listing_data (sub_source=233, ref_id=variant_id)</li>
+          <li><strong>Refresh:</strong> 2026-07-09 &middot; LOCAL ONLY</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Business Rules</h3>
+        <ul>
+          <li><span class="badge badge-stop" style="font-size:10px;">STOP</span> Stock=0 AND 30d Spend&gt;0 &rarr; Pause immediately</li>
+          <li><span class="badge badge-actsoon" style="font-size:10px;">ACT SOON</span> Stock&le;5 AND Spend&gt;0 &rarr; Cut budget / restock</li>
+          <li><span class="badge badge-monitor" style="font-size:10px;">MONITOR</span> Stock&le;5 AND Spend=0 &rarr; Watch</li>
+          <li><span class="badge badge-ok" style="font-size:10px;">OK</span> Stock&gt;5 &rarr; No action needed</li>
+          <li><strong>Low stock threshold:</strong> 5 units (default)</li>
+          <li><strong>Wasted Spend:</strong> Only counted when Stock=0 AND Spend&gt;0</li>
+        </ul>
+      </div>
+      <div class="fn">
+        <h3>Match Methods</h3>
+        <ul>
+          <li><strong>Product ID match (144):</strong> ppc_etl.sku = gmp.product_id directly</li>
+          <li><strong>Record ID match (102):</strong> ppc_etl.record_id &asymp; gmp.product_id (case-insensitive)</li>
+          <li><strong>Missing mapping (78):</strong> No gmp record found &mdash; feed data unavailable</li>
+          <li><strong>Stock:</strong> listing_data.quantity via ref_id=variant_id bridge</li>
+          <li><strong>Stock unknown (-1):</strong> No listing_data record; feed availability used as proxy</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+  <!-- /PANEL 3 -->
+
+  <!-- ══════════════════════════════════════════
+       PANEL 4 — Placeholder
+       ══════════════════════════════════════════ -->
+    <div class="tab-panel" id="panel-4" role="tabpanel">
+
+    <!-- KPI ROW -->
+    <div class="kpis" id="r4-kpis">
+      <div class="tbox"><div class="fn" id="r4-k-total">—</div><div class="fn-label">Products Tracked</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-sh30">—</div><div class="fn-label">Shopify Orders (30d)</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-ad30">—</div><div class="fn-label">Ads Orders (30d)</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-pct">—</div><div class="fn-label">Ads Contribution %</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-sh90">—</div><div class="fn-label">Shopify Orders (90d)</div></div>
+      <div class="tbox"><div class="fn" id="r4-k-ad90">—</div><div class="fn-label">Ads Orders (90d)</div></div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend" style="margin:8px 0 4px">
+      <span><span class="badge badge-ads-driven">Ads Driven</span> ≥80% ads contribution</span>
+      <span><span class="badge badge-balanced">Balanced</span> 40–79%</span>
+      <span><span class="badge badge-org-heavy">Organic Heavy</span> &lt;40%</span>
+      <span><span class="badge badge-org-only">Organic Only</span> Shopify orders, no Ads</span>
+      <span><span class="badge badge-no-orders">No Orders</span> 0 Shopify orders (30d)</span>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls" style="gap:6px;flex-wrap:wrap;margin:8px 0">
+      <input id="r4-search" class="r4sel" type="search" placeholder="Search product…" oninput="r4Render()">
+      <select class="r4sel" id="r4-status" onchange="r4Render()">
+        <option value="">All Status</option>
+        <option value="Ads Driven">Ads Driven</option>
+        <option value="Balanced">Balanced</option>
+        <option value="Organic Heavy">Organic Heavy</option>
+        <option value="Organic Only">Organic Only</option>
+        <option value="No Orders">No Orders</option>
+      </select>
+      <select class="r4sel" id="r4-win" onchange="r4Render()">
+        <option value="30">30 Days</option>
+        <option value="60">60 Days</option>
+        <option value="90">90 Days</option>
+      </select>
+      <select class="r4sel" id="r4-sort" onchange="r4Render()">
+        <option value="status">Sort: Status</option>
+        <option value="sh_desc">Sort: Shopify Orders ↓</option>
+        <option value="ad_desc">Sort: Ads Orders ↓</option>
+        <option value="pct_desc">Sort: Ads Contribution ↓</option>
+        <option value="diff_desc">Sort: Difference ↓</option>
+      </select>
+      <button class="nav-btn" onclick="r4CSV()" style="font-size:12px;padding:4px 10px;">Export CSV</button>
+      <span style="font-size:12px;color:var(--muted);align-self:center;" id="r4-count"></span>
+    </div>
+
+    <!-- TABLE -->
+    <div style="overflow-x:auto;margin-top:4px;">
+    <table class="rpt" id="r4-tbl">
+      <thead><tr>
+        <th>Product</th>
+        <th class="num">Price</th>
+        <th class="num">Shopify<br>90d</th>
+        <th class="num">Ads<br>90d</th>
+        <th class="num">Shopify<br>60d</th>
+        <th class="num">Ads<br>60d</th>
+        <th class="num">Shopify<br>30d</th>
+        <th class="num">Ads<br>30d</th>
+        <th class="num">Diff<br>(30d)</th>
+        <th class="num">Ads %<br>(30d)</th>
+        <th>Status</th>
+      </tr></thead>
+      <tbody id="r4-body"></tbody>
+    </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="r3-note" style="margin-top:12px;font-size:11px;color:var(--muted)">
+      <b>Data sources:</b> Shopify orders via ShopifyQL analytics (product-level, paid orders) ·
+      Ads orders via public.ppc_etl_performance_data (sub_source_id=233) ·
+      <b>Matching key:</b> Product Title (Shopify product title matched to Ads product title via Shopify Product ID lookup) ·
+      <b>Status (30d):</b> Ads Driven ≥80% · Balanced 40–79% · Organic Heavy &lt;40% · Organic Only = Shopify &gt;0, Ads=0 · No Orders = Shopify=0 in 30d window ·
+      Data as of 2026-07-09 · Snapshot only — refresh required for live decisions.
+    </div>
+
+  </div>
+
+
+</div><!-- /wrap -->
+
+<footer class="site">
+  Thivajini · Google Ads · LEDSone FR · AIOS Requirements Dashboard · 2026-07-09
+</footer>
+
+<script>
+/* ── Tab switching ─────────────────────────── */
+function showTab(n){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-selected','false');});
+  var p=document.getElementById('panel-'+n);
+  var b=document.getElementById('nav-'+n);
+  if(p) p.classList.add('active');
+  if(b){b.classList.add('active');b.setAttribute('aria-selected','true');}
+  if(n===2)tvLoadReq2();
+  if(n===3)tvLoadReq3();
+  if(n===4)tvLoadReq4();
+}
+
+/* ── Data ──────────────────────────────────── */
+var ROWS = [];
+
+/* ── Helpers ───────────────────────────────── */
+function campClass(c){
+  return c==="Topsell"?"camp-topsell":c==="All Products"?"camp-allproduct":"camp-bestsell";
+}
+function fmt(n){
+  if(n===0) return '<span style="color:var(--muted)">—</span>';
+  return '€'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+}
+function fmtGap(r){
+  var g=r.ads_conv-r.shop_ord;
+  if(g===0) return '<span style="color:var(--muted)">0</span>';
+  return '<span class="'+(g>0?'td-gap-pos':'td-gap-neg')+'">'+(g>0?'+':'')+g+'</span>';
+}
+function fmtRatio(r){
+  if(r.ads_conv===0||r.shop_ord===0||r.shop_rev===0) return '<span style="color:var(--muted)">N/A</span>';
+  var ratio=r.ads_val/r.shop_rev;
+  var col=ratio>=0.95&&ratio<=1.05?'var(--good)':ratio>=0.80&&ratio<=1.20?'var(--warn)':'var(--fail)';
+  return '<span style="color:'+col+';font-weight:800">'+ratio.toFixed(2)+'x</span>';
+}
+function statusBadge(r){
+  if(r.ads_conv===0&&r.shop_ord===0) return '<span class="badge nodata">—</span>';
+  if(r.ads_conv===0&&r.shop_ord>0)   return '<span class="badge noads">NO ADS CONV</span>';
+  if(r.shop_ord===0&&r.ads_conv>0)   return '<span class="badge noshop">NO SHOPIFY UTM</span>';
+  var ratio=r.ads_val/r.shop_rev;
+  if(ratio>=0.95&&ratio<=1.05) return '<span class="badge pass">PASS</span>';
+  if(ratio>=0.80&&ratio<=1.20) return '<span class="badge review">REVIEW</span>';
+  return '<span class="badge fail">FAIL</span>';
+}
+
+/* ── Table render ──────────────────────────── */
+var activeFilter='all';
+function renderTable(filter){
+  var tbody=document.getElementById('tbl-body');
+  tbody.innerHTML='';
+  var shown=0;
+  ROWS.forEach(function(r){
+    if(filter&&filter!=='all'&&r.camp!==filter) return;
+    shown++;
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td style="color:var(--muted);font-size:11px;">'+r.week+'</td>'+
+      '<td class="'+campClass(r.camp)+'">'+r.camp+'</td>'+
+      '<td class="num">'+(r.ads_conv===0?'<span style="color:var(--muted)">0</span>':r.ads_conv)+'</td>'+
+      '<td class="num">'+(r.ads_val===0?'<span style="color:var(--muted)">—</span>':fmt(r.ads_val))+'</td>'+
+      '<td class="num">'+(r.shop_ord===0?'<span style="color:var(--muted)">0</span>':r.shop_ord)+'</td>'+
+      '<td class="num">'+(r.shop_rev===0?'<span style="color:var(--muted)">—</span>':fmt(r.shop_rev))+'</td>'+
+      '<td class="num">'+fmtGap(r)+'</td>'+
+      '<td class="num">'+fmtRatio(r)+'</td>'+
+      '<td>'+statusBadge(r)+'</td>';
+    tbody.appendChild(tr);
+  });
+  var rc=document.getElementById('row-count');
+  if(rc) rc.textContent=shown+' row'+(shown!==1?'s':'');
+}
+
+function filterCamp(camp,btn){
+  activeFilter=camp;
+  document.querySelectorAll('.fbtn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  renderTable(camp==='all'?null:camp);
+}
+
+/* ── CSV export ────────────────────────────── */
+function exportCSV(){
+  var rows=[['Week Start','Campaign','Ads Conversions','Ads Conversion Value (EUR)','Shopify UTM Orders','Shopify UTM Revenue (EUR)','Order Gap (Ads-Shopify)','Attribution Ratio','Status']];
+  ROWS.forEach(function(r){
+    var ratio='N/A';
+    if(r.ads_conv>0&&r.shop_ord>0&&r.shop_rev>0) ratio=(r.ads_val/r.shop_rev).toFixed(4);
+    var status='—';
+    if(r.ads_conv===0&&r.shop_ord>0) status='NO ADS CONV';
+    else if(r.shop_ord===0&&r.ads_conv>0) status='NO SHOPIFY UTM';
+    else if(ratio!=='N/A'){var rv=parseFloat(ratio);status=rv>=0.95&&rv<=1.05?'PASS':rv>=0.80&&rv<=1.20?'REVIEW':'FAIL';}
+    rows.push([r.week,r.camp,r.ads_conv,r.ads_val,r.shop_ord,r.shop_rev,r.ads_conv-r.shop_ord,ratio,status]);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return'"'+c+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='thivajini-attribution-cross-check-2026-07-09.csv';
+  a.click();
+}
+
+/* ── Init ──────────────────────────────────── */
+
+var PRODUCTS = [];
+/* Req2 render */
+
+const SEG_ROW={'Hero':'seg-hero','Green':'seg-green','Amber':'seg-amber','Orange':'seg-orange','High Priority Cut':'seg-hpc','Bleeding':'seg-bleeding','Low Engagement':'seg-loweng','Zombie':'seg-zombie','Monitor Cut':'seg-monitor'};
+const SEG_BADGE={'Hero':'badge-hero','Green':'badge-green','Amber':'badge-amber','Orange':'badge-orange','High Priority Cut':'badge-hpc','Bleeding':'badge-bleeding','Low Engagement':'badge-loweng','Zombie':'badge-zombie','Monitor Cut':'badge-monitor'};
+const SEG_ACT={'Hero':'Scale aggressively','Green':'Scale','Amber':'Maintain','Orange':'Optimise','High Priority Cut':'Review / Likely exclude','Bleeding':'Exclude','Low Engagement':'Improve title / image / feed','Zombie':'Check Merchant Center feed','Monitor Cut':'Monitor'};
+const SEG_ORD=['Hero','Green','Amber','Orange','Monitor Cut','Low Engagement','Bleeding','High Priority Cut','Zombie'];
+
+function r2eur(n){return n===0?'\u2014':'\u20ac'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+
+function avBadge(av){
+  if(av==='in stock')    return '<span style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">In Stock</span>';
+  if(av==='out of stock')return '<span style="background:#fee2e2;color:#7f1d1d;border:1px solid #fca5a5;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">Out of Stock</span>';
+  if(av==='unavailable') return '<span style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">Unavailable</span>';
+  if(av==='not found')   return '<span style="background:#fce7f3;color:#9d174d;border:1px solid #f9a8d4;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">Not Found</span>';
+  return '<span style="background:#e2e3e5;color:#383d41;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700">'+av+'</span>';
+}
+
+function r2Render(){
+  var q=document.getElementById('r2-search').value.trim().toLowerCase();
+  var seg=document.getElementById('r2-seg').value;
+  var av=document.getElementById('r2-av').value;
+  var spA=document.getElementById('r2-spend-alert').value==='alert';
+  var srt=document.getElementById('r2-sort').value;
+  var rows=PRODUCTS.filter(function(p){
+    if(seg&&p.seg!==seg)return false;
+    if(av&&p.av!==av)return false;
+    if(spA&&p.spp<=25)return false;
+    if(q&&p.t.toLowerCase().indexOf(q)===-1&&p.id.indexOf(q)===-1)return false;
+    return true;
+  });
+  if(srt==='roas')rows.sort(function(a,b){return b.roas-a.roas;});
+  else if(srt==='sp')rows.sort(function(a,b){return b.sp-a.sp;});
+  else if(srt==='sa')rows.sort(function(a,b){return b.sa-a.sa;});
+  else if(srt==='cl')rows.sort(function(a,b){return b.cl-a.cl;});
+  else if(srt==='im')rows.sort(function(a,b){return b.im-a.im;});
+  else rows.sort(function(a,b){return SEG_ORD.indexOf(a.seg)-SEG_ORD.indexOf(b.seg)||b.roas-a.roas;});
+  var tbody=document.getElementById('r2-body');
+  tbody.innerHTML='';
+  rows.forEach(function(p){
+    var spCls=p.spp>25?' spend-alert':'';
+    var tr=document.createElement('tr');
+    tr.className=SEG_ROW[p.seg]||'';
+    var urlCell=p.url?'<a class="r2-url" href="'+p.url+'" target="_blank" rel="noopener">View</a>':'-';
+    tr.innerHTML=
+      '<td><span style="font-size:12px;font-weight:600;">'+p.t+'</span><br><span style="font-size:10.5px;color:var(--muted);">'+p.id+' &middot; '+urlCell+'</span></td>'+
+      '<td>'+avBadge(p.av)+'</td>'+
+      '<td class="num">'+(p.pr>0?'\u20ac'+p.pr.toFixed(2):'<span style="color:var(--muted)">-</span>')+'</td>'+
+      '<td class="num">'+p.im.toLocaleString()+'</td>'+
+      '<td class="num">'+p.cl+'</td>'+
+      '<td class="num'+spCls+'">'+r2eur(p.sp)+'</td>'+
+      '<td class="num">'+(p.or>0?p.or:'<span style="color:var(--muted)">0</span>')+'</td>'+
+      '<td class="num">'+r2eur(p.sa)+'</td>'+
+      '<td class="num">'+(p.im>0?p.ctr.toFixed(2)+'%':'<span style="color:var(--muted)">-</span>')+'</td>'+
+      '<td class="num">'+(p.cl>0?p.cvr.toFixed(2)+'%':'<span style="color:var(--muted)">-</span>')+'</td>'+
+      '<td class="num">'+(p.sp>0?p.roas.toFixed(1)+'%':'<span style="color:var(--muted)">-</span>')+'</td>'+
+      '<td class="num'+spCls+'">'+(p.spp>0?'<span class="'+(p.spp>25?'spend-alert':'')+'">'+p.spp.toFixed(1)+'%</span>':'<span style="color:var(--muted)">-</span>')+'</td>'+
+      '<td><span class="badge '+(SEG_BADGE[p.seg]||'')+'">'+p.seg+'</span></td>'+
+      '<td><span class="r2-action">'+(SEG_ACT[p.seg]||'-')+'</span></td>';
+    tbody.appendChild(tr);
+  });
+  var cnt=document.getElementById('r2-count');
+  if(cnt)cnt.textContent=rows.length+' product'+(rows.length!==1?'s':'');
+}
+
+function r2CSV(){
+  var hdr=['Product ID','Title','URL','Availability','Price EUR','Impressions','Clicks','Spend EUR','Orders','Sales EUR','CTR %','CVR %','ROAS %','Spend % of Price','Segment','Action'];
+  var lines=[hdr];
+  // Apply same filters as r2Render so export matches what's on screen
+  var q=document.getElementById('r2-search').value.trim().toLowerCase();
+  var seg=document.getElementById('r2-seg').value;
+  var av=document.getElementById('r2-av').value;
+  var spA=document.getElementById('r2-spend-alert').value==='alert';
+  var rows=PRODUCTS.filter(function(p){
+    if(seg&&p.seg!==seg)return false;
+    if(av&&p.av!==av)return false;
+    if(spA&&p.spp<=25)return false;
+    if(q&&p.t.toLowerCase().indexOf(q)===-1&&p.id.indexOf(q)===-1)return false;
+    return true;
+  });
+  rows.forEach(function(p){lines.push([p.id,p.t,p.url,p.av,p.pr,p.im,p.cl,p.sp,p.or,p.sa,p.ctr,p.cvr,p.roas,p.spp,p.seg,SEG_ACT[p.seg]||'']);});
+  var csv=lines.map(function(r){return r.map(function(c){return '"'+(c+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='thivajini-product-kpi-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+
+var R3PRODUCTS = [];
+
+/* Req3 render */
+const R3_ROW={'STOP':'r3-stop','ACT SOON':'r3-actsoon','MONITOR':'r3-monitor','OK':'r3-ok'};
+const R3_BADGE={'STOP':'badge-stop','ACT SOON':'badge-actsoon','MONITOR':'badge-monitor','OK':'badge-ok'};
+const R3_ACT={'STOP':'Pause ad group / exclude SKU immediately','ACT SOON':'Cut budget or restock within days','MONITOR':'No wasted spend yet \u2014 watch stock','OK':'Healthy stock \u2014 no action needed'};
+const R3_ORD={'STOP':0,'ACT SOON':1,'MONITOR':2,'OK':3};
+
+function r3Render(){
+  var q   =document.getElementById('r3-search').value.trim().toLowerCase();
+  var fl  =document.getElementById('r3-flag').value;
+  var camp=document.getElementById('r3-camp').value;
+  var av  =document.getElementById('r3-av').value;
+  var mm  =document.getElementById('r3-mm').value;
+  var srt =document.getElementById('r3-sort').value;
+  var rows=R3PRODUCTS.filter(function(p){
+    if(fl   && p.fl!==fl)   return false;
+    if(av   && p.av!==av)   return false;
+    if(mm   && p.mm!==mm)   return false;
+    if(camp && p.camp.indexOf(camp)===-1) return false;
+    if(q && p.t.toLowerCase().indexOf(q)===-1
+         && p.id.indexOf(q)===-1
+         && p.sku.toLowerCase().indexOf(q)===-1) return false;
+    return true;
+  });
+  if(srt==='spend') rows.sort(function(a,b){return b.sp-a.sp;});
+  else if(srt==='waste') rows.sort(function(a,b){return b.ws-a.ws;});
+  else if(srt==='stock') rows.sort(function(a,b){return (a.st<0?9999:a.st)-(b.st<0?9999:b.st);});
+  else if(srt==='clicks') rows.sort(function(a,b){return b.cl-a.cl;});
+  else rows.sort(function(a,b){return R3_ORD[a.fl]-R3_ORD[b.fl]||b.sp-a.sp;});
+  var tbody=document.getElementById('r3-body');
+  tbody.innerHTML='';
+  rows.forEach(function(p){
+    var tr=document.createElement('tr');
+    tr.className=R3_ROW[p.fl]||'';
+    var urlCell=p.url?'<a class="r3-url" href="'+p.url+'" target="_blank" rel="noopener">View</a>':'-';
+    var stDisp=p.st<0?'<span style="color:var(--muted)">?</span>':p.st;
+    var dlDisp=p.dl<0?'<span style="color:var(--muted)">-</span>':p.dl===9999?'\u221e':p.dl;
+    var wsDisp=p.ws>0?'<span class="r3-waste">\u20ac'+p.ws.toFixed(2)+'</span>':'<span style="color:var(--muted)">-</span>';
+    var adsDisp=p.ads>0?p.ads.toFixed(2):'<span style="color:var(--muted)">-</span>';
+    var mmCls=p.mm==='missing mapping'?'r3-waste':'';
+    tr.innerHTML=
+      '<td><span style="font-size:12px;font-weight:600;">'+p.t+'</span><br>'
+        +'<span style="font-size:10.5px;color:var(--muted);">'+p.id+' \u00b7 '+urlCell+'</span></td>'
+      +'<td><span style="font-size:11px;">'+( p.sku||'<span style="color:var(--muted)">-</span>' )+'</span></td>'
+      +'<td><span style="font-size:11px;">'+p.cat+'</span></td>'
+      +'<td><span style="font-size:11px;">'+p.camp+'</span></td>'
+      +'<td><span style="font-size:11px;">'+p.av+'</span></td>'
+      +'<td class="num">'+stDisp+'</td>'
+      +'<td class="num">'+(p.sp>0?'\u20ac'+p.sp.toFixed(2):'<span style="color:var(--muted)">-</span>')+'</td>'
+      +'<td class="num">'+p.cl+'</td>'
+      +'<td class="num">'+(p.or>0?p.or:'<span style="color:var(--muted)">0</span>')+'</td>'
+      +'<td class="num">'+(p.cl>0?p.cv.toFixed(2)+'%':'<span style="color:var(--muted)">-</span>')+'</td>'
+      +'<td class="num">'+adsDisp+'</td>'
+      +'<td class="num">'+dlDisp+'</td>'
+      +'<td class="num">'+wsDisp+'</td>'
+      +'<td><span class="badge '+(R3_BADGE[p.fl]||'')+'">'+p.fl+'</span></td>'
+      +'<td><span style="font-size:11px;">'+(R3_ACT[p.fl]||'-')+'</span></td>'
+      +'<td><span class="r3-mm '+mmCls+'">'+p.mm+'</span></td>'
+      +'<td><span class="r3-note">'+( p.nt||'' )+'</span></td>';
+    tbody.appendChild(tr);
+  });
+  var cnt=document.getElementById('r3-count');
+  if(cnt)cnt.textContent=rows.length+' product'+(rows.length!==1?'s':'');
+}
+
+function r3CSV(){
+  var hdr=['Variant ID','Internal SKU','Title','Category','Campaign','Feed Availability','Current Stock','30d Spend EUR','Clicks','Orders','CVR%','Avg Daily Sales','Days of Stock Left','Wasted Spend EUR','Flag','Action','Match Method','Notes'];
+  var lines=[hdr];
+  // Apply same filters as r3Render so export matches what's on screen
+  var q   =document.getElementById('r3-search').value.trim().toLowerCase();
+  var fl  =document.getElementById('r3-flag').value;
+  var camp=document.getElementById('r3-camp').value;
+  var av  =document.getElementById('r3-av').value;
+  var mm  =document.getElementById('r3-mm').value;
+  var rows=R3PRODUCTS.filter(function(p){
+    if(fl   && p.fl!==fl)   return false;
+    if(av   && p.av!==av)   return false;
+    if(mm   && p.mm!==mm)   return false;
+    if(camp && p.camp.indexOf(camp)===-1) return false;
+    if(q && p.t.toLowerCase().indexOf(q)===-1
+         && p.id.indexOf(q)===-1
+         && p.sku.toLowerCase().indexOf(q)===-1) return false;
+    return true;
+  });
+  rows.forEach(function(p){
+    lines.push([p.id,p.sku,p.t,p.cat,p.camp,p.av,p.st,p.sp,p.cl,p.or,p.cv,p.ads,p.dl,p.ws,p.fl,R3_ACT[p.fl]||'',p.mm,p.nt]);
+  });
+  var csv=lines.map(function(r){return r.map(function(c){return '"'+(c+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='thivajini-stock-spend-req3-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+
+var R4PRODUCTS=[{"id": "ampoule led b22 4w t", "t": "Ampoule LED B22 4W T45 Dimmable Vintage Filament Ampoules ~3077", "pr": 7.16, "sh90": 5, "sh60": 3, "sh30": 2, "ad90": 2, "ad60": 2, "ad30": 2, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre araignée 8 bras vintage – Suspension laiton & cuivre E27 ~1916", "pr": 73.74, "sh90": 3, "sh60": 3, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 2, "diff": -1, "pct": 200.0, "st": "Ads Driven"}, {"id": "câble plafonnier ind", "t": "Câble Plafonnier Industriel Rétro 2 Voies E27 Suspension Suspension ~1567", "pr": 25.15, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 2, "diff": -1, "pct": 200.0, "st": "Ads Driven"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Vintage Col de Cygne - Bras Métal E27 ~1971", "pr": 38.67, "sh90": 4, "sh60": 3, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ampoule led vintage ", "t": "Ampoule LED vintage B22 G125 – Filament ambré dimmable 8W ~ 3217", "pr": 6.77, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone 200mm kit ro", "t": "LEDSone 200mm Kit rosace Cylindrique en métal à 3 trous ~1514", "pr": 10.96, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension industrielle vintage en métal – Lustre de cuisine rétro plafonnier E27 ~1544", "pr": 36.11, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 2, "ad60": 2, "ad30": 2, "diff": -1, "pct": 200.0, "st": "Ads Driven"}, {"id": "ledsone lustre salon", "t": "LEDSone Lustre salon 5 têtes – Suspension bouteille de vin en verre  ~1722", "pr": 82.05, "sh90": 3, "sh60": 2, "sh30": 1, "ad90": 2, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone éclairage mu", "t": "LEDSone Éclairage mural de salon Appliques élégantes modernes ~1749", "pr": 32.4, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone suspension v", "t": "LEDSone Suspension Vintage Cuivre E27 – Plafonnier Métal Rétro 1m ~1560", "pr": 64.64, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 2, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone plafonnier m", "t": "LEDSone Plafonnier métal semi‑encastré vintage – Style ancien E27 ~1653", "pr": 15.49, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle Vintage 32cm E27 Métal ~1720", "pr": 15.57, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension Industrielle Vintage Métal E27 – Style Loft & Ancien ~ 5934", "pr": 26.21, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 0, "pct": 100.0, "st": "Ads Driven"}, {"id": "ledsone abat-jour su", "t": "LEDSone Abat-jour suspendu E27 Fix abat-jour dôme en métal 30 cm ~1774", "pr": 17.89, "sh90": 3, "sh60": 2, "sh30": 2, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 1, "pct": 50.0, "st": "Balanced"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industrielle Métal 15cm E27 Câble Réglable ~2152", "pr": 23.86, "sh90": 2, "sh60": 2, "sh30": 2, "ad90": 1, "ad60": 1, "ad30": 1, "diff": 1, "pct": 50.0, "st": "Balanced"}, {"id": "ledsone suspension e", "t": "LEDSone Suspension Extérieure IP65 E27 – Luminaire Noir Étanche 1m ~1545", "pr": 34.45, "sh90": 6, "sh60": 5, "sh30": 3, "ad90": 2, "ad60": 2, "ad30": 1, "diff": 2, "pct": 33.3, "st": "Organic Heavy"}, {"id": "ledsone luminaire ar", "t": "LEDSone Luminaire Araignée Industriel 5 Ampoules E27 – Métal Réglable ~1541", "pr": 71.33, "sh90": 9, "sh60": 7, "sh30": 3, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 3, "pct": 0.0, "st": "Organic Only"}, {"id": "kit suspension lumin", "t": "Kit Suspension Luminaire E27 en Câble Textile – Réglable 1m ~ 3646", "pr": 42.64, "sh90": 3, "sh60": 2, "sh30": 2, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "rosace de plafond ro", "t": "Rosace de Plafond Ronde 100mm en Métal — Cache-Fil Élégant pour Suspension ~1828", "pr": 18.18, "sh90": 2, "sh60": 2, "sh30": 2, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle en Métal Rétro avec Douille E27 ~2115", "pr": 16.55, "sh90": 3, "sh60": 3, "sh30": 2, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle Métal Vintage Style Edison ~2161", "pr": 51.23, "sh90": 2, "sh60": 2, "sh30": 2, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 2, "pct": 0.0, "st": "Organic Only"}, {"id": "douille e27 filetage", "t": "Douille E27 Filetage 20mm pour Tube Conduit – Support Ampoule Vintage ~ 5539", "pr": 17.47, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone ampoule led ", "t": "LEDSone Ampoule LED vintage T185 E27 – filament tubulaire LED dimmable ~1932", "pr": 13.1, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone rosace plafo", "t": "LEDSone Rosace Plafond Vintage 105mm Métal Antique avec Accessoires ~1935", "pr": 7.28, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lustre araignée 5 lu", "t": "Lustre Araignée 5 Lumières Industriel Vintage E27 Métal Noir – LEDsone ~1917", "pr": 41.3, "sh90": 2, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone plafonnier a", "t": "LEDSone Plafonnier au-dessus de l'évier de la cuisine – lampe vintage  ~1948", "pr": 17.08, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industriel Métal Noir - Lustre Rétro E27 ~1993", "pr": 43.05, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour de", "t": "LEDSone Abat-jour Design Moderne en Métal pour Suspension et Plafonnier 32 cm ~1898", "pr": 34.72, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone applique mur", "t": "LEDSone Applique Murale Industrielle Métal – Abat-jour Vintage Rétro E27 ~ 4080", "pr": 53.91, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lot de 3 abat‑jours ", "t": "Lot de 3 abat‑jours vintage – Suspension industrielle incurvée E27 ~1990", "pr": 23.41, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "rose de plafond mult", "t": "Rose de Plafond Multi-sorties 3 Voies en Cuivre ~3083", "pr": 8.72, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "applique murale vint", "t": "Applique Murale Vintage Noire Orientable à 180° – Éclairage Industriel ~1894", "pr": 31.2, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ancienne suspension ", "t": "Ancienne Suspension Lustre Araignée Industriel E27 – LEDsone ~1630", "pr": 25.83, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "alimentation led 7w ", "t": "Alimentation LED 7W Courant Constant | Driver Compact pour Spots & Projets DIY ~3322", "pr": 6.56, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "raccord conduit 20mm", "t": "Raccord Conduit 20mm Acier Galvanisé | Boîte Bornes Éclairage — LEDsone ~5543", "pr": 138.12, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "suspension led vinta", "t": "Suspension LED Vintage 5 Têtes – Lustre Araignée Réglable en Hauteur pour Salon et Salle à Manger ~1553", "pr": 101.23, "sh90": 3, "sh60": 2, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour mé", "t": "LEDSone Abat-jour métal Pluton plafonnier suspension luminaire abat-jour ~1689", "pr": 96.4, "sh90": 3, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Vintage Métal Noir E27 pour Cuisine ~2168", "pr": 44.95, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lustre araignée 5 fi", "t": "Lustre Araignée 5 Fils Vintage – Suspension Industrielle | LEDsone ~1528", "pr": 101.33, "sh90": 1, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension v", "t": "LEDSone Suspension Vintage Verte 32cm E27 – Abat-jour Métal Cuisine ~1900", "pr": 170.05, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 3, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Vintage Motif Cône - Métal Noir E27 ~1708", "pr": 25.47, "sh90": 3, "sh60": 2, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension industrielle rétro – Lustre vintage bleu marine E27 ~1875", "pr": 26.68, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industrielle - 3 Lampes Métal Noir ~2018", "pr": 29.0, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "transformateur d'ali", "t": "Transformateur d'alimentation LED étanche en aluminium 24V IP67 pour bande LED 150W~1863", "pr": 20.99, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone ancien abat-", "t": "LEDSone Ancien abat-jour suspension plafonnier E27 suspension industrielle ~1753", "pr": 78.33, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "plafonnier semi-enca", "t": "Plafonnier semi-encastré | Abat-jour conique antique ~1742", "pr": 18.66, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "applique murale vint", "t": "Applique murale vintage réglable 180° – Bras pivotant métal noir E27 ~2034", "pr": 92.3, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour cr", "t": "LEDSone Abat-jour Cristal Moderne - Suspension Cage Métal & Cristal ~2024", "pr": 24.4, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "fil pour suspension ", "t": "Fil pour Suspension Luminaire E27 – Câble Textile Rond 2m  ~3645", "pr": 24.14, "sh90": 2, "sh60": 1, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone plafonnier m", "t": "LEDSone Plafonnier Moderne 3 Têtes en Verre Nervuré Laiton Jaune  ~1927", "pr": 42.35, "sh90": 2, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone plafonnier a", "t": "LEDSone Plafonnier Araignée Noir – Lustre Industriel 2 Têtes – E27 ~1687", "pr": 18.66, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "raccords de conduits", "t": "Raccords de conduits 20 mm borne galvanisée 1 boîte de sortie ~ 1647", "pr": 163.11, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "luminaire suspendu v", "t": "Luminaire Suspendu Vintage à Trois Bras – Abat-jour Conique Plat, Finition Dorée ~2153", "pr": 165.0, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension i", "t": "Ledsone Suspension Industrielle Noire Steampunk – Lustre 3 Voies E27~1918", "pr": 41.38, "sh90": 2, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "lustre araignée 3 fi", "t": "Lustre Araignée 3 Fils Cuivre Brossé – Suspension Industrielle E27 2m Réglable ~1628", "pr": 38.82, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone suspension s", "t": "LEDSone Suspension Style Fermier Industrielle – Abat-jour Bol Métallique pour Cuisine & Couloir ~1824", "pr": 13.21, "sh90": 2, "sh60": 2, "sh30": 1, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre Araignée Dimmable 2 Bras E27 – Suspension Vintage ~1580", "pr": 33.08, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone abat-jour pl", "t": "LEDSone Abat-jour Plafond Métal Industriel Rétro 26cm ~ 2323", "pr": 13.14, "sh90": 1, "sh60": 0, "sh30": 1, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 1, "pct": 0.0, "st": "Organic Only"}, {"id": "ledsone ampoule led ", "t": "LEDSone Ampoule LED Vintage G95 E27 8W – Globe Rétro Verre Ambré Filament 2700K ~2074", "pr": 14.51, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "driver led 18w–100w ", "t": "Driver LED 18W–100W DC 12V – Alimentation LED 220V vers 12V – Transformateur pour bandeau LED – LEDsone ~2129", "pr": 15.3, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Vintage Noire - Bras Col de Cygne Métal E27 - LEDSone ~3911", "pr": 25.76, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lustre araignée indu", "t": "Lustre Araignée Industriel 8 Têtes E27 Décoration Intérieure – LEDsone ~1637", "pr": 57.45, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre Araignée Blanc - Suspension 3 Têtes Câble Réglable ~1878", "pr": 16.62, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone 22cm luminai", "t": "LEDSone 22cm Luminaire Abat jour en Métal E27/B22 ~1533", "pr": 137.37, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "filament led e27 g95", "t": "Filament LED E27 G95 4W Ampoule Dimmable Vis Vintage Globe Ampoule Décorative ~1896", "pr": 2.95, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "crochets de câble en", "t": "Crochets de câble en V pour murs et plafonds-4429", "pr": 3.5, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée 5 Fils E27 – Lustre Araignée Industriel 2m Réglable ~1542", "pr": 266.67, "sh90": 4, "sh60": 1, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "crochet swag de plaf", "t": "Crochet Swag de plafond blanc pour suspension ~ 4428", "pr": 17.5, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension s", "t": "LEDSone Suspension support interrupteur plafond métal industriel rotatif vintage ~1654", "pr": 76.03, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lustre suspension bo", "t": "Lustre Suspension Bouteilles de Vin Vintage E27 Plafonnier Grappe Cave à Vin, Bar, Restaurant ~1529", "pr": 84.52, "sh90": 1, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension globe rot", "t": "Suspension Globe Rotin Tressé Jaune — Style Bohème & Naturel, E27 ~ 3642", "pr": 14.64, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "abat-jour industriel", "t": "Abat-jour Industriel Dôme Courbé – Suspension Rétro Vintage en Métal ~1835", "pr": 7.19, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lot de 3 suspensions", "t": "Lot de 3 suspensions vintage en métal Ø30 cm – Luminaires LEDSone ~1691", "pr": 66.9, "sh90": 5, "sh60": 3, "sh30": 0, "ad90": 2, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ancien crochet de pl", "t": "Ancien crochet de plafond en fer cuivre pour suspensions luminaires lustre suspension support lampe", "pr": 1.98, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lustre araig", "t": "LEDSone Lustre Araignée 3 Fils E27 – Suspension Industrielle Vintage 2m Réglable pour Salon & Loft ~1543", "pr": 44.49, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industrielle Cuivre Antique Martelé E27 réglable ~1979", "pr": 58.0, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension araignée multi flamante pieuvre noire ~1634", "pr": 40.36, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale rétr", "t": "Applique murale rétro industrielle avec support en bois et abat-jour en métal ~1715", "pr": 20.57, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lustre indus", "t": "LEDSone Lustre industriel 5 lampes tuyau – Suspension vintage métal E27 ~1730", "pr": 45.55, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 2, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule vintage à fi", "t": "Ampoule vintage à filament LED G95 4W B22 Edison globe vintage ~4072", "pr": 4.42, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoules led baïonne", "t": "Ampoules LED Baïonnette ST64 B22 4W Dimmable Filament Edison Ampoules ~1673", "pr": 9.17, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led filament", "t": "Ampoule LED filament E27 4W–8W – Éclairage décoratif rétro ~1777", "pr": 6.98, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale col ", "t": "Applique Murale Col de Cygne E27 – Métal Vintage Edison ~1554", "pr": 28.95, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension lumineuse", "t": "Suspension lumineuse de style industriel vintage ~1826", "pr": 86.29, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension Industrielle Lampes Chanvre E27 ~2019", "pr": 37.67, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "rosace de plafond no", "t": "Rosace de Plafond Noire à 9 Sorties – Support Métal 120mm pour Lustre et Applique ~1834", "pr": 9.32, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone ampoule led ", "t": "LEDSone Ampoule LED Vintage Filament G80 — Culot B22 4W Blanc Chaud ~1829", "pr": 2.54, "sh90": 2, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée Industrielle Noire - Lustre Métal 2 Têtes E27, 29cm ~1563", "pr": 34.98, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée Industrielle à Poulie - 3 Têtes Réglables E27 ~1937", "pr": 0.0, "sh90": 0, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone support file", "t": "LEDSone Support filetage 20 mm E27 pour éclairage de conduit ~1682", "pr": 18.27, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "câble électrique tor", "t": "Câble électrique torsadé noir 5 m tissu recouvert 0,75 mm ~ 1152", "pr": 14.57, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "2m octopus suspensio", "t": "2m Octopus Suspension Corde D'araignée Luminaire E27 ~1507", "pr": 47.91, "sh90": 3, "sh60": 3, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension industrie", "t": "Suspension Industrielle Incurvée Noire E27 Câble Tissu 2m – LEDsone ~2033", "pr": 38.01, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "appliques murales d'", "t": "Appliques murales d'intérieur lampes vintage salon chambre ~2053", "pr": 13.9, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension araignée ", "t": "Suspension Araignée Noire Industrielle Câble Caoutchouc E27 ~1627", "pr": 42.02, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "tapis de porte en ca", "t": "Tapis de porte en caoutchouc - Tapis de porte de bienvenue antidérapants résistants-5148", "pr": 11.47, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led cœur vin", "t": "Ampoule LED Cœur Vintage E27 – Filament en Forme de Cœur ~1713", "pr": 13.73, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "dc 5v 60a 300w inter", "t": "DC 5V 60A 300W Interrupteur Alimentation AC 110V/220V Convertisseur Commutation ~1746", "pr": 403.5, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone alimentation", "t": "LEDSone Alimentation à courant constant 4-7W DC 12-26V 300mAmp ~ 3316", "pr": 7.9, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "abat-jour plafonnier", "t": "Abat-jour plafonnier style rétro métal incurvé 36 cm ~1776", "pr": 13.4, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lot de 2 suspension ", "t": "Lot de 2 Suspension Luminaire Vintage Métal Industriel - LEDSone ~2020", "pr": 21.99, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale exté", "t": "Applique murale extérieure imperméable avec élégant design incurvé 29 cm ~2094", "pr": 16.05, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "câble tissu torsadé ", "t": "Câble tissu torsadé marron 3 conducteurs — Câble électrique textile vintage ~ 3192", "pr": 5.72, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led vintage ", "t": "Ampoule LED Vintage G125 E27 4W – Filament Note de Musique ~ 1041", "pr": 6.8, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone applique mur", "t": "LEDSone Applique murale Vintage de style industriel rétro | Ø 21 cm | E27 ~1755", "pr": 0.0, "sh90": 0, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "plafonnier à tuyaux ", "t": "Plafonnier à tuyaux encastrés steampunk 4 lumières ~1883", "pr": 44.08, "sh90": 2, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Col de Cygne | Métal | E27 | Vintage Rétro | LEDsone ~2107", "pr": 18.85, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale indu", "t": "Applique Murale Industrielle Chrome Poli E27 - Lampe Murale Vintage Couloir Salon ~1754", "pr": 16.27, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone amber led ed", "t": "LEDSone Amber LED Edison Bulb E27 G125 8W  - Dimmable 2700K Warm White (800lm)~1871", "pr": 4.99, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension abat-jour", "t": "Suspension abat-jour vintage rétro en métal E27 ~ 5854", "pr": 27.25, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 1, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension p", "t": "LEDSone Suspension plafonnier 2m support ampoule E27 vintage ~1642", "pr": 29.73, "sh90": 2, "sh60": 2, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension i", "t": "LEDSone Suspension Industrielle Vintage Plafonnier Métal E27 ~ 1504", "pr": 14.66, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ancienne ampoule led", "t": "Ancienne Ampoule LED Edison 4W E27 Ampoule Décorative Non Dimmable ~1761", "pr": 6.46, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "applique murale cond", "t": "Applique murale conduit nautique exposée E27 métal ~1887", "pr": 29.28, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone kit de suspe", "t": "LEDSone Kit de Suspension E27 Vintage avec Chaîne – Câble Textile Ajustable 1m ~1960", "pr": 31.65, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone support de l", "t": "LEDSone Support de lampe extérieur E27 imperméable IP44 - 2 fils~1899", "pr": 25.56, "sh90": 2, "sh60": 1, "sh30": 0, "ad90": 1, "ad60": 1, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension rétro vin", "t": "Suspension rétro vintage industriel plafonnier E27 ~1506", "pr": 16.34, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone suspension l", "t": "LEDSone Suspension Luminaire Industriel - Abat-jour Métal Rétro Vintage E27 ~1876", "pr": 32.62, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension plafonnie", "t": "Suspension plafonnier métal LED moderne abat-jour suspension ~5870", "pr": 18.66, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "lustre araignée 8 br", "t": "Lustre Araignée 8 Bras E27 – Suspension Araignee Multi Abatjour Industrielle 2m DIY ~1539", "pr": 132.0, "sh90": 4, "sh60": 4, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone lot de 3 sus", "t": "LEDSone Lot de 3 suspensions vintage – luminaires style industriel Ø300mm blanc 240V ~1710", "pr": 83.91, "sh90": 8, "sh60": 2, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led b22 g95 ", "t": "Ampoule LED B22 G95 4W Filament Dimmable Blanc Chaud 2700K (Économie d'énergie) ~2076", "pr": 8.96, "sh90": 2, "sh60": 2, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "black/white e27, e14", "t": "Black/White E27, E14 Vintage Industrial Lamp Holder Pack", "pr": 20.42, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ampoule led baïonnet", "t": "Ampoule LED Baïonnette Vintage ST64 4W/8W B22 Dimmable Cage Écureuil Ampoule ~2116", "pr": 13.75, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone plafonniers ", "t": "LEDSone Plafonniers industriels chromés vintage rétro suspension abat-jour applique ~1782", "pr": 31.45, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "douille gu10 rotativ", "t": "Douille GU10 Rotative 180° en Métal Support Orientable pour Spot Encastré~ 1669", "pr": 20.2, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "ledsone abat-jour in", "t": "LEDSone Abat-jour Industriel en Métal Brillant Ø21cm – Suspension Rétro E27 ~1549", "pr": 32.16, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}, {"id": "suspension industrie", "t": "Suspension industrielle 3 voies plafonnier à roues ~ 5844", "pr": 19.41, "sh90": 1, "sh60": 0, "sh30": 0, "ad90": 0, "ad60": 0, "ad30": 0, "diff": 0, "pct": 0.0, "st": "No Orders"}];
+
+var R4_ROW={
+  'Ads Driven':'r4-ads-driven',
+  'Balanced':'r4-balanced',
+  'Organic Heavy':'r4-org-heavy',
+  'Organic Only':'r4-org-only',
+  'No Orders':'r4-no-orders'
+};
+var R4_BADGE={
+  'Ads Driven':'badge-ads-driven',
+  'Balanced':'badge-balanced',
+  'Organic Heavy':'badge-org-heavy',
+  'Organic Only':'badge-org-only',
+  'No Orders':'badge-no-orders'
+};
+var R4_ORD={'Ads Driven':0,'Balanced':1,'Organic Heavy':2,'Organic Only':3,'No Orders':4};
+function r4Win(p,w){
+  if(w==='90') return {sh:p.sh90,ad:p.ad90};
+  if(w==='60') return {sh:p.sh60,ad:p.ad60};
+  return {sh:p.sh30,ad:p.ad30};
+}
+function r4Render(){
+  var q   =document.getElementById('r4-search').value.trim().toLowerCase();
+  var st  =document.getElementById('r4-status').value;
+  var win =document.getElementById('r4-win').value||'30';
+  var srt =document.getElementById('r4-sort').value;
+  var rows=R4PRODUCTS.filter(function(p){
+    if(st && p.st!==st) return false;
+    if(q && p.t.toLowerCase().indexOf(q)===-1) return false;
+    return true;
+  });
+  if(srt==='sh_desc')  rows.sort(function(a,b){return r4Win(b,win).sh-r4Win(a,win).sh;});
+  else if(srt==='ad_desc')  rows.sort(function(a,b){return r4Win(b,win).ad-r4Win(a,win).ad;});
+  else if(srt==='pct_desc') rows.sort(function(a,b){return b.pct-a.pct;});
+  else if(srt==='diff_desc') rows.sort(function(a,b){return (r4Win(b,win).sh-r4Win(b,win).ad)-(r4Win(a,win).sh-r4Win(a,win).ad);});
+  else rows.sort(function(a,b){return R4_ORD[a.st]-R4_ORD[b.st]||(r4Win(b,'30').sh-r4Win(a,'30').sh);});
+
+  var tbody=document.getElementById('r4-body');
+  tbody.innerHTML='';
+  var totSh30=0,totAd30=0,totSh90=0,totAd90=0;
+  rows.forEach(function(p){
+    var w=r4Win(p,win);
+    var diff=p.sh30-p.ad30;
+    var tr=document.createElement('tr');
+    tr.className=R4_ROW[p.st]||'';
+    var prDisp=p.pr>0?('€'+p.pr.toFixed(2)):'—';
+    var diffDisp=diff>0?'+'+diff:(diff<0?String(diff):'0');
+    var pctDisp=p.pct>0?p.pct.toFixed(1)+'%':'—';
+    tr.innerHTML=
+      '<td><span style="font-size:12px;font-weight:600;">'+p.t+'</span></td>'
+      +'<td class="num">'+prDisp+'</td>'
+      +'<td class="num">'+p.sh90+'</td>'
+      +'<td class="num">'+p.ad90+'</td>'
+      +'<td class="num">'+p.sh60+'</td>'
+      +'<td class="num">'+p.ad60+'</td>'
+      +'<td class="num">'+(p.sh30>0?'<b>'+p.sh30+'</b>':p.sh30)+'</td>'
+      +'<td class="num">'+(p.ad30>0?'<b>'+p.ad30+'</b>':p.ad30)+'</td>'
+      +'<td class="num"><span class="'+(diff<0?'r4-hi':'')+'">'+diffDisp+'</span></td>'
+      +'<td class="num">'+pctDisp+'</td>'
+      +'<td><span class="badge '+(R4_BADGE[p.st]||'')+'">'+p.st+'</span></td>';
+    tbody.appendChild(tr);
+    totSh30+=p.sh30; totAd30+=p.ad30;
+    totSh90+=p.sh90; totAd90+=p.ad90;
+  });
+
+  // KPIs
+  var totPct=totSh30>0?Math.round(totAd30/totSh30*100):0;
+  document.getElementById('r4-k-total').textContent=rows.length;
+  document.getElementById('r4-k-sh30').textContent=totSh30;
+  document.getElementById('r4-k-ad30').textContent=totAd30;
+  document.getElementById('r4-k-pct').textContent=totPct+'%';
+  document.getElementById('r4-k-sh90').textContent=totSh90;
+  document.getElementById('r4-k-ad90').textContent=totAd90;
+  var cnt=document.getElementById('r4-count');
+  if(cnt)cnt.textContent=rows.length+' product'+(rows.length!==1?'s':'');
+}
+function r4CSV(){
+  var hdr=['Product Title','Price EUR','Shopify 90d','Ads 90d','Shopify 60d','Ads 60d','Shopify 30d','Ads 30d','Diff (30d)','Ads Contribution % (30d)','Status'];
+  var lines=[hdr];
+  R4PRODUCTS.forEach(function(p){
+    lines.push([p.t,p.pr,p.sh90,p.ad90,p.sh60,p.ad60,p.sh30,p.ad30,(p.sh30-p.ad30),p.pct,p.st]);
+  });
+  var csv=lines.map(function(r){return r.map(function(c){return '"'+(c+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='thivajini-order-data-req4-2026-07-09.csv';
+  a.click();
+}
+document.addEventListener('DOMContentLoaded',r4Render);
+
+// DRAG-TO-SCROLL — Req3 table
+(function(){
+  function enableDragScroll(el){
+    if(!el)return;
+    el.style.cursor='grab';
+    var down=false,startX=0,scrollLeft=0;
+    el.addEventListener('mousedown',function(e){
+      if(e.button!==0)return;
+      down=true;startX=e.pageX-el.offsetLeft;scrollLeft=el.scrollLeft;
+      el.style.cursor='grabbing';el.style.userSelect='none';
+    });
+    document.addEventListener('mouseup',function(){if(!down)return;down=false;el.style.cursor='grab';el.style.userSelect='';});
+    el.addEventListener('mouseleave',function(){if(!down)return;down=false;el.style.cursor='grab';el.style.userSelect='';});
+    el.addEventListener('mousemove',function(e){
+      if(!down)return;
+      e.preventDefault();
+      el.scrollLeft=scrollLeft-(e.pageX-el.offsetLeft-startX);
+    });
+  }
+  enableDragScroll(document.getElementById('t3Scroll'));
+})();
+
+// ── Thivajini live data fetch ─────────────────────────────────
+function tvState(panelId,state,msg){
+  var panel=document.getElementById(panelId);
+  if(!panel)return;
+  var cls=state==='load'?'tv-loading':'tv-error';
+  var el=panel.querySelector('.'+cls);
+  if(!el){
+    el=document.createElement('div');
+    el.className=cls;
+    var bg=state==='load'?'#f0f9ff':'#fff0f0';
+    var bd=state==='load'?'#bae6fd':'#fca5a5';
+    var co=state==='error'?'#dc2626':'inherit';
+    el.style.cssText='padding:12px;background:'+bg+';border:1px solid '+bd+';border-radius:10px;margin-bottom:10px;font-size:13px;color:'+co+';';
+    panel.insertBefore(el,panel.firstElementChild);
+  }
+  el.textContent=msg;el.style.display='block';
+}
+function tvHide(panelId){
+  var panel=document.getElementById(panelId);
+  if(!panel)return;
+  ['.tv-loading','.tv-error'].forEach(function(sel){
+    var el=panel.querySelector(sel);if(el)el.style.display='none';
+  });
+}
+
+var TV_LOADED={r1:false,r2:false,r3:false,r4:false};
+
+function tvLoadReq1(){
+  if(TV_LOADED.r1)return;TV_LOADED.r1=true;
+  tvState('panel-1','load','⏳ Loading weekly campaign data + Shopify UTM orders…');
+  fetch('/api/members-api?member=thivajini&type=req1')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      tvHide('panel-1');
+      if(!d.ok){tvState('panel-1','error','Error loading data: '+(d.error||'unknown'));return;}
+      ROWS=d.weeks;
+      renderTable(activeFilter==='all'?null:activeFilter);
+      // Update meta period
+      var subEl=document.querySelector('#panel-1 .sub');
+      if(subEl&&d.meta){
+        var strongs=subEl.querySelectorAll('strong');
+        if(strongs[2])strongs[2].textContent=d.meta.from+' → '+d.meta.to+' (live)';
+      }
+      // Update KPI cards from live data
+      if(d.kpi){
+        var k=d.kpi;
+        var weekSet=new Set((d.weeks||[]).map(function(w){return w.week;}));
+        var el=function(id){return document.getElementById(id);};
+        if(el('r1-kpi-weeks'))el('r1-kpi-weeks').textContent=weekSet.size;
+        if(el('r1-kpi-period')&&d.meta)el('r1-kpi-period').textContent=d.meta.from+' → '+d.meta.to;
+        if(el('r1-kpi-shop-ord'))el('r1-kpi-shop-ord').textContent=k.shop_ord;
+        if(el('r1-kpi-shop-rev'))el('r1-kpi-shop-rev').textContent='€'+Number(k.shop_rev).toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0});
+        if(el('r1-kpi-pass'))el('r1-kpi-pass').textContent=k.pass;
+        if(el('r1-kpi-review'))el('r1-kpi-review').textContent=k.review;
+        if(el('r1-kpi-fail'))el('r1-kpi-fail').textContent=k.fail;
+        if(el('r1-kpi-incomplete'))el('r1-kpi-incomplete').textContent=k.incomplete;
+      }
+    })
+    .catch(function(e){tvState('panel-1','error','Fetch failed: '+e.message);});
+}
+
+function buildR2Url(){
+  var days=document.getElementById('r2-days-filter')?document.getElementById('r2-days-filter').value:'90';
+  if(days==='custom'){
+    var f=document.getElementById('r2-from')?document.getElementById('r2-from').value:'';
+    var t=document.getElementById('r2-to')?document.getElementById('r2-to').value:'';
+    if(f&&t) return '/api/members-api?member=thivajini&type=req2&from='+f+'&to='+t;
+    return null;
+  }
+  return '/api/members-api?member=thivajini&type=req2&days='+days;
+}
+function onR2RangeChange(){
+  var days=document.getElementById('r2-days-filter').value;
+  var wrap=document.getElementById('r2-custom-wrap');
+  if(wrap) wrap.style.display=days==='custom'?'flex':'none';
+  TV_LOADED.r2=false;
+  tvLoadReq2();
+}
+function tvLoadReq2(){
+  if(TV_LOADED.r2)return;TV_LOADED.r2=true;
+  var url=buildR2Url();
+  if(!url)return;
+  tvState('panel-2','load','⏳ Loading product performance data…');
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      tvHide('panel-2');
+      if(!d.ok){tvState('panel-2','error','Error loading data: '+(d.error||'unknown'));return;}
+      PRODUCTS=d.products;
+      r2Render();
+      // KPI cards
+      var ps=d.products;
+      var totSp=ps.reduce(function(s,p){return s+p.sp;},0);
+      var totSa=ps.reduce(function(s,p){return s+p.sa;},0);
+      var totIm=ps.reduce(function(s,p){return s+p.im;},0);
+      var totCl=ps.reduce(function(s,p){return s+p.cl;},0);
+      var totOr=ps.reduce(function(s,p){return s+(p.or||0);},0);
+      var avgROAS=totSp>0?Math.round(totSa/totSp*100):0;
+      var avgCTR=totIm>0?Math.round(totCl/totIm*10000)/100:0;
+      var avgCVR=totCl>0?Math.round(totOr/totCl*10000)/100:0;
+      var heroCount=ps.filter(function(p){return p.seg==='Hero';}).length;
+      var bleedCount=ps.filter(function(p){return p.seg==='Bleeding';}).length;
+      var lowCount=ps.filter(function(p){return p.seg==='Low Engagement';}).length;
+      function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+      setText('r2-kpi-products', ps.length);
+      setText('r2-kpi-spend',   '€'+totSp.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,','));
+      setText('r2-kpi-sales',   '€'+totSa.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,','));
+      setText('r2-kpi-roas',    avgROAS+'%');
+      setText('r2-kpi-ctr',     avgCTR+'%');
+      setText('r2-kpi-cvr',     avgCVR+'%');
+      setText('r2-kpi-hero',    heroCount);
+      setText('r2-kpi-bleeding',bleedCount);
+      setText('r2-kpi-loweng',  lowCount);
+      // Period labels
+      var from=d.meta&&d.meta.from||'';
+      var to=d.meta&&d.meta.to||'';
+      var periodStr=from+' → '+to+' (live)';
+      setText('r2-period',          periodStr);
+      setText('r2-tbar-period',     from+' → '+to);
+      setText('r2-footnote-period', from+' → '+to);
+      setText('r2-footnote-refresh',to+' (live)');
+      setText('r2-chip-count',      ps.length+' Products');
+      setText('r2-chip-refresh',    'Last updated: '+to+' (live)');
+    })
+    .catch(function(e){tvState('panel-2','error','Fetch failed: '+e.message);});
+}
+
+function tvLoadReq3(){
+  if(TV_LOADED.r3)return;TV_LOADED.r3=true;
+  tvState('panel-3','load','⏳ Loading stock-spend data…');
+  fetch('/api/members-api?member=thivajini&type=req3')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      tvHide('panel-3');
+      if(!d.ok){tvState('panel-3','error','Error loading data: '+(d.error||'unknown'));return;}
+      R3PRODUCTS=d.products;
+      r3Render();
+    })
+    .catch(function(e){tvState('panel-3','error','Fetch failed: '+e.message);});
+}
+
+function tvLoadReq4(){
+  if(TV_LOADED.r4)return;TV_LOADED.r4=true;
+  tvState('panel-4','load','⏳ Loading order data…');
+  fetch('/api/members-api?member=thivajini&type=req4')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      tvHide('panel-4');
+      if(!d.ok){tvState('panel-4','error','Error loading data: '+(d.error||'unknown'));return;}
+      R4PRODUCTS=d.products;
+      r4Render();
+      var subEl=document.querySelector('#panel-4 .sub');
+      if(subEl&&d.meta)subEl.innerHTML=subEl.innerHTML.replace(/\d{4}-\d{2}-\d{2}.*?(live|snapshot)/,''+d.meta.from+' → '+d.meta.to+' (live)');
+    })
+    .catch(function(e){tvState('panel-4','error','Fetch failed: '+e.message);});
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  tvLoadReq1();
+  tvLoadReq4();
+});
+
+</script>
+</body>
+</html>
