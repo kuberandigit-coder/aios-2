@@ -175,24 +175,101 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .t5-nosales{background:#6b7280;}
 .t5-datacheck{background:#ef6c00;}
 @media(max-width:640px){table.t5-table{min-width:1100px;}}
+
+/* ---------- Sidebar shell (2026-08-10 redesign) ---------- */
+:root{--sb-navy:#0c1a30;--sb-navy2:#0e2143;--sb-gold:#c9a227;--sb-text:#aab4c8;}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;}
+.app-shell{display:flex;min-height:100vh;}
+
+.t-sidebar{width:270px;flex-shrink:0;background:var(--sb-navy);color:var(--sb-text);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;transition:width .18s ease,padding .18s ease;}
+.t-sidebar.collapsed{width:76px;padding:20px 10px;}
+.t-sidebar.collapsed .t-brand-txt,.t-sidebar.collapsed .t-navlabel,.t-sidebar.collapsed .t-navlist a span.lbl,.t-sidebar.collapsed .t-devbadge span,.t-sidebar.collapsed .t-back span.lbl{display:none;}
+.t-sidebar.collapsed .t-navlist a{justify-content:center;}
+.t-sidebar.collapsed .t-brand{justify-content:center;}
+.t-sidebar.collapsed .t-collapse-btn{transform:rotate(180deg);}
+
+.t-brand{display:flex;align-items:center;gap:10px;padding:6px 6px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;position:relative;}
+.t-brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
+.t-brand-txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
+.t-brand-txt span{display:block;font-size:10px;color:#7f8bab;letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;}
+.t-collapse-btn{margin-left:auto;width:26px;height:26px;flex-shrink:0;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#c3cce3;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .18s ease,background .15s;}
+.t-collapse-btn:hover{background:rgba(255,255,255,.12);}
+
+.t-navlabel{font-size:10px;color:#5e6b8a;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:14px 10px 8px;white-space:nowrap;}
+.t-navlist{list-style:none;display:flex;flex-direction:column;gap:3px;margin:0;padding:0;}
+.t-navlist a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;color:var(--sb-text);text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease;border:1px solid transparent;}
+.t-navlist a .ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:.85;}
+.t-navlist a .ic svg{width:18px;height:18px;}
+.t-navlist a:hover{background:rgba(255,255,255,.06);color:#fff;transform:translateX(2px);}
+.t-navlist a.on{background:rgba(31,94,255,.16);color:#fff;border-color:rgba(31,94,255,.35);box-shadow:inset 3px 0 0 var(--accent);}
+.t-navlist a.on .ic{opacity:1;color:#8fb2ff;}
+.t-navlist a span.lbl{white-space:normal;line-height:1.25;}
+
+.t-sidebar-spacer{flex:1;}
+.t-back{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:#dfe4ee;text-decoration:none;font-size:12.5px;font-weight:700;margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;}
+.t-back:hover{color:#fff;}
+.t-devbadge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--sb-gold);border-radius:10px;padding:9px 10px;margin-top:10px;}
+.t-devbadge .av{width:26px;height:26px;border-radius:999px;background:var(--sb-navy);border:1px solid var(--sb-gold);display:flex;align-items:center;justify-content:center;color:#e8d59a;font-weight:800;font-size:11px;flex-shrink:0;}
+.t-devbadge b{display:block;color:#fff;font-size:11.5px;white-space:nowrap;}
+.t-devbadge span{display:block;color:#e8d59a;font-size:10px;white-space:nowrap;}
+
+.t-main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.t-topbar{background:var(--sb-navy2);color:#fff;padding:20px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:3px solid var(--sb-gold);}
+.t-topbar .chip-live{display:inline-flex;align-items:center;gap:7px;background:rgba(10,125,79,.18);border:1px solid rgba(10,125,79,.4);color:#5fd99a;border-radius:999px;padding:5px 13px;font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;}
+.t-topbar .chip-live .dot{width:7px;height:7px;border-radius:999px;background:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.25);}
+.t-topbar h1{font-size:21px;font-weight:800;margin-top:8px;letter-spacing:.2px;}
+.t-topbar .datestr{color:#9fb0d1;font-size:12.5px;margin-top:4px;}
+.t-topcontent{padding:22px 30px 40px;}
+
+@media(max-width:900px){.t-sidebar{position:fixed;left:-270px;z-index:50;box-shadow:4px 0 24px rgba(0,0,0,.25);}.t-sidebar.mobile-open{left:0;}.t-topcontent,.t-topbar{padding-left:18px;padding-right:18px;}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-  <a class="back" href="../home.html" style="margin-bottom:0;">&larr; Back to all members</a>
-  <span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Kuberan</span>
+<div class="app-shell">
+
+<aside class="t-sidebar" id="tSidebar">
+  <div class="t-brand">
+    <div class="mark">T</div>
+    <div class="t-brand-txt"><b>Thasitha</b><span>Google Ads &middot; DE</span></div>
+    <button class="t-collapse-btn" id="tCollapseBtn" type="button" title="Collapse sidebar" aria-label="Collapse sidebar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
   </div>
 
-<div class="t1-wrap">
+  <div class="t-navlabel">Requirements</div>
+  <ul class="t-navlist" id="tNavList">
+    <li><a href="#" data-tab="R1" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><span class="lbl">Campaign ROAS</span></a></li>
+    <li><a href="#" data-tab="R2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span><span class="lbl">PMax Zero-Performance</span></a></li>
+    <li><a href="#" data-tab="R3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"></circle><circle cx="15" cy="12" r="6"></circle></svg></span><span class="lbl">Campaign Product Overlap</span></a></li>
+    <li><a href="#" data-tab="R4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span><span class="lbl">Shopify vs Ads Orders</span></a></li>
+    <li><a href="#" data-tab="R5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span class="lbl">Multichannel YoY Sales</span></a></li>
+  </ul>
 
-<div class="tabbar">
-  <button class="tabbtn on" id="tabBtnR1">Requirement 1 &middot; Campaign ROAS</button>
-  <button class="tabbtn" id="tabBtnR2">Requirement 2 &middot; PMax Product Zero-Performance</button>
-  <button class="tabbtn" id="tabBtnR3">Requirement 3 &middot; Campaign Product Overlap</button>
-  <button class="tabbtn" id="tabBtnR4">Requirement 4 &middot; Shopify vs Ads Orders</button>
-  <button class="tabbtn" id="tabBtnR5">Requirement 5 &middot; Multichannel YoY Sales</button>
-</div>
+  <div class="t-sidebar-spacer"></div>
+
+  <a class="t-back" href="../home.html">
+    <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></span>
+    <span class="lbl">Back to all members</span>
+  </a>
+  <div class="t-devbadge">
+    <div class="av">K</div>
+    <div><b>Developed by</b><span>Kuberan</span></div>
+  </div>
+</aside>
+
+<div class="t-main">
+  <div class="t-topbar">
+    <div>
+      <span class="chip-live"><span class="dot"></span>All Systems Live</span>
+      <h1 id="tTopbarTitle">Requirement 1 &middot; Campaign ROAS</h1>
+      <div class="datestr" id="tTopbarDate"></div>
+    </div>
+  </div>
+
+  <div class="t-topcontent">
+<div class="t1-wrap">
 
 <div class="tabpanel on" id="tabPanelR1">
 
@@ -788,6 +865,13 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 
 </div>
 <!-- /t1-wrap -->
+  </div>
+  <!-- /t-topcontent -->
+</div>
+<!-- /t-main -->
+
+</div>
+<!-- /app-shell -->
 
 <script>
 // Fallback snapshot — used only as an instant first paint before the live
@@ -1401,17 +1485,38 @@ document.getElementById('t2RefreshBtn').addEventListener('click', function(){ r2
   r2Load(false);
 })();
 
+// ===== Sidebar shell (2026-08-10 redesign) — nav clicks, collapse toggle,
+// topbar title/date sync. switchTab() itself is unchanged in signature so
+// nothing downstream (R1-R5 load functions) needed touching. =====
+const TAB_TITLES = {
+  R1: 'Requirement 1 &middot; Campaign ROAS',
+  R2: 'Requirement 2 &middot; PMax Zero-Performance',
+  R3: 'Requirement 3 &middot; Campaign Product Overlap',
+  R4: 'Requirement 4 &middot; Shopify vs Ads Orders',
+  R5: 'Requirement 5 &middot; Multichannel YoY Sales',
+};
 function switchTab(which){
   ['R1','R2','R3','R4','R5'].forEach(function(k){
-    document.getElementById('tabBtn'+k).classList.toggle('on', k===which);
     document.getElementById('tabPanel'+k).classList.toggle('on', k===which);
   });
+  document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
+    a.classList.toggle('on', a.dataset.tab === which);
+  });
+  document.getElementById('tTopbarTitle').innerHTML = TAB_TITLES[which] || '';
 }
-document.getElementById('tabBtnR1').addEventListener('click', function(){ switchTab('R1'); });
-document.getElementById('tabBtnR2').addEventListener('click', function(){ switchTab('R2'); });
-document.getElementById('tabBtnR3').addEventListener('click', function(){ switchTab('R3'); });
-document.getElementById('tabBtnR4').addEventListener('click', function(){ switchTab('R4'); });
-document.getElementById('tabBtnR5').addEventListener('click', function(){ switchTab('R5'); });
+document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
+  a.addEventListener('click', function(e){
+    e.preventDefault();
+    switchTab(a.dataset.tab);
+  });
+});
+
+const tSidebar = document.getElementById('tSidebar');
+document.getElementById('tCollapseBtn').addEventListener('click', function(){
+  tSidebar.classList.toggle('collapsed');
+});
+
+document.getElementById('tTopbarDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
 // ===== Requirement 3: Campaign Product Overlap (rebuilt 2026-08-05 — fewer
 // columns, no CPC-tier jargon, per explicit request) =====
