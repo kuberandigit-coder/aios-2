@@ -4,6 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Thasitha — Digital Marketing Member Reports</title>
+<style>html{visibility:hidden;}</style>
+<script>
+// Auth guard — this page is locked to the "thasitha" account only (or admin).
+(function () {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/auth?action=session', false);
+    xhr.withCredentials = true;
+    xhr.send(null);
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      if (data && data.success && data.user) {
+        if (data.user.staff_key === 'thasitha' || data.user.role === 'admin') {
+          document.documentElement.style.visibility = 'visible';
+          return;
+        }
+        var landing = { muguntha:'muguntha.html', jefri:'jefri.html', dilaksi:'dilaksi.html', kamsi:'kamsi.html', mahima:'mahima.html', thasitha:'thasitha.html', sukirtha:'sukirtha.html' };
+        window.location.replace(landing[data.user.staff_key] || '../login.html');
+        return;
+      }
+    }
+  } catch (e) { /* fall through to login */ }
+  window.location.replace('../login.html');
+})();
+</script>
 <link rel="stylesheet" href="../assets/css/style.css">
 <style>
 :root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--na:#9aa3b2;}
@@ -2864,6 +2889,16 @@ renderR5();
   setInterval(refresh, 500);
   refresh();
 })();
+</script>
+<div id="dmSignOut" style="position:fixed;bottom:18px;right:18px;z-index:99999;">
+  <a href="#" id="dmSignOutBtn" style="display:inline-block;background:#0c1a30;color:#dfe4ee;text-decoration:none;font:700 12.5px/1 &quot;Segoe UI&quot;,system-ui,sans-serif;padding:10px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);">Sign Out</a>
+</div>
+<script>
+document.getElementById("dmSignOutBtn").addEventListener("click", function (e) {
+  e.preventDefault();
+  fetch("/api/auth?action=logout", { method: "POST", credentials: "same-origin" })
+    .finally(function () { window.location.href = "../login.html"; });
+});
 </script>
 </body>
 </html>

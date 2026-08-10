@@ -76,9 +76,18 @@ function clearSessionCookie(res) {
   res.setHeader('Set-Cookie', `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
 }
 
-// staff_key -> the page each role lands on after login
+// staff_key -> the page each role lands on after login. Every non-admin
+// account is locked to exactly this one page (enforced client-side by each
+// page's own guard script, which checks staff_key/role against this same
+// list of names) — no shared home.html/index.html directory access.
 const ROLE_LANDING = {
   muguntha: 'pages/muguntha.html',
+  jefri: 'pages/jefri.html',
+  dilaksi: 'pages/dilaksi.html',
+  kamsi: 'pages/kamsi.html',
+  mahima: 'pages/mahima.html',
+  thasitha: 'pages/thasitha.html',
+  sukirtha: 'pages/sukirtha.html',
 };
 
 async function readJsonBody(req) {

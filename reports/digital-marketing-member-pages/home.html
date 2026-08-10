@@ -4,6 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Digital Marketing Member Reports</title>
+<style>html{visibility:hidden;}</style>
+<script>
+// Auth guard — home.html (workspace directory) is admin-only. A logged-in
+// staff account gets bounced straight to their own page, not shown the
+// directory; anyone unauthenticated goes to the login page.
+(function () {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/auth?action=session', false);
+    xhr.withCredentials = true;
+    xhr.send(null);
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      if (data && data.success && data.user) {
+        if (data.user.role === 'admin') {
+          document.documentElement.style.visibility = 'visible';
+          return;
+        }
+        var landing = { jefri:'pages/jefri.html', dilaksi:'pages/dilaksi.html', kamsi:'pages/kamsi.html', mahima:'pages/mahima.html', thasitha:'pages/thasitha.html', sukirtha:'pages/sukirtha.html' };
+        window.location.replace(landing[data.user.staff_key] || 'login.html');
+        return;
+      }
+    }
+  } catch (e) { /* fall through to login */ }
+  window.location.replace('login.html');
+})();
+</script>
 <style>
   :root{
     --navy:#0c1a30; --navy-2:#13284a; --ink:#1a2233; --muted:#5b6577;
