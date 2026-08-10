@@ -275,7 +275,7 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
     <li><a href="#" data-tab="R4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span><span class="lbl">Shopify vs Ads Orders</span></a></li>
     <li><a href="#" data-tab="R5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span class="lbl">Multichannel YoY Sales</span></a></li>
     <li><a href="#" data-tab="R6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Search Terms Labels</span></a></li>
-    <li><a href="#" data-tab="R7"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span class="lbl">Product Catalog: SEO + Amazon</span></a></li>
+    <li><a href="#" data-tab="R7"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span class="lbl">Amazon DE Search Terms</span></a></li>
   </ul>
 
   <div class="t-sidebar-spacer"></div>
@@ -989,8 +989,8 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
 <div class="t1-header">
   <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;">Requirement 7</div>
-  <h1>Product Catalog: Shopify SEO + Amazon Keywords</h1>
-  <div class="sub">All of Thasitha's products &middot; Live Shopify H1/Meta Title &middot; Amazon keywords (PostgreSQL) &middot; ledsone.de</div>
+  <h1>Amazon DE Search Terms (Campaign-Wise, for Thasitha's SKUs)</h1>
+  <div class="sub">Last 90 Days &middot; Amazon DE (market_place=10) &middot; Scope: every Amazon DE campaign that has advertised one of Thasitha's Google-side SKUs &mdash; same format as Requirement 6</div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;">
     <span id="r7LiveChip" style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:#eef1f6;color:#5b6577;white-space:nowrap;">Loading&hellip;</span>
     <button class="t1-btn primary" id="r7RefreshBtn" type="button">Refresh</button>
@@ -998,40 +998,69 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 </div>
 
 <div class="t1-cards">
-  <div class="t1-card"><div class="l">Total Products</div><div class="v" id="r7kpiTotal">&ndash;</div></div>
-  <div class="t1-card"><div class="l">SKU Resolved</div><div class="v" id="r7kpiSku">&ndash;</div></div>
-  <div class="t1-card"><div class="l">H1/Meta Resolved (Live)</div><div class="v" id="r7kpiH1">&ndash;</div></div>
-  <div class="t1-card"><div class="l">Products with Amazon DE Keywords</div><div class="v" id="r7kpiAmz">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Total Terms</div><div class="v" id="r7cTotal">&ndash;</div></div>
+  <div class="t1-card"><div class="l">&#127942; Heroes</div><div class="v" id="r7cHero">&ndash;</div></div>
+  <div class="t1-card"><div class="l">&#129656; Villains</div><div class="v" id="r7cVillain">&ndash;</div></div>
+  <div class="t1-card"><div class="l">&#129496; Zombies</div><div class="v" id="r7cZombie">&ndash;</div></div>
+  <div class="t1-card"><div class="l">&#128373; Sidekicks</div><div class="v" id="r7cSidekick">&ndash;</div></div>
 </div>
 
 <div class="t1-filterbox">
   <div class="t1-row">
-    <div class="t1-field"><span>Search</span><input type="text" id="r7q" placeholder="Product ID, SKU, or Amazon keyword&hellip;"></div>
+    <div class="t1-field"><span>Search</span><input type="text" id="r7q" placeholder="Search term or match type&hellip;"></div>
     <div class="t1-field"><span>Campaign</span>
       <select id="r7f_campaign"><option value="">All campaigns</option></select>
     </div>
-    <button class="t1-btn" id="r7ClearFilters" type="button">Clear Filters</button>
+    <div class="t1-field"><span>Tag</span>
+      <select id="r7f_tag">
+        <option value="">All tags (includes untagged)</option>
+        <option value="Hero">&#127942; Hero</option>
+        <option value="Villain">&#129656; Villain</option>
+        <option value="Zombie">&#129496; Zombie</option>
+        <option value="Sidekick">&#128373; Sidekick</option>
+      </select>
+    </div>
+    <button class="t1-btn" id="r7ExportCsv" type="button">Export CSV</button>
+    <span id="r7cnt" style="margin-left:auto;font-size:12.5px;color:var(--muted);align-self:center;"></span>
   </div>
+</div>
+
+<div class="t1-tablewrap" style="margin-bottom:16px;">
+<table class="t1-table" style="min-width:700px;">
+<thead><tr>
+  <th>Campaign</th><th class="num">Terms</th><th class="num">&#127942; Heroes</th><th class="num">&#129656; Villains</th><th class="num">&#129496; Zombies</th><th class="num">&#128373; Sidekicks</th>
+</tr></thead>
+<tbody id="r7CampaignSummaryBody"><tr><td colspan="6" class="t1-empty">Loading&hellip;</td></tr></tbody>
+</table>
 </div>
 
 <div class="t1-tablewrap">
 <table class="t1-table" id="r7Table">
 <thead><tr>
-  <th>Product ID / SKU</th>
-  <th>Campaign</th>
-  <th>Current Shopify H1 Title</th>
-  <th>Current Shopify Meta Title</th>
-  <th>Amazon DE Keywords / Search Terms (all)</th>
+  <th class="sortable" data-k="searchTerm">Search Term</th>
+  <th class="sortable" data-k="matchType">Match Type</th>
+  <th class="sortable" data-k="campaignName">Campaign</th>
+  <th class="num sortable" data-k="clicks">Clicks</th>
+  <th class="num sortable" data-k="impressions">Impressions</th>
+  <th class="num sortable" data-k="ctr">CTR</th>
+  <th class="num sortable" data-k="avgCpc">Avg CPC</th>
+  <th class="num sortable" data-k="cost">Cost</th>
+  <th class="num sortable" data-k="conversionValue">Sales</th>
+  <th class="num sortable" data-k="conversions">Orders</th>
+  <th class="num sortable" data-k="costPerConversion">Cost / Order</th>
+  <th class="num sortable" data-k="roas">ROAS</th>
+  <th class="num sortable" data-k="skuCount">Ad Group SKU Count</th>
+  <th class="sortable" data-k="tag">Tag</th>
 </tr></thead>
 <tbody id="r7Tbody"></tbody>
 </table>
 </div>
-<div class="t1-empty" id="r7Empty" style="display:none;">No products match the current filters.</div>
+<div class="t1-empty" id="r7Empty" style="display:none;">No search terms match the current filters.</div>
 
 <div class="pager" id="r7Pager">
   <span class="info" id="r7PageInfo"></span>
   <div style="display:flex;gap:8px;align-items:center;">
-    <label>Rows <select id="r7PageSize"><option>25</option><option selected>50</option><option>100</option><option>All</option></select></label>
+    <label>Rows <select id="r7PageSize"><option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
     <button class="t1-btn" id="r7First">&laquo;</button>
     <button class="t1-btn" id="r7Prev">&lsaquo; Prev</button>
     <button class="t1-btn" id="r7Next">Next &rsaquo;</button>
@@ -1040,12 +1069,11 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 </div>
 
 <div class="t1-statusnote">
-  <strong>Rows.</strong> Every product with real Google Ads <code>product_performance</code> history across any of Thasitha's 3 campaigns &mdash; no date cutoff, no top-N limit ("gather all", per explicit instruction). Rows with a blank/null <code>product_item_id</code> (unattributed spend, not a real product) are excluded.<br>
-  <strong>Product ID / SKU.</strong> <code>product_item_id</code> (Google Ads' own ID) resolved to the real Shopify SKU via <code>listings.shopify_listings</code> (same resolution used in Requirements 2/3/6) &mdash; both shown together in one column, SKU shown as N/A when unresolved. Shopify assigns SKU only to child variant listings, not parent listings, so a parent-listing match falls back to its mapped child variant's SKU via <code>listings.shopify_listings_parent_child_mapping</code>.<br>
-  <strong>Campaign.</strong> Every one of Thasitha's campaigns this product has ever run in (a product can appear in more than one).<br>
-  <strong>Current H1 / Meta Title.</strong> Fetched <strong>live</strong> from the Shopify Admin GraphQL API (<code>ledsone-de.myshopify.com</code>, <code>productByHandle</code>) at request time &mdash; never read from a cached database field. H1 = the product's Title field (Shopify's Online Store 2.0 default theme renders <code>product.title</code> as the page's H1; LEDSone DE's specific theme template was not independently verified, so treat H1 as "Product Title" unless confirmed otherwise). Meta Title = the product's SEO title field.<br>
-  <strong>Amazon DE Keywords / Search Terms.</strong> ALL real Amazon search terms found for this SKU, last 90 days &mdash; not just the top one. Scoped to the <strong>Amazon DE marketplace only</strong> (<code>amazon_campaigns.campaigns.market_place = 10</code>, confirmed via <code>order_management.market_place</code>: id=10, Germany, DE) &mdash; other Amazon marketplaces (UK/US/FR/etc.) are excluded. Matched via <code>amazon_campaigns.performance_data.listing_sku</code> (exact SKU string match) joined to <code>amazon_campaigns.search_term_performance_data</code> by ad group. Amazon's Search Term Report is only reported at ad-group level, not per-SKU &mdash; the SKU count shown per keyword is how many other SKUs share that same ad group (1 = an exact match; higher = a broader proxy signal, judge accordingly).<br>
-  <strong>Data source.</strong> Live PostgreSQL query on every load and on "Refresh" (5-minute server-side cache in between); Shopify H1/Meta fetched live on every query, never cached.
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>amazon_campaigns.performance_data</code>, <code>amazon_campaigns.search_term_performance_data</code>, <code>amazon_campaigns.campaigns</code>) &middot; fetched via <code>/api/requirement?fn=thasitha-req7</code>.<br>
+  <strong>Scope.</strong> Amazon has no staff/owner field on its campaigns, so Thasitha does not "own" any Amazon campaign &mdash; this is a cross-platform SKU proxy: every Amazon DE campaign (<code>market_place=10</code>) that has ever advertised one of Thasitha's Google-side SKUs (resolved the same way as Requirement 6, exact SKU string match), grouped campaign-wise, rolling last 90 days. Other Amazon marketplaces (UK/US/FR/etc.) are excluded.<br>
+  <strong>Ad Group SKU Count.</strong> Amazon's Search Term Report is reported at ad-group level, not per-SKU &mdash; this column shows how many total SKUs sit in the ad group that produced this term. 1 = a tight/near-exact signal for her SKU; higher (into the hundreds) = a broad proxy shared with many other products, judge accordingly.<br>
+  <strong>ROAS:</strong> (Sales &divide; Cost) &times; 100, shown as 0% when Cost is 0.<br>
+  <strong>Tag rules</strong> (identical to Requirement 6 / Jefri Req2): &#127942; Hero = Clicks &ge; 3 AND ROAS &ge; 400%. &#129656; Villain = Clicks &ge; 3 AND (ROAS &lt; 400% OR Orders = 0). &#129496; Zombie = Impressions &gt; 0 AND Clicks = 0. &#128373; Sidekick = Clicks 1&ndash;2 AND ROAS &ge; 400%. Rows matching none of these are left untagged.
 </div>
 
 </div>
@@ -1846,9 +1874,11 @@ document.getElementById('r6ExportCsv').addEventListener('click', function(){
 
 r6Load(false);
 
-// ===== Requirement 7: Product Catalog — Shopify SEO + Amazon Keywords (added 2026-08-10) =====
+// ===== Requirement 7: Amazon DE Campaign-Wise Search Terms (for Thasitha's SKUs) — rebuilt 2026-08-10, replaces the earlier product-catalog version =====
 let R7_DATA = [];
+let R7_SUMMARY = null, R7_CAMPAIGN_SUMMARY = [];
 let r7Pg = 1, r7LastLen = 0, r7LastPs = 1;
+let r7SortKey = null, r7SortDir = 1;
 
 function r7MaxPg(len, ps){
   if(len===undefined) len = r7LastLen;
@@ -1860,7 +1890,7 @@ async function r7Load(force){
   const btn = document.getElementById('r7RefreshBtn');
   const chip = document.getElementById('r7LiveChip');
   btn.disabled = true;
-  chip.textContent = 'Fetching live from PostgreSQL + Shopify… (this can take 20-40s for the full catalog)';
+  chip.textContent = 'Loading live data from PostgreSQL…';
   chip.style.background = '#eef1f6'; chip.style.color = '#5b6577';
   try {
     const url = '/api/requirement?fn=thasitha-req7' + (force ? '&refresh=1' : '');
@@ -1868,8 +1898,10 @@ async function r7Load(force){
     const data = await res.json();
     if(!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
     R7_DATA = data.rows || [];
-    r7PopulateCampaignFilter();
-    chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString() + ' · ' + data.meta.rowCount + ' products, ' + data.meta.resolvedH1 + ' H1 resolved, ' + data.meta.withAmazonKeywords + ' with Amazon DE keywords';
+    R7_SUMMARY = data.summary || null;
+    R7_CAMPAIGN_SUMMARY = data.campaignSummary || [];
+    r7PopulateCampaignFilter(data.campaignList || []);
+    chip.textContent = 'Live · ' + new Date(data.meta.generatedAt).toLocaleString();
     chip.style.background = '#eef7ee'; chip.style.color = '#0a7d4f';
     r7Pg = 1;
     renderR7();
@@ -1881,47 +1913,77 @@ async function r7Load(force){
   }
 }
 
-function r7PopulateCampaignFilter(){
-  const names = new Set();
-  R7_DATA.forEach(function(r){ (r.campaignNames||[]).forEach(function(n){ names.add(n); }); });
+function r7PopulateCampaignFilter(campaignList){
   const sel = document.getElementById('r7f_campaign');
   const prev = sel.value;
   sel.querySelectorAll('option:not([value=""])').forEach(function(o){ o.remove(); });
-  [...names].sort().forEach(function(n){
-    const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt);
+  campaignList.forEach(function(c){
+    const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt);
   });
   if([...sel.options].some(function(o){ return o.value===prev; })) sel.value = prev;
 }
 
+function r7TagBadge(tag){
+  if(tag==='Hero') return '<span class="t1-badge b-hero">&#127942; Hero</span>';
+  if(tag==='Villain') return '<span class="t1-badge b-poor">&#129656; Villain</span>';
+  if(tag==='Zombie') return '<span class="t1-badge b-check">&#129496; Zombie</span>';
+  if(tag==='Sidekick') return '<span class="t1-badge b-good">&#128373; Sidekick</span>';
+  return '<span class="t1-na">&mdash;</span>';
+}
+
 function renderR7Row(r){
-  const kws = r.amazonKeywords || [];
-  const amzHtml = kws.length
-    ? kws.map(function(kw){
-        return '<div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #eef1f6;">' +
-          '<strong>' + esc(kw.keyword) + '</strong><br>' +
-          '<span style="color:var(--muted);font-size:10.5px;">Clicks ' + num(kw.clicks) + ' &middot; Cost ' + eur(kw.cost).replace('&euro;','€') +
-          ' &middot; Conv. ' + num(kw.conversions) + ' &middot; Conv. Value ' + eur(kw.convValue).replace('&euro;','€') +
-          ' &middot; Ad group has ' + num(kw.adGroupSkuCount) + ' SKU(s)</span></div>';
-      }).join('')
-    : '<span class="t1-na">none found</span>';
   return '<tr>' +
-    '<td class="wrap">' + esc(r.productItemId) + '<br><span class="t2-sku" style="display:inline-block;max-width:220px;">' + (r.sku ? esc(r.sku).split('+').join('+<wbr>') : '<span class="t1-na">SKU N/A</span>') + '</span></td>' +
-    '<td class="wrap">' + (r.campaignNames && r.campaignNames.length ? r.campaignNames.map(esc).join('<br>') : '&mdash;') + '</td>' +
-    '<td class="wrap">' + (r.h1 ? esc(r.h1) : '<span class="t1-na">N/A</span>') + '</td>' +
-    '<td class="wrap">' + (r.metaTitle ? esc(r.metaTitle) : '<span class="t1-na">N/A</span>') + '</td>' +
-    '<td class="wrap">' + amzHtml + '</td>' +
+    '<td class="wrap">' + esc(r.searchTerm) + '</td>' +
+    '<td>' + esc(r.matchType || '&mdash;') + '</td>' +
+    '<td>' + esc(r.campaignName) + '</td>' +
+    '<td class="num">' + num(r.clicks) + '</td>' +
+    '<td class="num">' + num(r.impressions) + '</td>' +
+    '<td class="num">' + r.ctr.toFixed(2) + '%</td>' +
+    '<td class="num">' + eur(r.avgCpc).replace('&euro;','€') + '</td>' +
+    '<td class="num">' + eur(r.cost).replace('&euro;','€') + '</td>' +
+    '<td class="num">' + eur(r.conversionValue).replace('&euro;','€') + '</td>' +
+    '<td class="num">' + num(r.conversions) + '</td>' +
+    '<td class="num">' + (r.costPerConversion!=null ? eur(r.costPerConversion).replace('&euro;','€') : '<span class="t1-na">N/A</span>') + '</td>' +
+    '<td class="num">' + r.roas.toFixed(2) + '%</td>' +
+    '<td class="num">' + num(r.skuCount) + '</td>' +
+    '<td>' + r7TagBadge(r.tag) + '</td>' +
     '</tr>';
+}
+
+function renderR7CampaignSummary(){
+  const tbody = document.getElementById('r7CampaignSummaryBody');
+  if(!R7_CAMPAIGN_SUMMARY.length){ tbody.innerHTML = '<tr><td colspan="6" class="t1-empty">No data</td></tr>'; return; }
+  tbody.innerHTML = R7_CAMPAIGN_SUMMARY.map(function(c){
+    return '<tr>' +
+      '<td>' + esc(c.campaignName) + '</td>' +
+      '<td class="num">' + num(c.totalTerms) + '</td>' +
+      '<td class="num">' + num(c.hero) + '</td>' +
+      '<td class="num">' + num(c.villain) + '</td>' +
+      '<td class="num">' + num(c.zombie) + '</td>' +
+      '<td class="num">' + num(c.sidekick) + '</td>' +
+      '</tr>';
+  }).join('');
 }
 
 function renderR7(){
   const q = document.getElementById('r7q').value.trim().toLowerCase();
   const campaignFilter = document.getElementById('r7f_campaign').value;
+  const tagFilter = document.getElementById('r7f_tag').value;
 
   let rows = R7_DATA.filter(function(r){
-    const qHit = !q || (r.productItemId||'').toLowerCase().includes(q) || (r.sku||'').toLowerCase().includes(q) || (r.amazonKeywords||[]).some(function(kw){ return kw.keyword.toLowerCase().includes(q); });
-    const campHit = !campaignFilter || (r.campaignNames||[]).includes(campaignFilter);
-    return qHit && campHit;
+    const qHit = !q || r.searchTerm.toLowerCase().includes(q) || (r.matchType||'').toLowerCase().includes(q);
+    const campHit = !campaignFilter || r.campaignId===campaignFilter;
+    const tagHit = !tagFilter || r.tag===tagFilter;
+    return qHit && campHit && tagHit;
   });
+
+  if(r7SortKey){
+    rows.sort(function(a,b){
+      const av = a[r7SortKey], bv = b[r7SortKey];
+      if(typeof av === 'string') return av.localeCompare(bv) * r7SortDir;
+      return ((av==null?-Infinity:av) - (bv==null?-Infinity:bv)) * r7SortDir;
+    });
+  }
 
   const tbody = document.getElementById('r7Tbody');
   const emptyEl = document.getElementById('r7Empty');
@@ -1930,39 +1992,58 @@ function renderR7(){
   document.getElementById('r7Pager').style.display = rows.length ? '' : 'none';
 
   const pageSizeVal = document.getElementById('r7PageSize').value;
-  const ps = pageSizeVal==='All' ? rows.length||1 : parseInt(pageSizeVal,10);
+  const ps = parseInt(pageSizeVal,10);
   r7LastLen = rows.length; r7LastPs = ps;
   if(r7Pg > r7MaxPg(rows.length, ps)) r7Pg = r7MaxPg(rows.length, ps);
   const start = (r7Pg-1)*ps;
-  const pageRows = pageSizeVal==='All' ? rows : rows.slice(start, start+ps);
+  const pageRows = rows.slice(start, start+ps);
   tbody.innerHTML = pageRows.map(renderR7Row).join('');
   document.getElementById('r7PageInfo').textContent = rows.length
     ? ('Rows ' + (start+1).toLocaleString() + '-' + Math.min(start+ps, rows.length).toLocaleString() + ' of ' + rows.length.toLocaleString() + ' | page ' + r7Pg + ' / ' + r7MaxPg(rows.length, ps))
     : 'No rows match';
+  document.getElementById('r7cnt').textContent = rows.length.toLocaleString() + ' of ' + R7_DATA.length.toLocaleString() + ' terms';
 
-  document.getElementById('r7kpiTotal').textContent = rows.length.toLocaleString();
-  document.getElementById('r7kpiSku').textContent = rows.filter(function(r){ return r.sku; }).length.toLocaleString();
-  document.getElementById('r7kpiH1').textContent = rows.filter(function(r){ return r.h1; }).length.toLocaleString();
-  document.getElementById('r7kpiAmz').textContent = rows.filter(function(r){ return (r.amazonKeywords||[]).length; }).length.toLocaleString();
+  renderR7CampaignSummary();
+  if(R7_SUMMARY){
+    document.getElementById('r7cTotal').textContent = R7_SUMMARY.totalTerms.toLocaleString();
+    document.getElementById('r7cHero').textContent = R7_SUMMARY.hero.toLocaleString();
+    document.getElementById('r7cVillain').textContent = R7_SUMMARY.villain.toLocaleString();
+    document.getElementById('r7cZombie').textContent = R7_SUMMARY.zombie.toLocaleString();
+    document.getElementById('r7cSidekick').textContent = R7_SUMMARY.sidekick.toLocaleString();
+  }
 }
 
 document.getElementById('r7RefreshBtn').addEventListener('click', function(){ r7Load(true); });
 ['r7q'].forEach(function(id){
   document.getElementById(id).addEventListener('input', function(){ r7Pg=1; renderR7(); });
 });
-['r7f_campaign','r7PageSize'].forEach(function(id){
+['r7f_campaign','r7f_tag','r7PageSize'].forEach(function(id){
   document.getElementById(id).addEventListener('change', function(){ r7Pg=1; renderR7(); });
-});
-document.getElementById('r7ClearFilters').addEventListener('click', function(){
-  document.getElementById('r7q').value = '';
-  document.getElementById('r7f_campaign').value = '';
-  r7Pg = 1;
-  renderR7();
 });
 document.getElementById('r7First').addEventListener('click', function(){ r7Pg=1; renderR7(); });
 document.getElementById('r7Prev').addEventListener('click', function(){ if(r7Pg>1){ r7Pg--; renderR7(); } });
 document.getElementById('r7Next').addEventListener('click', function(){ if(r7Pg<r7MaxPg()){ r7Pg++; renderR7(); } });
 document.getElementById('r7Last').addEventListener('click', function(){ r7Pg=r7MaxPg(); renderR7(); });
+document.querySelectorAll('#r7Table th.sortable').forEach(function(th){
+  th.addEventListener('click', function(){
+    const key = th.dataset.k;
+    if(r7SortKey===key) r7SortDir = -r7SortDir; else { r7SortKey = key; r7SortDir = -1; }
+    renderR7();
+  });
+});
+document.getElementById('r7ExportCsv').addEventListener('click', function(){
+  const header = ['Search Term','Match Type','Campaign','Clicks','Impressions','CTR','Avg CPC','Cost','Sales','Orders','Cost/Order','ROAS','Ad Group SKU Count','Tag'];
+  const lines = [header.join(',')];
+  R7_DATA.forEach(function(r){
+    lines.push([r.searchTerm, r.matchType, r.campaignName, r.clicks, r.impressions, r.ctr, r.avgCpc, r.cost, r.conversionValue, r.conversions, r.costPerConversion==null?'':r.costPerConversion, r.roas, r.skuCount, r.tag]
+      .map(function(v){ return '"' + String(v==null?'':v).replace(/"/g,'""') + '"'; }).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'thasitha-amazon-de-search-terms-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+});
 
 r7Load(false);
 
@@ -1976,7 +2057,7 @@ const TAB_TITLES = {
   R4: 'Requirement 4 &middot; Shopify vs Ads Orders',
   R5: 'Requirement 5 &middot; Multichannel YoY Sales',
   R6: 'Requirement 6 &middot; Search Terms Labels',
-  R7: 'Requirement 7 &middot; Product Catalog: SEO + Amazon Keywords',
+  R7: 'Requirement 7 &middot; Amazon DE Campaign-Wise Search Terms',
 };
 function switchTab(which){
   ['R1','R2','R3','R4','R5','R6','R7'].forEach(function(k){

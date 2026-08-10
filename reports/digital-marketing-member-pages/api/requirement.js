@@ -4088,54 +4088,32 @@ async function handleThasithaReq6(req, res) {
 return handleThasithaReq6;
 })();
 
-// ==================== Thasitha Requirement 7 — Product Catalog: Shopify H1/Meta + Amazon Keywords ====================
-// Added 2026-08-10. All of Thasitha's products (any product with real
-// google_ads.product_performance history across her 3 campaigns, no
-// date-range cutoff — "gather all", not a top-N subset), each resolved to
-// its Shopify SKU/handle, with LIVE Shopify H1 (Product Title) + Meta (SEO)
-// Title, and — where the same SKU also exists in Amazon's advertising data —
-// that SKU's top Amazon search term/keyword from PostgreSQL. Reuses the same
-// verified approach as Requirement 6's original discovery: live Shopify
-// fetch via productByHandle (never a cached DB field), Amazon matched via
-// amazon_campaigns.performance_data (indexed on listing_sku — the .ads
-// table has no such index and times out, confirmed directly).
+// ==================== Thasitha Requirement 7 — Amazon DE Campaign-Wise Search Terms (for her SKUs) ====================
+// Rebuilt 2026-08-10, replacing the earlier Shopify H1/Meta product-catalog
+// version entirely, per explicit instruction: "show the amazon de all
+// champaign wise search terms ... replacing all req 7 ... like req 6 for
+// google ads". Same shape/classification as Requirement 6 (Jefri Req2
+// pattern), but scoped to Amazon DE campaigns instead of Google Ads.
+//
+// Amazon campaigns have NO staff/owner field (confirmed during Requirement 6
+// discovery) — Thasitha does not "own" any Amazon campaign. So this stays a
+// SKU-based cross-platform proxy, same idea approved earlier ("for the same
+// sku what keyword amazon staff using"): every Amazon DE campaign that has
+// EVER advertised one of Thasitha's Google-side SKUs (matched via
+// amazon_campaigns.performance_data.listing_sku, exact string match),
+// grouped campaign-wise, showing every real search term for that
+// campaign+SKU match (amazon_campaigns.search_term_performance_data, last 90
+// days). Scoped to market_place=10 (Germany/DE, confirmed via
+// order_management.market_place) only — other Amazon marketplaces excluded.
+//
+// Known limitation, disclosed in the UI: Amazon's Search Term Report is
+// ad-group level, not per-SKU. A term is attributed to a campaign whenever
+// it comes from an ad group that contains one of her SKUs — the "SKU count"
+// column shows how many total SKUs sit in that ad group (1 = a tight/exact
+// signal, hundreds = a broad proxy, judge accordingly). Verified live via
+// EXPLAIN ANALYZE: ~10,030 campaign+term rows, ~3s execution.
 const thasithaReq7HandlerModule = (function() {
 const { Pool } = require('pg');
-
-const R7_SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
-const R7_SHOPIFY_API_VERSION = '2024-10';
-const r7Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-async function shopifyGraphQL(query, variables) {
-  const token = process.env.SHOPIFY_ADMIN_TOKEN;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    let res;
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      res = await fetch(`https://${R7_SHOPIFY_STORE_DOMAIN}/admin/api/${R7_SHOPIFY_API_VERSION}/graphql.json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
-        body: JSON.stringify({ query, variables }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-    } catch (e) {
-      await r7Sleep(400 * Math.pow(2, attempt));
-      continue;
-    }
-    if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
-      await r7Sleep(400 * Math.pow(2, attempt));
-      continue;
-    }
-    if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
-    const json = await res.json();
-    const throttled = json.errors && Array.isArray(json.errors) && json.errors.some((e) => e.extensions && e.extensions.code === 'THROTTLED');
-    if (throttled) { await r7Sleep(800 * Math.pow(2, attempt)); continue; }
-    if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
-    return json.data;
-  }
-  throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
-}
 
 let pool;
 function getPool() {
@@ -4160,33 +4138,24 @@ function getPool() {
   return pool;
 }
 
-// Two fixes confirmed 2026-08-10 via direct DB inspection, same pattern
-// already used in Req2/Req3:
-// 1. 27 of Thasitha's product_performance rows have a blank/null
-//    product_item_id — junk rows with no real product at all (Google Ads
-//    logs some spend as unattributed). Filtered out — nothing to show.
-// 2. A resolved listing can be a PARENT record (is_parent=1, all_list=0),
-//    which never has its own SKU in Shopify's parent/child structure — the
-//    real SKU lives on a CHILD variant (all_list=1). Added the same
-//    child_fallback join Req2/Req3 already use, so a parent match now
-//    falls back to its representative child's SKU instead of showing N/A.
-const THASI_PRODUCTS_QUERY = `
+// SKU resolution CTEs identical to Req2/Req3/Req6 pattern (blank
+// product_item_id rows excluded, parent-listing SKU resolved via mapped
+// child variant), feeding into the Amazon match.
+const TERMS_QUERY = `
 WITH thasi_campaigns AS (
-  SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE group_name = 'Thasi'
+  SELECT campaign_id FROM google_ads.campaigns WHERE group_name = 'Thasi'
 ),
 thasi_products AS (
-  SELECT pp.product_item_id, array_agg(DISTINCT pp.campaign_id) AS campaign_ids
+  SELECT DISTINCT pp.product_item_id
   FROM google_ads.product_performance pp
   WHERE pp.campaign_id IN (SELECT campaign_id FROM thasi_campaigns)
     AND pp.product_item_id IS NOT NULL AND pp.product_item_id <> ''
-  GROUP BY pp.product_item_id
 ),
 resolved_ids AS (
-  SELECT product_item_id, campaign_ids,
+  SELECT product_item_id,
     CASE WHEN product_item_id LIKE 'shopify\\_%'
          THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
-         ELSE product_item_id
-    END AS shopify_id
+         ELSE product_item_id END AS shopify_id
   FROM thasi_products
 ),
 child_fallback AS (
@@ -4196,81 +4165,73 @@ child_fallback AS (
   GROUP BY m.parent_id
 ),
 resolved_listing AS (
-  SELECT sl.item_id,
-    COALESCE(NULLIF(sl.sku, ''), child_sl.sku) AS sku,
-    sl.shopify_handle
+  SELECT sl.item_id, COALESCE(NULLIF(sl.sku, ''), child_sl.sku) AS sku
   FROM listings.shopify_listings sl
   LEFT JOIN child_fallback cf ON cf.parent_listing_id = sl.id
   LEFT JOIN listings.shopify_listings child_sl ON child_sl.id = cf.child_listing_id
   WHERE sl.channel = 'LEDSone DE'
-)
-SELECT ri.product_item_id, ri.campaign_ids, rl.sku, rl.shopify_handle
-FROM resolved_ids ri
-LEFT JOIN resolved_listing rl ON rl.item_id = ri.shopify_id
-ORDER BY ri.product_item_id;
-`;
-
-// Same amazon_campaigns.performance_data approach proven in Req6's
-// discovery — .ads.listing_sku has no index and a full scan times out.
-// Scoped to the Amazon DE marketplace only (market_place=10, confirmed via
-// order_management.market_place: id=10, name='Germany', abbreviation='DE')
-// — per explicit instruction, not all Amazon marketplaces mixed together.
-// Returns EVERY search term per matched ad group (not just the top one) —
-// per explicit instruction "do not miss all".
-const AMAZON_QUERY = `
-WITH de_campaigns AS (
+),
+skus AS (
+  SELECT DISTINCT rl.sku
+  FROM resolved_ids ri
+  JOIN resolved_listing rl ON rl.item_id = ri.shopify_id
+  WHERE rl.sku IS NOT NULL
+),
+de_campaigns AS (
   SELECT campaign_id FROM amazon_campaigns.campaigns WHERE market_place = 10
 ),
-matched AS (
-  SELECT DISTINCT ad_group_id, listing_sku
-  FROM amazon_campaigns.performance_data
-  WHERE listing_sku = ANY($1::text[]) AND campaign_id IN (SELECT campaign_id FROM de_campaigns)
+matched_ad_groups AS (
+  SELECT DISTINCT pd.ad_group_id, pd.campaign_id
+  FROM amazon_campaigns.performance_data pd
+  JOIN skus s ON s.sku = pd.listing_sku
+  WHERE pd.campaign_id IN (SELECT campaign_id FROM de_campaigns)
 ),
-ad_group_sizes AS (
+ad_group_sku_counts AS (
   SELECT ad_group_id, COUNT(DISTINCT listing_sku) AS sku_count
   FROM amazon_campaigns.performance_data
-  WHERE ad_group_id IN (SELECT ad_group_id FROM matched)
+  WHERE ad_group_id IN (SELECT ad_group_id FROM matched_ad_groups)
   GROUP BY ad_group_id
 ),
-ad_group_terms AS (
-  SELECT ad_group_id, search_term,
-    SUM(clicks) AS clicks, SUM(spend) AS cost, SUM(orders) AS conversions, SUM(sales) AS conv_value
-  FROM amazon_campaigns.search_term_performance_data
-  WHERE ad_group_id IN (SELECT ad_group_id FROM matched) AND date >= CURRENT_DATE - INTERVAL '90 days'
-  GROUP BY ad_group_id, search_term
+terms AS (
+  SELECT t.campaign_id, t.ad_group_id, t.search_term, t.match_type,
+    SUM(t.clicks) AS clicks, SUM(t.impressions) AS impressions,
+    SUM(t.spend) AS cost, SUM(t.orders) AS conversions, SUM(t.sales) AS conv_value
+  FROM amazon_campaigns.search_term_performance_data t
+  WHERE t.ad_group_id IN (SELECT ad_group_id FROM matched_ad_groups)
+    AND t.date >= CURRENT_DATE - INTERVAL '90 days'
+  GROUP BY t.campaign_id, t.ad_group_id, t.search_term, t.match_type
 )
-SELECT m.listing_sku, m.ad_group_id, ags.sku_count,
-  t.search_term, t.clicks, t.cost, t.conversions, t.conv_value
-FROM matched m
-JOIN ad_group_sizes ags ON ags.ad_group_id = m.ad_group_id
-LEFT JOIN ad_group_terms t ON t.ad_group_id = m.ad_group_id
-ORDER BY m.listing_sku, t.conv_value DESC NULLS LAST, t.clicks DESC;
+SELECT te.campaign_id, te.search_term, te.match_type,
+  SUM(te.clicks)::bigint AS clicks,
+  SUM(te.impressions)::bigint AS impressions,
+  SUM(te.cost)::numeric AS cost,
+  SUM(te.conversions)::numeric AS conversions,
+  SUM(te.conv_value)::numeric AS conv_value,
+  MAX(agc.sku_count) AS sku_count
+FROM terms te
+JOIN ad_group_sku_counts agc ON agc.ad_group_id = te.ad_group_id
+WHERE te.search_term IS NOT NULL
+GROUP BY te.campaign_id, te.search_term, te.match_type;
 `;
 
-const SHOPIFY_LIVE_QUERY_TEMPLATE = (handles) => {
-  const fields = handles.map((h, i) => `p${i}: productByHandle(handle: ${JSON.stringify(h)}) { title seo { title } }`);
-  return `query { ${fields.join('\n')} }`;
-};
-async function fetchLiveShopifyTitles(handles) {
-  const uniqueHandles = [...new Set(handles.filter(Boolean))];
-  const result = new Map();
-  const BATCH = 50;
-  for (let i = 0; i < uniqueHandles.length; i += BATCH) {
-    const batch = uniqueHandles.slice(i, i + BATCH);
-    const data = await shopifyGraphQL(SHOPIFY_LIVE_QUERY_TEMPLATE(batch));
-    batch.forEach((h, idx) => {
-      const node = data['p' + idx];
-      result.set(h, {
-        h1: node ? node.title : null,
-        metaTitle: node && node.seo ? node.seo.title : null,
-      });
-    });
+// Same tag rules as Req6/Jefri Req2 — kept byte-identical:
+//   Hero:     clicks >= 3 AND ROAS >= 400%
+//   Villain:  clicks >= 3 AND (ROAS < 400% OR conversions = 0)
+//   Zombie:   impressions > 0 AND clicks = 0
+//   Sidekick: clicks BETWEEN 1 AND 2 AND ROAS >= 400%
+function classifyTag(clicks, impressions, cost, conversions, roas) {
+  if (clicks >= 3) {
+    if (roas >= 400) return 'Hero';
+    if (roas < 400 || conversions === 0) return 'Villain';
   }
-  return result;
+  if (impressions > 0 && clicks === 0) return 'Zombie';
+  if (clicks >= 1 && clicks <= 2 && roas >= 400) return 'Sidekick';
+  return '';
 }
+function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
 
 const CACHE = new Map();
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 60 * 1000;
 const CACHE_KEY = 'thasitha-req7';
 
 async function handleThasithaReq7(req, res) {
@@ -4293,60 +4254,78 @@ async function handleThasithaReq7(req, res) {
   if (!client) return;
 
   try {
-    const campResult = await client.query(`SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE group_name = 'Thasi'`);
-    const campaignNameById = new Map(campResult.rows.map((c) => [String(c.campaign_id), c.campaign_name]));
+    const termsResult = await client.query(TERMS_QUERY);
 
-    const prodResult = await client.query(THASI_PRODUCTS_QUERY);
-    const products = prodResult.rows;
-
-    // amazonBySku now holds an ARRAY of every DE search term found for that
-    // SKU's ad group(s) — not just the top one — per explicit instruction
-    // "do not miss all". Rows with a null search_term (an ad group with no
-    // search-term data in the window, but a real SKU match) are dropped
-    // here — nothing useful to show — but the SKU still keeps its H1/Meta.
-    const skus = [...new Set(products.map((p) => p.sku).filter(Boolean))];
-    let amazonBySku = new Map();
-    if (skus.length) {
-      const amzResult = await client.query(AMAZON_QUERY, [skus]);
-      for (const r of amzResult.rows) {
-        if (!r.search_term) continue;
-        if (!amazonBySku.has(r.listing_sku)) amazonBySku.set(r.listing_sku, []);
-        amazonBySku.get(r.listing_sku).push({
-          keyword: r.search_term,
-          clicks: r.clicks,
-          cost: Number(r.cost) || 0,
-          conversions: Number(r.conversions) || 0,
-          convValue: Number(r.conv_value) || 0,
-          adGroupSkuCount: r.sku_count,
-        });
-      }
+    const campaignIds = [...new Set(termsResult.rows.map((r) => String(r.campaign_id)))];
+    let campaignNameById = new Map();
+    if (campaignIds.length) {
+      const campResult = await client.query(
+        `SELECT campaign_id, campaign_name FROM amazon_campaigns.campaigns WHERE campaign_id = ANY($1::bigint[])`,
+        [campaignIds]
+      );
+      campaignNameById = new Map(campResult.rows.map((c) => [String(c.campaign_id), c.campaign_name]));
     }
 
-    const handles = products.map((p) => p.shopify_handle).filter(Boolean);
-    const shopifyByHandle = await fetchLiveShopifyTitles(handles);
-
-    const rows = products.map((p) => {
-      const shop = p.shopify_handle ? shopifyByHandle.get(p.shopify_handle) : null;
-      const campaignNames = (p.campaign_ids || []).map((id) => campaignNameById.get(String(id)) || String(id));
+    const rows = termsResult.rows.map((r) => {
+      const clicks = Number(r.clicks) || 0;
+      const impressions = Number(r.impressions) || 0;
+      const cost = Number(r.cost) || 0;
+      const conversions = Number(r.conversions) || 0;
+      const convValue = Number(r.conv_value) || 0;
+      const ctr = impressions > 0 ? round2((clicks / impressions) * 100) : 0;
+      const avgCpc = clicks > 0 ? round2(cost / clicks) : 0;
+      const costPerConversion = conversions > 0 ? round2(cost / conversions) : null;
+      const roas = cost > 0 ? round2((convValue / cost) * 100) : 0;
+      const tag = classifyTag(clicks, impressions, cost, conversions, roas);
+      const campaignId = String(r.campaign_id);
       return {
-        productItemId: p.product_item_id,
-        sku: p.sku || null,
-        campaignNames,
-        h1: shop ? shop.h1 : null,
-        metaTitle: shop ? shop.metaTitle : null,
-        amazonKeywords: p.sku ? (amazonBySku.get(p.sku) || []) : [],
+        searchTerm: r.search_term,
+        matchType: r.match_type,
+        campaignId,
+        campaignName: campaignNameById.get(campaignId) || campaignId,
+        clicks, impressions, ctr, avgCpc, cost,
+        conversionValue: round2(convValue),
+        conversions: round2(conversions),
+        costPerConversion,
+        roas,
+        skuCount: r.sku_count,
+        tag,
       };
     });
 
+    const campaignSummaryMap = new Map();
+    for (const [id, name] of campaignNameById.entries()) {
+      campaignSummaryMap.set(id, { campaignId: id, campaignName: name, totalTerms: 0, hero: 0, villain: 0, zombie: 0, sidekick: 0 });
+    }
+    for (const r of rows) {
+      const cs = campaignSummaryMap.get(r.campaignId);
+      cs.totalTerms++;
+      if (r.tag === 'Hero') cs.hero++;
+      else if (r.tag === 'Villain') cs.villain++;
+      else if (r.tag === 'Zombie') cs.zombie++;
+      else if (r.tag === 'Sidekick') cs.sidekick++;
+    }
+    const campaignSummary = [...campaignSummaryMap.values()].sort((a, b) => b.totalTerms - a.totalTerms);
+
     const payload = {
-      generatedAt: new Date().toISOString(),
-      rows,
-      meta: {
-        rowCount: rows.length,
-        resolvedSku: rows.filter((r) => r.sku).length,
-        resolvedH1: rows.filter((r) => r.h1).length,
-        withAmazonKeywords: rows.filter((r) => r.amazonKeywords.length).length,
+      success: true,
+      staff: { name: 'Thasitha', department: 'Google Ads', store: 'ledsone.de' },
+      reportPeriod: { label: 'Last 90 Days', days: 90 },
+      source: {
+        scope: `Amazon DE campaigns (market_place=10) that have ever advertised one of Thasitha's Google-side SKUs (exact SKU string match), search terms rolling last 90 days — same shape as Requirement 6, cross-platform proxy since Amazon campaigns have no staff/owner field`,
+        tables: ['amazon_campaigns.performance_data', 'amazon_campaigns.search_term_performance_data', 'amazon_campaigns.campaigns'],
       },
+      summary: {
+        totalTerms: rows.length,
+        hero: rows.filter((r) => r.tag === 'Hero').length,
+        villain: rows.filter((r) => r.tag === 'Villain').length,
+        zombie: rows.filter((r) => r.tag === 'Zombie').length,
+        sidekick: rows.filter((r) => r.tag === 'Sidekick').length,
+      },
+      campaignList: [...campaignNameById.entries()].map(([id, name]) => ({ id, name })),
+      campaignSummary,
+      rows,
+      meta: { generatedAt: new Date().toISOString() },
     };
     CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
     res.status(200).json(payload);
