@@ -269,6 +269,13 @@ body.sb-open .ms-collapse-btn svg{transform:rotate(180deg);}
 .ms-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;transition:margin-left .18s ease;position:relative;z-index:1;}
 body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
 .ms-topcontent{padding:28px 24px 40px;}
+body.tool-open .ms-sidebar{display:none;}
+body.tool-open .ms-collapse-btn{display:none;}
+body.tool-open .ms-main{margin-left:0 !important;}
+body.tool-open .ms-topcontent{padding:0;}
+.ms-tool-back-btn{display:none;position:fixed;top:14px;left:14px;z-index:60;width:32px;height:32px;border-radius:8px;border:1px solid #dfe3ec;background:#fff;color:#42506a;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(16,24,40,.12);}
+body.tool-open .ms-tool-back-btn{display:flex;}
+body.tool-open #msToolFrame{height:100vh;border-radius:0;border:none;}
 @media(max-width:900px){
   .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
   body.sb-open .ms-sidebar{width:var(--sb-w);}
@@ -5126,6 +5133,7 @@ window.flt = flt; window.rst = rst; if (typeof srt === 'function') window.srt = 
 </div>
 </div>
 </div>
+<button class="ms-tool-back-btn" id="msToolBackBtn" type="button" title="Back to dashboard" aria-label="Back to dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
 <div id="msToolFrame" style="display:none;height:calc(100vh - 56px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
   <iframe id="msToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
 </div>
@@ -5139,11 +5147,19 @@ function msShowTool(url){
   var iframe = document.getElementById("msToolFrameIframe");
   if (iframe.getAttribute("src") !== url) iframe.setAttribute("src", url);
   frame.style.display = "block";
+  document.body.classList.add("tool-open");
 }
 function msShowContent(){
   document.getElementById("msToolFrame").style.display = "none";
   document.getElementById("msContentArea").style.display = "";
+  document.body.classList.remove("tool-open");
 }
+document.getElementById("msToolBackBtn").addEventListener("click", function () {
+  document.querySelectorAll("#msSidebar .ms-navlist a").forEach(function (x) { x.classList.remove("on"); });
+  var firstReq = document.querySelector("#msNavList a");
+  if (firstReq) firstReq.classList.add("on");
+  msShowContent();
+});
 document.querySelectorAll("#msSidebar a[data-tool]").forEach(function (a) {
   a.addEventListener("click", function (e) {
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;

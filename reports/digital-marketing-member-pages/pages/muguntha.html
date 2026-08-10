@@ -92,6 +92,13 @@ body.sb-open .collapse-btn svg{transform:rotate(180deg);}
 .filters button.primary:disabled{opacity:.6;cursor:wait;}
 
 .content{padding:28px 36px 40px;flex:1;}
+body.tool-open .sidebar{display:none;}
+body.tool-open .collapse-btn{display:none;}
+body.tool-open .topbar{display:none;}
+body.tool-open .content{padding:0;}
+.mg-tool-back-btn{display:none;position:fixed;top:14px;left:14px;z-index:60;width:32px;height:32px;border-radius:8px;border:1px solid #dfe3ec;background:#fff;color:#42506a;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(16,24,40,.12);}
+body.tool-open .mg-tool-back-btn{display:flex;}
+body.tool-open #mgToolFrame{height:100vh;border-radius:0;border:none;}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
 .card{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(16,24,40,.05);transition:box-shadow .15s ease,transform .15s ease;}
 .card:hover{box-shadow:0 4px 14px rgba(16,24,40,.09);transform:translateY(-1px);}
@@ -400,6 +407,7 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
     </div>
   </div>
 </div>
+<button class="mg-tool-back-btn" id="mgToolBackBtn" type="button" title="Back to dashboard" aria-label="Back to dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
 <div id="mgToolFrame" style="display:none;height:calc(100vh - 100px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
   <iframe id="mgToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
 </div>
@@ -722,11 +730,17 @@ function mgShowTool(url){
   const iframe = document.getElementById('mgToolFrameIframe');
   if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
   frame.style.display = 'block';
+  document.body.classList.add('tool-open');
 }
 function mgShowContent(){
   document.getElementById('mgToolFrame').style.display = 'none';
   document.getElementById('mgContentArea').style.display = '';
+  document.body.classList.remove('tool-open');
 }
+document.getElementById('mgToolBackBtn').addEventListener('click', () => {
+  document.querySelectorAll('.sidebar .navlist a').forEach((x) => x.classList.remove('active'));
+  mgShowContent();
+});
 document.querySelectorAll('.sidebar a[data-tool]').forEach((a) => {
   a.addEventListener('click', (e) => {
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;
