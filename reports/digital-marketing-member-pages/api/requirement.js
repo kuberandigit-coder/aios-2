@@ -4035,11 +4035,17 @@ async function handleThasithaReq6(req, res) {
       };
     });
 
+    // Pre-seed every one of Thasitha's campaigns (not just ones that show up
+    // in the search-term rows) — a brand-new campaign with zero search-term
+    // data yet (confirmed 2026-08-10: "Klarna | SUMT | NewProduct -22/07",
+    // started ~19 days before this fix, genuinely 0 rows in either
+    // search-term table, all-time) would otherwise silently vanish from the
+    // campaign summary and dropdown instead of showing as 0 terms.
     const campaignSummaryMap = new Map();
+    for (const [id, name] of campaignNameById.entries()) {
+      campaignSummaryMap.set(id, { campaignId: id, campaignName: name, totalTerms: 0, hero: 0, villain: 0, zombie: 0, sidekick: 0 });
+    }
     for (const r of rows) {
-      if (!campaignSummaryMap.has(r.campaignId)) {
-        campaignSummaryMap.set(r.campaignId, { campaignId: r.campaignId, campaignName: r.campaignName, totalTerms: 0, hero: 0, villain: 0, zombie: 0, sidekick: 0 });
-      }
       const cs = campaignSummaryMap.get(r.campaignId);
       cs.totalTerms++;
       if (r.tag === 'Hero') cs.hero++;
@@ -4064,7 +4070,7 @@ async function handleThasithaReq6(req, res) {
         zombie: rows.filter((r) => r.tag === 'Zombie').length,
         sidekick: rows.filter((r) => r.tag === 'Sidekick').length,
       },
-      campaignList: [...campaignNameById.entries()].map(([id, name]) => ({ id, name })).filter((c) => campaignSummaryMap.has(c.id)),
+      campaignList: [...campaignNameById.entries()].map(([id, name]) => ({ id, name })),
       campaignSummary,
       rows,
       meta: { generatedAt: new Date().toISOString() },
