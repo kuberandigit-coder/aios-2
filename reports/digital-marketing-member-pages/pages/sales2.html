@@ -79,15 +79,15 @@ tbody tr:hover{background:var(--accent-soft);}
 <span style="display:inline-flex;align-items:center;gap:6px;background:#0c1a30;color:#e8d59a;border:1px solid #b98b1e;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;">Developed by Kuberan</span>
 </div>
 
-<div class="reqtabs">
-  <div class="reqtab active" id="tabBtnMahima" onclick="showStaffTab('mahima')">Mahima</div>
-  <div class="reqtab" id="tabBtnSukirtha" onclick="showStaffTab('sukirtha')">Sukirtha &middot; Email</div>
-  <div class="reqtab" id="tabBtnJeffri" onclick="showStaffTab('jeffri')">Jeffri</div>
-  <div class="reqtab" id="tabBtnHetheesha" onclick="showStaffTab('hetheesha')">Hetheesha &middot; FR</div>
-  <div class="reqtab" id="tabBtnThivagini" onclick="showStaffTab('thivagini')">Thivagini &middot; FR</div>
-  <div class="reqtab" id="tabBtnThasitha" onclick="showStaffTab('thasitha')">Thasitha</div>
-  <div class="reqtab" onclick="window.location.href='salesuk.html'">UK Sales</div>
-  <div class="reqtab" onclick="window.location.href='sales25.html'">2025 UK</div>
+<div class="reqtabs" id="staffTabs">
+  <div class="reqtab active" id="tabBtnMahima" data-staff="mahima" onclick="showStaffTab('mahima')">Mahima</div>
+  <div class="reqtab" id="tabBtnSukirtha" data-staff="sukirtha" onclick="showStaffTab('sukirtha')">Sukirtha &middot; Email</div>
+  <div class="reqtab" id="tabBtnJeffri" data-staff="jeffri" onclick="showStaffTab('jeffri')">Jeffri</div>
+  <div class="reqtab" id="tabBtnHetheesha" data-staff="hetheesha" onclick="showStaffTab('hetheesha')">Hetheesha &middot; FR</div>
+  <div class="reqtab" id="tabBtnThivagini" data-staff="thivagini" onclick="showStaffTab('thivagini')">Thivagini &middot; FR</div>
+  <div class="reqtab" id="tabBtnThasitha" data-staff="thasitha" onclick="showStaffTab('thasitha')">Thasitha</div>
+  <div class="reqtab" id="tabBtnUkLink" onclick="window.location.href='salesuk.html'">UK Sales</div>
+  <div class="reqtab" id="tabBtn2025Link" onclick="window.location.href='sales25.html'">2025 UK</div>
   <div class="reqtab" onclick="window.location.href='2025DE.html'">2025 DE</div>
 </div>
 
@@ -2831,6 +2831,25 @@ mLoad(false);
 sdoLoad(false);
 sdeLoad(false);
 
+// Locked single-member view: ?staff=mahima (or jeffri/thasitha/sukirtha) in
+// the URL both deep-links straight to that member's tab AND hides every
+// other tab so a staff member embedding this page (e.g. via their own
+// sidebar iframe) only ever sees their own numbers, matching the same
+// "each account only sees its own data" rule the rest of this login
+// system follows.
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const lockedStaff = params.get('staff');
+  if (lockedStaff) {
+    const validTab = document.querySelector('#staffTabs [data-staff="' + lockedStaff + '"]');
+    if (validTab) {
+      document.querySelectorAll('#staffTabs .reqtab').forEach(function(el){
+        if (el.id !== validTab.id) el.style.display = 'none';
+      });
+      showStaffTab(lockedStaff);
+    }
+  }
+})();
 </script>
 </body>
 </html>

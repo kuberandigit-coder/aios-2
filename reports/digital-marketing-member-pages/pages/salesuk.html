@@ -648,6 +648,28 @@ function exportCsv(){
 }
 document.getElementById('exportCsv').addEventListener('click', exportCsv);
 
+// Locked single-member view: ?group=kamsi (or any group) in the URL both
+// deep-links straight to that member's tab AND hides every other group tab
+// so a staff member embedding this page (e.g. via their own sidebar iframe)
+// only ever sees their own numbers, matching the same "each account only
+// sees its own data" rule the rest of this login system follows.
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const lockedGroup = params.get('group');
+  if (lockedGroup) {
+    const validTab = document.querySelector('#groupTabs .reqtab[data-group="' + lockedGroup + '"]');
+    if (validTab) {
+      document.querySelectorAll('#groupTabs .reqtab').forEach(function(el){
+        if (el.getAttribute('data-group') !== lockedGroup) el.style.display = 'none';
+      });
+      CURRENT_GROUP = lockedGroup;
+      document.querySelectorAll('#groupTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-group') === lockedGroup));
+      const back = document.querySelector('.back');
+      if (back) back.style.display = 'none';
+    }
+  }
+})();
+
 load(false);
 </script>
 </body>
