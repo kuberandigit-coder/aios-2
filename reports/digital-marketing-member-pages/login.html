@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LEDSone — DM Dashboard Login</title>
+<style>
+:root{--navy:#0c1a30;--navy2:#0e2143;--gold:#c9a227;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--bad:#c62828;--bad-soft:#fdecea;}
+*{box-sizing:border-box;}
+body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:
+  radial-gradient(1200px 600px at 15% -10%, rgba(31,94,255,.18), transparent 60%),
+  radial-gradient(900px 500px at 110% 10%, rgba(201,162,39,.14), transparent 55%),
+  var(--navy);
+  display:flex;align-items:center;justify-content:center;padding:24px;}
+
+.wrap{width:100%;max-width:920px;display:grid;grid-template-columns:1.1fr 1fr;background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35);}
+@media (max-width:760px){.wrap{grid-template-columns:1fr;max-width:420px;}}
+
+.side{background:linear-gradient(160deg,var(--navy),var(--navy2) 70%);color:#dfe4ee;padding:44px 38px;display:flex;flex-direction:column;justify-content:space-between;position:relative;}
+.side::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--gold),transparent);}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand .mark{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px;flex-shrink:0;}
+.brand .txt b{display:block;color:#fff;font-size:17px;letter-spacing:.2px;}
+.brand .txt span{display:block;font-size:11px;color:#93a3c4;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+
+.side .pitch{margin-top:38px;}
+.side .pitch h1{font-size:26px;line-height:1.35;margin:0 0 14px;color:#fff;font-weight:800;}
+.side .pitch p{font-size:13.5px;line-height:1.7;color:#aab4c8;margin:0;max-width:340px;}
+
+.side .foot{font-size:11.5px;color:#7f8bab;letter-spacing:.3px;}
+.side .foot b{color:#e8d59a;}
+
+.form-side{padding:48px 42px;display:flex;flex-direction:column;justify-content:center;}
+.form-side h2{margin:0 0 6px;font-size:22px;font-weight:800;color:var(--ink);}
+.form-side .sub{margin:0 0 30px;font-size:13px;color:var(--muted);}
+
+label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.field{margin-bottom:18px;}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;color:var(--ink);background:#fbfcfe;transition:border-color .15s ease, box-shadow .15s ease;outline:none;}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);background:#fff;}
+
+.btn{width:100%;padding:13px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14.5px;font-weight:700;letter-spacing:.2px;cursor:pointer;transition:background .15s ease,transform .1s ease;margin-top:6px;}
+.btn:hover{background:#1749cc;}
+.btn:active{transform:translateY(1px);}
+.btn:disabled{opacity:.65;cursor:not-allowed;}
+
+.error{display:none;margin-top:14px;padding:11px 14px;border-radius:9px;background:var(--bad-soft);color:var(--bad);font-size:13px;font-weight:600;border:1px solid rgba(198,40,40,.2);}
+.error.show{display:block;}
+
+.hint{margin-top:24px;font-size:11.5px;color:var(--muted);text-align:center;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="side">
+      <div class="brand">
+        <span class="mark">L</span>
+        <span class="txt"><b>LEDSone</b><span>DM Dashboard</span></span>
+      </div>
+      <div class="pitch">
+        <h1>Performance data for every staff member, in one place.</h1>
+        <p>Sign in with your assigned account to view your personal sales, ad-cost and attribution dashboard. Access is role-based — each account only sees its own tab.</p>
+      </div>
+      <div class="foot">Data pages are <b>PostgreSQL / Shopify</b>-sourced snapshots &middot; read-only</div>
+    </div>
+    <div class="form-side">
+      <h2>Sign in</h2>
+      <p class="sub">Enter your username and password to continue.</p>
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn" id="submitBtn" type="submit">Sign In</button>
+        <div class="error" id="errorBox"></div>
+      </form>
+      <div class="hint">Access issues? Contact your dashboard administrator.</div>
+    </div>
+  </div>
+
+<script>
+const form = document.getElementById('loginForm');
+const errorBox = document.getElementById('errorBox');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorBox.classList.remove('show');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in…';
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  try {
+    const res = await fetch('/api/auth?action=login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      credentials: 'same-origin',
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Invalid username or password.');
+    }
+    window.location.href = data.redirect || 'home.html';
+  } catch (err) {
+    errorBox.textContent = err.message || 'Something went wrong. Please try again.';
+    errorBox.classList.add('show');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Sign In';
+  }
+});
+</script>
+</body>
+</html>

@@ -4160,6 +4160,16 @@ function getPool() {
   return pool;
 }
 
+// Two fixes confirmed 2026-08-10 via direct DB inspection, same pattern
+// already used in Req2/Req3:
+// 1. 27 of Thasitha's product_performance rows have a blank/null
+//    product_item_id — junk rows with no real product at all (Google Ads
+//    logs some spend as unattributed). Filtered out — nothing to show.
+// 2. A resolved listing can be a PARENT record (is_parent=1, all_list=0),
+//    which never has its own SKU in Shopify's parent/child structure — the
+//    real SKU lives on a CHILD variant (all_list=1). Added the same
+//    child_fallback join Req2/Req3 already use, so a parent match now
+//    falls back to its representative child's SKU instead of showing N/A.
 const THASI_PRODUCTS_QUERY = `
 WITH thasi_campaigns AS (
   SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE group_name = 'Thasi'
@@ -4168,6 +4178,7 @@ thasi_products AS (
   SELECT pp.product_item_id, array_agg(DISTINCT pp.campaign_id) AS campaign_ids
   FROM google_ads.product_performance pp
   WHERE pp.campaign_id IN (SELECT campaign_id FROM thasi_campaigns)
+    AND pp.product_item_id IS NOT NULL AND pp.product_item_id <> ''
   GROUP BY pp.product_item_id
 ),
 resolved_ids AS (
@@ -4177,20 +4188,43 @@ resolved_ids AS (
          ELSE product_item_id
     END AS shopify_id
   FROM thasi_products
+),
+child_fallback AS (
+  SELECT m.parent_id AS parent_listing_id, MIN(child.id) AS child_listing_id
+  FROM listings.shopify_listings_parent_child_mapping m
+  JOIN listings.shopify_listings child ON child.id = m.child_id AND child.all_list = 1
+  GROUP BY m.parent_id
+),
+resolved_listing AS (
+  SELECT sl.item_id,
+    COALESCE(NULLIF(sl.sku, ''), child_sl.sku) AS sku,
+    sl.shopify_handle
+  FROM listings.shopify_listings sl
+  LEFT JOIN child_fallback cf ON cf.parent_listing_id = sl.id
+  LEFT JOIN listings.shopify_listings child_sl ON child_sl.id = cf.child_listing_id
+  WHERE sl.channel = 'LEDSone DE'
 )
-SELECT ri.product_item_id, ri.campaign_ids, sl.sku, sl.shopify_handle
+SELECT ri.product_item_id, ri.campaign_ids, rl.sku, rl.shopify_handle
 FROM resolved_ids ri
-LEFT JOIN listings.shopify_listings sl ON sl.item_id = ri.shopify_id AND sl.channel = 'LEDSone DE'
+LEFT JOIN resolved_listing rl ON rl.item_id = ri.shopify_id
 ORDER BY ri.product_item_id;
 `;
 
 // Same amazon_campaigns.performance_data approach proven in Req6's
 // discovery — .ads.listing_sku has no index and a full scan times out.
+// Scoped to the Amazon DE marketplace only (market_place=10, confirmed via
+// order_management.market_place: id=10, name='Germany', abbreviation='DE')
+// — per explicit instruction, not all Amazon marketplaces mixed together.
+// Returns EVERY search term per matched ad group (not just the top one) —
+// per explicit instruction "do not miss all".
 const AMAZON_QUERY = `
-WITH matched AS (
+WITH de_campaigns AS (
+  SELECT campaign_id FROM amazon_campaigns.campaigns WHERE market_place = 10
+),
+matched AS (
   SELECT DISTINCT ad_group_id, listing_sku
   FROM amazon_campaigns.performance_data
-  WHERE listing_sku = ANY($1::text[])
+  WHERE listing_sku = ANY($1::text[]) AND campaign_id IN (SELECT campaign_id FROM de_campaigns)
 ),
 ad_group_sizes AS (
   SELECT ad_group_id, COUNT(DISTINCT listing_sku) AS sku_count
@@ -4204,18 +4238,13 @@ ad_group_terms AS (
   FROM amazon_campaigns.search_term_performance_data
   WHERE ad_group_id IN (SELECT ad_group_id FROM matched) AND date >= CURRENT_DATE - INTERVAL '90 days'
   GROUP BY ad_group_id, search_term
-),
-top_term AS (
-  SELECT * FROM (
-    SELECT *, ROW_NUMBER() OVER (PARTITION BY ad_group_id ORDER BY conv_value DESC NULLS LAST, clicks DESC) AS rn
-    FROM ad_group_terms
-  ) x WHERE rn = 1
 )
 SELECT m.listing_sku, m.ad_group_id, ags.sku_count,
-  tt.search_term, tt.clicks, tt.cost, tt.conversions, tt.conv_value
+  t.search_term, t.clicks, t.cost, t.conversions, t.conv_value
 FROM matched m
 JOIN ad_group_sizes ags ON ags.ad_group_id = m.ad_group_id
-LEFT JOIN top_term tt ON tt.ad_group_id = m.ad_group_id;
+LEFT JOIN ad_group_terms t ON t.ad_group_id = m.ad_group_id
+ORDER BY m.listing_sku, t.conv_value DESC NULLS LAST, t.clicks DESC;
 `;
 
 const SHOPIFY_LIVE_QUERY_TEMPLATE = (handles) => {
@@ -4270,11 +4299,27 @@ async function handleThasithaReq7(req, res) {
     const prodResult = await client.query(THASI_PRODUCTS_QUERY);
     const products = prodResult.rows;
 
+    // amazonBySku now holds an ARRAY of every DE search term found for that
+    // SKU's ad group(s) — not just the top one — per explicit instruction
+    // "do not miss all". Rows with a null search_term (an ad group with no
+    // search-term data in the window, but a real SKU match) are dropped
+    // here — nothing useful to show — but the SKU still keeps its H1/Meta.
     const skus = [...new Set(products.map((p) => p.sku).filter(Boolean))];
     let amazonBySku = new Map();
     if (skus.length) {
       const amzResult = await client.query(AMAZON_QUERY, [skus]);
-      for (const r of amzResult.rows) amazonBySku.set(r.listing_sku, r);
+      for (const r of amzResult.rows) {
+        if (!r.search_term) continue;
+        if (!amazonBySku.has(r.listing_sku)) amazonBySku.set(r.listing_sku, []);
+        amazonBySku.get(r.listing_sku).push({
+          keyword: r.search_term,
+          clicks: r.clicks,
+          cost: Number(r.cost) || 0,
+          conversions: Number(r.conversions) || 0,
+          convValue: Number(r.conv_value) || 0,
+          adGroupSkuCount: r.sku_count,
+        });
+      }
     }
 
     const handles = products.map((p) => p.shopify_handle).filter(Boolean);
@@ -4282,7 +4327,6 @@ async function handleThasithaReq7(req, res) {
 
     const rows = products.map((p) => {
       const shop = p.shopify_handle ? shopifyByHandle.get(p.shopify_handle) : null;
-      const amz = p.sku ? amazonBySku.get(p.sku) : null;
       const campaignNames = (p.campaign_ids || []).map((id) => campaignNameById.get(String(id)) || String(id));
       return {
         productItemId: p.product_item_id,
@@ -4290,15 +4334,7 @@ async function handleThasithaReq7(req, res) {
         campaignNames,
         h1: shop ? shop.h1 : null,
         metaTitle: shop ? shop.metaTitle : null,
-        amazonKeyword: amz && amz.search_term ? {
-          keyword: amz.search_term,
-          clicks: amz.clicks,
-          cost: Number(amz.cost) || 0,
-          conversions: Number(amz.conversions) || 0,
-          convValue: Number(amz.conv_value) || 0,
-          adGroupSkuCount: amz.sku_count,
-        } : null,
-        amazonMatched: !!amz,
+        amazonKeywords: p.sku ? (amazonBySku.get(p.sku) || []) : [],
       };
     });
 
@@ -4309,7 +4345,7 @@ async function handleThasithaReq7(req, res) {
         rowCount: rows.length,
         resolvedSku: rows.filter((r) => r.sku).length,
         resolvedH1: rows.filter((r) => r.h1).length,
-        amazonMatched: rows.filter((r) => r.amazonMatched).length,
+        withAmazonKeywords: rows.filter((r) => r.amazonKeywords.length).length,
       },
     };
     CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });

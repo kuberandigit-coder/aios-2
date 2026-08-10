@@ -4,6 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LEDSone — DM Dashboard: Employee Performance</title>
+<style>html{visibility:hidden;}</style>
+<script>
+// Auth guard — checked synchronously before paint so an unauthenticated
+// visitor never sees a flash of this page's content. Requires an active
+// dm_session cookie for the "muguntha" (admin) role, issued by
+// /api/auth?action=login (see ../login.html).
+(function () {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/auth?action=session', false); // sync — intentional, guard runs before paint
+    xhr.withCredentials = true;
+    xhr.send(null);
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      if (data && data.success && data.user && data.user.staff_key === 'muguntha') {
+        document.documentElement.style.visibility = 'visible';
+        return;
+      }
+    }
+  } catch (e) { /* fall through to redirect */ }
+  window.location.replace('../login.html');
+})();
+</script>
 <style>
 :root{--navy:#0c1a30;--navy2:#0e2143;--gold:#c9a227;--sidebar-text:#aab4c8;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--good-soft:#e6f6ec;--bad:#c62828;--bad-soft:#fdecea;--warn:#b7791f;--warn-soft:#fdf3e0;--na:#9aa3b2;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -127,8 +150,16 @@ tbody tr:hover td:first-child{color:var(--accent);}
       <div class="av">K</div>
       <div><b>Developed by</b><span>Kuberan</span></div>
     </div>
+    <a href="#" class="back-btn" id="signOutBtn">Sign Out</a>
   </div>
 </aside>
+<script>
+document.getElementById('signOutBtn').addEventListener('click', function (e) {
+  e.preventDefault();
+  fetch('/api/auth?action=logout', { method: 'POST', credentials: 'same-origin' })
+    .finally(function () { window.location.href = '../login.html'; });
+});
+</script>
 
 <div class="main">
   <div class="topbar">
