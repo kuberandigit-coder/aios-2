@@ -263,8 +263,8 @@ body.sb-open .t-collapse-btn svg{transform:rotate(180deg);}
 .t-devbadge b{display:block;color:#fff;font-size:11.5px;white-space:nowrap;}
 .t-devbadge span{display:block;color:#e8d59a;font-size:10px;white-space:nowrap;}
 
-.t-main{margin-left:var(--sb-w-collapsed);min-width:0;display:flex;flex-direction:column;transition:margin-left .18s ease;}
-body.sb-open .t-main{margin-left:var(--sb-w);}
+.t-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;display:flex;flex-direction:column;transition:margin-left .18s ease;position:relative;z-index:1;}
+body.sb-open .t-main{margin-left:var(--sb-w) !important;}
 .t-topbar{background:var(--sb-navy2);color:#fff;padding:12px 26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:3px solid var(--sb-gold);}
 .t-topbar .chip-live{display:inline-flex;align-items:center;gap:6px;background:rgba(10,125,79,.18);border:1px solid rgba(10,125,79,.4);color:#5fd99a;border-radius:999px;padding:3px 11px;font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;}
 .t-topbar .chip-live .dot{width:6px;height:6px;border-radius:999px;background:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.25);}
@@ -277,7 +277,7 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 @media(max-width:900px){
   .t-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
   body.sb-open .t-sidebar{width:var(--sb-w);}
-  body.sb-open .t-main{margin-left:var(--sb-w-collapsed);}
+  body.sb-open .t-main{margin-left:var(--sb-w-collapsed) !important;}
   .t-topcontent,.t-topbar{padding-left:16px;padding-right:16px;}
 }
 #r7CampaignSummaryDetails[open] > summary span{transform:rotate(90deg);}

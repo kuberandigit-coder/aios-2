@@ -127,13 +127,13 @@ body.sb-open .ms-collapse-btn svg{transform:rotate(180deg);}
 .ms-signout{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:#dfe4ee;text-decoration:none;font-size:12.5px;font-weight:700;background:rgba(255,255,255,.06);margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;}
 .ms-signout:hover{background:rgba(255,255,255,.12);}
 .ms-signout svg{width:16px;height:16px;flex-shrink:0;}
-.ms-main{margin-left:var(--sb-w-collapsed);min-width:0;transition:margin-left .18s ease;}
-body.sb-open .ms-main{margin-left:var(--sb-w);}
+.ms-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;transition:margin-left .18s ease;position:relative;z-index:1;}
+body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
 .ms-topcontent{padding:28px 24px 40px;}
 @media(max-width:900px){
   .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
   body.sb-open .ms-sidebar{width:var(--sb-w);}
-  body.sb-open .ms-main{margin-left:var(--sb-w-collapsed);}
+  body.sb-open .ms-main{margin-left:var(--sb-w-collapsed) !important;}
 }
 </style>
 </head>
