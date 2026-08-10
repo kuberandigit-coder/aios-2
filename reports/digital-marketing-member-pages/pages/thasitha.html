@@ -196,20 +196,25 @@ body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,s
 .t-sidebar .t-navlist a{justify-content:center;}
 .t-sidebar .t-brand{justify-content:center;}
 .t-sidebar .t-devbadge{justify-content:center;}
-.t-sidebar .t-collapse-btn{transform:rotate(180deg);}
 body.sb-open .t-sidebar{width:var(--sb-w);padding:16px 14px;}
 body.sb-open .t-sidebar .t-brand-txt,body.sb-open .t-sidebar .t-navlabel,body.sb-open .t-sidebar .t-navlist a span.lbl,body.sb-open .t-sidebar .t-devbadge-txt,body.sb-open .t-sidebar .t-back span.lbl{display:block;}
 body.sb-open .t-sidebar .t-navlist a{justify-content:flex-start;}
 body.sb-open .t-sidebar .t-brand{justify-content:flex-start;}
 body.sb-open .t-sidebar .t-devbadge{justify-content:flex-start;}
-body.sb-open .t-sidebar .t-collapse-btn{transform:rotate(0deg);}
+
+/* Standalone collapse handle — a small fixed-position tab pinned to the
+   sidebar's right edge, independent of the sidebar's own flex layout. This
+   replaces the earlier in-row button (margin-left:auto inside a 72px-wide
+   flex row), which had no room to sit next to the brand mark and spilled
+   outside the sidebar visually. */
+.t-collapse-btn{position:fixed;top:18px;left:var(--sb-w-collapsed);transform:translateX(-50%);width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:var(--sb-navy2);color:#c3cce3;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:left .18s ease;z-index:41;}
+.t-collapse-btn:hover{background:rgba(255,255,255,.12);}
+body.sb-open .t-collapse-btn{left:var(--sb-w);}
 
 .t-brand{display:flex;align-items:center;gap:10px;padding:6px 6px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;position:relative;}
 .t-brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
 .t-brand-txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
 .t-brand-txt span{display:block;font-size:10px;color:#7f8bab;letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;}
-.t-collapse-btn{margin-left:auto;width:26px;height:26px;flex-shrink:0;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#c3cce3;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .18s ease,background .15s;}
-.t-collapse-btn:hover{background:rgba(255,255,255,.12);}
 
 .t-navlabel{font-size:10px;color:#5e6b8a;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:14px 10px 8px;white-space:nowrap;}
 .t-navlist{list-style:none;display:flex;flex-direction:column;gap:3px;margin:0;padding:0;}
@@ -251,13 +256,13 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 <body>
 <div class="app-shell">
 
+<button class="t-collapse-btn" id="tCollapseBtn" type="button" title="Toggle sidebar" aria-label="Toggle sidebar">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
 <aside class="t-sidebar" id="tSidebar">
   <div class="t-brand">
     <div class="mark">T</div>
     <div class="t-brand-txt"><b>Thasitha</b><span>Google Ads &middot; DE</span></div>
-    <button class="t-collapse-btn" id="tCollapseBtn" type="button" title="Collapse sidebar" aria-label="Collapse sidebar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-    </button>
   </div>
 
   <div class="t-navlabel">Requirements</div>
@@ -2039,9 +2044,9 @@ function renderR4(){
   allRows.forEach(function(r){ sumSold+=r.m30.sold; sumSales+=r.m30.sales; sumConv+=r.m30.conv; });
   document.getElementById('t4kpiTotal').textContent = allRows.length.toLocaleString();
   document.getElementById('t4kpiSold30').textContent = sumSold.toLocaleString();
-  document.getElementById('t4kpiSales30').textContent = eur(Math.round(sumSales*100)/100);
-  document.getElementById('t4kpiConv30').textContent = eur(Math.round(sumConv*100)/100);
-  document.getElementById('t4kpiDiff30').textContent = eur(Math.round((sumSales-sumConv)*100)/100);
+  document.getElementById('t4kpiSales30').textContent = eur(Math.round(sumSales*100)/100).replace('&euro;','€');
+  document.getElementById('t4kpiConv30').textContent = eur(Math.round(sumConv*100)/100).replace('&euro;','€');
+  document.getElementById('t4kpiDiff30').textContent = eur(Math.round((sumSales-sumConv)*100)/100).replace('&euro;','€');
 }
 
 ['t4Search'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ t4Pg=1; renderR4(); }); });
