@@ -174,10 +174,10 @@ tbody tr:hover td:first-child{color:var(--accent);}
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody"><tr><td colspan="12" class="loading">Loading Sonya's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody"><tr><td colspan="13" class="loading">Loading Sonya's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -206,10 +206,10 @@ tbody tr:hover td:first-child{color:var(--accent);}
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-sajeepan"><tr><td colspan="12" class="loading">Loading Sajeepan's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-sajeepan"><tr><td colspan="13" class="loading">Loading Sajeepan's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -238,10 +238,10 @@ tbody tr:hover td:first-child{color:var(--accent);}
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-kamsi"><tr><td colspan="12" class="loading">Loading Kamsi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-kamsi"><tr><td colspan="13" class="loading">Loading Kamsi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -270,10 +270,10 @@ tbody tr:hover td:first-child{color:var(--accent);}
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-jefri"><tr><td colspan="12" class="loading">Loading Jefri's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-jefri"><tr><td colspan="13" class="loading">Loading Jefri's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -304,10 +304,10 @@ tbody tr:hover td:first-child{color:var(--accent);}
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-dilaksi"><tr><td colspan="12" class="loading">Loading Dilaksi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-dilaksi"><tr><td colspan="13" class="loading">Loading Dilaksi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -406,7 +406,7 @@ async function loadAll(member, idSuffix, force){
   const memberLabel = MEMBER_NAMES[member] || member;
   refreshBtn.disabled = true;
   statusChip.textContent = 'Loading…';
-  tbody.innerHTML = '<tr><td colspan="12" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
 
   try {
     // Only the live/current month (2026-08) is ever force-refreshed. Closed
@@ -466,12 +466,18 @@ async function loadAll(member, idSuffix, force){
       const targetAch = (net2025 != null && net2026 != null && net2025 > 0)
         ? net2026 / (net2025 * (1 + TARGET_ROAS))
         : null;
+      // Raw actual YoY change — separate from Target Achievement, which
+      // measures actual-vs-target. This is just (2026 Net - 2025 Net) /
+      // 2025 Net, e.g. -7.10% if Net fell. Added 2026-08-10.
+      const yoyGrowth = (net2025 != null && net2026 != null && net2025 > 0)
+        ? (net2026 - net2025) / net2025
+        : null;
       const isLive = m26 && LIVE_2026.includes(m26);
       rows.push({
         monthLabel, m25, m26,
         sales2025, costVal2025, ownCost2025, dmSonya2025, net2025, roas2025,
         sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
-        targetAch, isLive,
+        targetAch, yoyGrowth, isLive,
       });
     }
 
@@ -479,7 +485,7 @@ async function loadAll(member, idSuffix, force){
     renderCards(rows, idSuffix);
     statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty">Error: ' + (err.message || err) + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="empty">Error: ' + (err.message || err) + '</td></tr>';
     statusChip.textContent = 'Error';
   } finally {
     refreshBtn.disabled = false;
@@ -495,7 +501,7 @@ const HAS_DM = new Set(['sonya', 'sajeepan']);
 function renderTable(rows, memberLabel, idSuffix, member){
   const tbody = document.getElementById('tblBody' + idSuffix);
   document.getElementById('rowCount' + idSuffix).textContent = rows.length + ' months';
-  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No data</td></tr>'; return; }
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="13" class="empty">No data</td></tr>'; return; }
   const showDm = HAS_DM.has(member);
   const netCell = (v) => v != null ? ('<span class="' + (v >= 0 ? 'up' : 'down') + '">' + fmtMoney(v) + '</span>') : 'N/A';
   const roasCell = (v) => {
@@ -507,6 +513,10 @@ function renderTable(rows, memberLabel, idSuffix, member){
     if (v == null) return 'N/A';
     const cls = v >= 1 ? 'up' : (v >= 0.7 ? 'roas-warn' : 'down');
     return '<span class="' + cls + '">' + fmtPct(v) + '</span>';
+  };
+  const growthCell = (v) => {
+    if (v == null) return 'N/A';
+    return '<span class="' + (v >= 0 ? 'up' : 'down') + '">' + (v >= 0 ? '+' : '') + fmtPct(v) + '</span>';
   };
 
   tbody.innerHTML = rows.map((r) => {
@@ -522,6 +532,7 @@ function renderTable(rows, memberLabel, idSuffix, member){
       '<td class="num">' + (r.costVal2026 != null ? fmtMoney(r.costVal2026) + (showDm && r.ownCost2026 != null && r.dmSonya2026 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2026) + ', DM: ' + fmtMoney(r.dmSonya2026) + ')</span>' : '') : 'N/A') + '</td>' +
       '<td class="num">' + netCell(r.net2026) + '</td>' +
       '<td class="num">' + roasCell(r.roas2026) + '</td>' +
+      '<td class="num">' + growthCell(r.yoyGrowth) + '</td>' +
       '<td class="num">' + targetCell(r.targetAch) + '</td>' +
       '<td>' + statusPill + '</td>' +
       '</tr>';
