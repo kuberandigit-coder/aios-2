@@ -274,6 +274,7 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
     <li><a href="#" data-tab="R3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"></circle><circle cx="15" cy="12" r="6"></circle></svg></span><span class="lbl">Campaign Product Overlap</span></a></li>
     <li><a href="#" data-tab="R4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span><span class="lbl">Shopify vs Ads Orders</span></a></li>
     <li><a href="#" data-tab="R5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span class="lbl">Multichannel YoY Sales</span></a></li>
+    <li><a href="#" data-tab="R6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Keyword to SEO Gap</span></a></li>
   </ul>
 
   <div class="t-sidebar-spacer"></div>
@@ -890,6 +891,112 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
 </div>
 <!-- /tabPanelR5 -->
+
+<div class="tabpanel" id="tabPanelR6">
+
+<div class="t1-header">
+  <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;">Requirement 6</div>
+  <h1>Keyword &rarr; Product &rarr; Shopify SEO Gap Report</h1>
+  <div class="sub">Google Ads (PMax, campaign-level) + Amazon (SKU-level) &middot; Live Shopify H1/Meta Title &middot; ledsone.de</div>
+  <div class="t1-period" id="r6Period"></div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;">
+    <div class="t1-updated" id="r6Updated"></div>
+    <span id="r6LiveChip" style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:#eef1f6;color:#5b6577;white-space:nowrap;">Fetching live from PostgreSQL&hellip;</span>
+    <button class="t1-btn primary" id="r6RefreshBtn" type="button">Refresh Data</button>
+  </div>
+</div>
+
+<div class="t1-cards">
+  <div class="t1-card"><div class="l">Rows</div><div class="v" id="r6kpiRows">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Total Clicks (top keyword)</div><div class="v" id="r6kpiClicks">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Total Cost (top keyword)</div><div class="v" id="r6kpiCost">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Total Conv. Value (top keyword)</div><div class="v" id="r6kpiConvValue">&ndash;</div></div>
+  <div class="t1-card"><div class="l">H1 Missing</div><div class="v" id="r6kpiH1Missing">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Meta Missing</div><div class="v" id="r6kpiMetaMissing">&ndash;</div></div>
+  <div class="t1-card"><div class="l">Full Gaps (&#128680;)</div><div class="v" id="r6kpiFullGap">&ndash;</div></div>
+</div>
+
+<div class="t1-filterbox">
+  <div class="t1-row">
+    <div class="t1-field"><span>Date Range &mdash; Start</span><input type="date" id="r6RangeStart" min="2026-04-20"></div>
+    <div class="t1-field"><span>Date Range &mdash; End</span><input type="date" id="r6RangeEnd"></div>
+    <button class="t1-btn primary" id="r6ApplyBtn" type="button">Apply</button>
+    <button class="t1-btn" id="r6ResetBtn" type="button">Reset</button>
+  </div>
+  <div class="t1-row">
+    <div class="t1-field"><span>SKU Search</span><input type="text" id="r6SkuSearch" placeholder="SKU ID&hellip;"></div>
+    <div class="t1-field"><span>Keyword Search</span><input type="text" id="r6KwSearch" placeholder="Keyword contains&hellip;"></div>
+    <div class="t1-field"><span>Gap Flag</span>
+      <select id="r6GapFilter">
+        <option value="all">All</option>
+        <option value="GAP">&#128680; GAP</option>
+        <option value="H1 ONLY">&#9888;&#65039; H1 ONLY (Meta missing)</option>
+        <option value="META ONLY">&#9888;&#65039; META ONLY (H1 missing)</option>
+        <option value="OK">&#9989; OK</option>
+      </select>
+    </div>
+    <div class="t1-field"><span>Sort By</span>
+      <select id="r6Sort">
+        <option value="cost_desc">Cost High &rarr; Low</option>
+        <option value="cost_asc">Cost Low &rarr; High</option>
+        <option value="convvalue_desc">Conv. Value High &rarr; Low</option>
+        <option value="convvalue_asc">Conv. Value Low &rarr; High</option>
+      </select>
+    </div>
+    <button class="t1-btn" id="r6ClearFilters" type="button">Clear Filters</button>
+  </div>
+</div>
+
+<div class="t1-tablewrap">
+<table class="t1-table" id="r6Table">
+<thead><tr>
+  <th>SKU ID</th>
+  <th>Campaign</th>
+  <th>Top Keyword</th>
+  <th>Source</th>
+  <th class="num">Clicks</th>
+  <th class="num">Cost</th>
+  <th class="num">Conv.</th>
+  <th class="num">Conv. Value</th>
+  <th>Current H1 Title</th>
+  <th>Current Meta Title</th>
+  <th>Keyword in H1?</th>
+  <th>Keyword in Meta?</th>
+  <th>Gap Flag</th>
+  <th>Gap Keywords</th>
+</tr></thead>
+<tbody id="r6Tbody"></tbody>
+</table>
+</div>
+<div class="t1-empty" id="r6Empty" style="display:none;">No rows match the selected filters.</div>
+
+<div class="pager" id="r6Pager">
+  <span class="info" id="r6PageInfo"></span>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <label>Rows <select id="r6PageSize"><option>25</option><option selected>50</option><option>100</option><option>All</option></select></label>
+    <button class="t1-btn" id="r6First">&laquo;</button>
+    <button class="t1-btn" id="r6Prev">&lsaquo; Prev</button>
+    <button class="t1-btn" id="r6Next">Next &rsaquo;</button>
+    <button class="t1-btn" id="r6Last">&raquo;</button>
+  </div>
+</div>
+
+<div class="t1-statusnote">
+  <strong>Date range.</strong> Filters every metric below (Google Ads <code>pmax_campaign_search_term_data.date</code> / <code>product_performance.date</code>, Amazon <code>search_term_performance_data.date</code>). Defaults to campaign start (2026-04-20) through today.<br>
+  <strong>Rows.</strong> One row per real product (SKU) that had Google Ads <code>product_performance</code> in the selected range, top 15 by Conversion Value per campaign (3 campaigns &middot; up to 45 rows) &mdash; kept bounded since each row triggers a live Shopify lookup.<br>
+  <strong>Google Ads source.</strong> Thasitha's campaigns (<code>group_name='Thasi'</code>, <code>account_id=9031058245</code>) are all Performance Max, which has <strong>no keyword targeting</strong> &mdash; confirmed 0 rows in <code>google_ads.keyword_performance</code> for these campaigns, a real Google Ads platform limitation. The closest real data is <strong>search terms</strong> (<code>google_ads.pmax_campaign_search_term_data</code>), which Google Ads only reports at campaign level &mdash; there is no join to a specific product anywhere in the schema. "Top Keyword" for the Google side is therefore that <strong>campaign's</strong> top search term by conversion value in range &mdash; a campaign-level proxy, not a confirmed per-SKU match.<br>
+  <strong>Amazon source.</strong> <code>amazon_campaigns.search_term_performance_data</code> (real search_term+keyword data) joined via <code>amazon_campaigns.ads.listing_sku</code> matched directly to this SKU. Amazon ad groups containing Thasitha's SKUs range from 1 to ~212 distinct SKUs (checked, not assumed) &mdash; tighter than Google's campaign-wide targeting, so this is a meaningful per-SKU proxy, occasionally exact when the ad group has only 1 SKU.<br>
+  <strong>eBay.</strong> Checked but not used &mdash; there is no keyword or search-term data anywhere in the <code>ebay_campaigns</code> schema (every column checked). Not a linking problem; the data was never captured.<br>
+  <strong>Top Keyword column.</strong> Whichever candidate (Google campaign term or Amazon SKU-level term) has the higher Conversion Value in range drives the Clicks/Cost/Conv./Conv. Value/H1?/Meta?/Gap Flag columns for that row.<br>
+  <strong>Current H1 / Meta Title.</strong> Fetched <strong>live</strong> from the Shopify Admin GraphQL API (<code>ledsone-de.myshopify.com</code>, <code>productByHandle</code>) at request time &mdash; never read from a cached database field. H1 = the product's Title field (Shopify's Online Store 2.0 default theme renders <code>product.title</code> as the page's H1; this project has not independently verified LEDSone DE's specific theme template, so treat H1 as "Product Title" unless that's confirmed otherwise). Meta Title = the product's SEO title field.<br>
+  <strong>Keyword matching rule.</strong> Case-insensitive, punctuation-stripped, whitespace-normalized substring match of the full keyword phrase against the normalized H1/Meta text. No semantic/AI matching.<br>
+  <strong>Gap Flag.</strong> &#128680; GAP = keyword in neither H1 nor Meta. &#9888;&#65039; H1 ONLY = in Meta but not H1. &#9888;&#65039; META ONLY = in H1 but not Meta. &#9989; OK = in both.<br>
+  <strong>Gap Keywords.</strong> Every real candidate keyword (Google + Amazon, not just the single Top Keyword) missing from both H1 and Meta for that SKU.<br>
+  <strong>Data source.</strong> Live PostgreSQL query on every load and on "Refresh Data" (5-minute server-side cache in between); Shopify H1/Meta fetched live on every query, not cached.
+</div>
+
+</div>
+<!-- /tabPanelR6 -->
 
 </div>
 <!-- /t1-wrap -->
@@ -1513,6 +1620,158 @@ document.getElementById('t2RefreshBtn').addEventListener('click', function(){ r2
   r2Load(false);
 })();
 
+// ===== Requirement 6: Keyword to SEO Gap Report (added 2026-08-10) =====
+let R6_DATA = [];
+let r6Pg = 1, r6LastLen = 0, r6LastPs = 1;
+const R6_MIN_DATE = '2026-04-20';
+
+function r6MaxPg(len, ps){
+  if(len===undefined) len = r6LastLen;
+  if(ps===undefined) ps = r6LastPs;
+  return Math.max(1, Math.ceil((len||0)/(ps||1)));
+}
+
+function r6DefaultDates(){
+  const endEl = document.getElementById('r6RangeEnd');
+  const startEl = document.getElementById('r6RangeStart');
+  if(!startEl.value) startEl.value = R6_MIN_DATE;
+  if(!endEl.value) endEl.value = new Date().toISOString().slice(0,10);
+}
+
+async function r6Load(force){
+  const btn = document.getElementById('r6RefreshBtn');
+  const chip = document.getElementById('r6LiveChip');
+  r6DefaultDates();
+  const start = document.getElementById('r6RangeStart').value;
+  const end = document.getElementById('r6RangeEnd').value;
+  btn.disabled = true;
+  chip.textContent = 'Fetching live from PostgreSQL + Shopify…';
+  chip.style.background = '#eef1f6'; chip.style.color = '#5b6577';
+  try {
+    const url = '/api/requirement?fn=thasitha-req6&start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(end) + (force ? '&refresh=1' : '');
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    R6_DATA = data.rows || [];
+    document.getElementById('r6Period').textContent = start + ' to ' + end;
+    document.getElementById('r6Updated').textContent = 'Last updated: ' + new Date(data.generatedAt).toLocaleString();
+    chip.textContent = 'Live · ' + R6_DATA.length + ' rows';
+    chip.style.background = '#eef7ee'; chip.style.color = '#0a7d4f';
+    r6Pg = 1;
+    renderR6();
+  } catch(e) {
+    chip.textContent = 'Unable to load — ' + e.message;
+    chip.style.background = '#fdecea'; chip.style.color = '#c62828';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function r6GapBadge(flag){
+  if(flag==='GAP') return '<span class="t1-badge b-poor">&#128680; GAP</span>';
+  if(flag==='H1 ONLY') return '<span class="t1-badge b-average">&#9888;&#65039; H1 ONLY</span>';
+  if(flag==='META ONLY') return '<span class="t1-badge b-average">&#9888;&#65039; META ONLY</span>';
+  if(flag==='OK') return '<span class="t1-badge b-hero">&#9989; OK</span>';
+  return '<span class="t1-na">No keyword data</span>';
+}
+
+function renderR6Row(r){
+  const kw = r.topKeyword;
+  return '<tr>' +
+    '<td class="t2-sku">' + esc(r.sku || r.productItemId || '&mdash;') + '</td>' +
+    '<td>' + esc(r.campaignName) + '</td>' +
+    '<td>' + (kw ? esc(kw.keyword) : '<span class="t1-na">none</span>') + '</td>' +
+    '<td>' + (kw ? esc(kw.source) : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? num(kw.clicks) : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? eur(kw.cost).replace('&euro;','€') : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? num(kw.conversions) : '&mdash;') + '</td>' +
+    '<td class="num">' + (kw ? eur(kw.convValue).replace('&euro;','€') : '&mdash;') + '</td>' +
+    '<td class="wrap">' + (r.h1 ? esc(r.h1) : '<span class="t1-na">N/A</span>') + '</td>' +
+    '<td class="wrap">' + (r.metaTitle ? esc(r.metaTitle) : '<span class="t1-na">N/A</span>') + '</td>' +
+    '<td>' + (kw ? (r.inH1 ? '&#9989; OK' : '&#10060; MISSING') : '&mdash;') + '</td>' +
+    '<td>' + (kw ? (r.inMeta ? '&#9989; OK' : '&#10060; MISSING') : '&mdash;') + '</td>' +
+    '<td>' + r6GapBadge(r.gapFlag) + '</td>' +
+    '<td class="wrap">' + (r.gapKeywords && r.gapKeywords.length ? r.gapKeywords.map(esc).join('<br>') : '<span class="t1-na">none</span>') + '</td>' +
+    '</tr>';
+}
+
+function renderR6(){
+  const skuQ = document.getElementById('r6SkuSearch').value.trim().toLowerCase();
+  const kwQ = document.getElementById('r6KwSearch').value.trim().toLowerCase();
+  const gapFilter = document.getElementById('r6GapFilter').value;
+  const sort = document.getElementById('r6Sort').value;
+
+  let rows = R6_DATA.filter(function(r){
+    const skuHit = !skuQ || (r.sku||'').toLowerCase().includes(skuQ) || (r.productItemId||'').toLowerCase().includes(skuQ);
+    const kwHit = !kwQ || (r.topKeyword && r.topKeyword.keyword.toLowerCase().includes(kwQ));
+    const gapHit = gapFilter==='all' || r.gapFlag===gapFilter;
+    return skuHit && kwHit && gapHit;
+  });
+
+  const sortMap = {
+    cost_desc: function(a,b){ return (b.topKeyword?b.topKeyword.cost:-1) - (a.topKeyword?a.topKeyword.cost:-1); },
+    cost_asc: function(a,b){ return (a.topKeyword?a.topKeyword.cost:999999) - (b.topKeyword?b.topKeyword.cost:999999); },
+    convvalue_desc: function(a,b){ return (b.topKeyword?b.topKeyword.convValue:-1) - (a.topKeyword?a.topKeyword.convValue:-1); },
+    convvalue_asc: function(a,b){ return (a.topKeyword?a.topKeyword.convValue:999999) - (b.topKeyword?b.topKeyword.convValue:999999); },
+  };
+  rows.sort(sortMap[sort] || sortMap.cost_desc);
+
+  const tbody = document.getElementById('r6Tbody');
+  const emptyEl = document.getElementById('r6Empty');
+  document.getElementById('r6Table').style.display = rows.length ? '' : 'none';
+  emptyEl.style.display = rows.length ? 'none' : 'block';
+  document.getElementById('r6Pager').style.display = rows.length ? '' : 'none';
+
+  const pageSizeVal = document.getElementById('r6PageSize').value;
+  const ps = pageSizeVal==='All' ? rows.length||1 : parseInt(pageSizeVal,10);
+  r6LastLen = rows.length; r6LastPs = ps;
+  if(r6Pg > r6MaxPg(rows.length, ps)) r6Pg = r6MaxPg(rows.length, ps);
+  const start = (r6Pg-1)*ps;
+  const pageRows = pageSizeVal==='All' ? rows : rows.slice(start, start+ps);
+  tbody.innerHTML = pageRows.map(renderR6Row).join('');
+  document.getElementById('r6PageInfo').textContent = rows.length
+    ? ('Rows ' + (start+1).toLocaleString() + '-' + Math.min(start+ps, rows.length).toLocaleString() + ' of ' + rows.length.toLocaleString() + ' | page ' + r6Pg + ' / ' + r6MaxPg(rows.length, ps))
+    : 'No rows match';
+
+  const withKw = rows.filter(function(r){ return r.topKeyword; });
+  document.getElementById('r6kpiRows').textContent = rows.length.toLocaleString();
+  document.getElementById('r6kpiClicks').textContent = withKw.reduce(function(s,r){ return s + (r.topKeyword.clicks||0); }, 0).toLocaleString();
+  document.getElementById('r6kpiCost').textContent = eur(withKw.reduce(function(s,r){ return s + (r.topKeyword.cost||0); }, 0)).replace('&euro;','€');
+  document.getElementById('r6kpiConvValue').textContent = eur(withKw.reduce(function(s,r){ return s + (r.topKeyword.convValue||0); }, 0)).replace('&euro;','€');
+  document.getElementById('r6kpiH1Missing').textContent = rows.filter(function(r){ return r.topKeyword && !r.inH1; }).length.toLocaleString();
+  document.getElementById('r6kpiMetaMissing').textContent = rows.filter(function(r){ return r.topKeyword && !r.inMeta; }).length.toLocaleString();
+  document.getElementById('r6kpiFullGap').textContent = rows.filter(function(r){ return r.gapFlag==='GAP'; }).length.toLocaleString();
+}
+
+document.getElementById('r6RefreshBtn').addEventListener('click', function(){ r6Load(true); });
+document.getElementById('r6ApplyBtn').addEventListener('click', function(){ r6Load(false); });
+document.getElementById('r6ResetBtn').addEventListener('click', function(){
+  document.getElementById('r6RangeStart').value = R6_MIN_DATE;
+  document.getElementById('r6RangeEnd').value = new Date().toISOString().slice(0,10);
+  r6Load(false);
+});
+['r6SkuSearch','r6KwSearch'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){ r6Pg=1; renderR6(); });
+});
+['r6GapFilter','r6Sort','r6PageSize'].forEach(function(id){
+  document.getElementById(id).addEventListener('change', function(){ r6Pg=1; renderR6(); });
+});
+document.getElementById('r6ClearFilters').addEventListener('click', function(){
+  document.getElementById('r6SkuSearch').value = '';
+  document.getElementById('r6KwSearch').value = '';
+  document.getElementById('r6GapFilter').value = 'all';
+  document.getElementById('r6Sort').value = 'cost_desc';
+  r6Pg = 1;
+  renderR6();
+});
+document.getElementById('r6First').addEventListener('click', function(){ r6Pg=1; renderR6(); });
+document.getElementById('r6Prev').addEventListener('click', function(){ if(r6Pg>1){ r6Pg--; renderR6(); } });
+document.getElementById('r6Next').addEventListener('click', function(){ if(r6Pg<r6MaxPg()){ r6Pg++; renderR6(); } });
+document.getElementById('r6Last').addEventListener('click', function(){ r6Pg=r6MaxPg(); renderR6(); });
+
+r6DefaultDates();
+r6Load(false);
+
 // ===== Sidebar shell (2026-08-10 redesign) — nav clicks, collapse toggle,
 // topbar title/date sync. switchTab() itself is unchanged in signature so
 // nothing downstream (R1-R5 load functions) needed touching. =====
@@ -1522,9 +1781,10 @@ const TAB_TITLES = {
   R3: 'Requirement 3 &middot; Campaign Product Overlap',
   R4: 'Requirement 4 &middot; Shopify vs Ads Orders',
   R5: 'Requirement 5 &middot; Multichannel YoY Sales',
+  R6: 'Requirement 6 &middot; Keyword to SEO Gap Report',
 };
 function switchTab(which){
-  ['R1','R2','R3','R4','R5'].forEach(function(k){
+  ['R1','R2','R3','R4','R5','R6'].forEach(function(k){
     document.getElementById('tabPanel'+k).classList.toggle('on', k===which);
   });
   document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){

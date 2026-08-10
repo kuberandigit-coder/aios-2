@@ -3900,6 +3900,362 @@ async function handleThasithaReq3(req, res) {
 return handleThasithaReq3;
 })();
 
+// ==================== Thasitha Requirement 6 — Google Ads / Amazon Keyword to Shopify SEO Gap Report ====================
+// Added 2026-08-10. Full discovery documented in
+// evidence/thasitha/2026-08-10_requirement-6-keyword-seo-gap-discovery.md —
+// summary of the key findings that shape this implementation:
+//
+// - Thasitha's 3 campaigns (group_name='Thasi', account_id=9031058245) are
+//   ALL Performance Max. PMax has NO keyword targeting (google_ads.keywords/
+//   keyword_performance has 0 rows for these campaigns — a real Google Ads
+//   platform limitation, not a sync gap). The closest real data is SEARCH
+//   TERM data: google_ads.pmax_campaign_search_term_data (campaign+date
+//   level, no product dimension at all).
+// - Google Ads provides NO join between a PMax search term and the specific
+//   product it was shown/clicked for — confirmed by inspecting every PMax
+//   table in the schema (asset_group_product_group_performance has a
+//   product/listing-group dimension but no search-term column; neither
+//   table shares a join key with the other). This is a genuine Google Ads
+//   API limitation, not something more querying can fix.
+// - Per explicit user decision (2026-08-10): report CAMPAIGN-WISE. Each row
+//   is a real product (SKU) that had real Google Ads product_performance in
+//   the selected date range, tagged with its owning campaign. The "Top
+//   Converting Keyword" shown for the Google side is that CAMPAIGN's top
+//   search term by conversion value — a campaign-level proxy, not a
+//   confirmed per-product match, and labeled as such in the UI/footnote.
+// - eBay has NO keyword/search-term data anywhere in this database (checked
+//   every column in the ebay_campaigns schema) — excluded entirely, not a
+//   guess.
+// - Amazon DOES have real search_term+keyword data
+//   (amazon_campaigns.search_term_performance_data), and Amazon ads carry a
+//   real listing_sku (amazon_campaigns.ads.listing_sku) — confirmed 184 of
+//   Thasitha's 683 Google-side SKUs also exist as an Amazon listing_sku
+//   (matched by exact SKU string, the same convention used elsewhere in
+//   this codebase). Amazon ad groups containing Thasitha's SKUs range from
+//   1 to ~212 distinct SKUs (checked directly, not assumed) — much tighter
+//   than Google's campaign-wide "ALL products" targeting, so this actually
+//   IS a meaningful per-SKU proxy (occasionally an exact match, when the ad
+//   group has exactly 1 SKU). Ad-group SKU count is surfaced per row so the
+//   user can judge signal strength themselves.
+// - Current Shopify H1 (=Product Title) and Meta Title (=SEO title) are
+//   fetched LIVE via Shopify Admin GraphQL against ledsone-de.myshopify.com
+//   (same shopifyGraphQL()/SHOPIFY_STORE_DOMAIN already used elsewhere in
+//   this file), looked up by shopify_handle (listings.shopify_listings) via
+//   productByHandle — never read from the DB-cached listings.title field,
+//   per explicit requirement that this must be live/current.
+// - Keyword matching rule: case-insensitive, whitespace-normalized,
+//   punctuation-stripped substring match of the full keyword phrase against
+//   the normalized H1/Meta text. Deterministic, no semantic/AI matching.
+const thasithaReq6HandlerModule = (function() {
+const { Pool } = require('pg');
+
+// Local copy — this codebase's convention is each module owns its own
+// shopifyGraphQL()/store-domain rather than sharing one across modules
+// (see the other shopifyGraphQL definitions at lines ~251/1902/2375).
+const R6_SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
+const R6_SHOPIFY_API_VERSION = '2024-10';
+const r6Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function shopifyGraphQL(query, variables) {
+  const token = process.env.SHOPIFY_ADMIN_TOKEN;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let res;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      res = await fetch(`https://${R6_SHOPIFY_STORE_DOMAIN}/admin/api/${R6_SHOPIFY_API_VERSION}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+    } catch (e) {
+      await r6Sleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
+      await r6Sleep(400 * Math.pow(2, attempt));
+      continue;
+    }
+    if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+    const json = await res.json();
+    const throttled = json.errors && Array.isArray(json.errors) && json.errors.some((e) => e.extensions && e.extensions.code === 'THROTTLED');
+    if (throttled) { await r6Sleep(800 * Math.pow(2, attempt)); continue; }
+    if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+    return json.data;
+  }
+  throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
+}
+
+const CACHE = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const THASI_ACCOUNT_ID = 9031058245;
+const ROWS_PER_CAMPAIGN = 15; // top-N products per campaign by conv value — keeps live Shopify calls bounded
+
+let pool;
+function getPool() {
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString && !process.env.PGHOST) {
+      throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+    }
+    pool = new Pool({
+      connectionString: connectionString || undefined,
+      host: connectionString ? undefined : process.env.PGHOST,
+      port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+      database: connectionString ? undefined : process.env.PGDATABASE,
+      user: connectionString ? undefined : process.env.PGUSER,
+      password: connectionString ? undefined : process.env.PGPASSWORD,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 8000,
+      statement_timeout: 45000,
+      max: 3,
+    });
+  }
+  return pool;
+}
+
+function normalizeKw(s) {
+  return (s || '')
+    .toLowerCase()
+    .replace(/[.,!?;:'"()\[\]{}\-–—_/\\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function containsKeyword(text, keyword) {
+  const nt = normalizeKw(text);
+  const nk = normalizeKw(keyword);
+  if (!nt || !nk) return false;
+  return nt.includes(nk);
+}
+
+const QUERY = `
+WITH thasi_campaigns AS (
+  SELECT campaign_id, campaign_name FROM google_ads.campaigns WHERE group_name = 'Thasi'
+),
+campaign_terms AS (
+  SELECT campaign_id, search_term,
+    SUM(clicks) AS clicks, SUM(cost) AS cost, SUM(conversions) AS conversions, SUM(conversions_value) AS conv_value
+  FROM google_ads.pmax_campaign_search_term_data
+  WHERE campaign_id IN (SELECT campaign_id FROM thasi_campaigns) AND date >= $1 AND date <= $2
+  GROUP BY campaign_id, search_term
+),
+top_term_per_campaign AS (
+  SELECT * FROM (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY campaign_id ORDER BY conv_value DESC, clicks DESC) AS rn
+    FROM campaign_terms
+  ) x WHERE rn = 1
+),
+product_perf AS (
+  SELECT pp.campaign_id, pp.product_item_id,
+    SUM(pp.cost) AS cost, SUM(pp.clicks) AS clicks, SUM(pp.conversions) AS conversions, SUM(pp.conversion_value) AS conv_value
+  FROM google_ads.product_performance pp
+  WHERE pp.campaign_id IN (SELECT campaign_id FROM thasi_campaigns) AND pp.date >= $1 AND pp.date <= $2
+  GROUP BY pp.campaign_id, pp.product_item_id
+),
+ranked_products AS (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY campaign_id ORDER BY conv_value DESC, cost DESC) AS rn
+  FROM product_perf
+),
+top_products AS (
+  SELECT * FROM ranked_products WHERE rn <= ${ROWS_PER_CAMPAIGN}
+),
+resolved_ids AS (
+  SELECT product_item_id,
+    CASE WHEN product_item_id LIKE 'shopify\\_%'
+         THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
+         ELSE product_item_id
+    END AS shopify_id
+  FROM top_products
+)
+SELECT
+  tp.campaign_id, tc.campaign_name, tp.product_item_id, tp.cost, tp.clicks, tp.conversions, tp.conv_value,
+  tt.search_term AS camp_top_term, tt.clicks AS camp_term_clicks, tt.cost AS camp_term_cost,
+  tt.conversions AS camp_term_conv, tt.conv_value AS camp_term_conv_value,
+  sl.sku, sl.shopify_handle
+FROM top_products tp
+JOIN thasi_campaigns tc ON tc.campaign_id = tp.campaign_id
+LEFT JOIN top_term_per_campaign tt ON tt.campaign_id = tp.campaign_id
+JOIN resolved_ids ri ON ri.product_item_id = tp.product_item_id
+LEFT JOIN listings.shopify_listings sl ON sl.item_id = ri.shopify_id AND sl.channel = 'LEDSone DE'
+ORDER BY tp.campaign_id, tp.rn;
+`;
+
+// Uses amazon_campaigns.performance_data (indexed on listing_sku, ad_group_id,
+// campaign_id, date) instead of amazon_campaigns.ads — the ads table has no
+// index on listing_sku and a full scan of it times out (confirmed directly,
+// not assumed). performance_data carries the same listing_sku/ad_group_id
+// linkage and is what the earlier discovery queries already used.
+const AMAZON_QUERY = `
+WITH matched_ads AS (
+  SELECT DISTINCT ad_group_id, listing_sku
+  FROM amazon_campaigns.performance_data
+  WHERE listing_sku = ANY($3::text[])
+),
+ad_group_sizes AS (
+  SELECT ad_group_id, COUNT(DISTINCT listing_sku) AS sku_count
+  FROM amazon_campaigns.performance_data
+  WHERE ad_group_id IN (SELECT ad_group_id FROM matched_ads)
+  GROUP BY ad_group_id
+),
+ad_group_terms AS (
+  SELECT ad_group_id, search_term,
+    SUM(clicks) AS clicks, SUM(spend) AS cost, SUM(orders) AS conversions, SUM(sales) AS conv_value
+  FROM amazon_campaigns.search_term_performance_data
+  WHERE ad_group_id IN (SELECT ad_group_id FROM matched_ads) AND date >= $1 AND date <= $2
+  GROUP BY ad_group_id, search_term
+),
+top_term_per_ad_group AS (
+  SELECT * FROM (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY ad_group_id ORDER BY conv_value DESC NULLS LAST, clicks DESC) AS rn
+    FROM ad_group_terms
+  ) x WHERE rn = 1
+)
+SELECT ma.listing_sku, ma.ad_group_id, ags.sku_count,
+  tt.search_term, tt.clicks, tt.cost, tt.conversions, tt.conv_value
+FROM matched_ads ma
+JOIN ad_group_sizes ags ON ags.ad_group_id = ma.ad_group_id
+LEFT JOIN top_term_per_ad_group tt ON tt.ad_group_id = ma.ad_group_id;
+`;
+
+const SHOPIFY_LIVE_QUERY_TEMPLATE = (handles) => {
+  const fields = handles.map((h, i) => `p${i}: productByHandle(handle: ${JSON.stringify(h)}) { title seo { title } }`);
+  return `query { ${fields.join('\n')} }`;
+};
+
+async function fetchLiveShopifyTitles(handles) {
+  const uniqueHandles = [...new Set(handles.filter(Boolean))];
+  const result = new Map();
+  const BATCH = 50; // keep each GraphQL request well under Shopify's query-cost limit
+  for (let i = 0; i < uniqueHandles.length; i += BATCH) {
+    const batch = uniqueHandles.slice(i, i + BATCH);
+    const data = await shopifyGraphQL(SHOPIFY_LIVE_QUERY_TEMPLATE(batch));
+    batch.forEach((h, idx) => {
+      const node = data['p' + idx];
+      result.set(h, {
+        h1: node ? node.title : null,
+        metaTitle: node && node.seo ? node.seo.title : null,
+      });
+    });
+  }
+  return result;
+}
+
+async function handleThasithaReq6(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const forceRefresh = req.query && req.query.refresh === '1';
+  const start = (req.query && req.query.start) || '2026-04-20';
+  const end = (req.query && req.query.end) || new Date().toISOString().slice(0, 10);
+  const cacheKey = 'thasitha-req6:' + start + ':' + end;
+
+  if (!forceRefresh) {
+    const cached = CACHE.get(cacheKey);
+    if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+  }
+
+  const client = await getPool().connect().catch((err) => {
+    console.error('[thasitha/req6] DB connect failed:', err && err.message);
+    res.status(500).json({ error: 'Server not configured or database unreachable.' });
+    return null;
+  });
+  if (!client) return;
+
+  try {
+    const result = await client.query(QUERY, [start, end]);
+    const rows = result.rows;
+
+    const skus = [...new Set(rows.map((r) => r.sku).filter(Boolean))];
+    let amazonBySku = new Map();
+    if (skus.length) {
+      const amzResult = await client.query(AMAZON_QUERY, [start, end, skus]);
+      for (const r of amzResult.rows) {
+        if (!amazonBySku.has(r.listing_sku)) amazonBySku.set(r.listing_sku, []);
+        amazonBySku.get(r.listing_sku).push(r);
+      }
+    }
+
+    const handles = rows.map((r) => r.shopify_handle).filter(Boolean);
+    const shopifyByHandle = await fetchLiveShopifyTitles(handles);
+
+    const payload = rows.map((r) => {
+      const shop = r.shopify_handle ? shopifyByHandle.get(r.shopify_handle) : null;
+      const h1 = shop ? shop.h1 : null;
+      const metaTitle = shop ? shop.metaTitle : null;
+
+      const googleTerm = r.camp_top_term ? {
+        source: 'Google', keyword: r.camp_top_term,
+        clicks: r.camp_term_clicks, cost: Number(r.camp_term_cost) || 0,
+        conversions: Number(r.camp_term_conv) || 0, convValue: Number(r.camp_term_conv_value) || 0,
+      } : null;
+
+      const amzMatches = r.sku ? (amazonBySku.get(r.sku) || []) : [];
+      const amzTerm = amzMatches.length && amzMatches[0].search_term ? {
+        source: 'Amazon', keyword: amzMatches[0].search_term,
+        clicks: amzMatches[0].clicks, cost: Number(amzMatches[0].cost) || 0,
+        conversions: Number(amzMatches[0].conversions) || 0, convValue: Number(amzMatches[0].conv_value) || 0,
+        adGroupSkuCount: amzMatches[0].sku_count,
+      } : null;
+
+      // Top keyword overall = whichever candidate (Google campaign term or
+      // Amazon SKU-level term) has the higher conversion value — drives the
+      // single H1?/Meta?/Gap Flag columns, matching the requested table
+      // shape (one keyword per row for those columns).
+      const candidates = [googleTerm, amzTerm].filter(Boolean);
+      const topKeyword = candidates.length
+        ? candidates.reduce((a, b) => (b.convValue > a.convValue ? b : a))
+        : null;
+
+      const inH1 = topKeyword && h1 ? containsKeyword(h1, topKeyword.keyword) : false;
+      const inMeta = topKeyword && metaTitle ? containsKeyword(metaTitle, topKeyword.keyword) : false;
+      let gapFlag = 'NO KEYWORD DATA';
+      if (topKeyword) {
+        if (!inH1 && !inMeta) gapFlag = 'GAP';
+        else if (!inH1) gapFlag = 'H1 ONLY';
+        else if (!inMeta) gapFlag = 'META ONLY';
+        else gapFlag = 'OK';
+      }
+
+      // Gap Keywords: every real candidate keyword (Google + Amazon) missing
+      // from BOTH H1 and Meta — not just the single top keyword.
+      const gapKeywords = candidates.filter((c) => !containsKeyword(h1 || '', c.keyword) && !containsKeyword(metaTitle || '', c.keyword)).map((c) => c.source + ': ' + c.keyword);
+
+      return {
+        campaignId: String(r.campaign_id),
+        campaignName: r.campaign_name,
+        productItemId: r.product_item_id,
+        sku: r.sku || null,
+        googleCost: Number(r.cost) || 0,
+        googleClicks: r.clicks,
+        googleConversions: Number(r.conversions) || 0,
+        googleConvValue: Number(r.conv_value) || 0,
+        googleTerm, amzTerm, topKeyword,
+        h1, metaTitle,
+        inH1, inMeta, gapFlag, gapKeywords,
+      };
+    });
+
+    const payloadOut = {
+      generatedAt: new Date().toISOString(),
+      dateRange: { start, end },
+      rows: payload,
+      meta: { cacheStatus: forceRefresh ? 'live' : 'miss', rowCount: payload.length },
+    };
+    CACHE.set(cacheKey, { data: payloadOut, at: Date.now() });
+    res.status(200).json(payloadOut);
+  } catch (err) {
+    console.error('[thasitha/req6] error:', err && err.message);
+    res.status(500).json({ error: err.message || 'Unknown error' });
+  } finally {
+    client.release();
+  }
+}
+
+return handleThasithaReq6;
+})();
+
 // ==================== Thasitha Requirement 2 — PMax Product Zero-Performance & Root-Cause ====================
 // Live PostgreSQL refresh, replacing the static R2_PRODUCTS array baked into
 // thasitha.html on 2026-07-15/16. Same live/frozen bug class as the old
@@ -4525,6 +4881,7 @@ module.exports = async (req, res) => {
   if (fn === 'thasitha-req1') return thasithaReq1HandlerModule(req, res);
   if (fn === 'thasitha-req2') return thasithaReq2HandlerModule(req, res);
   if (fn === 'thasitha-req3') return thasithaReq3HandlerModule(req, res);
+  if (fn === 'thasitha-req6') return thasithaReq6HandlerModule(req, res);
   if (fn === 'jefri-product-status') return jefriProductStatusHandlerModule(req, res);
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
