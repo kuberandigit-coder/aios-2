@@ -4,6 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Blog Builder</title>
+    <style>html{visibility:hidden;}</style>
+    <script>
+    // Auth guard — requires any valid dm_session (staff or admin). This tool
+    // is shared, so unlike the per-member pages it doesn't check staff_key,
+    // just that a session exists. Also loaded via <iframe> from the other
+    // member pages when they click "Blog Tool" — the session cookie is
+    // same-origin there too, so this guard passes silently in that case.
+    (function () {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/auth?action=session', false);
+        xhr.withCredentials = true;
+        xhr.send(null);
+        if (xhr.status === 200) {
+          var data = JSON.parse(xhr.responseText);
+          if (data && data.success && data.user) {
+            document.documentElement.style.visibility = 'visible';
+            return;
+          }
+        }
+      } catch (e) { /* fall through to login */ }
+      if (window.top === window.self) window.location.replace('../../login.html');
+    })();
+    </script>
     <link
       rel="icon"
       type="image/png"
