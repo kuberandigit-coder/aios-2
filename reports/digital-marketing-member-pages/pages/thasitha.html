@@ -319,13 +319,6 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 </aside>
 
 <div class="t-main">
-  <div class="t-topbar">
-    <div>
-      <h1 id="tTopbarTitle">Requirement 1 &middot; Campaign ROAS</h1>
-      <div class="datestr" id="tTopbarDate"></div>
-    </div>
-  </div>
-
   <div class="t-topcontent">
 <div class="t1-wrap">
 
@@ -2148,7 +2141,6 @@ function switchTab(which){
   document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
     a.classList.toggle('on', a.dataset.tab === which);
   });
-  document.getElementById('tTopbarTitle').innerHTML = TAB_TITLES[which] || '';
 }
 document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
   a.addEventListener('click', function(e){
@@ -2162,8 +2154,6 @@ document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
 document.getElementById('tCollapseBtn').addEventListener('click', function(){
   document.body.classList.toggle('sb-open');
 });
-
-document.getElementById('tTopbarDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
 // ===== Requirement 3: Campaign Product Overlap (rebuilt 2026-08-05 — fewer
 // columns, no CPC-tier jargon, per explicit request) =====
