@@ -1005,7 +1005,8 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
   <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.campaign_search_term_data</code>, <code>google_ads.pmax_campaign_search_term_data</code>) &middot; fetched via <code>/api/requirement?fn=thasitha-req6</code>.<br>
   <strong>Scope:</strong> All 3 of Thasitha's campaigns (<code>group_name='Thasi'</code>, <code>account_id=9031058245</code>), rolling last 90 days, search terms from both Shopping/Search and Performance Max campaign types &mdash; a term appearing in either is included; if it appears in both, they're shown as separate rows by Match Type. Exact same query shape as Jefri Requirement 2, scoped to Thasitha's campaigns instead of Jefri's 5 named campaign IDs. Every campaign is listed in the summary table below even with 0 terms (e.g. a brand-new campaign with no search-term data reported yet) &mdash; confirmed 2026-08-10.<br>
   <strong>ROAS:</strong> (Conversion Value &divide; Cost) &times; 100, shown as 0% when Cost is 0.<br>
-  <strong>Tag rules</strong> (identical to Jefri Req2): &#127942; Hero = Clicks &ge; 3 AND ROAS &ge; 400%. &#129656; Villain = Clicks &ge; 3 AND (ROAS &lt; 400% OR Conversions = 0). &#129496; Zombie = Impressions &gt; 0 AND Clicks = 0. &#128373; Sidekick = Clicks 1&ndash;2 AND ROAS &ge; 400%. Rows matching none of these are left untagged.
+  <strong>Tag rules</strong> (identical to Jefri Req2): &#127942; Hero = Clicks &ge; 3 AND ROAS &ge; 400%. &#129656; Villain = Clicks &ge; 3 AND (ROAS &lt; 400% OR Conversions = 0). &#129496; Zombie = Impressions &gt; 0 AND Clicks = 0. &#128373; Sidekick = Clicks 1&ndash;2 AND ROAS &ge; 400%. Rows matching none of these are left untagged.<br>
+  <strong>Cost / Avg CPC / Cost per Conversion / ROAS showing N/A.</strong> Confirmed 2026-08-10: <code>google_ads.campaign_search_term_data.cost</code> is NULL for 100% of Thasitha's rows in that table (10,740/10,740, including 464 rows with real clicks) &mdash; genuinely not tracked at the search-term level for that source, not a real &euro;0. These rows now show N/A instead of a misleading &euro;0.00/0.00%, and are left untagged since a Hero/Villain tag can't be honestly computed without real cost. <code>google_ads.pmax_campaign_search_term_data.cost</code> is never null &mdash; a real &euro;0.00 there (common for PMax, which doesn't always allocate spend per search term) is still shown as &euro;0.00 and tagged normally.
 </div>
 
 </div>
@@ -1809,6 +1810,7 @@ function r6TagBadge(tag){
 }
 
 function renderR6Row(r){
+  const naSpan = '<span class="t1-na">N/A</span>';
   return '<tr>' +
     '<td class="wrap">' + esc(r.searchTerm) + '</td>' +
     '<td>' + esc(r.matchType || '&mdash;') + '</td>' +
@@ -1816,13 +1818,13 @@ function renderR6Row(r){
     '<td class="num">' + num(r.clicks) + '</td>' +
     '<td class="num">' + num(r.impressions) + '</td>' +
     '<td class="num">' + r.ctr.toFixed(2) + '%</td>' +
-    '<td class="num">' + eur(r.avgCpc).replace('&euro;','€') + '</td>' +
-    '<td class="num">' + eur(r.cost).replace('&euro;','€') + '</td>' +
+    '<td class="num">' + (r.avgCpc!=null ? eur(r.avgCpc).replace('&euro;','€') : naSpan) + '</td>' +
+    '<td class="num">' + (r.cost!=null ? eur(r.cost).replace('&euro;','€') : naSpan) + '</td>' +
     '<td class="num">' + eur(r.conversionValue).replace('&euro;','€') + '</td>' +
     '<td class="num">' + num(r.conversions) + '</td>' +
-    '<td class="num">' + (r.costPerConversion!=null ? eur(r.costPerConversion).replace('&euro;','€') : '<span class="t1-na">N/A</span>') + '</td>' +
-    '<td class="num">' + r.roas.toFixed(2) + '%</td>' +
-    '<td>' + r6TagBadge(r.tag) + '</td>' +
+    '<td class="num">' + (r.costPerConversion!=null ? eur(r.costPerConversion).replace('&euro;','€') : naSpan) + '</td>' +
+    '<td class="num">' + (r.roas!=null ? r.roas.toFixed(2) + '%' : naSpan) + '</td>' +
+    '<td>' + (r.costAvailable ? r6TagBadge(r.tag) : naSpan) + '</td>' +
     '</tr>';
 }
 

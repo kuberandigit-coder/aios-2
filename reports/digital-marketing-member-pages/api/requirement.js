@@ -4009,28 +4009,43 @@ async function handleThasithaReq6(req, res) {
     const campaignNameById = new Map(campResult.rows.map((c) => [String(c.campaign_id), c.campaign_name]));
 
     const result = await client.query(THASI_QUERY);
+    // Bug fix confirmed 2026-08-10 via direct DB inspection: cost is 100%
+    // NULL for every row Thasitha has in google_ads.campaign_search_term_data
+    // (10,740/10,740 rows, 464 of them with real clicks) — genuinely not
+    // tracked at the search-term level for that source, NOT a real €0. The
+    // old code did `Number(null) || 0`, silently showing "€0.00 cost" next
+    // to real clicks/conversions, which is misleading. google_ads.
+    // pmax_campaign_search_term_data's cost is never null (0 there is a real
+    // zero — PMax genuinely doesn't allocate spend to some search terms).
+    // Now: cost stays null (shown as "N/A", not €0.00) whenever the source
+    // row(s) never had cost tracked; ROAS/Avg CPC/Cost per Conversion follow
+    // suit; and the row is left untagged (no Hero/Villain/etc.) since a tag
+    // driven by ROAS can't be honestly computed without real cost.
     const rows = result.rows.map((r) => {
       const clicks = Number(r.clicks) || 0;
       const impressions = Number(r.impressions) || 0;
-      const cost = Number(r.cost) || 0;
+      const costKnown = r.cost !== null && r.cost !== undefined;
+      const cost = costKnown ? Number(r.cost) : 0;
       const conversions = Number(r.conversions) || 0;
       const convValue = Number(r.conv_value) || 0;
       const ctr = impressions > 0 ? round2((clicks / impressions) * 100) : 0;
-      const avgCpc = clicks > 0 ? round2(cost / clicks) : 0;
-      const costPerConversion = conversions > 0 ? round2(cost / conversions) : null;
-      const roas = cost > 0 ? round2((convValue / cost) * 100) : 0;
-      const tag = classifyTag(clicks, impressions, cost, conversions, roas);
+      const avgCpc = costKnown && clicks > 0 ? round2(cost / clicks) : null;
+      const costPerConversion = costKnown && conversions > 0 ? round2(cost / conversions) : null;
+      const roas = costKnown ? (cost > 0 ? round2((convValue / cost) * 100) : 0) : null;
+      const tag = costKnown ? classifyTag(clicks, impressions, cost, conversions, roas) : '';
       const campaignId = String(r.campaign_id);
       return {
         searchTerm: r.search_term,
         matchType: r.match_type,
         campaignId,
         campaignName: campaignNameById.get(campaignId) || campaignId,
-        clicks, impressions, ctr, avgCpc, cost,
+        clicks, impressions, ctr, avgCpc,
+        cost: costKnown ? cost : null,
         conversionValue: round2(convValue),
         conversions: round2(conversions),
         costPerConversion,
         roas,
+        costAvailable: costKnown,
         tag,
       };
     });
