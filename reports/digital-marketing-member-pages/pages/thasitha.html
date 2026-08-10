@@ -221,11 +221,13 @@ body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,s
 .t-sidebar .t-navlist a{justify-content:center;}
 .t-sidebar .t-brand{justify-content:center;}
 .t-sidebar .t-devbadge{justify-content:center;}
+.t-sidebar .t-back{justify-content:center;}
 body.sb-open .t-sidebar{width:var(--sb-w);padding:16px 14px;}
 body.sb-open .t-sidebar .t-brand-txt,body.sb-open .t-sidebar .t-navlabel,body.sb-open .t-sidebar .t-navlist a span.lbl,body.sb-open .t-sidebar .t-devbadge-txt,body.sb-open .t-sidebar .t-back span.lbl{display:block;}
 body.sb-open .t-sidebar .t-navlist a{justify-content:flex-start;}
 body.sb-open .t-sidebar .t-brand{justify-content:flex-start;}
 body.sb-open .t-sidebar .t-devbadge{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-back{justify-content:flex-start;}
 
 /* Standalone collapse handle — a small fixed-position tab pinned to the
    sidebar's right edge, independent of the sidebar's own flex layout. This
@@ -306,9 +308,9 @@ body.sb-open .t-main{margin-left:var(--sb-w);}
 
   <div class="t-sidebar-spacer"></div>
 
-  <a class="t-back" href="../home.html">
-    <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></span>
-    <span class="lbl">Back to all members</span>
+  <a class="t-back" href="#" id="tSignOutBtn">
+    <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+    <span class="lbl">Sign Out</span>
   </a>
   <div class="t-devbadge">
     <div class="av">K</div>
@@ -2892,11 +2894,8 @@ renderR5();
   refresh();
 })();
 </script>
-<div id="dmSignOut" style="position:fixed;bottom:18px;right:18px;z-index:99999;">
-  <a href="#" id="dmSignOutBtn" style="display:inline-block;background:#0c1a30;color:#dfe4ee;text-decoration:none;font:700 12.5px/1 &quot;Segoe UI&quot;,system-ui,sans-serif;padding:10px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);">Sign Out</a>
-</div>
 <script>
-document.getElementById("dmSignOutBtn").addEventListener("click", function (e) {
+document.getElementById("tSignOutBtn").addEventListener("click", function (e) {
   e.preventDefault();
   fetch("/api/auth?action=logout", { method: "POST", credentials: "same-origin" })
     .finally(function () { window.location.href = "../login.html"; });
