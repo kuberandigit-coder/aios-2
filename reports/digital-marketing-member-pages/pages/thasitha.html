@@ -176,19 +176,33 @@ table.t5-table td.t5-sku{font-family:ui-monospace,Consolas,monospace;font-size:1
 .t5-datacheck{background:#ef6c00;}
 @media(max-width:640px){table.t5-table{min-width:1100px;}}
 
-/* ---------- Sidebar shell (2026-08-10 redesign) ---------- */
-:root{--sb-navy:#0c1a30;--sb-navy2:#0e2143;--sb-gold:#c9a227;--sb-text:#aab4c8;}
+/* ---------- Sidebar shell (2026-08-10 redesign) ----------
+   Sidebar is position:fixed (not sticky/flex) so wide inner tables can
+   never drag it sideways via page-level horizontal scroll — that was the
+   cause of the earlier "sidebar drifts off / squished" bug. .t-main uses a
+   margin-left matched to the sidebar's current width instead of flex, and
+   body has overflow-x:hidden as a second guard (each table already scrolls
+   internally via .t1-tablewrap, so the page itself never needs to). Default
+   state is COLLAPSED (icon rail) — opens only when the user clicks the
+   toggle, per explicit instruction. ---------- */
+:root{--sb-navy:#0c1a30;--sb-navy2:#0e2143;--sb-gold:#c9a227;--sb-text:#aab4c8;--sb-w:270px;--sb-w-collapsed:72px;}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
-body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;}
-.app-shell{display:flex;min-height:100vh;}
+body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;overflow-x:hidden;}
+.app-shell{min-height:100vh;}
 
-.t-sidebar{width:270px;flex-shrink:0;background:var(--sb-navy);color:var(--sb-text);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;transition:width .18s ease,padding .18s ease;}
-.t-sidebar.collapsed{width:76px;padding:20px 10px;}
-.t-sidebar.collapsed .t-brand-txt,.t-sidebar.collapsed .t-navlabel,.t-sidebar.collapsed .t-navlist a span.lbl,.t-sidebar.collapsed .t-devbadge span,.t-sidebar.collapsed .t-back span.lbl{display:none;}
-.t-sidebar.collapsed .t-navlist a{justify-content:center;}
-.t-sidebar.collapsed .t-brand{justify-content:center;}
-.t-sidebar.collapsed .t-collapse-btn{transform:rotate(180deg);}
+.t-sidebar{width:var(--sb-w-collapsed);background:var(--sb-navy);color:var(--sb-text);display:flex;flex-direction:column;padding:16px 10px;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;transition:width .18s ease,padding .18s ease;z-index:40;}
+.t-sidebar .t-brand-txt,.t-sidebar .t-navlabel,.t-sidebar .t-navlist a span.lbl,.t-sidebar .t-devbadge-txt,.t-sidebar .t-back span.lbl{display:none;}
+.t-sidebar .t-navlist a{justify-content:center;}
+.t-sidebar .t-brand{justify-content:center;}
+.t-sidebar .t-devbadge{justify-content:center;}
+.t-sidebar .t-collapse-btn{transform:rotate(180deg);}
+body.sb-open .t-sidebar{width:var(--sb-w);padding:16px 14px;}
+body.sb-open .t-sidebar .t-brand-txt,body.sb-open .t-sidebar .t-navlabel,body.sb-open .t-sidebar .t-navlist a span.lbl,body.sb-open .t-sidebar .t-devbadge-txt,body.sb-open .t-sidebar .t-back span.lbl{display:block;}
+body.sb-open .t-sidebar .t-navlist a{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-brand{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-devbadge{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-collapse-btn{transform:rotate(0deg);}
 
 .t-brand{display:flex;align-items:center;gap:10px;padding:6px 6px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;position:relative;}
 .t-brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
@@ -215,15 +229,23 @@ body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,s
 .t-devbadge b{display:block;color:#fff;font-size:11.5px;white-space:nowrap;}
 .t-devbadge span{display:block;color:#e8d59a;font-size:10px;white-space:nowrap;}
 
-.t-main{flex:1;min-width:0;display:flex;flex-direction:column;}
-.t-topbar{background:var(--sb-navy2);color:#fff;padding:20px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:3px solid var(--sb-gold);}
-.t-topbar .chip-live{display:inline-flex;align-items:center;gap:7px;background:rgba(10,125,79,.18);border:1px solid rgba(10,125,79,.4);color:#5fd99a;border-radius:999px;padding:5px 13px;font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;}
-.t-topbar .chip-live .dot{width:7px;height:7px;border-radius:999px;background:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.25);}
-.t-topbar h1{font-size:21px;font-weight:800;margin-top:8px;letter-spacing:.2px;}
-.t-topbar .datestr{color:#9fb0d1;font-size:12.5px;margin-top:4px;}
-.t-topcontent{padding:22px 30px 40px;}
+.t-main{margin-left:var(--sb-w-collapsed);min-width:0;display:flex;flex-direction:column;transition:margin-left .18s ease;}
+body.sb-open .t-main{margin-left:var(--sb-w);}
+.t-topbar{background:var(--sb-navy2);color:#fff;padding:12px 26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:3px solid var(--sb-gold);}
+.t-topbar .chip-live{display:inline-flex;align-items:center;gap:6px;background:rgba(10,125,79,.18);border:1px solid rgba(10,125,79,.4);color:#5fd99a;border-radius:999px;padding:3px 11px;font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;}
+.t-topbar .chip-live .dot{width:6px;height:6px;border-radius:999px;background:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.25);}
+.t-topbar h1{font-size:16px;font-weight:800;margin-top:5px;letter-spacing:.2px;line-height:1.2;}
+.t-topbar .datestr{color:#9fb0d1;font-size:11px;margin-top:2px;}
+.t-topcontent{padding:18px 26px 36px;}
 
-@media(max-width:900px){.t-sidebar{position:fixed;left:-270px;z-index:50;box-shadow:4px 0 24px rgba(0,0,0,.25);}.t-sidebar.mobile-open{left:0;}.t-topcontent,.t-topbar{padding-left:18px;padding-right:18px;}}
+/* Sidebar defaults to COLLAPSED at all sizes — .collapsed is the resting
+   state, JS removes it (via body.sb-open) only when the user opens it. */
+@media(max-width:900px){
+  .t-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
+  body.sb-open .t-sidebar{width:var(--sb-w);}
+  body.sb-open .t-main{margin-left:var(--sb-w-collapsed);}
+  .t-topcontent,.t-topbar{padding-left:16px;padding-right:16px;}
+}
 </style>
 </head>
 <body>
@@ -255,7 +277,7 @@ body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,s
   </a>
   <div class="t-devbadge">
     <div class="av">K</div>
-    <div><b>Developed by</b><span>Kuberan</span></div>
+    <div class="t-devbadge-txt"><b>Developed by</b><span>Kuberan</span></div>
   </div>
 </aside>
 
@@ -1511,9 +1533,10 @@ document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
   });
 });
 
-const tSidebar = document.getElementById('tSidebar');
+// Sidebar defaults to closed/collapsed (icon rail) — body.sb-open is the
+// ONLY thing that opens it, toggled by the user. Never opens itself.
 document.getElementById('tCollapseBtn').addEventListener('click', function(){
-  tSidebar.classList.toggle('collapsed');
+  document.body.classList.toggle('sb-open');
 });
 
 document.getElementById('tTopbarDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
