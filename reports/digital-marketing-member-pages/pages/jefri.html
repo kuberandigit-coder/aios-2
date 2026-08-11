@@ -91,8 +91,6 @@ td.urlcell a{font-family:Consolas,"Courier New",monospace;font-size:11px;color:v
 html,body{margin:0;padding:0;}
 body{overflow-x:hidden;padding:0;}
 .ms-sidebar{width:var(--sb-w-collapsed);background:var(--sb-navy);color:var(--sb-text);display:flex;flex-direction:column;padding:16px 10px;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;transition:width .18s ease,padding .18s ease,background .18s ease;z-index:40;}
-body.tool-open .ms-sidebar{background:transparent;}
-body.tool-open .ms-sidebar:hover{background:var(--sb-navy);}
 .ms-sidebar .ms-brand-txt,.ms-sidebar .ms-navlabel,.ms-sidebar .ms-navlist a span.lbl,.ms-sidebar .ms-devbadge-txt,.ms-sidebar .ms-signout span.lbl{display:none;}
 .ms-sidebar .ms-signout{justify-content:center;}
 .ms-sidebar .ms-navlist a{justify-content:center;}
@@ -134,7 +132,14 @@ body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
 .ms-topcontent{padding:28px 24px 40px;}
 body.tool-open .ms-topcontent{padding:0;max-width:none;}
 #msToolFrame{position:relative;z-index:2;width:100%;box-sizing:border-box;}
-body.tool-open #msToolFrame{height:100vh;border-radius:0;border:none;}
+body.tool-open #msToolFrame{height:100vh !important;border-radius:0;border:none;}
+/* While a tool (EOD/Blog) is open, the sidebar overlays on top of the tool
+   instead of pushing it — opening the sidebar no longer widens ms-main's
+   margin, it just floats over the tool content (already position:fixed,
+   so this is purely stopping the content from being shoved over for it). */
+body.sb-open.tool-open .ms-main{margin-left:var(--sb-w-collapsed) !important;}
+body.tool-open .ms-sidebar{z-index:45;}
+body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 @media(max-width:900px){
   .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
   body.sb-open .ms-sidebar{width:var(--sb-w);}
