@@ -4978,8 +4978,137 @@ const sukirthaR6HandlerModule = (function() {
   };
 })();
 
+// ==================== Jefri T-04 (Step 1) — Google Ads Item ID -> Parent Product ID mapping ====================
+// Added 2026-08-11. DISCOVERY-VALIDATED, step 1 of T-04 only: for every
+// distinct Google Ads product_item_id Jefri has ever had (all-time, not
+// windowed), resolve it to a Shopify listing and — for variant-level items —
+// its Parent Product ID via listings.shopify_listings_parent_child_mapping.
+// Same identifier-resolution mechanics as Req1 (raw ID, or Merchant Center
+// "shopify_de_<parent>_<variant>" format). Confirmed live via direct SQL
+// (see evidence/jefri/T-04-data-discovery.md): 8,073 distinct items,
+// 4,543 resolve to a variant (100% of those map to exactly one parent, 0
+// many-to-one conflicts for Jefri's items), 1,147 resolve to a parent
+// directly, 2,383 (29.5%) have no Shopify match at all (non-Shopify-format
+// long IDs, concentrated in the "Shoparize ALL | All Products" campaign).
+const jefriReq4MappingHandlerModule = (function() {
+  const { Pool } = require('pg');
+
+  let pool;
+  function getPool() {
+    if (!pool) {
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString && !process.env.PGHOST) {
+        throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+      }
+      pool = new Pool({
+        connectionString: connectionString || undefined,
+        host: connectionString ? undefined : process.env.PGHOST,
+        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+        database: connectionString ? undefined : process.env.PGDATABASE,
+        user: connectionString ? undefined : process.env.PGUSER,
+        password: connectionString ? undefined : process.env.PGPASSWORD,
+        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+        connectionTimeoutMillis: 8000,
+        statement_timeout: 30000,
+        max: 3,
+      });
+    }
+    return pool;
+  }
+
+  const JEFRI_CAMPAIGN_IDS_R4 = ['23141810147', '23411228109', '22539594891', '23473840779', '23340277562'];
+
+  const MAPPING_QUERY = `
+WITH jefri_items AS (
+  SELECT DISTINCT product_item_id
+  FROM google_ads.product_performance
+  WHERE campaign_id = ANY($1::bigint[]) AND product_item_id IS NOT NULL AND product_item_id <> ''
+),
+resolved AS (
+  SELECT product_item_id,
+    CASE WHEN product_item_id LIKE 'shopify\\_%'
+         THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
+         ELSE product_item_id END AS shopify_id
+  FROM jefri_items
+),
+matched AS (
+  SELECT r.product_item_id, sl.id AS listing_pk, sl.is_parent, sl.is_child, sl.item_id AS matched_shopify_id, sl.sku
+  FROM resolved r
+  LEFT JOIN listings.shopify_listings sl ON sl.item_id = r.shopify_id AND sl.channel = 'LEDSone DE'
+),
+child_to_parent AS (
+  SELECT m.child_id AS listing_pk, p.item_id AS parent_product_id
+  FROM listings.shopify_listings_parent_child_mapping m
+  JOIN listings.shopify_listings p ON p.id = m.parent_id
+)
+SELECT
+  m.product_item_id AS item_id,
+  CASE
+    WHEN m.is_parent = 1 THEN m.matched_shopify_id
+    WHEN m.is_child = 1 THEN ctp.parent_product_id
+    ELSE NULL
+  END AS parent_product_id,
+  CASE WHEN m.is_parent = 1 THEN 'Parent' WHEN m.is_child = 1 THEN 'Variant' ELSE 'Unmatched' END AS level,
+  m.sku
+FROM matched m
+LEFT JOIN child_to_parent ctp ON ctp.listing_pk = m.listing_pk
+ORDER BY level, item_id;
+`;
+
+  const CACHE = new Map();
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+  const CACHE_KEY = 'jefri-req4-mapping';
+
+  async function handleJefriReq4Mapping(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const forceRefresh = req.query && req.query.refresh === '1';
+    if (!forceRefresh) {
+      const cached = CACHE.get(CACHE_KEY);
+      if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+        res.status(200).json(cached.data);
+        return;
+      }
+    }
+    const client = await getPool().connect().catch((err) => {
+      console.error('[jefri/req4-mapping] DB connect failed:', err && err.message);
+      res.status(500).json({ error: 'Server not configured or database unreachable.' });
+      return null;
+    });
+    if (!client) return;
+    try {
+      const result = await client.query(MAPPING_QUERY, [JEFRI_CAMPAIGN_IDS_R4]);
+      const rows = result.rows.map((r) => ({
+        itemId: r.item_id,
+        parentProductId: r.parent_product_id,
+        level: r.level,
+        sku: r.sku || null,
+      }));
+      const payload = {
+        generatedAt: new Date().toISOString(),
+        rows,
+        meta: {
+          totalItems: rows.length,
+          levelParent: rows.filter((r) => r.level === 'Parent').length,
+          levelVariant: rows.filter((r) => r.level === 'Variant').length,
+          unmatched: rows.filter((r) => r.level === 'Unmatched').length,
+        },
+      };
+      CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[jefri/req4-mapping] error:', err && err.message);
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    } finally {
+      client.release();
+    }
+  }
+
+  return handleJefriReq4Mapping;
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
+  if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
   if (fn === 'thasitha-req1') return thasithaReq1HandlerModule(req, res);

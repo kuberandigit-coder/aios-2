@@ -161,6 +161,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-req="req1" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">Requirement 1</span></a></li>
     <li><a href="#" data-req="req2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="13" y2="17"></line></svg></span><span class="lbl">Requirement 2</span></a></li>
     <li><a href="#" data-req="req3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Requirement 3</span></a></li>
+    <li><a href="#" data-req="req4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span class="lbl">Requirement 4</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -452,17 +453,85 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 </div>
 
+<div id="req4Tab" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 4 (Live) — T-04, Step 1</div>
+  <h1>Item ID &rarr; Parent Product ID Mapping</h1>
+  <div class="sub">Step 1 of T-04: every Google Ads item ID Jefri has ever advertised, mapped to its Shopify Parent Product ID &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads) &nbsp;&middot;&nbsp; Scope: Jefri's 5 named campaigns (same as Requirement 1), all-time (not date-windowed)</div>
+  <div class="filters">
+    <span class="chip" id="r4LiveChip">Loading…</span>
+    <button id="r4RefreshBtn" type="button">Refresh</button>
+  </div>
+</header>
+
+<div class="cards" id="r4Cards">
+  <div class="card"><div class="label">Total Item IDs</div><div class="value" id="r4cTotal">&ndash;</div></div>
+  <div class="card"><div class="label">Parent-Level</div><div class="value" id="r4cParent">&ndash;</div></div>
+  <div class="card"><div class="label">Variant-Level</div><div class="value" id="r4cVariant">&ndash;</div></div>
+  <div class="card villain"><div class="label">Unmatched</div><div class="value" id="r4cUnmatched">&ndash;</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="r4q" placeholder="Search Item ID or Parent Product ID…">
+    <label>Level <select id="r4f_level">
+      <option value="">All levels</option>
+      <option value="Parent">Parent</option>
+      <option value="Variant">Variant</option>
+      <option value="Unmatched">Unmatched</option>
+    </select></label>
+    <button id="r4ExportCsv" type="button">Export CSV</button>
+    <span id="r4cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table>
+      <thead style="position:sticky;top:0;z-index:5;"><tr>
+        <th data-k="parentProductId">Parent Product ID</th>
+        <th data-k="itemId">Item ID</th>
+      </tr></thead>
+      <tbody id="r4tbody"><tr><td colspan="2" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r4empty" style="display:none;">No items match the current filters.</div>
+  <div class="tbar" style="border-top:1px solid var(--line);justify-content:space-between;">
+    <span id="r4pinfo"></span>
+    <span style="display:flex;gap:8px;align-items:center;">
+      <label>Rows <select id="r4psize">
+        <option>50</option><option>100</option><option selected>250</option><option>500</option><option>All</option></select></label>
+      <button id="r4pgFirst" style="background:#fff;color:var(--ink);border-color:var(--line);">&laquo;</button>
+      <button id="r4pgPrev" style="background:#fff;color:var(--ink);border-color:var(--line);">&lsaquo; Prev</button>
+      <button id="r4pgNext" style="background:#fff;color:var(--ink);border-color:var(--line);">Next &rsaquo;</button>
+      <button id="r4pgLast" style="background:#fff;color:var(--ink);border-color:var(--line);">&raquo;</button>
+    </span>
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Step 1 of T-04 &mdash; scope note:</strong> this tab only shows the Item ID &rarr; Parent Product ID mapping, the first building block of the full T-04 report (Total Sales, Ads Sales, ROAS, Ads Sales % are not in this step). Full discovery/validation for T-04 is in <code>evidence/jefri/T-04-data-discovery.md</code>.<br>
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.product_performance</code>, <code>listings.shopify_listings</code>, <code>listings.shopify_listings_parent_child_mapping</code>) &middot; fetched via <code>/api/requirement?fn=jefri-req4-mapping</code>.<br>
+  <strong>Scope:</strong> every distinct Item ID Jefri's 5 campaigns have EVER had (no date window &mdash; "gather all") &mdash; not just currently-active products.<br>
+  <strong>Parent Product ID resolution:</strong> if the Item ID itself resolves to a Shopify PARENT listing, Parent Product ID = that same Item ID. If it resolves to a Shopify VARIANT (child) listing, Parent Product ID is looked up via <code>listings.shopify_listings_parent_child_mapping</code>. Confirmed live: 100% of matched variants (4,543/4,543) resolve to exactly one parent &mdash; no many-to-one conflicts for Jefri's items.<br>
+  <strong>Unmatched rows (Parent Product ID blank):</strong> the Item ID does not correspond to any Shopify product/variant ID in this database at all &mdash; confirmed to be 17&ndash;20 digit IDs (real Shopify IDs are 13&ndash;14 digits), concentrated in one campaign ("Shoparize ALL | All Products"). This is a genuine data gap, not a query failure &mdash; these rows are shown, not hidden, so the gap stays visible.
+</div>
+</div>
+
 <script>
 let R2_LOADED = false;
 let R3_LOADED = false;
+let R4_LOADED = false;
 function showReqTab(which){
   document.getElementById('req1Tab').style.display = which === 'req1' ? '' : 'none';
   document.getElementById('req2Tab').style.display = which === 'req2' ? '' : 'none';
   document.getElementById('req3Tab').style.display = which === 'req3' ? '' : 'none';
+  document.getElementById('req4Tab').style.display = which === 'req4' ? '' : 'none';
   var tb1=document.getElementById('tabBtnReq1'), tb2=document.getElementById('tabBtnReq2'), tb3=document.getElementById('tabBtnReq3');
   if (tb1) tb1.classList.toggle('active', which === 'req1');
   if (tb2) tb2.classList.toggle('active', which === 'req2');
   if (tb3) tb3.classList.toggle('active', which === 'req3');
+  if (which === 'req4' && !R4_LOADED) {
+    R4_LOADED = true;
+    r4Load();
+  }
   if (which === 'req2' && !R2_LOADED) {
     R2_LOADED = true;
     (async function(){
@@ -1113,6 +1182,111 @@ document.querySelectorAll('#req3Tab thead th[data-k]').forEach(th => {
     const k = th.getAttribute('data-k');
     if (r3SortKey === k) r3SortDir = -r3SortDir; else { r3SortKey = k; r3SortDir = 1; }
     r3Render();
+  });
+});
+
+// ===== Requirement 4 (T-04 Step 1): Item ID -> Parent Product ID Mapping =====
+let R4_ALL = [];
+let r4pg = 1, r4SortKey = null, r4SortDir = 1;
+function r4Maxpg(rows){ const ps = document.getElementById('r4psize').value; const n = ps==='All' ? (rows.length||1) : parseInt(ps,10); return Math.max(1, Math.ceil((rows.length||0)/n)); }
+
+async function r4Load(force){
+  const btn = document.getElementById('r4RefreshBtn');
+  const chip = document.getElementById('r4LiveChip');
+  btn.disabled = true;
+  chip.textContent = 'Loading live data from PostgreSQL…';
+  chip.style.background = ''; chip.style.color = '';
+  try {
+    const url = '/api/requirement?fn=jefri-req4-mapping' + (force ? '&refresh=1' : '');
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+    R4_ALL = data.rows || [];
+    chip.textContent = 'Live · ' + new Date(data.meta ? data.generatedAt : Date.now()).toLocaleString();
+    chip.className = 'chip live';
+    document.getElementById('r4cTotal').textContent = num(data.meta.totalItems);
+    document.getElementById('r4cParent').textContent = num(data.meta.levelParent);
+    document.getElementById('r4cVariant').textContent = num(data.meta.levelVariant);
+    document.getElementById('r4cUnmatched').textContent = num(data.meta.unmatched);
+    r4pg = 1;
+    r4Render();
+  } catch (e) {
+    chip.textContent = 'Unable to load — ' + e.message;
+    chip.className = 'chip stale';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function r4FilteredRows(){
+  const q = document.getElementById('r4q').value.trim().toLowerCase();
+  const levelFilter = document.getElementById('r4f_level').value;
+  let rows = R4_ALL.filter(function(r){
+    const qHit = !q || (r.itemId||'').toLowerCase().includes(q) || (r.parentProductId||'').toLowerCase().includes(q);
+    const levelHit = !levelFilter || r.level === levelFilter;
+    return qHit && levelHit;
+  });
+  if (r4SortKey) {
+    rows = rows.slice().sort(function(a,b){
+      const av = a[r4SortKey] || '', bv = b[r4SortKey] || '';
+      return String(av).localeCompare(String(bv)) * r4SortDir;
+    });
+  }
+  return rows;
+}
+
+function r4Render(){
+  const rows = r4FilteredRows();
+  const tbody = document.getElementById('r4tbody');
+  const emptyEl = document.getElementById('r4empty');
+  emptyEl.style.display = rows.length ? 'none' : 'block';
+
+  const psVal = document.getElementById('r4psize').value;
+  const ps = psVal === 'All' ? (rows.length || 1) : parseInt(psVal, 10);
+  if (r4pg > r4Maxpg(rows)) r4pg = r4Maxpg(rows);
+  const start = (r4pg - 1) * ps;
+  const pageRows = psVal === 'All' ? rows : rows.slice(start, start + ps);
+
+  tbody.innerHTML = pageRows.map(function(r){
+    return '<tr>' +
+      '<td>' + (r.parentProductId ? esc(r.parentProductId) : '<span style="color:var(--na);">N/A &mdash; no Shopify match</span>') + '</td>' +
+      '<td>' + esc(r.itemId) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('r4pinfo').textContent = rows.length
+    ? ('Rows ' + (start+1).toLocaleString() + '-' + Math.min(start+ps, rows.length).toLocaleString() + ' of ' + rows.length.toLocaleString() + ' | page ' + r4pg + ' / ' + r4Maxpg(rows))
+    : 'No rows match';
+  document.getElementById('r4cnt').textContent = rows.length.toLocaleString() + ' of ' + R4_ALL.length.toLocaleString() + ' items';
+}
+
+function r4ExportCsv(){
+  const rows = r4FilteredRows();
+  const lines = ['Parent Product ID,Item ID'];
+  rows.forEach(function(r){
+    lines.push([r.parentProductId || '', r.itemId].map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jefri-t04-item-parent-mapping-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('r4RefreshBtn').addEventListener('click', () => r4Load(true));
+document.getElementById('r4q').addEventListener('input', () => { r4pg=1; r4Render(); });
+document.getElementById('r4f_level').addEventListener('change', () => { r4pg=1; r4Render(); });
+document.getElementById('r4psize').addEventListener('change', () => { r4pg=1; r4Render(); });
+document.getElementById('r4ExportCsv').addEventListener('click', r4ExportCsv);
+document.getElementById('r4pgFirst').addEventListener('click', () => { r4pg=1; r4Render(); });
+document.getElementById('r4pgPrev').addEventListener('click', () => { if(r4pg>1){r4pg--;r4Render();} });
+document.getElementById('r4pgNext').addEventListener('click', () => { if(r4pg<r4Maxpg(r4FilteredRows())){r4pg++;r4Render();} });
+document.getElementById('r4pgLast').addEventListener('click', () => { r4pg=r4Maxpg(r4FilteredRows()); r4Render(); });
+document.querySelectorAll('#req4Tab thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.getAttribute('data-k');
+    if (r4SortKey === k) r4SortDir = -r4SortDir; else { r4SortKey = k; r4SortDir = 1; }
+    r4Render();
   });
 });
 </script>
