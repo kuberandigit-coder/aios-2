@@ -1047,6 +1047,194 @@ async function handleSajeepanReq2(client, toDate, fromDate, prevFrom, prevTo) {
   return { waste_products, neg_kw, budget_waste, cross_platform, windows };
 }
 
+async function handleSajeepanReq3(client, fromDate, toDate, prevFrom, prevTo) {
+  const n = v => Number(v) || 0;
+
+  // ── 1. Best-selling OOS ───────────────────────────────────────────────────
+  const { rows: oosRows } = await client.query(`
+    WITH perf AS (
+      SELECT pp.product_item_id, pp.campaign_id::text,
+        SUM(pp.conversion_value) AS cv, SUM(pp.conversions) AS conv,
+        SUM(pp.cost) AS cost, SUM(pp.impressions) AS imps, SUM(pp.clicks) AS clicks
+      FROM google_ads.product_performance pp
+      WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3
+      GROUP BY pp.product_item_id, pp.campaign_id
+    )
+    SELECT p.product_item_id, p.campaign_id, ROUND(p.cv::numeric,2) AS cv,
+      ROUND(p.conv::numeric,2) AS conv, ROUND(p.cost::numeric,2) AS cost,
+      p.imps, p.clicks,
+      mp.title, mp.image_link AS img, mp.availability, mp.price, mp.feed_label
+    FROM perf p
+    JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(p.product_item_id)
+    WHERE mp.availability='out of stock' AND p.cv > 0
+    ORDER BY p.cv DESC LIMIT 50
+  `, [SJ_CAMPAIGN_IDS, fromDate, toDate]);
+
+  // ── 2. Limited campaigns ──────────────────────────────────────────────────
+  const { rows: limitedRows } = await client.query(`
+    SELECT c.campaign_id::text, c.campaign_name, c.campaign_primary_status,
+      c.campaign_status, c.budget, c.target_roas,
+      ROUND(SUM(cp.cost)::numeric,2) AS cost_l,
+      ROUND(SUM(cp.conversion_value)::numeric,2) AS cv_l,
+      ROUND(SUM(cp.conversions)::numeric,2) AS conv_l,
+      SUM(cp.impressions) AS imp_l
+    FROM google_ads.campaigns c
+    LEFT JOIN google_ads.campaign_performance cp
+      ON cp.campaign_id=c.campaign_id AND cp.date BETWEEN $2 AND $3
+    WHERE c.campaign_id=ANY($1::bigint[]) AND c.campaign_primary_status='LIMITED'
+    GROUP BY c.campaign_id, c.campaign_name, c.campaign_primary_status,
+      c.campaign_status, c.budget, c.target_roas
+  `, [SJ_CAMPAIGN_IDS, fromDate, toDate]);
+
+  // ── 3. Sudden drops — campaign level ─────────────────────────────────────
+  const { rows: dropRows } = await client.query(`
+    SELECT cp.campaign_id::text, c.campaign_name,
+      SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.impressions ELSE 0 END)       AS imp_l,
+      SUM(CASE WHEN cp.date BETWEEN $4 AND $5 THEN cp.impressions ELSE 0 END)       AS imp_p,
+      ROUND(SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.conversion_value ELSE 0 END)::numeric,2) AS cv_l,
+      ROUND(SUM(CASE WHEN cp.date BETWEEN $4 AND $5 THEN cp.conversion_value ELSE 0 END)::numeric,2) AS cv_p,
+      ROUND(SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.conversions ELSE 0 END)::numeric,2)      AS conv_l,
+      ROUND(SUM(CASE WHEN cp.date BETWEEN $4 AND $5 THEN cp.conversions ELSE 0 END)::numeric,2)      AS conv_p,
+      ROUND(SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.cost ELSE 0 END)::numeric,2)            AS cost_l
+    FROM google_ads.campaign_performance cp
+    JOIN google_ads.campaigns c ON c.campaign_id=cp.campaign_id
+    WHERE cp.campaign_id=ANY($1::bigint[]) AND cp.date BETWEEN $4 AND $3
+    GROUP BY cp.campaign_id, c.campaign_name
+  `, [SJ_CAMPAIGN_IDS, fromDate, toDate, prevFrom, prevTo]);
+
+  const drops = dropRows.map(r => {
+    const imp_l=n(r.imp_l), imp_p=n(r.imp_p), cv_l=n(r.cv_l), cv_p=n(r.cv_p), conv_l=n(r.conv_l), conv_p=n(r.conv_p);
+    const imp_chg  = imp_p  > 0 ? ((imp_l  - imp_p)  / imp_p  * 100) : null;
+    const cv_chg   = cv_p   > 0 ? ((cv_l   - cv_p)   / cv_p   * 100) : null;
+    const conv_chg = conv_p > 0 ? ((conv_l - conv_p) / conv_p * 100) : null;
+    const alerts = [];
+    if (imp_chg  !== null && imp_chg  < -40) alerts.push({ type:'impressions', chg: Math.round(imp_chg) });
+    if (cv_chg   !== null && cv_chg   < -30) alerts.push({ type:'revenue',     chg: Math.round(cv_chg) });
+    if (conv_chg !== null && conv_chg < -30) alerts.push({ type:'conversions', chg: Math.round(conv_chg) });
+    return { cid: String(r.campaign_id), name: r.campaign_name,
+      imp_l, imp_p, cv_l, cv_p, conv_l, conv_p, cost_l: n(r.cost_l),
+      imp_chg, cv_chg, conv_chg, alerts, has_drop: alerts.length > 0 };
+  }).filter(r => r.has_drop);
+
+  // ── 4. Cross-platform top sellers with low Google visibility ─────────────
+  const { rows: cpRows } = await client.query(`
+    WITH amz AS (
+      SELECT oii.item_sku AS sku, SUM(oii.item_quantity::int) AS qty, COUNT(DISTINCT oii.order_id) AS orders
+      FROM order_management.order_item_info oii
+      JOIN order_management.orders o ON o.id=oii.order_id
+      WHERE o.order_date >= NOW()-INTERVAL '30 days' AND oii.item_sku IS NOT NULL AND oii.item_sku!=''
+      GROUP BY oii.item_sku HAVING SUM(oii.item_quantity::int)>=3
+    ),
+    goog AS (
+      SELECT mp.mpn AS sku, SUM(pp.impressions) AS imps, SUM(pp.clicks) AS clicks
+      FROM google_ads.product_performance pp
+      JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+      WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3 AND mp.mpn IS NOT NULL
+      GROUP BY mp.mpn
+    )
+    SELECT a.sku, a.qty, a.orders, COALESCE(g.imps,0) AS google_imps, COALESCE(g.clicks,0) AS google_clicks
+    FROM amz a
+    LEFT JOIN goog g ON LOWER(g.sku)=LOWER(a.sku)
+    WHERE COALESCE(g.imps,0) < 500
+    ORDER BY a.orders DESC LIMIT 20
+  `, [SJ_CAMPAIGN_IDS, fromDate, toDate]);
+
+  // ── 5. ROAS banding — product level ──────────────────────────────────────
+  const { rows: roasRows } = await client.query(`
+    SELECT pp.product_item_id, pp.campaign_id::text,
+      ROUND(SUM(pp.cost)::numeric,2)             AS cost,
+      ROUND(SUM(pp.conversion_value)::numeric,2) AS cv,
+      ROUND(SUM(pp.conversions)::numeric,4)      AS conv,
+      SUM(pp.impressions) AS imps, SUM(pp.clicks) AS clicks,
+      mp.title, mp.image_link AS img, mp.availability, mp.price, mp.mpn AS sku, mp.feed_label
+    FROM google_ads.product_performance pp
+    LEFT JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+    WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3 AND pp.product_item_id!=''
+    GROUP BY pp.product_item_id, pp.campaign_id, mp.title, mp.image_link,
+      mp.availability, mp.price, mp.mpn, mp.feed_label
+    ORDER BY cv DESC LIMIT 500
+  `, [SJ_CAMPAIGN_IDS, fromDate, toDate]);
+
+  const roasProducts = roasRows.map(r => {
+    const cost=n(r.cost), cv=n(r.cv), conv=n(r.conv), imps=n(r.imps), clicks=n(r.clicks);
+    const roas = cost > 0 ? (cv / cost * 100) : 0;
+    const ctr  = imps > 0 ? (clicks / imps * 100) : 0;
+    const avail = r.availability || 'unknown';
+    let band;
+    if (avail === 'out of stock')            band = 'oos';
+    else if (conv === 0 && cost >= 20)       band = 'zero-high';
+    else if (conv === 0 && cost >= 10)       band = 'zero-med';
+    else if (conv === 0 && cost < 5)         band = 'zero-low';
+    else if (conv === 0 && r.price && cost < n(r.price)) band = 'zero-low';
+    else if (roas >= 400 && conv > 0)        band = 'scale';
+    else if (roas >= 300)                    band = 'keep';
+    else if (roas >= 250)                    band = 'monitor';
+    else if (roas >= 100)                    band = 'reduce';
+    else if (cost > 0)                       band = 'exclude';
+    else                                     band = 'low-data';
+    return { item:r.product_item_id, cid:r.campaign_id, cost, cv, conv, imps, clicks,
+      roas:Math.round(roas*10)/10, ctr:Math.round(ctr*100)/100,
+      title:r.title||r.product_item_id, img:r.img||'', avail, price:r.price?n(r.price):null,
+      sku:r.sku||'', feed_label:r.feed_label||'', band };
+  });
+
+  // ── 6. Duplicates — same product_item_id across multiple campaigns ────────
+  const { rows: dupSkuRows } = await client.query(`
+    SELECT pp.product_item_id, ARRAY_AGG(DISTINCT pp.campaign_id::text) AS campaign_ids,
+      COUNT(DISTINCT pp.campaign_id) AS camp_count,
+      mp.title, mp.mpn AS sku
+    FROM google_ads.product_performance pp
+    LEFT JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+    WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3 AND pp.product_item_id!=''
+    GROUP BY pp.product_item_id, mp.title, mp.mpn
+    HAVING COUNT(DISTINCT pp.campaign_id) > 1
+    ORDER BY COUNT(DISTINCT pp.campaign_id) DESC, pp.product_item_id
+    LIMIT 100
+  `, [SJ_CAMPAIGN_IDS, fromDate, toDate]);
+
+  // ── 7. Duplicates — same title across different product IDs ──────────────
+  const { rows: dupTitleRows } = await client.query(`
+    SELECT LOWER(mp.title) AS norm_title, mp.title,
+      COUNT(DISTINCT mp.product_id) AS id_count,
+      ARRAY_AGG(DISTINCT mp.product_id) AS product_ids
+    FROM google_ads.merchant_products mp
+    WHERE LOWER(mp.feed_label) ILIKE ANY(ARRAY['sjgb','sj_pendant_klarna','%sj%'])
+      AND mp.title IS NOT NULL AND mp.title != ''
+    GROUP BY LOWER(mp.title), mp.title
+    HAVING COUNT(DISTINCT mp.product_id) > 1
+    ORDER BY COUNT(DISTINCT mp.product_id) DESC
+    LIMIT 50
+  `, []);
+
+  // ── 8. Duplicate Merchant Item IDs (same product_item_id, multiple rows) ──
+  const { rows: dupMerchRows } = await client.query(`
+    SELECT mp.product_id, COUNT(*) AS row_count,
+      ARRAY_AGG(DISTINCT mp.feed_label) AS feed_labels,
+      ARRAY_AGG(DISTINCT mp.availability) AS availabilities,
+      mp.title
+    FROM google_ads.merchant_products mp
+    WHERE LOWER(mp.feed_label) ILIKE ANY(ARRAY['sjgb','sj_pendant_klarna','%sj%'])
+    GROUP BY mp.product_id, mp.title
+    HAVING COUNT(*) > 1
+    ORDER BY COUNT(*) DESC LIMIT 50
+  `, []);
+
+  return {
+    morning_risk: {
+      oos_bestsellers: oosRows,
+      limited_campaigns: limitedRows,
+      drops,
+      missing_from_google: cpRows
+    },
+    roas_products: roasProducts,
+    duplicates: {
+      dup_campaigns: dupSkuRows,
+      dup_titles: dupTitleRows,
+      dup_merchant: dupMerchRows
+    }
+  };
+}
+
 async function handleSajeepan(req, res) {
   const connStr = process.env.DATABASE_URL;
   if (!connStr) return res.status(500).json({ ok: false, error: 'DATABASE_URL not configured' });
@@ -1081,6 +1269,11 @@ async function handleSajeepan(req, res) {
     if (type === 'req2') {
       const r2 = await handleSajeepanReq2(client, toDate, fromDate, prevFrom, prevTo);
       return res.status(200).json({ ok:true, meta:{from:fromDate,to:toDate,prev_from:prevFrom,prev_to:prevTo}, ...r2 });
+    }
+
+    if (type === 'req3') {
+      const r3 = await handleSajeepanReq3(client, fromDate, toDate, prevFrom, prevTo);
+      return res.status(200).json({ ok:true, meta:{from:fromDate,to:toDate,prev_from:prevFrom,prev_to:prevTo}, ...r3 });
     }
 
     if (type === 'proddetail') {
