@@ -441,6 +441,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <ul class="ms-navlist" id="msNavList">
     <li><a href="#" data-tab="1" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg></span><span class="lbl">Campaign &amp; Product Intelligence</span></a></li>
     <li><a href="#" data-tab="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Stop Waste &amp; Intel</span></a></li>
+    <li><a href="#" data-tab="3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span class="lbl">Revenue Protection &amp; PPC Actions</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -811,6 +812,171 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 
 </div><!-- /req2Panel -->
+
+<!-- ══ REQ 3 PANEL ══════════════════════════════════════════════════════════ -->
+<div id="req3Panel" style="display:none">
+
+<!-- Date + Refresh bar -->
+<div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+  <span style="font-size:12px;font-weight:700;color:#5b6577;text-transform:uppercase;letter-spacing:.5px;">Date Range</span>
+  <button class="fbtn on" id="r3-preset-30" onclick="r3SetPreset(30)">Last 30d</button>
+  <button class="fbtn"    id="r3-preset-60" onclick="r3SetPreset(60)">Last 60d</button>
+  <button class="fbtn"    id="r3-preset-90" onclick="r3SetPreset(90)">Last 90d</button>
+  <span id="r3LastUpd" style="margin-left:auto;font-size:12px;color:#5b6577;font-weight:600;">—</span>
+  <button onclick="r3Refresh()" style="border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;background:#0f172a;color:#fff;">&#8635; Refresh</button>
+</div>
+<div id="r3Loading" style="text-align:center;padding:40px;color:#5b6577;display:none;">&#8987; Loading…</div>
+<div id="r3Error"   style="display:none;background:#fce8e6;border:1px solid #f28b82;border-radius:10px;padding:12px 16px;font-size:13px;color:#b31412;margin-bottom:12px;"></div>
+
+<!-- ── SECTION A: Morning Revenue Risk ─────────────────────────────────── -->
+<div class="r2-section">
+  <div class="r2-title">🌅 Morning Revenue Risk — Protect Area <span class="cnt" id="r3RiskCnt">—</span></div>
+
+  <!-- A1: Best-selling OOS -->
+  <div style="margin-bottom:20px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+      📦 Best-Selling Products — Out of Stock <span class="cnt" id="r3OosCnt">—</span>
+      <button onclick="r3ExportCSV('oos')" style="border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);margin-left:auto;">⬇ CSV</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Products that generated revenue in this period but are currently out of stock in Merchant feed. Pause ads or restock urgently.</p>
+    <div class="scroll" style="overflow-x:auto;">
+      <table class="waste-table" id="r3OosTable">
+        <thead><tr><th>#</th><th>Product</th><th>Campaign</th><th class="num">Revenue £</th><th class="num">Conv.</th><th class="num">Cost £</th><th class="num">Imps</th><th>Feed Status</th><th>Action</th></tr></thead>
+        <tbody id="r3OosTbody"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted);">Load data to see OOS best-sellers.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- A2: Limited Campaigns -->
+  <div style="margin-bottom:20px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+      🟡 Limited Campaigns <span class="cnt" id="r3LimCnt">—</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Campaign primary status = LIMITED. Do not increase budget automatically — investigate reason in Google Ads UI first.</p>
+    <div id="r3LimList"><div style="color:var(--muted);font-size:12px;padding:12px;">Load data to see limited campaigns.</div></div>
+  </div>
+
+  <!-- A3: Sudden Drops -->
+  <div style="margin-bottom:20px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+      📉 Sudden Performance Drops <span class="cnt" id="r3DropCnt">—</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Campaigns with impressions ↓&gt;40% OR revenue ↓&gt;30% OR conversions ↓&gt;30% vs the previous equal period.</p>
+    <div id="r3DropList"><div style="color:var(--muted);font-size:12px;padding:12px;">Load data to see drops.</div></div>
+  </div>
+
+  <!-- A4: Missing from Google -->
+  <div style="margin-bottom:4px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+      🌐 Cross-Platform Winners — Low Google Visibility <span class="cnt" id="r3MissCnt">—</span>
+      <button onclick="r3ExportCSV('miss')" style="border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);margin-left:auto;">⬇ CSV</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">SKUs with 3+ orders from Amazon/eBay in last 30 days but &lt;500 Google impressions in this period. Review for campaign inclusion.</p>
+    <div class="scroll" style="overflow-x:auto;">
+      <table class="waste-table" id="r3MissTable">
+        <thead><tr><th>#</th><th>SKU</th><th class="num">Orders (30d)</th><th class="num">Units (30d)</th><th class="num">Google Imps</th><th class="num">Google Clicks</th><th>Suggestion</th></tr></thead>
+        <tbody id="r3MissTbody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Load data to see opportunities.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION B: PPC Product Action Dashboard ──────────────────────────── -->
+<div class="r2-section">
+  <div class="r2-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>⚡ PPC Product Action Dashboard <span class="cnt" id="r3ProdCnt">—</span></span>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:11px;font-weight:700;color:var(--muted);">ROAS Thresholds:</span>
+      <label style="font-size:11px;color:var(--muted);">Scale ≥<input id="r3ThScale" type="number" value="400" min="0" style="width:52px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;">%</label>
+      <label style="font-size:11px;color:var(--muted);">Keep ≥<input id="r3ThKeep"  type="number" value="300" min="0" style="width:52px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;">%</label>
+      <label style="font-size:11px;color:var(--muted);">Monitor ≥<input id="r3ThMon" type="number" value="250" min="0" style="width:52px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;">%</label>
+      <label style="font-size:11px;color:var(--muted);">Reduce ≥<input id="r3ThRed"  type="number" value="100" min="0" style="width:52px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;">%</label>
+      <button onclick="r3RenderPpcTable()" style="border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">Apply</button>
+      <button onclick="r3ExportCSV('ppc')" style="border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);">⬇ CSV</button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+    <button class="fbtn on" id="r3bf-all"      onclick="r3SetBandFilter('all')">All</button>
+    <button class="fbtn"    id="r3bf-scale"     onclick="r3SetBandFilter('scale')"    style="border-color:#137333;color:#137333;">🟢 Scale</button>
+    <button class="fbtn"    id="r3bf-keep"      onclick="r3SetBandFilter('keep')"     style="border-color:#34a853;color:#34a853;">✅ Keep</button>
+    <button class="fbtn"    id="r3bf-monitor"   onclick="r3SetBandFilter('monitor')"  style="border-color:#e37400;color:#e37400;">🟠 Monitor</button>
+    <button class="fbtn"    id="r3bf-reduce"    onclick="r3SetBandFilter('reduce')"   style="border-color:#7d1a1a;color:#7d1a1a;">🟤 Reduce</button>
+    <button class="fbtn"    id="r3bf-exclude"   onclick="r3SetBandFilter('exclude')"  style="border-color:#b31412;color:#b31412;">🔴 Exclude</button>
+    <button class="fbtn"    id="r3bf-oos"       onclick="r3SetBandFilter('oos')"      style="border-color:#5b6577;color:#5b6577;">⛔ OOS</button>
+    <button class="fbtn"    id="r3bf-zero-high" onclick="r3SetBandFilter('zero-high')" style="border-color:#ea4335;color:#ea4335;">💸 Zero Conv £20+</button>
+    <button class="fbtn"    id="r3bf-zero-med"  onclick="r3SetBandFilter('zero-med')" style="border-color:#fbbc04;color:#e37400;">⚠️ Zero Conv £10-20</button>
+    <button class="fbtn"    id="r3bf-low-data"  onclick="r3SetBandFilter('low-data')" style="border-color:#aaa;color:#aaa;">🔵 Low Data</button>
+  </div>
+
+  <div id="r3BandSummary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+
+  <div class="scroll" style="overflow-x:auto;">
+    <table class="waste-table" id="r3PpcTable" style="min-width:1100px;">
+      <thead><tr>
+        <th>#</th><th>Image</th><th>Product</th><th>Campaign</th>
+        <th class="num">Cost £</th><th class="num">Revenue £</th>
+        <th class="num">ROAS %</th><th class="num">Conv.</th>
+        <th class="num">Imps</th><th>Feed</th><th>PPC Action</th>
+      </tr></thead>
+      <tbody id="r3PpcTbody"><tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted);">Load data to see PPC actions.</td></tr></tbody>
+    </table>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;flex-wrap:wrap;gap:6px;">
+    <span id="r3PpcInfo" style="font-size:12px;color:var(--muted);">—</span>
+    <div style="display:flex;gap:4px;" id="r3PpcPager"></div>
+  </div>
+</div>
+
+<!-- ── SECTION C: Duplicate Products ────────────────────────────────────── -->
+<div class="r2-section">
+  <div class="r2-title">🔁 Duplicate Product Findings</div>
+
+  <div style="margin-bottom:20px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;">Same Product ID in Multiple Campaigns <span class="cnt" id="r3DupCampCnt">—</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Same product_item_id appearing across more than one Sajeepan campaign — may split budget and signal confusion.</p>
+    <div class="scroll" style="overflow-x:auto;">
+      <table class="waste-table" id="r3DupCampTable">
+        <thead><tr><th>#</th><th>Product ID</th><th>Title / SKU</th><th>Campaigns</th><th class="num">Campaign Count</th></tr></thead>
+        <tbody id="r3DupCampTbody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">Load data.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;">Duplicate Product Titles (Different IDs) <span class="cnt" id="r3DupTitleCnt">—</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Same title submitted under multiple product IDs in Merchant feed — possible duplicate listings.</p>
+    <div class="scroll" style="overflow-x:auto;">
+      <table class="waste-table" id="r3DupTitleTable">
+        <thead><tr><th>#</th><th>Title</th><th class="num">ID Count</th><th>Product IDs</th></tr></thead>
+        <tbody id="r3DupTitleTbody"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">Load data.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;">Duplicate Merchant Item IDs (Multiple Feed Rows) <span class="cnt" id="r3DupMerchCnt">—</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Same product_id submitted across multiple feed rows — check for feed conflicts.</p>
+    <div class="scroll" style="overflow-x:auto;">
+      <table class="waste-table" id="r3DupMerchTable">
+        <thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Feed Labels</th><th>Availability</th><th class="num">Row Count</th></tr></thead>
+        <tbody id="r3DupMerchTbody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Load data.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION D: Unsupported ────────────────────────────────────────────── -->
+<div class="r2-section" style="background:#f8f9fa;border:1px dashed var(--line);">
+  <div class="r2-title" style="color:var(--muted);">ℹ️ Features Not Supported — Data Not in DB</div>
+  <div class="r2-unsupported">❌ <strong>Merchant Centre Disapprovals</strong> — GMC Content API not connected. No eligibility/approval/policy columns exist on merchant_products. Check Google Merchant Center UI directly.</div>
+  <div class="r2-unsupported">❌ <strong>GTIN Duplicate Detection</strong> — No GTIN/barcode/EAN field in any table (confirmed missing from both Postgres and MySQL source).</div>
+  <div class="r2-unsupported">❌ <strong>Feed Staleness / Last Updated</strong> — merchant_products has no updated_at timestamp. Rows are upserted each sync with no change history.</div>
+  <div class="r2-unsupported">❌ <strong>Numeric Shopify Stock</strong> — No working join from Google product IDs to Shopify variant stock quantity. Availability shown as In Stock / Out of Stock from Merchant feed only.</div>
+  <div class="r2-unsupported">❌ <strong>Duplicate Variant Attributes</strong> — selected_variations stored as JSONB with no structured colour/size columns — cross-variant comparison not possible.</div>
+</div>
+
+</div><!-- /req3Panel -->
 
 <!-- Product Detail Drawer -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
@@ -1677,9 +1843,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
 function switchReqTab(n){
   document.getElementById('req1Panel').style.display = n===1?'':'none';
   document.getElementById('req2Panel').style.display = n===2?'':'none';
+  var r3 = document.getElementById('req3Panel'); if(r3) r3.style.display = n===3?'':'none';
   var t1 = document.getElementById('tab-req1'); if (t1) { t1.classList.toggle('on', n===1); }
   var t2 = document.getElementById('tab-req2'); if (t2) { t2.classList.toggle('on', n===2); }
+  var t3 = document.getElementById('tab-req3'); if (t3) { t3.classList.toggle('on', n===3); }
   if(n===2 && !r2Loaded) r2SetPreset(30);
+  if(n===3 && !r3Loaded) r3SetPreset(30);
 }
 
 /* ============================================================
@@ -1944,6 +2113,295 @@ function r2RenderWindows(){
   if(el30) el30.innerHTML = wMetrics(ws.d30);
   if(el60) el60.innerHTML = wMetrics(ws.d60);
   if(el90) el90.innerHTML = wMetrics(ws.d90);
+}
+
+/* ============================================================
+   REQUIREMENT 3 — Revenue Protection & PPC Actions
+   ============================================================ */
+var R3 = { morning_risk:{oos_bestsellers:[],limited_campaigns:[],drops:[],missing_from_google:[]}, roas_products:[], duplicates:{dup_campaigns:[],dup_titles:[],dup_merchant:[]} };
+var r3Loaded = false;
+var r3BandFilter = 'all';
+var r3PpcPage = 0;
+const R3_PG = 25;
+
+const SJ_CAMP_SHORT = {
+  '21069663519':'SJ_PENDANT_KLARNA','23110323532':'HIGH REVENUE PH',
+  '23516313256':'SJ_TOP_20','23590572906':'zero conv2',
+  '22079334413':'SJALL HERO','21242723265':'ALLACRSJ2 Access.'
+};
+function r3CampShort(id){ return SJ_CAMP_SHORT[id]||id; }
+
+function r3SetPreset(days){
+  ['30','60','90'].forEach(d=>{ const el=document.getElementById('r3-preset-'+d); if(el) el.classList.toggle('on',Number(d)===days); });
+  const to=isoDate(new Date()), from=daysAgo(days-1);
+  r3LoadData(from, to);
+}
+function r3Refresh(){ r3LoadData(null,null); }
+
+async function r3LoadData(from, to){
+  const loading=document.getElementById('r3Loading');
+  const errBox =document.getElementById('r3Error');
+  if(loading) loading.style.display='block';
+  if(errBox)  errBox.style.display='none';
+  try {
+    const url = from && to
+      ? `/api/members-api?member=sajeepan&type=req3&from=${from}&to=${to}`
+      : '/api/members-api?member=sajeepan&type=req3';
+    const res  = await fetch(url);
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error||'API error');
+    R3 = { morning_risk: json.morning_risk||{}, roas_products: json.roas_products||[], duplicates: json.duplicates||{} };
+    const meta = json.meta||{};
+    const upd = document.getElementById('r3LastUpd');
+    if(upd) upd.textContent=`Data: ${meta.from||''} → ${meta.to||''}`;
+    r3Loaded=true;
+    r3Render();
+  } catch(err){
+    if(errBox){ errBox.style.display='block'; errBox.innerHTML=`<strong>Could not load Req 3 data:</strong> ${err.message}`; }
+  } finally {
+    if(loading) loading.style.display='none';
+  }
+}
+
+function r3Render(){
+  r3RenderOos();
+  r3RenderLimited();
+  r3RenderDrops();
+  r3RenderMissing();
+  r3RenderPpcTable();
+  r3RenderDuplicates();
+  const risk = R3.morning_risk;
+  const cnt = (risk.oos_bestsellers||[]).length + (risk.limited_campaigns||[]).length
+    + (risk.drops||[]).length + (risk.missing_from_google||[]).length;
+  const el = document.getElementById('r3RiskCnt'); if(el) el.textContent=cnt;
+}
+
+function r3RenderOos(){
+  const list = R3.morning_risk.oos_bestsellers||[];
+  const cnt = document.getElementById('r3OosCnt'); if(cnt) cnt.textContent=list.length;
+  const tbody = document.getElementById('r3OosTbody');
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:16px;color:var(--green-tx);font-weight:600;">✅ No best-sellers currently out of stock.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=list.map((p,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.title||''}">${p.title||p.product_item_id||'—'}</td>
+    <td style="font-size:11.5px;">${r3CampShort(p.campaign_id)}</td>
+    <td class="num" style="font-weight:700;color:var(--accent2);">£${Number(p.cv||0).toFixed(2)}</td>
+    <td class="num">${Number(p.conv||0).toFixed(2)}</td>
+    <td class="num" style="color:var(--accent3);">£${Number(p.cost||0).toFixed(2)}</td>
+    <td class="num">${Number(p.imps||0).toLocaleString()}</td>
+    <td><span class="badge b-outstock">Out of Stock</span></td>
+    <td><span style="font-size:11px;font-weight:700;color:var(--accent3);">⛔ Pause / Restock</span></td>
+  </tr>`).join('');
+}
+
+function r3RenderLimited(){
+  const list = R3.morning_risk.limited_campaigns||[];
+  const cnt = document.getElementById('r3LimCnt'); if(cnt) cnt.textContent=list.length;
+  const el = document.getElementById('r3LimList');
+  if(!list.length){
+    el.innerHTML='<div style="color:var(--green-tx);font-size:12px;font-weight:600;padding:8px;">✅ No LIMITED campaigns.</div>';
+    return;
+  }
+  el.innerHTML=list.map(c=>{
+    const roas = Number(c.cost_l)>0 ? (Number(c.cv_l)/Number(c.cost_l)*100).toFixed(0) : '—';
+    return `<div class="morning-action ma-amber" style="margin-bottom:8px;">
+      <div class="ma-num">!</div>
+      <div class="ma-body">
+        <div class="ma-title">${c.campaign_name}</div>
+        <div class="ma-desc">Status: <strong>LIMITED</strong> · Budget: £${c.budget||'?'}/d · Cost: £${Number(c.cost_l||0).toFixed(0)} · Revenue: £${Number(c.cv_l||0).toFixed(0)} · ROAS: ${roas}% · Conv: ${Number(c.conv_l||0).toFixed(1)}</div>
+        <div class="ma-desc" style="margin-top:4px;color:var(--accent3);">⚠️ Limitation reason not in DB — investigate in Google Ads UI before increasing budget.</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function r3RenderDrops(){
+  const list = R3.morning_risk.drops||[];
+  const cnt = document.getElementById('r3DropCnt'); if(cnt) cnt.textContent=list.length;
+  const el = document.getElementById('r3DropList');
+  if(!list.length){
+    el.innerHTML='<div style="color:var(--green-tx);font-size:12px;font-weight:600;padding:8px;">✅ No sudden drops detected.</div>';
+    return;
+  }
+  el.innerHTML=list.map(d=>{
+    const alertHtml = d.alerts.map(a=>{
+      const icon = a.type==='impressions'?'👁️':a.type==='revenue'?'💰':'🎯';
+      return `<span style="background:var(--red-bg);color:var(--red-tx);border:1px solid var(--red-bd);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:4px;">${icon} ${a.type} ${a.chg}%</span>`;
+    }).join('');
+    return `<div class="morning-action ma-red" style="margin-bottom:8px;">
+      <div class="ma-num">↓</div>
+      <div class="ma-body">
+        <div class="ma-title">${d.name}</div>
+        <div class="ma-desc" style="margin-bottom:6px;">${alertHtml}</div>
+        <div class="ma-desc">Current: £${d.cv_l.toFixed(0)} rev · ${d.conv_l.toFixed(1)} conv · ${Number(d.imp_l).toLocaleString()} imps &nbsp;|&nbsp; Prev: £${d.cv_p.toFixed(0)} rev · ${d.conv_p.toFixed(1)} conv · ${Number(d.imp_p).toLocaleString()} imps</div>
+        <div class="ma-desc" style="margin-top:4px;color:var(--accent3);">Investigate: stock, feed status, campaign changes, search demand, bids &amp; budget.</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function r3RenderMissing(){
+  const list = R3.morning_risk.missing_from_google||[];
+  const cnt = document.getElementById('r3MissCnt'); if(cnt) cnt.textContent=list.length;
+  const tbody = document.getElementById('r3MissTbody');
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted);">No cross-platform winners with low Google visibility found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=list.map((r,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="font-weight:600;font-family:monospace;font-size:11.5px;">${r.sku}</td>
+    <td class="num">${r.orders}</td>
+    <td class="num">${r.qty}</td>
+    <td class="num" style="color:${Number(r.google_imps)<100?'var(--accent3)':'var(--muted)'};">${Number(r.google_imps).toLocaleString()}</td>
+    <td class="num">${r.google_clicks}</td>
+    <td><span style="font-size:11px;font-weight:700;color:var(--accent);">Review for campaign inclusion</span></td>
+  </tr>`).join('');
+}
+
+const BAND_META = {
+  'scale':     { label:'Scale',           color:'#137333', bg:'#e6f4ea', action:'Scale carefully / increase visibility' },
+  'keep':      { label:'Keep',            color:'#34a853', bg:'#f0faf2', action:'Keep running normally' },
+  'monitor':   { label:'Monitor',         color:'#e37400', bg:'#fef3e2', action:'Monitor — check CPC, CVR, search terms' },
+  'reduce':    { label:'Reduce',          color:'#7d1a1a', bg:'#f9eded', action:'Reduce exposure / lower priority' },
+  'exclude':   { label:'Exclude',         color:'#b31412', bg:'#fce8e6', action:'Exclude from PPC — low ROAS with enough data' },
+  'oos':       { label:'OOS — Exclude',   color:'#5b6577', bg:'#f1f3f4', action:'Pause immediately — out of stock in feed' },
+  'zero-high': { label:'Zero Conv £20+',  color:'#b31412', bg:'#fce8e6', action:'Exclude / pause — significant waste' },
+  'zero-med':  { label:'Zero Conv £10-20',color:'#e37400', bg:'#fef3e2', action:'Monitor / reduce exposure' },
+  'zero-low':  { label:'Low Data',        color:'#5b6577', bg:'#f1f3f4', action:'Wait for more data' },
+  'low-data':  { label:'Low Data',        color:'#5b6577', bg:'#f1f3f4', action:'Wait for more data' },
+};
+
+function r3GetBand(p){
+  const thScale = Number(document.getElementById('r3ThScale')?.value||400);
+  const thKeep  = Number(document.getElementById('r3ThKeep') ?.value||300);
+  const thMon   = Number(document.getElementById('r3ThMon')  ?.value||250);
+  const thRed   = Number(document.getElementById('r3ThRed')  ?.value||100);
+  const avail = p.avail||'unknown';
+  const cost=p.cost, cv=p.cv, conv=p.conv, roas=p.roas;
+  if (avail==='out of stock')              return 'oos';
+  if (conv===0 && cost>=20)               return 'zero-high';
+  if (conv===0 && cost>=10)               return 'zero-med';
+  if (conv===0 && p.price && cost<p.price)return 'zero-low';
+  if (conv===0 && cost<5)                 return 'zero-low';
+  if (roas>=thScale && conv>0)            return 'scale';
+  if (roas>=thKeep)                       return 'keep';
+  if (roas>=thMon)                        return 'monitor';
+  if (roas>=thRed)                        return 'reduce';
+  if (cost>0)                             return 'exclude';
+  return 'low-data';
+}
+
+function r3SetBandFilter(band){
+  r3BandFilter=band;
+  r3PpcPage=0;
+  document.querySelectorAll('[id^="r3bf-"]').forEach(b=>b.classList.remove('on'));
+  const el=document.getElementById('r3bf-'+band); if(el) el.classList.add('on');
+  r3RenderPpcTable();
+}
+
+function r3RenderPpcTable(){
+  const all = R3.roas_products||[];
+  const banded = all.map(p=>({...p, band:r3GetBand(p)}));
+  const counts={};
+  banded.forEach(p=>{ counts[p.band]=(counts[p.band]||0)+1; });
+  const sumEl=document.getElementById('r3BandSummary');
+  if(sumEl) sumEl.innerHTML=Object.entries(BAND_META).map(([k,m])=>{
+    const c=counts[k]||0; if(!c) return '';
+    return `<span style="background:${m.bg};color:${m.color};border:1px solid ${m.color}40;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;" onclick="r3SetBandFilter('${k}')">${m.label}: ${c}</span>`;
+  }).join('');
+  const cnt=document.getElementById('r3ProdCnt'); if(cnt) cnt.textContent=all.length;
+  const filtered = r3BandFilter==='all' ? banded : banded.filter(p=>p.band===r3BandFilter);
+  const pages = Math.ceil(filtered.length/R3_PG);
+  const slice = filtered.slice(r3PpcPage*R3_PG, (r3PpcPage+1)*R3_PG);
+  const tbody = document.getElementById('r3PpcTbody');
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted);">No products match this filter.</td></tr>';
+  } else {
+    tbody.innerHTML=slice.map((p,i)=>{
+      const m=BAND_META[p.band]||{label:p.band,color:'#5b6577',bg:'#f1f3f4',action:'—'};
+      const imgHtml=p.img?`<img src="${p.img}" style="width:34px;height:34px;border-radius:5px;object-fit:cover;" onerror="this.style.display='none'">`:'<div style="width:34px;height:34px;border-radius:5px;background:#e8eaf0;"></div>';
+      const availBadge=p.avail==='in stock'?'<span class="badge b-active">In Stock</span>':'<span class="badge b-outstock">'+(p.avail||'OOS')+'</span>';
+      return `<tr style="background:${m.bg}10;">
+        <td class="num">${r3PpcPage*R3_PG+i+1}</td>
+        <td>${imgHtml}</td>
+        <td style="max-width:200px;"><span style="font-size:12px;font-weight:600;color:var(--ink);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.title}">${p.title}</span><span style="font-size:10.5px;color:var(--muted);">${p.sku||''}</span></td>
+        <td style="font-size:11.5px;">${r3CampShort(p.cid)}</td>
+        <td class="num" style="color:var(--accent3);">£${p.cost.toFixed(2)}</td>
+        <td class="num" style="color:var(--accent2);font-weight:700;">£${p.cv.toFixed(2)}</td>
+        <td class="num"><span class="roas-pill ${roasClass(p.roas)}">${p.roas.toFixed(0)}%</span></td>
+        <td class="num">${p.conv.toFixed(2)}</td>
+        <td class="num">${Number(p.imps).toLocaleString()}</td>
+        <td>${availBadge}</td>
+        <td><span style="font-size:11px;font-weight:700;background:${m.bg};color:${m.color};border:1px solid ${m.color}40;border-radius:6px;padding:3px 8px;white-space:nowrap;">${m.label}</span><div style="font-size:10px;color:var(--muted);margin-top:3px;">${m.action}</div></td>
+      </tr>`;
+    }).join('');
+  }
+  const infoEl=document.getElementById('r3PpcInfo');
+  if(infoEl) infoEl.textContent=`Showing ${r3PpcPage*R3_PG+1}–${Math.min((r3PpcPage+1)*R3_PG,filtered.length)} of ${filtered.length} products`;
+  const pager=document.getElementById('r3PpcPager');
+  if(pager){
+    pager.innerHTML='';
+    if(r3PpcPage>0){ const b=document.createElement('button');b.className='pg-btn';b.textContent='← Prev';b.onclick=()=>{r3PpcPage--;r3RenderPpcTable();};pager.appendChild(b); }
+    let s=Math.max(0,r3PpcPage-2),e=Math.min(pages-1,s+4);s=Math.max(0,e-4);
+    for(let j=s;j<=e;j++){const b=document.createElement('button');b.className='pg-btn'+(j===r3PpcPage?' on':'');b.textContent=j+1;b.onclick=(()=>{const jj=j;return()=>{r3PpcPage=jj;r3RenderPpcTable();}; })();pager.appendChild(b);}
+    if(r3PpcPage<pages-1){const b=document.createElement('button');b.className='pg-btn';b.textContent='Next →';b.onclick=()=>{r3PpcPage++;r3RenderPpcTable();};pager.appendChild(b);}
+  }
+}
+
+function r3RenderDuplicates(){
+  const dup=R3.duplicates||{};
+  const dc=dup.dup_campaigns||[];
+  const dcCnt=document.getElementById('r3DupCampCnt'); if(dcCnt) dcCnt.textContent=dc.length;
+  document.getElementById('r3DupCampTbody').innerHTML=dc.length ? dc.map((r,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="font-family:monospace;font-size:10.5px;max-width:200px;word-break:break-all;">${r.product_item_id}</td>
+    <td style="font-size:11.5px;">${r.title||'—'}<div style="font-size:10.5px;color:var(--muted);">${r.sku||''}</div></td>
+    <td style="font-size:11px;">${(r.campaign_ids||[]).map(id=>r3CampShort(id)).join(', ')}</td>
+    <td class="num"><span style="font-weight:700;color:var(--accent3);">${r.camp_count}</span></td>
+  </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--green-tx);font-weight:600;">✅ No duplicate campaign appearances found.</td></tr>';
+  const dt=dup.dup_titles||[];
+  const dtCnt=document.getElementById('r3DupTitleCnt'); if(dtCnt) dtCnt.textContent=dt.length;
+  document.getElementById('r3DupTitleTbody').innerHTML=dt.length ? dt.map((r,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="font-size:12px;max-width:260px;">${r.title}</td>
+    <td class="num" style="font-weight:700;color:var(--accent3);">${r.id_count}</td>
+    <td style="font-size:10.5px;font-family:monospace;max-width:260px;word-break:break-all;">${(r.product_ids||[]).slice(0,5).join(', ')}</td>
+  </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--green-tx);font-weight:600;">✅ No duplicate titles found.</td></tr>';
+  const dm=dup.dup_merchant||[];
+  const dmCnt=document.getElementById('r3DupMerchCnt'); if(dmCnt) dmCnt.textContent=dm.length;
+  document.getElementById('r3DupMerchTbody').innerHTML=dm.length ? dm.map((r,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="font-family:monospace;font-size:10.5px;max-width:180px;word-break:break-all;">${r.product_id}</td>
+    <td style="font-size:11.5px;max-width:200px;">${r.title||'—'}</td>
+    <td style="font-size:11px;">${(r.feed_labels||[]).join(', ')}</td>
+    <td>${(r.availabilities||[]).join(', ')}</td>
+    <td class="num" style="font-weight:700;color:var(--accent3);">${r.row_count}</td>
+  </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--green-tx);font-weight:600;">✅ No duplicate merchant items found.</td></tr>';
+}
+
+function r3ExportCSV(type){
+  let rows=[], filename='';
+  if(type==='oos'){
+    filename='sj_r3_oos_bestsellers.csv';
+    rows=[['#','Title','Campaign','Revenue £','Conv','Cost £','Impressions','Availability']];
+    (R3.morning_risk.oos_bestsellers||[]).forEach((p,i)=>rows.push([i+1,p.title||'',r3CampShort(p.campaign_id),Number(p.cv||0).toFixed(2),Number(p.conv||0).toFixed(2),Number(p.cost||0).toFixed(2),p.imps,p.availability]));
+  } else if(type==='miss'){
+    filename='sj_r3_missing_google.csv';
+    rows=[['#','SKU','Orders 30d','Units 30d','Google Imps','Google Clicks']];
+    (R3.morning_risk.missing_from_google||[]).forEach((r,i)=>rows.push([i+1,r.sku,r.orders,r.qty,r.google_imps,r.google_clicks]));
+  } else if(type==='ppc'){
+    filename='sj_r3_ppc_actions.csv';
+    rows=[['#','Product','SKU','Campaign','Cost £','Revenue £','ROAS %','Conv','Impressions','Feed','Band','Action']];
+    const banded=(R3.roas_products||[]).map(p=>({...p,band:r3GetBand(p)}));
+    const filtered=r3BandFilter==='all'?banded:banded.filter(p=>p.band===r3BandFilter);
+    filtered.forEach((p,i)=>{const m=BAND_META[p.band]||{};rows.push([i+1,p.title,p.sku||'',r3CampShort(p.cid),p.cost.toFixed(2),p.cv.toFixed(2),p.roas.toFixed(1),p.conv.toFixed(2),p.imps,p.avail,m.label||'',m.action||'']);});
+  }
+  const csv=rows.map(r=>r.map(v=>'"'+(String(v).replace(/"/g,'""'))+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=filename;a.click();
 }
 
 /* ============================================================
