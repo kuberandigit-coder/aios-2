@@ -12,3 +12,4 @@ shopify.theme.toml.local
 
 # Shopify theme repos — each has its own .git
 shopify-themes/
+piranav_aios/
