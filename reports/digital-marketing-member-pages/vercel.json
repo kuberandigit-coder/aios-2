@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/", "destination": "/login.html" }
+  ],
   "functions": {
     "api/sales.js": { "maxDuration": 300 },
     "api/requirement.js": { "maxDuration": 300 },

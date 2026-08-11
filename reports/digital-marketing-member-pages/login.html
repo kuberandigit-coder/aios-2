@@ -134,7 +134,8 @@ form.addEventListener('submit', async (e) => {
     if (!res.ok || !data.success) {
       throw new Error(data.error || 'Invalid username or password.');
     }
-    window.location.href = data.redirect || 'home.html';
+    if (!data.redirect) throw new Error('No landing page configured for this account.');
+    window.location.href = data.redirect;
   } catch (err) {
     errorText.textContent = err.message || 'Something went wrong. Please try again.';
     errorBox.classList.add('show');
