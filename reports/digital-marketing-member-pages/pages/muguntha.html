@@ -178,10 +178,6 @@ tbody tr:hover td:first-child{color:var(--accent);}
   <div class="sidebar-spacer"></div>
 
   <div class="sidebar-foot">
-    <div class="dev-badge">
-      <div class="av">K</div>
-      <div class="devbadge-txt"><b>Developed by</b><span>Kuberan</span></div>
-    </div>
     <a href="#" class="back-btn" id="signOutBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
       <span class="lbl" id="signOutLbl">Log Out</span>
@@ -227,6 +223,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
     <div class="filters" id="dilaksiFilters" style="display:none;">
       <span class="chip live" id="statusChip-dilaksi">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-dilaksi">Refresh (live)</button>
+    </div>
+    <div class="filters" id="thasithaFilters" style="display:none;">
+      <span class="chip live" id="statusChip-thasitha">Loading&hellip;</span>
+      <button class="primary" id="refreshBtn-thasitha">Refresh (live)</button>
     </div>
   </div>
 
