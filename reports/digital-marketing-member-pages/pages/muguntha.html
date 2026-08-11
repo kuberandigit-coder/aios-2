@@ -203,6 +203,7 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
       <h1 id="pageTitle">Employee Performance &mdash; Sonya</h1>
       <div class="sub" id="pageSub">Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales excludes tax, shipping, discounts & refunds (net sales) &middot; ADS Cost is Google Ads spend on Sonya's campaigns &middot; Target ROAS 30%</div>
       <select id="memberSelect" style="margin-top:10px;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:13px;font-weight:600;cursor:pointer;"></select>
+      <style>#memberSelect option{color:#1a2233;background:#fff;}</style>
     </div>
     <div class="filters" id="sonyaFilters">
       <span class="chip live" id="statusChip">Loading&hellip;</span>
@@ -393,6 +394,37 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
       </div>
     </div>
 
+    <div id="panel-thasitha" class="member-panel" style="display:none;">
+      <div class="cards" id="kpiCards-thasitha"></div>
+
+      <div class="tablebox">
+        <div class="tbar">
+          <strong>Month-by-Month &mdash; Thasitha</strong>
+          <span id="rowCount-thasitha"></span>
+        </div>
+        <div class="scroll">
+          <table id="mainTable-thasitha">
+            <thead>
+              <tr>
+                <th>Month</th><th>Name</th>
+                <th class="num">Sales</th><th class="num">Total Cost</th><th class="num">Net</th><th class="num">ROAS</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tblBody-thasitha"><tr><td colspan="7" class="loading">Loading Thasitha's performance&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnotes">
+        <strong>Data sources.</strong><br>
+        Thasitha joined Google Ads (Paid Search) on the <strong>DE store (ledsone.de)</strong> in April 2026 (first campaign start date 2026-04-20, confirmed via <code>google_ads.campaigns</code>) &mdash; unlike Sonya/Sajeepan/Kamsi/Jefri/Dilaksi, there is no 2025 data for her at all, so this panel shows a single continuous timeline (<strong>May 2026 onward</strong> &mdash; her first full calendar month &mdash; through the current live month) instead of a 2025-vs-2026 comparison. No Target Achievement / YoY Growth % columns, since there's no prior-year baseline to measure against.<br>
+        Sales (incl. tax + shipping) &mdash; <code>combinedSummary.orderTotalSum</code>, the order total for every order whose first-session <code>utm_term</code> exactly matches "thasi" (case-insensitive) &mdash; the same confirmed rule already used on the Thasitha Ads tab of sales.html, live <code>/api/sales?staff=thasitha-ads</code>. Store-wide, not product-scoped.<br>
+        Total Cost &mdash; <code>SUM(google_ads.campaign_performance.cost)</code> for Thasitha's campaigns (<code>google_ads.campaigns WHERE group_name='Thasi' AND account_id=9031058245</code>, the same campaigns used on thasitha.html's Requirement tabs), for the month. No DM-style shared-campaign product-share concept applies here (DE account, not the UK account that construct is specific to).<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost, shown as N/A when Cost is &euro;0.<br>
+        Status: <span class="pill notarchived">Not-Archived</span> = current live month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+      </div>
+    </div>
+
     <div id="panel-placeholder" class="member-panel" style="display:none;">
       <div class="comingsoon">
         <div class="comingsoon-avatar" id="csAvatar">?</div>
@@ -434,6 +466,10 @@ const MONTH_NAME = {'01':'January','02':'February','03':'March','04':'April','05
 const LIVE_2026 = ['2026-08'];
 
 function fmtMoney(n){ return '£' + (Math.round((n||0)*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// Thasitha's store is ledsone.de (EUR) — a dedicated EUR formatter, not
+// reusing fmtMoney's £ symbol (which mislabels Jefri's already-EUR figures
+// too, an existing inconsistency not introduced here or touched).
+function fmtMoneyEur(n){ return '€' + (Math.round((n||0)*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPct(n){ return isFinite(n) ? (Math.round(n*10000)/100).toFixed(2) + '%' : 'N/A'; }
 
 // Jefri runs on the DE store/account, with his own pre-existing endpoints
@@ -657,6 +693,111 @@ function renderCards(rows, idSuffix){
   ).join('');
 }
 
+// ---------- Thasitha: single-timeline panel (joined April 2026, no 2025
+// data — does NOT reuse the shared loadAll()/renderTable()/renderCards()
+// machinery above, which is hardcoded around a 2025-vs-2026 dual-year row
+// shape with YoY Growth %/Target Achievement columns that don't apply to
+// her. Added 2026-08-11, per explicit instruction: data from May 2026
+// (her first full calendar month) through the current live month only. ----------
+const THASITHA_START_MONTH = '2026-05';
+
+async function fetchThasithaSales(month, force){
+  const url = '/api/sales?staff=thasitha-ads&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || ('thasitha-ads failed for ' + month));
+  if (!data.combinedSummary) return 0;
+  // orderTotalSum (incl. tax + shipping) — same convention as Jefri, the
+  // other DE/Google-Ads-paid tab on this page (not netSales, which is what
+  // the UK SEO/Organic tabs show).
+  return data.combinedSummary.orderTotalSum;
+}
+
+function thasithaMonthList(){
+  const now = new Date();
+  const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  return MONTHS_2026.filter((m) => m >= THASITHA_START_MONTH && m <= currentMonth);
+}
+
+async function loadThasitha(force){
+  const statusChip = document.getElementById('statusChip-thasitha');
+  const refreshBtn = document.getElementById('refreshBtn-thasitha');
+  const tbody = document.getElementById('tblBody-thasitha');
+  refreshBtn.disabled = true;
+  statusChip.textContent = 'Loading…';
+  tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading Thasitha\'s performance…</td></tr>';
+
+  try {
+    const months = thasithaMonthList();
+    // Same rule as everyone else: only the live/current month is ever
+    // force-refreshed on "Refresh (live)" — closed months already have a
+    // static snapshot (Sales side) / are cheap live queries (Cost side).
+    const [salesArr, costArr] = await Promise.all([
+      mapLimit(months, 5, (m) => fetchThasithaSales(m, force && LIVE_2026.includes(m))),
+      mapLimit(months, 5, (m) => fetchCost('thasitha', m, force && LIVE_2026.includes(m))),
+    ]);
+
+    const rows = months.map((m, i) => {
+      const sales = salesArr[i];
+      const cost = costArr[i];
+      const costVal = cost ? cost.totalCost : null;
+      const net = (sales != null && costVal != null) ? sales - costVal : null;
+      const roas = (sales != null && costVal > 0) ? sales / costVal : null;
+      const isLive = LIVE_2026.includes(m);
+      return { m, monthLabel: MONTH_NAME[m.slice(5)] + ' ' + m.slice(0, 4), sales, costVal, net, roas, isLive };
+    });
+
+    renderThasithaTable(rows);
+    renderThasithaCards(rows);
+    statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Error: ' + (err.message || err) + '</td></tr>';
+    statusChip.textContent = 'Error';
+  } finally {
+    refreshBtn.disabled = false;
+  }
+}
+
+function renderThasithaTable(rows){
+  const tbody = document.getElementById('tblBody-thasitha');
+  document.getElementById('rowCount-thasitha').textContent = rows.length + ' months';
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">No data</td></tr>'; return; }
+  const netCell = (v) => v != null ? ('<span class="' + (v >= 0 ? 'up' : 'down') + '">' + fmtMoneyEur(v) + '</span>') : 'N/A';
+  const roasCell = (v) => {
+    if (v == null) return 'N/A';
+    const cls = v >= TARGET_ROAS ? 'up' : (v >= TARGET_ROAS * 0.7 ? 'roas-warn' : 'down');
+    return '<span class="' + cls + '">' + fmtPct(v) + '</span>';
+  };
+  tbody.innerHTML = rows.map((r) => {
+    const statusPill = r.isLive ? '<span class="pill notarchived">Not-Archived</span>' : '<span class="pill archived">Archived</span>';
+    return '<tr>' +
+      '<td>' + r.monthLabel + '</td>' +
+      '<td>Thasitha</td>' +
+      '<td class="num">' + (r.sales != null ? fmtMoneyEur(r.sales) : 'N/A') + '</td>' +
+      '<td class="num">' + (r.costVal != null ? fmtMoneyEur(r.costVal) : 'N/A') + '</td>' +
+      '<td class="num">' + netCell(r.net) + '</td>' +
+      '<td class="num">' + roasCell(r.roas) + '</td>' +
+      '<td>' + statusPill + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderThasithaCards(rows){
+  const sum = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0);
+  const totalSales = sum('sales'), totalCost = sum('costVal');
+  const totalNet = totalSales - totalCost;
+  const avgRoas = totalCost > 0 ? totalSales / totalCost : null;
+  const cards = [
+    { label: 'Total Sales (May 2026–now)', value: fmtMoneyEur(totalSales) },
+    { label: 'Total Cost', value: fmtMoneyEur(totalCost) },
+    { label: 'Total Net Profit', value: fmtMoneyEur(totalNet), cls: totalNet >= 0 ? 'good' : 'warn' },
+    { label: 'Avg ROAS', value: avgRoas != null ? fmtPct(avgRoas) : 'N/A' },
+  ];
+  document.getElementById('kpiCards-thasitha').innerHTML = cards.map((c) =>
+    '<div class="card' + (c.cls ? ' ' + c.cls : '') + '"><div class="label">' + c.label + '</div><div class="value">' + c.value + '</div></div>'
+  ).join('');
+}
+
 // ---------- Member tab switching (all members share this one page; Sonya
 // and Sajeepan have real data built; others show a "coming soon" panel in
 // place, per user instruction 2026-08-04: no standalone pages per member). ----------
@@ -679,6 +820,7 @@ document.getElementById('refreshBtn-sajeepan').addEventListener('click', () => l
 document.getElementById('refreshBtn-kamsi').addEventListener('click', () => loadAll('kamsi', '-kamsi', true));
 document.getElementById('refreshBtn-jefri').addEventListener('click', () => loadAll('jefri', '-jefri', true));
 document.getElementById('refreshBtn-dilaksi').addEventListener('click', () => loadAll('dilaksi', '-dilaksi', true));
+document.getElementById('refreshBtn-thasitha').addEventListener('click', () => loadThasitha(true));
 // Lazy-load: only fetch the tab that's actually visible. Each loadAll()
 // fires 20 months x 2 (sales+cost) = 40 requests; loading all 3 built
 // members on every page load (120 requests) was the real cause of slow
@@ -695,8 +837,8 @@ const pageTitle = document.getElementById('pageTitle');
 const pageSub = document.getElementById('pageSub');
 const csAvatar = document.getElementById('csAvatar');
 const csName = document.getElementById('csName');
-const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters', 'dilaksiFilters'];
-const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-placeholder'];
+const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters', 'dilaksiFilters', 'thasithaFilters'];
+const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-thasitha', 'panel-placeholder'];
 
 function selectMember(key){
   mgShowView('performance');
@@ -711,7 +853,19 @@ function selectMember(key){
   allFilterIds.forEach((id) => { document.getElementById(id).style.display = 'none'; });
   allPanelIds.forEach((id) => { document.getElementById(id).style.display = 'none'; });
 
-  if (built) {
+  if (key === 'thasitha') {
+    // Separate from BUILT_MEMBERS/loadAll() on purpose — she has no 2025
+    // data (joined April 2026), so the shared dual-year table/loadAll()
+    // machinery doesn't apply. See loadThasitha() above.
+    pageTitle.textContent = 'Employee Performance — Thasitha';
+    pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>Thasitha</strong> &middot; Sales incl. tax &amp; shipping &middot; ADS Cost is Google Ads spend on Thasitha\'s DE campaigns &middot; Target ROAS 30% &middot; May 2026 onward only (joined April 2026, no 2025 data)';
+    document.getElementById('thasithaFilters').style.display = '';
+    document.getElementById('panel-thasitha').style.display = '';
+    if (!loadedMembers.has('thasitha')) {
+      loadedMembers.add('thasitha');
+      loadThasitha(false);
+    }
+  } else if (built) {
     pageTitle.textContent = 'Employee Performance — ' + name;
     // Kamsi/Dilaksi are SEO/Organic (£0 ad spend) — their Cost column is a
     // shared SEO tool-cost share (Semrush/Arrow AI), not Google Ads spend.

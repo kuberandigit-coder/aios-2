@@ -224,17 +224,41 @@ function runMuguntha(monthArgs) {
   if (failCount > 0) process.exitCode = 1;
 }
 
+// Thasitha joined April 2026 (no 2025 data) — only May-onward closed months
+// ever need a snapshot; August 2026 (or whatever the current live month is)
+// stays live-only, matching CURRENT_LIVE_MONTHS in api/muguntha.js.
+const MUGUNTHA_THASITHA_MONTHS = ['2026-05', '2026-06', '2026-07'];
+
+function runMugunthaThasitha(monthArgs) {
+  const months = monthArgs.length ? monthArgs : MUGUNTHA_THASITHA_MONTHS;
+  console.log(`Refreshing Muguntha/Thasitha ADS-cost snapshots for ${months.length} months...`);
+  let okCount = 0, failCount = 0;
+  for (const month of months) {
+    const url = `${BASE_URL}/api/muguntha?employee=thasitha&month=${month}&refresh=1`;
+    const data = fetchJson(url, month);
+    if (!data) { failCount++; continue; }
+    const outPath = path.join(DATA_DIR, `muguntha-thasitha-${month}.json`);
+    fs.writeFileSync(outPath, JSON.stringify(data));
+    console.log(`    -> ${path.basename(outPath)} (cost: ${data.cost})`);
+    okCount++;
+  }
+  console.log(`\nDone. ${okCount} succeeded, ${failCount} failed.`);
+  if (failCount > 0) process.exitCode = 1;
+}
+
 function main() {
   const [, , mode, ...rest] = process.argv;
   if (mode === 'postgres') return runPostgres();
   if (mode === 'july') return runJuly();
   if (mode === 'salesuk') return runSalesuk();
   if (mode === 'muguntha') return runMuguntha(rest);
+  if (mode === 'muguntha-thasitha') return runMugunthaThasitha(rest);
   if (mode) return runStaffMonths(mode, rest);
   console.error('Usage:');
   console.error('  node api/scripts/generate-snapshots.js postgres');
   console.error('  node api/scripts/generate-snapshots.js july');
   console.error('  node api/scripts/generate-snapshots.js muguntha [months...]');
+  console.error('  node api/scripts/generate-snapshots.js muguntha-thasitha [months...]');
   console.error('  node api/scripts/generate-snapshots.js <staff> [months...]');
   console.error('Known staff values:', Object.keys(SNAPSHOT_NAME_BY_STAFF).join(', '));
   process.exit(1);

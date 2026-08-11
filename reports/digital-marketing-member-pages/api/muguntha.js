@@ -152,12 +152,30 @@ const EMPLOYEES = {
     productIds: new Set(),
     snapshotSlug: 'jefri',
   },
+  // Thasitha runs Google Ads on the same DE store/account as Jefri
+  // (9031058245), group_name='Thasi' (same 3 campaigns used on thasitha.html's
+  // Requirement tabs, confirmed via google_ads.campaigns). Added 2026-08-11.
+  // No 2025 data — her first campaign started 2026-04-20 — so muguntha.html's
+  // frontend only ever requests May-2026-onward months for her (a separate
+  // code path from the shared 2025-vs-2026 loadAll(), see loadThasitha()).
+  thasitha: {
+    isJefri: true,
+    groupName: 'Thasi',
+    accountId: 9031058245,
+    productIds: new Set(),
+    snapshotSlug: 'thasitha',
+  },
 };
 
 function buildSourceLabels(cfg) {
   if (cfg.isJefri) {
+    // "isJefri" is a generic "DE account, no DM-46 concept" flag, reused
+    // as-is (2026-08-11) for Thasitha rather than renamed, to avoid
+    // touching Jefri's already-working code path — text below is built
+    // from cfg.groupName/cfg.accountId dynamically so it's accurate for
+    // both, not hardcoded to Jefri specifically.
     return {
-      source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${cfg.accountId} (all of Jefri's DE campaigns, current + historical — matches the "Jefri" Campaign group filter in the Google Ads UI, 61 campaigns as of 2026-08-05)`,
+      source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${cfg.accountId} (all of ${cfg.groupName}'s DE campaigns, current + historical — matches the "${cfg.groupName}" Campaign group filter in the Google Ads UI)`,
       dmSource: 'not applicable — the DM 46 shared-campaign product-share concept is a UK-account-only construct',
       dmTotalSource: 'not applicable',
     };
