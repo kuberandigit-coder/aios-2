@@ -131,7 +131,7 @@ body.sb-open .ms-collapse-btn svg{transform:rotate(180deg);}
 body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
 .ms-topcontent{padding:28px 24px 40px;}
 body.tool-open .ms-topcontent{padding:0;max-width:none;}
-#msToolFrame{position:relative;z-index:2;width:100%;box-sizing:border-box;}
+#msToolFrame{position:relative;z-index:2;width:calc(100% - var(--sb-w-collapsed));margin-left:var(--sb-w-collapsed);box-sizing:border-box;transition:margin-left .18s ease,width .18s ease;}
 body.tool-open #msToolFrame{height:100vh !important;border-radius:0;border:none;}
 /* While a tool (EOD/Blog) is open, the sidebar overlays on top of the tool
    instead of pushing it — opening the sidebar no longer widens ms-main's
