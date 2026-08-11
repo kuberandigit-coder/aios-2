@@ -3774,9 +3774,14 @@ async function handleOrganic(req, res, monthConfig, forceRefresh, startTime) {
   // above; July onward is live (Jeffri also runs Meta/social campaigns --
   // previously-unattributed Social-channel orders reassigned here). Any
   // OTHER month with neither a snapshot nor being the current live month
-  // (shouldn't normally happen) returns a well-formed empty payload instead
-  // of falling through to the unrelated organic-search computation below.
-  if (staff === 'jeffri-meta' && !monthConfig.isLive) {
+  // returns a well-formed empty payload instead of falling through to the
+  // unrelated organic-search computation below — UNLESS forceRefresh is
+  // set, in which case it falls through to the real live computation below
+  // (needed for one-off closed-month backfills via
+  // generate-snapshots.js jeffri-meta-backfill; without this, a closed
+  // month that was never live for jeffri-meta had no path to ever get a
+  // snapshot — caught 2026-08-11, July fell into exactly this gap).
+  if (staff === 'jeffri-meta' && !monthConfig.isLive && !forceRefresh) {
     const emptySummary = { ordersCount: 0, unitsSold: 0, grossSales: 0, discounts: 0, refunds: 0, netSales: 0, orderTotalSum: 0, averageRevenuePerOrder: 0, uniqueProductsSold: 0, currency: 'EUR', multiCurrencyWarning: null };
     res.status(200).json({
       success: true,

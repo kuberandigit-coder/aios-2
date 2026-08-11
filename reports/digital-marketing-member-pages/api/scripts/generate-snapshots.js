@@ -92,7 +92,13 @@ function runPostgres() {
 }
 
 // ===== mode: july (sales.js, hourly, live month) =====
-const JULY_MONTH = '2026-07';
+// NOTE: despite the name (kept for backward compat with the workflow/mode
+// name), this always targets the CURRENT live month, not literally July —
+// this constant was hardcoded to '2026-07' for weeks after July closed
+// (through 2026-08-11), silently refreshing an already-closed month every
+// hour while the real current month (August) never got a snapshot at all.
+// Fixed 2026-08-11: bump this by hand each month until it's made dynamic.
+const JULY_MONTH = '2026-08';
 const JULY_ENDPOINTS = [
   { query: 'entity=kamsi', snapshotName: 'kamsi' },
   { query: 'entity=dilaksi', snapshotName: 'dilaksi' },
@@ -133,7 +139,8 @@ function runJuly() {
 // page — same rationale as runJuly() above: a live full-month Shopify scan
 // takes 30-90s+, unusable for a page load, so the live month's snapshot
 // file is kept fresh by this hourly job instead.
-const SALESUK_LIVE_MONTH = '2026-07';
+// Same staleness bug as JULY_MONTH above — fixed 2026-08-11, bump monthly.
+const SALESUK_LIVE_MONTH = '2026-08';
 const SALESUK_GROUPS = ['dm-ad', 'meta', 'sonya', 'sajeepan', 'sukirtha', 'organic', 'cppc', 'thishoban', 'theekshy', 'thanishtika', 'not-assigned'];
 
 function runSalesuk() {
@@ -154,8 +161,8 @@ function runSalesuk() {
 
 // ===== mode: <staff> [months...] (sales-sukirtha-de.js, one-off, closed months) =====
 // Mirrors SUPPORTED_MONTHS / CURRENT_LIVE_MONTHS in api/sales-sukirtha-de.js.
-const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const CURRENT_LIVE_MONTHS = ['2026-07'];
+const SUPPORTED_MONTHS = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+const CURRENT_LIVE_MONTHS = ['2026-08'];
 
 // staff query value -> snapshot filename prefix (must match the
 // `snapshotName` switch in handleOrganic() in api/sales-sukirtha-de.js,
@@ -199,6 +206,34 @@ function runStaffMonths(staff, monthArgs) {
     console.log(`    -> ${path.basename(outPath)} (${data.meta.matchedOrders ?? data.meta.fullyOrganicOrders ?? '?'} matched orders)`);
   }
   console.log('Done. Redeploy (vercel --prod) so the new snapshot files are served.');
+}
+
+// ===== mode: jeffri-meta-backfill [months...] (sales.js, one-off, closed
+// months) =====
+// jeffri-meta has no static snapshot mechanism outside the "july" hourly
+// live-month job, so a closed month it was never live for (e.g. 2026-07,
+// which closed before this bug was caught 2026-08-11) has no path to get
+// one. This is that path — same fetchOrdersForMonthIncremental machinery
+// as every other month, just invoked directly for a specific closed month.
+// Requires the api/sales.js jeffri-meta early-return to respect
+// forceRefresh (fixed alongside this script, 2026-08-11) — otherwise every
+// request short-circuits to an empty "not backfilled" stub regardless of
+// refresh=1.
+function runJeffriMetaBackfill(monthArgs) {
+  const months = monthArgs.length ? monthArgs : ['2026-07'];
+  console.log(`Backfilling jeffri-meta for ${months.length} closed month(s): ${months.join(', ')}...`);
+  let okCount = 0, failCount = 0;
+  for (const month of months) {
+    const url = `${BASE_URL}/api/sales?staff=jeffri-meta&month=${month}&refresh=1`;
+    const data = fetchJson(url, month);
+    if (!data) { failCount++; continue; }
+    const outPath = path.join(DATA_DIR, `jeffri-meta-sales-${month}.json`);
+    fs.writeFileSync(outPath, JSON.stringify(data));
+    console.log(`    -> ${path.basename(outPath)} (${data.combinedSummary ? data.combinedSummary.ordersCount : '?'} orders)`);
+    okCount++;
+  }
+  console.log(`\nDone. ${okCount} succeeded, ${failCount} failed.`);
+  if (failCount > 0) process.exitCode = 1;
 }
 
 // ===== mode: muguntha (api/muguntha.js, Sonya ADS cost, closed months) =====
@@ -251,6 +286,7 @@ function main() {
   if (mode === 'postgres') return runPostgres();
   if (mode === 'july') return runJuly();
   if (mode === 'salesuk') return runSalesuk();
+  if (mode === 'jeffri-meta-backfill') return runJeffriMetaBackfill(rest);
   if (mode === 'muguntha') return runMuguntha(rest);
   if (mode === 'muguntha-thasitha') return runMugunthaThasitha(rest);
   if (mode) return runStaffMonths(mode, rest);
