@@ -157,19 +157,8 @@ tbody tr:hover td:first-child{color:var(--accent);}
   </ul>
 
   <div class="navlabel">Performance Analysis</div>
-  <ul class="navlist" id="memberNav">
-    <li><a href="#" data-member="sonya" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Sonya</span></a></li>
-    <li><a href="#" data-member="sajeepan"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Sajeepan</span></a></li>
-    <li><a href="#" data-member="jefri"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Jefri</span></a></li>
-    <li><a href="#" data-member="dilaksi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Dilaksi</span></a></li>
-    <li><a href="#" data-member="kamsi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Kamsi</span></a></li>
-    <li><a href="#" data-member="mahima"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Mahima</span></a></li>
-    <li><a href="#" data-member="thasitha"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Thasitha</span></a></li>
-    <li><a href="#" data-member="sukirtha"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Sukirtha</span></a></li>
-    <li><a href="#" data-member="theekshy"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Theekshy</span></a></li>
-    <li><a href="#" data-member="jackson"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Jackson</span></a></li>
-    <li><a href="#" data-member="hetheesha"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Hetheesha</span></a></li>
-    <li><a href="#" data-member="thivajini"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Thivajini</span></a></li>
+  <ul class="navlist">
+    <li><a href="#" id="perfAnalysisLink" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Performance</span></a></li>
   </ul>
 
   <div class="navlabel">Tools</div>
@@ -217,6 +206,7 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
     <div>
       <h1 id="pageTitle">Employee Performance &mdash; Sonya</h1>
       <div class="sub" id="pageSub">Requested by Muguntha &middot; currently scoped to <strong>Sonya</strong> &middot; Sales excludes tax, shipping, discounts & refunds (net sales) &middot; ADS Cost is Google Ads spend on Sonya's campaigns &middot; Target ROAS 30%</div>
+      <select id="memberSelect" style="margin-top:10px;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:13px;font-weight:600;cursor:pointer;"></select>
     </div>
     <div class="filters" id="sonyaFilters">
       <span class="chip live" id="statusChip">Loading&hellip;</span>
@@ -691,7 +681,10 @@ const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefr
 
 function selectMember(key){
   mgShowContent();
-  document.querySelectorAll('#memberNav a').forEach((a) => a.classList.toggle('active', a.dataset.member === key));
+  document.querySelectorAll('.sidebar .navlist a').forEach((a) => a.classList.remove('active'));
+  document.getElementById('perfAnalysisLink').classList.add('active');
+  const sel = document.getElementById('memberSelect');
+  if (sel && sel.value !== key) sel.value = key;
   const name = MEMBER_NAMES[key] || key;
   const built = BUILT_MEMBERS[key];
 
@@ -722,20 +715,30 @@ function selectMember(key){
   }
 }
 
-document.getElementById('memberNav').addEventListener('click', (e) => {
-  const a = e.target.closest('a[data-member]');
-  if (!a) return;
+(function populateMemberSelect(){
+  const sel = document.getElementById('memberSelect');
+  Object.keys(MEMBER_NAMES).forEach((key) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = MEMBER_NAMES[key];
+    sel.appendChild(opt);
+  });
+  sel.value = 'sonya';
+  sel.addEventListener('change', () => selectMember(sel.value));
+})();
+
+document.getElementById('perfAnalysisLink').addEventListener('click', (e) => {
   e.preventDefault();
-  selectMember(a.dataset.member);
+  selectMember(document.getElementById('memberSelect').value || 'sonya');
 });
 
-function mgShowTool(url, fullTool){
+function mgShowTool(url){
   document.getElementById('mgContentArea').style.display = 'none';
   const frame = document.getElementById('mgToolFrame');
   const iframe = document.getElementById('mgToolFrameIframe');
   if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
   frame.style.display = 'block';
-  if (fullTool) document.body.classList.add('tool-open');
+  document.body.classList.add('tool-open');
 }
 function mgShowContent(){
   document.body.classList.remove('tool-open');
@@ -748,7 +751,7 @@ document.querySelectorAll('.sidebar a[data-tool]').forEach((a) => {
     e.preventDefault();
     document.querySelectorAll('.sidebar .navlist a').forEach((x) => x.classList.remove('active'));
     a.classList.add('active');
-    mgShowTool(a.getAttribute('data-tool'), a.hasAttribute('data-fulltool'));
+    mgShowTool(a.getAttribute('data-tool'));
   });
 });
 </script>
