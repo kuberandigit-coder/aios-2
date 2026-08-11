@@ -490,9 +490,15 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
         <th data-k="parentProductId">Parent Product ID</th>
         <th data-k="sku">SKU</th>
         <th class="num" data-k="totalSales">Total Sales (Store)</th>
+        <th class="num" data-k="adsSales">Ads Sales (Conv. Value)</th>
+        <th class="num" data-k="adsClicks">Ads Clicks</th>
+        <th class="num" data-k="adsImpressions">Ads Impressions</th>
+        <th class="num" data-k="adsCost">Ads Cost</th>
+        <th class="num" data-k="roas">ROAS</th>
+        <th class="num" data-k="adsSalesPct">Ads Sales % of Total Sales</th>
         <th data-k="itemId">Item ID</th>
       </tr></thead>
-      <tbody id="r4tbody"><tr><td colspan="5" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+      <tbody id="r4tbody"><tr><td colspan="11" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r4empty" style="display:none;">No items match the current filters.</div>
@@ -517,7 +523,10 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <strong>Default row order:</strong> grouped by parent &mdash; each Parent (Rollup) row is followed immediately by its own Variant rows, then the next parent group. Unmatched rows (no parent to group under) are sorted last. Clicking a column header to sort overrides this grouping.<br>
   <strong>Unmatched rows (Parent Product ID blank):</strong> the Item ID does not correspond to any Shopify product/variant ID in this database at all &mdash; confirmed to be 17&ndash;20 digit IDs (real Shopify IDs are 13&ndash;14 digits), concentrated in one campaign ("Shoparize ALL | All Products"). This is a genuine data gap, not a query failure &mdash; these rows are shown, not hidden, so the gap stays visible.<br>
   <strong>SKU:</strong> from <code>listings.shopify_listings.sku</code>. Only populated on Variant rows &mdash; Shopify assigns SKU to child/variant listings only, so Parent (Rollup) rows correctly show "N/A (multiple SKUs)" rather than an invented single SKU.<br>
-  <strong>Total Sales (Store):</strong> <strong>GROSS</strong> revenue &mdash; <code>SUM(item_price &times; item_quantity)</code> from <code>order_management.order_item_info</code>, joined to <code>orders</code> where <code>status='Completed'</code> (excludes Refunded/Cancelled/Inprogress/New) and <code>sub_source_id=108</code> (Shopify ledsone-de). <strong>Not net-of-tax</strong> &mdash; a different "netSales" definition exists elsewhere in this codebase for a different store; which definition T-04 should ultimately use is an open decision, see <code>evidence/jefri/T-04-data-discovery.md</code>. Currently <strong>all-time</strong> (no date range picker yet, matching this tab's "gather all" scope) &mdash; date filtering is a later build step. Parent (Rollup) Total Sales = every Completed order line sharing that Parent Product ID (this already includes all its variants' sales; not separately re-summed from the Variant rows). Shows &euro;0.00 (a real zero) for a matched Parent/Variant with no completed orders &mdash; N/A is reserved for Unmatched rows only, where Total Sales genuinely cannot be computed.
+  <strong>Total Sales (Store):</strong> <strong>GROSS</strong> revenue &mdash; <code>SUM(item_price &times; item_quantity)</code> from <code>order_management.order_item_info</code>, joined to <code>orders</code> where <code>status='Completed'</code> (excludes Refunded/Cancelled/Inprogress/New) and <code>sub_source_id=108</code> (Shopify ledsone-de). <strong>Not net-of-tax</strong> &mdash; a different "netSales" definition exists elsewhere in this codebase for a different store; which definition T-04 should ultimately use is an open decision, see <code>evidence/jefri/T-04-data-discovery.md</code>. Currently <strong>all-time</strong> (no date range picker yet, matching this tab's "gather all" scope) &mdash; date filtering is a later build step. Parent (Rollup) Total Sales = every Completed order line sharing that Parent Product ID (this already includes all its variants' sales; not separately re-summed from the Variant rows). Shows &euro;0.00 (a real zero) for a matched Parent/Variant with no completed orders &mdash; N/A is reserved for Unmatched rows only, where Total Sales genuinely cannot be computed.<br>
+  <strong>Ads Sales / Clicks / Impressions / Cost:</strong> from <code>google_ads.product_performance</code>, all-time (same scope as everything else on this tab). For a <strong>Parent (Rollup)</strong> row these are a true SUM &mdash; the parent's own ad entry (if Google ever advertised the parent item directly) PLUS every one of its variants' ad entries, never averaged. Variant and Unmatched rows show that single item's own ad performance. An Unmatched row can still have real Ads data (Google spent money and got clicks on that item ID) even though it has no Shopify match &mdash; shown, not hidden.<br>
+  <strong>ROAS:</strong> (Ads Sales &divide; Ads Cost) &times; 100. Shows 0% when both Ads Cost and Ads Sales are 0; shows N/A only in the mathematically undefined case of real Ads Sales with &euro;0 Ads Cost (division by zero, not a real 0%).<br>
+  <strong>Ads Sales % of Total Sales:</strong> (Ads Sales &divide; Total Sales) &times; 100. Shows N/A on Unmatched rows (no Total Sales to divide by) and in the undefined case of real Ads Sales against &euro;0 Total Sales. <strong>Known issue, not hidden:</strong> discovery testing (see <code>evidence/jefri/T-04-data-discovery.md</code>) found this can genuinely exceed 100% for real products &mdash; Google Ads' own conversion-value attribution doesn't always match a fixed Postgres order window 1:1. Treat any figure over 100% as a real finding about the two sources' attribution difference, not a bug in this page.
 </div>
 </div>
 
@@ -1261,6 +1270,12 @@ function r4Render(){
       '<td>' + (r.parentProductId ? esc(r.parentProductId) : '<span style="color:var(--na);">N/A &mdash; no Shopify match</span>') + '</td>' +
       '<td>' + skuCell + '</td>' +
       '<td class="num">' + (r.level === 'Unmatched' ? '<span style="color:var(--na);">N/A</span>' : eur(r.totalSales != null ? r.totalSales : 0)) + '</td>' +
+      '<td class="num">' + eur(r.adsSales) + '</td>' +
+      '<td class="num">' + num(r.adsClicks) + '</td>' +
+      '<td class="num">' + num(r.adsImpressions) + '</td>' +
+      '<td class="num">' + eur(r.adsCost) + '</td>' +
+      '<td class="num">' + (r.roas != null ? r.roas.toFixed(2) + '%' : '<span style="color:var(--na);">N/A</span>') + '</td>' +
+      '<td class="num">' + (r.adsSalesPct != null ? r.adsSalesPct.toFixed(2) + '%' : '<span style="color:var(--na);">N/A</span>') + '</td>' +
       '<td>' + esc(r.itemId) + '</td>' +
       '</tr>';
   }).join('');
@@ -1273,11 +1288,11 @@ function r4Render(){
 
 function r4ExportCsv(){
   const rows = r4FilteredRows();
-  const lines = ['Level,Parent Product ID,SKU,Total Sales (Store),Item ID'];
+  const lines = ['Level,Parent Product ID,SKU,Total Sales (Store),Ads Sales (Conv. Value),Ads Clicks,Ads Impressions,Ads Cost,ROAS,Ads Sales % of Total Sales,Item ID'];
   rows.forEach(function(r){
     const levelLabel = r.level === 'Parent' ? 'Parent (Rollup)' : (r.level === 'Variant' ? 'Variant' : 'Unmatched');
     const totalSalesCsv = r.level === 'Unmatched' ? '' : (r.totalSales != null ? r.totalSales : 0);
-    lines.push([levelLabel, r.parentProductId || '', r.sku || '', totalSalesCsv, r.itemId].map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','));
+    lines.push([levelLabel, r.parentProductId || '', r.sku || '', totalSalesCsv, r.adsSales, r.adsClicks, r.adsImpressions, r.adsCost, r.roas != null ? r.roas : '', r.adsSalesPct != null ? r.adsSalesPct : '', r.itemId].map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','));
   });
   const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
   const a = document.createElement('a');

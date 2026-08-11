@@ -5063,6 +5063,34 @@ variant_sales AS (
   JOIN order_management.order_item_info oii ON oii.order_id = o.id
   WHERE o.sub_source_id = 108 AND o.status = 'Completed'
   GROUP BY oii.variant_id
+),
+-- Ads columns: Parent rows show a TRUE ROLLUP (SUM of the parent's own
+-- ad entry, if it has one, PLUS every one of its variants' ad entries) —
+-- per the T-04 spec's explicit "Parent rollup = SUM of variant values,
+-- never average." Variant/Unmatched rows show their own single item's
+-- ad performance (an Unmatched row still has real Ads data even though it
+-- has no Shopify match — shown, not hidden).
+resolved_full AS (
+  SELECT m.product_item_id,
+    CASE WHEN m.is_parent = 1 THEN m.matched_shopify_id WHEN m.is_child = 1 THEN ctp.parent_product_id ELSE NULL END AS parent_product_id
+  FROM matched m LEFT JOIN child_to_parent ctp ON ctp.listing_pk = m.listing_pk
+),
+ads_by_item AS (
+  SELECT product_item_id,
+    SUM(clicks)::bigint AS clicks, SUM(impressions)::bigint AS impressions,
+    SUM(cost)::numeric AS cost, SUM(conversion_value)::numeric AS conv_value
+  FROM google_ads.product_performance
+  WHERE campaign_id = ANY($1::bigint[])
+  GROUP BY product_item_id
+),
+rollup_by_parent AS (
+  SELECT rf.parent_product_id,
+    SUM(a.clicks)::bigint AS clicks, SUM(a.impressions)::bigint AS impressions,
+    SUM(a.cost)::numeric AS cost, SUM(a.conv_value)::numeric AS conv_value
+  FROM resolved_full rf
+  JOIN ads_by_item a ON a.product_item_id = rf.product_item_id
+  WHERE rf.parent_product_id IS NOT NULL
+  GROUP BY rf.parent_product_id
 )
 SELECT
   m.product_item_id AS item_id,
@@ -5077,11 +5105,17 @@ SELECT
     WHEN m.is_parent = 1 THEN ps.total_sales
     WHEN m.is_child = 1 THEN vs.total_sales
     ELSE NULL
-  END AS total_sales
+  END AS total_sales,
+  CASE WHEN m.is_parent = 1 THEN rp.clicks ELSE ai.clicks END AS ads_clicks,
+  CASE WHEN m.is_parent = 1 THEN rp.impressions ELSE ai.impressions END AS ads_impressions,
+  CASE WHEN m.is_parent = 1 THEN rp.cost ELSE ai.cost END AS ads_cost,
+  CASE WHEN m.is_parent = 1 THEN rp.conv_value ELSE ai.conv_value END AS ads_sales
 FROM matched m
 LEFT JOIN child_to_parent ctp ON ctp.listing_pk = m.listing_pk
 LEFT JOIN parent_sales ps ON m.is_parent = 1 AND ps.product_id = m.matched_shopify_id
 LEFT JOIN variant_sales vs ON m.is_child = 1 AND vs.variant_id = m.matched_shopify_id
+LEFT JOIN ads_by_item ai ON ai.product_item_id = m.product_item_id
+LEFT JOIN rollup_by_parent rp ON m.is_parent = 1 AND rp.parent_product_id = m.matched_shopify_id
 ORDER BY
   COALESCE(CASE WHEN m.is_parent = 1 THEN m.matched_shopify_id WHEN m.is_child = 1 THEN ctp.parent_product_id ELSE NULL END, '~unmatched') ASC,
   CASE WHEN m.is_parent = 1 THEN 0 WHEN m.is_child = 1 THEN 1 ELSE 2 END ASC,
@@ -5110,13 +5144,32 @@ ORDER BY
     if (!client) return;
     try {
       const result = await client.query(MAPPING_QUERY, [JEFRI_CAMPAIGN_IDS_R4]);
-      const rows = result.rows.map((r) => ({
-        itemId: r.item_id,
-        parentProductId: r.parent_product_id,
-        level: r.level,
-        sku: r.sku || null,
-        totalSales: r.total_sales !== null && r.total_sales !== undefined ? Number(r.total_sales) : null,
-      }));
+      const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+      const rows = result.rows.map((r) => {
+        const level = r.level;
+        const totalSales = r.total_sales !== null && r.total_sales !== undefined ? Number(r.total_sales) : (level === 'Unmatched' ? null : 0);
+        const adsClicks = Number(r.ads_clicks) || 0;
+        const adsImpressions = Number(r.ads_impressions) || 0;
+        const adsCost = Number(r.ads_cost) || 0;
+        const adsSales = Number(r.ads_sales) || 0;
+        const roas = adsCost > 0 ? round2((adsSales / adsCost) * 100) : (adsSales > 0 ? null : 0);
+        const adsSalesPct = totalSales != null
+          ? (totalSales > 0 ? round2((adsSales / totalSales) * 100) : (adsSales > 0 ? null : 0))
+          : null;
+        return {
+          itemId: r.item_id,
+          parentProductId: r.parent_product_id,
+          level,
+          sku: r.sku || null,
+          totalSales,
+          adsSales: round2(adsSales),
+          adsClicks,
+          adsImpressions,
+          adsCost: round2(adsCost),
+          roas,
+          adsSalesPct,
+        };
+      });
       const payload = {
         generatedAt: new Date().toISOString(),
         rows,
