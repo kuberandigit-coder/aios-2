@@ -12950,7 +12950,7 @@ function r6LoadData() {
       + String(y.getMonth() + 1).padStart(2, '0') + '-'
       + String(y.getDate()).padStart(2, '0');
   }
-  const dateParam = dateEl && dateEl.value ? '?date=' + dateEl.value : '';
+  const dateParam = dateEl && dateEl.value ? '&date=' + dateEl.value : '';
 
   document.getElementById('r6Loading').style.display  = 'block';
   document.getElementById('r6Error').style.display    = 'none';

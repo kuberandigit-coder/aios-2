@@ -628,6 +628,14 @@ function parseADS(md, date, member) {
   tasks = parseParenTimeLines(md, date, member);
   if (tasks.length > 0) { tasks.forEach(t => rows.push(t)); return rows; }
 
+  // Strategy 5c: Theekshy markdown table — "| Task | Planned | Actual |"
+  tasks = parseMarkdownTable(md, date, member);
+  if (tasks.length > 0) { tasks.forEach(t => rows.push(t)); return rows; }
+
+  // Strategy 5d: Sonya/Mahima markdown heading sections — "### N. Task Name"
+  tasks = parseMarkdownSections(md, date, member);
+  if (tasks.length > 0) { tasks.forEach(t => rows.push(t)); return rows; }
+
   // Strategy 6: Generic — extract any bold headings or lines that look like task titles
   tasks = parseGeneric(md, date, member);
   tasks.forEach(t => rows.push(t));
@@ -690,6 +698,95 @@ function parseParenTimeLines(md, date, member) {
     const intentId = makeIntentADS(desc, ++globalTaskSeq);
     const metric   = inferMetricADS(desc, intentId);
     rows.push(makeRow(date, member, desc, hrs, '', '', tier, tierDesc, intentId, metric));
+  }
+  return rows;
+}
+
+// ── Strategy 5c: Markdown table parser (Theekshy EOD TRACK format) ──────────
+// Handles: "| Task | Planned Time | Actual Time | Status |" and "| Task | Planned | Actual |"
+function parseMarkdownTable(md, date, member) {
+  const rows = [];
+  const lines = md.split('\n');
+  let taskCol = -1, actualCol = -1, inTable = false;
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t.startsWith('|')) { inTable = false; taskCol = -1; actualCol = -1; continue; }
+
+    const cells = t.split('|').slice(1, -1).map(c => c.trim());
+    if (cells.length < 2) continue;
+
+    // Separator row (---|---|---)
+    if (cells.every(c => /^[-: ]+$/.test(c))) continue;
+
+    // Header row — find Task and Actual columns
+    if (!inTable) {
+      const ti = cells.findIndex(c => /^task$/i.test(c.replace(/\*/g, '')));
+      const ai = cells.findIndex(c => /actual/i.test(c));
+      if (ti >= 0) { taskCol = ti; actualCol = ai >= 0 ? ai : cells.length - 1; inTable = true; }
+      continue;
+    }
+
+    // Data row
+    let taskName = (cells[taskCol] || '').replace(/\*+/g, '').trim();
+    // Strip emoji/priority prefix like "🔴 P1 " or "🟠 P2 "
+    taskName = taskName.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}✅✔]+\s*/u, '').replace(/^\w+\s+P\d+\s*/i, '').trim();
+    // Strip parenthetical campaign name suffix like "(THEE_MYSTERY & THEE_GEMS)"
+    taskName = taskName.replace(/\s*\([^)]+\)\s*$/, '').trim();
+    const desc = cleanText(taskName);
+    if (!desc || desc.length < 4) continue;
+    if (/^(?:total|priority|task|planned|actual|status|summary)/i.test(desc)) continue;
+
+    let hrs = 0;
+    if (actualCol >= 0 && cells[actualCol]) {
+      const timeM = cells[actualCol].replace(/\*/g, '').match(/(\d+(?:\.\d+)?)\s*(h(?:rs?|ours?)?|min(?:s|utes?)?)/i);
+      if (timeM) {
+        const isMin = /^min/i.test(timeM[2]);
+        hrs = isMin ? Math.round((parseFloat(timeM[1]) / 60) * 4) / 4 : parseFloat(timeM[1]);
+      }
+    }
+
+    const {tier, tierDesc} = classifyTierADS(desc, '');
+    const intentId = makeIntentADS(desc, ++globalTaskSeq);
+    const metric   = inferMetricADS(desc, intentId);
+    rows.push(makeRow(date, member, desc, hrs, '', '', tier, tierDesc, intentId, metric));
+  }
+  return rows;
+}
+
+// ── Strategy 5d: Markdown heading sections (Sonya / Mahima prose format) ─────
+// Handles: "### 1. Task Name" numbered sections + "## X-Minute Routine" headings
+function parseMarkdownSections(md, date, member) {
+  const rows = [];
+  const lines = md.split('\n');
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!/^#{1,3}\s/.test(t)) continue;
+    const headingM = t.match(/^#{1,3}\s+(.*)/);
+    if (!headingM) continue;
+
+    let title = headingM[1].replace(/\*+/g, '').trim();
+    // Strip leading "N. " numbering
+    title = title.replace(/^\d+\.\s+/, '').trim();
+
+    const desc = cleanText(title);
+    if (!desc || desc.length < 6) continue;
+    // Skip generic structural headings
+    if (/^(?:main\s+work|weekly\s+performance|end\s+of\s+day|eod\s+report|eod\s+track|date[:\s]|friday|monday|tuesday|wednesday|thursday|saturday|sunday|roas\s+health|time\s+vs|priority\s+dist|section|summary)/i.test(desc)) continue;
+
+    // Extract time if embedded in heading ("30-Minute", "1-Hour")
+    let hrs = 0;
+    const timeInTitle = desc.match(/(\d+)[\s-]*(minute|min|hour|hr)/i);
+    if (timeInTitle) {
+      const isMin = /^min/i.test(timeInTitle[2]);
+      hrs = isMin ? Math.round((parseFloat(timeInTitle[1]) / 60) * 4) / 4 : parseFloat(timeInTitle[1]);
+    }
+
+    const {tier, tierDesc} = classifyTierADS(desc, '');
+    const intentId = makeIntentADS(desc, ++globalTaskSeq);
+    const metric   = inferMetricADS(desc, intentId);
+    rows.push(makeRow(date, member, desc, hrs || '', '', '', tier, tierDesc, intentId, metric));
   }
   return rows;
 }

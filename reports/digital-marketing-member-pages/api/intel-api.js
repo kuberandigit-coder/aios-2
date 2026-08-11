@@ -781,7 +781,7 @@ async function handleCwv(res, strategy) {
 /* ─── SEMRUSH ────────────────────────────────────────────────── */
 
 async function handleSemrush(type, res, req) {
-  const NEON_URL = process.env.NEON_DATABASE_URL;
+  const NEON_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
   if (!NEON_URL) return res.status(500).json({ ok:false, cause:'no_neon_url', error:'NEON_DATABASE_URL not set' });
   const nc = makeSeoClient(NEON_URL);
   try {
@@ -877,7 +877,7 @@ async function handleSemrush(type, res, req) {
 /* ─── GEO ────────────────────────────────────────────────────── */
 
 async function handleGeo(type, query, res) {
-  const NEON_URL = process.env.NEON_DATABASE_URL;
+  const NEON_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
   if (!NEON_URL) return res.status(500).json({ ok:false, error:'NEON_DATABASE_URL not set' });
   const nc = makeSeoClient(NEON_URL);
   try {
