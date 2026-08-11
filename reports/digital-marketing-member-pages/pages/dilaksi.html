@@ -269,6 +269,16 @@ body.sb-open .ms-collapse-btn svg{transform:rotate(180deg);}
 .ms-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;transition:margin-left .18s ease;position:relative;z-index:1;}
 body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
 .ms-topcontent{padding:28px 24px 40px;}
+body.tool-open .ms-topcontent{padding:0;max-width:none;}
+#msToolFrame{position:relative;z-index:2;width:calc(100% - var(--sb-w-collapsed));margin-left:var(--sb-w-collapsed);box-sizing:border-box;transition:margin-left .18s ease,width .18s ease;}
+body.tool-open #msToolFrame{height:100vh !important;border-radius:0 !important;border:none !important;}
+/* While a tool (EOD/Blog) is open, the sidebar overlays on top of the tool
+   instead of pushing it — opening the sidebar no longer widens ms-main's
+   margin, it just floats over the tool content (already position:fixed,
+   so this is purely stopping the content from being shoved over for it). */
+body.sb-open.tool-open .ms-main{margin-left:var(--sb-w-collapsed) !important;}
+body.tool-open .ms-sidebar{z-index:45;}
+body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 @media(max-width:900px){
   .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
   body.sb-open .ms-sidebar{width:var(--sb-w);}
@@ -297,8 +307,8 @@ body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
   </ul>
   <div class="ms-navlabel">Tools</div>
   <ul class="ms-navlist">
-    <li><a href="eod/index.html" data-tool="eod/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
-    <li><a href="blog-tool/index.html" data-tool="blog-tool/index.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
+    <li><a href="eod/index.html" data-tool="eod/index.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
+    <li><a href="blog-tool/index.html" data-tool="blog-tool/index.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
   </ul>
 
   <div class="ms-sidebar-spacer"></div>
@@ -5134,14 +5144,16 @@ window.flt = flt; window.rst = rst; if (typeof srt === 'function') window.srt = 
 document.getElementById('msCollapseBtn').addEventListener('click', function () {
   document.body.classList.toggle('sb-open');
 });
-function msShowTool(url){
+function msShowTool(url, fullTool){
   document.getElementById("msContentArea").style.display = "none";
   var frame = document.getElementById("msToolFrame");
   var iframe = document.getElementById("msToolFrameIframe");
   if (iframe.getAttribute("src") !== url) iframe.setAttribute("src", url);
   frame.style.display = "block";
+  if (fullTool) document.body.classList.add("tool-open");
 }
 function msShowContent(){
+  document.body.classList.remove("tool-open");
   document.getElementById("msToolFrame").style.display = "none";
   document.getElementById("msContentArea").style.display = "";
 }
@@ -5151,7 +5163,7 @@ document.querySelectorAll("#msSidebar a[data-tool]").forEach(function (a) {
     e.preventDefault();
     document.querySelectorAll("#msSidebar .ms-navlist a").forEach(function (x) { x.classList.remove("on"); });
     a.classList.add("on");
-    msShowTool(a.getAttribute("data-tool"));
+    msShowTool(a.getAttribute("data-tool"), a.hasAttribute("data-fulltool"));
   });
 });
 document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
