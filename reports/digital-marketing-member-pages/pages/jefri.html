@@ -473,6 +473,10 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
 <div class="tablebox">
   <div class="tbar">
+    <label>Start Date <input type="date" id="r4f_startDate"></label>
+    <label>End Date <input type="date" id="r4f_endDate"></label>
+    <button id="r4ApplyDates" type="button">Apply</button>
+    <button id="r4ClearDates" type="button">All-Time</button>
     <input type="text" id="r4q" placeholder="Search Item ID or Parent Product ID…">
     <label>Level <select id="r4f_level">
       <option value="">All levels</option>
@@ -518,13 +522,14 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 <div class="footnotes">
   <strong>Step 1 of T-04 &mdash; scope note:</strong> this tab only shows the Item ID &rarr; Parent Product ID mapping, the first building block of the full T-04 report (Total Sales, Ads Sales, ROAS, Ads Sales % are not in this step). Full discovery/validation for T-04 is in <code>evidence/jefri/T-04-data-discovery.md</code>.<br>
   <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.product_performance</code>, <code>listings.shopify_listings</code>, <code>listings.shopify_listings_parent_child_mapping</code>) &middot; fetched via <code>/api/requirement?fn=jefri-req4-mapping</code>.<br>
-  <strong>Scope:</strong> every distinct Item ID Jefri's 5 campaigns have EVER had (no date window &mdash; "gather all") &mdash; not just currently-active products.<br>
+  <strong>Scope:</strong> every distinct Item ID Jefri's 5 campaigns have EVER had (no date window on the Item ID list itself &mdash; "gather all") &mdash; not just currently-active products. Total Sales/Ads figures below ARE date-filterable (see Start Date/End Date above) &mdash; leaving both blank shows all-time.<br>
   <strong>Parent Product ID resolution:</strong> if the Item ID itself resolves to a Shopify PARENT listing, Parent Product ID = that same Item ID. If it resolves to a Shopify VARIANT (child) listing, Parent Product ID is looked up via <code>listings.shopify_listings_parent_child_mapping</code>. Confirmed live: 100% of matched variants (4,543/4,543) resolve to exactly one parent &mdash; no many-to-one conflicts for Jefri's items.<br>
   <strong>Default row order:</strong> grouped by parent &mdash; each Parent (Rollup) row is followed immediately by its own Variant rows, then the next parent group. Unmatched rows (no parent to group under) are sorted last. Clicking a column header to sort overrides this grouping.<br>
   <strong>Unmatched rows (Parent Product ID blank):</strong> the Item ID does not correspond to any Shopify product/variant ID in this database at all &mdash; confirmed to be 17&ndash;20 digit IDs (real Shopify IDs are 13&ndash;14 digits), concentrated in one campaign ("Shoparize ALL | All Products"). This is a genuine data gap, not a query failure &mdash; these rows are shown, not hidden, so the gap stays visible.<br>
   <strong>SKU:</strong> from <code>listings.shopify_listings.sku</code>. Only populated on Variant rows &mdash; Shopify assigns SKU to child/variant listings only, so Parent (Rollup) rows correctly show "N/A (multiple SKUs)" rather than an invented single SKU.<br>
-  <strong>Total Sales (Store):</strong> <strong>GROSS</strong> revenue &mdash; <code>SUM(item_price &times; item_quantity)</code> from <code>order_management.order_item_info</code>, joined to <code>orders</code> where <code>status='Completed'</code> (excludes Refunded/Cancelled/Inprogress/New) and <code>sub_source_id=108</code> (Shopify ledsone-de). <strong>Not net-of-tax</strong> &mdash; a different "netSales" definition exists elsewhere in this codebase for a different store; which definition T-04 should ultimately use is an open decision, see <code>evidence/jefri/T-04-data-discovery.md</code>. Currently <strong>all-time</strong> (no date range picker yet, matching this tab's "gather all" scope) &mdash; date filtering is a later build step. Parent (Rollup) Total Sales = every Completed order line sharing that Parent Product ID (this already includes all its variants' sales; not separately re-summed from the Variant rows). Shows &euro;0.00 (a real zero) for a matched Parent/Variant with no completed orders &mdash; N/A is reserved for Unmatched rows only, where Total Sales genuinely cannot be computed.<br>
-  <strong>Ads Sales / Clicks / Impressions / Cost:</strong> from <code>google_ads.product_performance</code>, all-time (same scope as everything else on this tab). For a <strong>Parent (Rollup)</strong> row these are a true SUM &mdash; the parent's own ad entry (if Google ever advertised the parent item directly) PLUS every one of its variants' ad entries, never averaged. Variant and Unmatched rows show that single item's own ad performance. An Unmatched row can still have real Ads data (Google spent money and got clicks on that item ID) even though it has no Shopify match &mdash; shown, not hidden.<br>
+  <strong>Total Sales (Store):</strong> <strong>GROSS</strong> revenue &mdash; <code>SUM(item_price &times; item_quantity)</code> from <code>order_management.order_item_info</code>, joined to <code>orders</code> where <code>status='Completed'</code> (excludes Refunded/Cancelled/Inprogress/New) and <code>sub_source_id=108</code> (Shopify ledsone-de). <strong>Not net-of-tax</strong> &mdash; a different "netSales" definition exists elsewhere in this codebase for a different store; which definition T-04 should ultimately use is an open decision, see <code>evidence/jefri/T-04-data-discovery.md</code>. <strong>Date-filtered</strong> by Start Date/End Date above (order date, inclusive both ends) &mdash; blank = all-time. Parent (Rollup) Total Sales = every Completed order line (within the selected range) sharing that Parent Product ID (this already includes all its variants' sales; not separately re-summed from the Variant rows). Shows &euro;0.00 (a real zero) for a matched Parent/Variant with no completed orders in the selected range &mdash; N/A is reserved for Unmatched rows only, where Total Sales genuinely cannot be computed.<br>
+  <strong>Ads Sales / Clicks / Impressions / Cost:</strong> from <code>google_ads.product_performance</code>, <strong>date-filtered</strong> the same way (inclusive both ends, blank = all-time). For a <strong>Parent (Rollup)</strong> row these are a true SUM &mdash; the parent's own ad entry (if Google ever advertised the parent item directly) PLUS every one of its variants' ad entries within the selected range, never averaged. Variant and Unmatched rows show that single item's own ad performance for the range. An Unmatched row can still have real Ads data (Google spent money and got clicks on that item ID) even though it has no Shopify match &mdash; shown, not hidden.<br>
+  <strong>Date filter mechanics:</strong> the Item ID/Parent Product ID/SKU list itself never changes with the date range (all 8,073 items always shown, per explicit instruction) &mdash; only the Sales/Ads columns recompute for the selected window. Click <strong>Apply</strong> after choosing dates, or <strong>All-Time</strong> to clear both and reset. The default (blank) view is served from a fast static snapshot; any custom date range always queries PostgreSQL live.<br>
   <strong>ROAS:</strong> (Ads Sales &divide; Ads Cost) &times; 100. Shows 0% when both Ads Cost and Ads Sales are 0; shows N/A only in the mathematically undefined case of real Ads Sales with &euro;0 Ads Cost (division by zero, not a real 0%).<br>
   <strong>Ads Sales % of Total Sales:</strong> (Ads Sales &divide; Total Sales) &times; 100. Shows N/A on Unmatched rows (no Total Sales to divide by) and in the undefined case of real Ads Sales against &euro;0 Total Sales. <strong>Known issue, not hidden:</strong> discovery testing (see <code>evidence/jefri/T-04-data-discovery.md</code>) found this can genuinely exceed 100% for real products &mdash; Google Ads' own conversion-value attribution doesn't always match a fixed Postgres order window 1:1. Treat any figure over 100% as a real finding about the two sources' attribution difference, not a bug in this page.
 </div>
@@ -1212,12 +1217,19 @@ async function r4Load(force){
   chip.textContent = 'Loading live data from PostgreSQL…';
   chip.style.background = ''; chip.style.color = '';
   try {
-    const url = '/api/requirement?fn=jefri-req4-mapping' + (force ? '&refresh=1' : '');
+    const startDate = document.getElementById('r4f_startDate').value;
+    const endDate = document.getElementById('r4f_endDate').value;
+    let url = '/api/requirement?fn=jefri-req4-mapping' + (force ? '&refresh=1' : '');
+    if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
+    if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
     R4_ALL = data.rows || [];
-    chip.textContent = 'Live · ' + new Date(data.meta ? data.generatedAt : Date.now()).toLocaleString();
+    const rangeLabel = (data.meta.startDate || data.meta.endDate)
+      ? ' · ' + (data.meta.startDate || 'earliest') + ' to ' + (data.meta.endDate || 'latest')
+      : ' · all-time';
+    chip.textContent = 'Live · ' + new Date(data.meta ? data.generatedAt : Date.now()).toLocaleString() + rangeLabel;
     chip.className = 'chip live';
     document.getElementById('r4cTotal').textContent = num(data.meta.totalItems);
     document.getElementById('r4cParent').textContent = num(data.meta.levelParent);
@@ -1302,6 +1314,12 @@ function r4ExportCsv(){
 }
 
 document.getElementById('r4RefreshBtn').addEventListener('click', () => r4Load(true));
+document.getElementById('r4ApplyDates').addEventListener('click', () => r4Load(true));
+document.getElementById('r4ClearDates').addEventListener('click', () => {
+  document.getElementById('r4f_startDate').value = '';
+  document.getElementById('r4f_endDate').value = '';
+  r4Load(true);
+});
 document.getElementById('r4q').addEventListener('input', () => { r4pg=1; r4Render(); });
 document.getElementById('r4f_level').addEventListener('change', () => { r4pg=1; r4Render(); });
 document.getElementById('r4psize').addEventListener('change', () => { r4pg=1; r4Render(); });
