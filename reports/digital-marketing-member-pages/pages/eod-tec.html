@@ -94,6 +94,11 @@
 
   input#taskSearch{border:1px solid var(--line);border-radius:6px;padding:6px 11px;font-size:12.5px;width:190px;outline:none;background:var(--card);}
   input#taskSearch:focus{border-color:var(--tec);}
+  .month-filter{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);background:#f4f7fb;}
+  .month-filter .mf-label{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-right:4px;}
+  .mfbtn{border:1.5px solid var(--line);border-radius:6px;padding:4px 11px;font-size:11.5px;font-weight:700;cursor:pointer;background:var(--card);color:var(--muted);transition:all .12s;white-space:nowrap;}
+  .mfbtn:hover{border-color:var(--tec);color:var(--tec);}
+  .mfbtn.on{background:var(--tec);border-color:var(--tec);color:#fff;}
   .exp-btn{border:none;border-radius:6px;padding:6px 14px;font-size:11.5px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;white-space:nowrap;}
   .exp-btn:hover{opacity:.88;}
 
@@ -138,6 +143,10 @@
 <body>
 
 
+
+<!-- Logout Button -->
+
+
 <div class="topbar"></div>
 <header class="masthead">
   <div class="inner">
@@ -158,6 +167,7 @@
 <main class="page">
 
   <div class="topbar-nav">
+    <a class="back" href="../index.html">← Directory</a>
     <a class="back" href="eod.html">← EOD Viewer</a>
     <span class="team-badge">⚙ TEC Team · 2 Members · All Data</span>
   </div>
@@ -178,6 +188,10 @@
 
   <!-- Table -->
   <div class="tbox">
+    <div class="month-filter">
+      <span class="mf-label">Month:</span>
+      <div id="monthBtns" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+    </div>
     <div class="tbar">
       <span class="tlabel" id="tableLabel">TEC Team EOD Log</span>
       <span class="tcount" id="tableCount"></span>
@@ -282,6 +296,28 @@ const KNOWN_DATES = {
 // ── State ─────────────────────────────────────────────────────────────────────
 let allRows      = [];
 let personFilter = 'all'; // 'all' | 'Kuberan' | 'Piranav'
+let monthFilter  = 'all';
+
+// ── Month filter ──────────────────────────────────────────────────────────────
+function buildMonthButtons() {
+  const months = [...new Set(allRows.map(r => r.date.slice(0,7)))].sort().reverse();
+  const container = document.getElementById('monthBtns');
+  const allBtn = `<button class="mfbtn on" id="mf-all" onclick="setMonth('all')">All</button>`;
+  const monthBtns = months.map(ym => {
+    const [y,m] = ym.split('-');
+    const label = new Date(y, m-1, 1).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+    return `<button class="mfbtn" id="mf-${ym}" onclick="setMonth('${ym}')">${label}</button>`;
+  }).join('');
+  container.innerHTML = allBtn + monthBtns;
+}
+
+function setMonth(ym) {
+  monthFilter = ym;
+  document.querySelectorAll('.mfbtn').forEach(b => b.classList.remove('on'));
+  const active = document.getElementById('mf-' + ym);
+  if (active) active.classList.add('on');
+  renderTable();
+}
 
 // ── Init: auto-load everything ─────────────────────────────────────────────────
 (function init() { loadAll(); })();
@@ -378,6 +414,7 @@ async function loadAll() {
 
   setProgress(0);
   setStatus('');
+  buildMonthButtons();
   updateKPIs();
   renderTable();
   document.getElementById('stateWrap').style.display = 'none';
@@ -930,6 +967,7 @@ function renderTable() {
   const visible = allRows.filter(r => {
     if (r.noEod && r.missing) return false;
     if (personFilter !== 'all' && r.member.name !== personFilter) return false;
+    if (monthFilter !== 'all' && !r.date.startsWith(monthFilter)) return false;
     if (!q) return true;
     return [r.member.name, r.desc, r.intentId, r.dept, r.url, r.product]
       .join(' ').toLowerCase().includes(q);

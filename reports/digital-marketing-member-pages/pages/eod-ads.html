@@ -34,7 +34,7 @@
     --fail:#b91c1c;--fail-soft:#fff5f5;
     --na:#64748b;--na-soft:#eef2f7;
     --ads:#1a73e8;--ads-soft:#e8f0fe;
-    --c1:#0369a1;--c2:#7c3aed;--c3:#0891b2;--c4:#d97706;--c5:#0a7d4f;--c6:#be185d;
+    --c1:#0369a1;--c2:#7c3aed;--c3:#0891b2;--c4:#d97706;--c5:#0a7d4f;--c6:#be185d;--c7:#b45309;--c8:#0f766e;--c9:#6d28d9;--c10:#b91c1c;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;}
@@ -73,6 +73,10 @@
   .kpi.m4{border-color:var(--c4);} .kpi.m4 .kv{color:var(--c4);}
   .kpi.m5{border-color:var(--c5);} .kpi.m5 .kv{color:var(--c5);}
   .kpi.m6{border-color:var(--c6);} .kpi.m6 .kv{color:var(--c6);}
+  .kpi.m7{border-color:var(--c7);} .kpi.m7 .kv{color:var(--c7);}
+  .kpi.m8{border-color:var(--c8);} .kpi.m8 .kv{color:var(--c8);}
+  .kpi.m9{border-color:var(--c9);} .kpi.m9 .kv{color:var(--c9);}
+  .kpi.m10{border-color:var(--c10);} .kpi.m10 .kv{color:var(--c10);}
 
   .tbox{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
   .tbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);background:#f8fafc;}
@@ -89,9 +93,18 @@
   .pfbtn.on-4{background:var(--c4);border-color:var(--c4);color:#fff;}
   .pfbtn.on-5{background:var(--c5);border-color:var(--c5);color:#fff;}
   .pfbtn.on-6{background:var(--c6);border-color:var(--c6);color:#fff;}
+  .pfbtn.on-7{background:var(--c7);border-color:var(--c7);color:#fff;}
+  .pfbtn.on-8{background:var(--c8);border-color:var(--c8);color:#fff;}
+  .pfbtn.on-9{background:var(--c9);border-color:var(--c9);color:#fff;}
+  .pfbtn.on-10{background:var(--c10);border-color:var(--c10);color:#fff;}
 
   input#taskSearch{border:1px solid var(--line);border-radius:6px;padding:6px 11px;font-size:12.5px;width:180px;outline:none;background:var(--card);}
   input#taskSearch:focus{border-color:var(--ads);}
+  .month-filter{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);background:#f4f7fb;}
+  .month-filter .mf-label{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-right:4px;}
+  .mfbtn{border:1.5px solid var(--line);border-radius:6px;padding:4px 11px;font-size:11.5px;font-weight:700;cursor:pointer;background:var(--card);color:var(--muted);transition:all .12s;white-space:nowrap;}
+  .mfbtn:hover{border-color:var(--ads);color:var(--ads);}
+  .mfbtn.on{background:var(--ads);border-color:var(--ads);color:#fff;}
   .exp-btn{border:none;border-radius:6px;padding:6px 14px;font-size:11.5px;font-weight:700;cursor:pointer;background:var(--ads);color:#fff;}
   .exp-btn:hover{opacity:.88;}
 
@@ -110,6 +123,10 @@
   tr.mem-hdr.m4 td{background:#fffbeb;color:var(--c4);border-color:var(--c4);}
   tr.mem-hdr.m5 td{background:#e5f5ee;color:var(--c5);border-color:var(--c5);}
   tr.mem-hdr.m6 td{background:#fce7f3;color:var(--c6);border-color:var(--c6);}
+  tr.mem-hdr.m7 td{background:#fef3c7;color:var(--c7);border-color:var(--c7);}
+  tr.mem-hdr.m8 td{background:#ccfbf1;color:var(--c8);border-color:var(--c8);}
+  tr.mem-hdr.m9 td{background:#ede9fe;color:var(--c9);border-color:var(--c9);}
+  tr.mem-hdr.m10 td{background:#fee2e2;color:var(--c10);border-color:var(--c10);}
 
   tr.date-hdr td{background:#fafbfc;padding:5px 10px;font-size:10.5px;font-weight:700;color:var(--muted);border-top:1px dashed var(--line);}
 
@@ -135,6 +152,11 @@
 </head>
 <body>
 
+
+
+<!-- Logout Button -->
+
+
 <div class="topbar"></div>
 <header class="masthead">
   <div class="inner">
@@ -150,6 +172,10 @@
       <div class="stat"><div class="v" style="color:var(--c4)">Thishoban</div><div class="l">DMK004</div></div>
       <div class="stat"><div class="v" style="color:var(--c5)">Mahima</div><div class="l">DMG002</div></div>
       <div class="stat"><div class="v" style="color:var(--c6)">Jefri</div><div class="l">DMG001</div></div>
+      <div class="stat"><div class="v" style="color:var(--c7)">Thasitha</div><div class="l">DMG003</div></div>
+      <div class="stat"><div class="v" style="color:var(--c8)">Theekshy</div><div class="l">DMG004</div></div>
+      <div class="stat"><div class="v" style="color:var(--c9)">Ripson</div><div class="l">DMG005</div></div>
+      <div class="stat"><div class="v" style="color:var(--c10)">Thanishtika</div><div class="l">DMG006</div></div>
       <div class="stat"><div class="v" id="statFiles">—</div><div class="l">EOD Files</div></div>
       <div class="stat"><div class="v" id="statRange">—</div><div class="l">Date Range</div></div>
     </div>
@@ -159,8 +185,9 @@
 <main class="page">
 
   <div class="topbar-nav">
+    <a class="back" href="../index.html">← Directory</a>
     <a class="back" href="eod.html">← EOD Viewer</a>
-    <span class="team-badge">📊 ADS Team · 6 Members · All Data</span>
+    <span class="team-badge">📊 ADS Team · 10 Members · All Data</span>
   </div>
 
   <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
@@ -176,9 +203,17 @@
     <div class="kpi m4"><div class="kv" id="kpi4">—</div><div class="kl">Thishoban</div></div>
     <div class="kpi m5"><div class="kv" id="kpi5">—</div><div class="kl">Mahima</div></div>
     <div class="kpi m6"><div class="kv" id="kpi6">—</div><div class="kl">Jefri</div></div>
+    <div class="kpi m7"><div class="kv" id="kpi7">—</div><div class="kl">Thasitha</div></div>
+    <div class="kpi m8"><div class="kv" id="kpi8">—</div><div class="kl">Theekshy</div></div>
+    <div class="kpi m9"><div class="kv" id="kpi9">—</div><div class="kl">Ripson</div></div>
+    <div class="kpi m10"><div class="kv" id="kpi10">—</div><div class="kl">Thanishtika</div></div>
   </div>
 
   <div class="tbox">
+    <div class="month-filter">
+      <span class="mf-label">Month:</span>
+      <div id="monthBtns" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+    </div>
     <div class="tbar">
       <span class="tlabel" id="tableLabel">ADS Team EOD Log</span>
       <span class="tcount" id="tableCount"></span>
@@ -188,8 +223,12 @@
         <button class="pfbtn"         id="pf-Sonya"     onclick="setFilter('Sonya')">Sonya</button>
         <button class="pfbtn"         id="pf-Thivagini" onclick="setFilter('Thivagini')">Thivagini</button>
         <button class="pfbtn"         id="pf-Thishoban" onclick="setFilter('Thishoban')">Thishoban</button>
-        <button class="pfbtn"         id="pf-Mahima"    onclick="setFilter('Mahima')">Mahima</button>
-        <button class="pfbtn"         id="pf-Jefri"     onclick="setFilter('Jefri')">Jefri</button>
+        <button class="pfbtn"         id="pf-Mahima"      onclick="setFilter('Mahima')">Mahima</button>
+        <button class="pfbtn"         id="pf-Jefri"       onclick="setFilter('Jefri')">Jefri</button>
+        <button class="pfbtn"         id="pf-Thasitha"    onclick="setFilter('Thasitha')">Thasitha</button>
+        <button class="pfbtn"         id="pf-Theekshy"    onclick="setFilter('Theekshy')">Theekshy</button>
+        <button class="pfbtn"         id="pf-Ripson"      onclick="setFilter('Ripson')">Ripson</button>
+        <button class="pfbtn"         id="pf-Thanishtika" onclick="setFilter('Thanishtika')">Thanishtika</button>
       </div>
       <input type="text" id="taskSearch" placeholder="Search tasks…" oninput="renderTable()">
       <button class="exp-btn" onclick="exportCSV()">Export CSV</button>
@@ -246,8 +285,12 @@ const MEMBERS = [
   { name:'Sonya',     empId:'DMK002', dept:'Google Ads', cssClass:'m2', color:'var(--c2)', kpiId:'kpi2' },
   { name:'Thivagini', empId:'DMK003', dept:'Google Ads', cssClass:'m3', color:'var(--c3)', kpiId:'kpi3' },
   { name:'Thishoban', empId:'DMK004', dept:'Google Ads', cssClass:'m4', color:'var(--c4)', kpiId:'kpi4' },
-  { name:'Mahima',    empId:'DMG002', dept:'Google Ads', cssClass:'m5', color:'var(--c5)', kpiId:'kpi5' },
-  { name:'Jefri',     empId:'DMG001', dept:'Google Ads', cssClass:'m6', color:'var(--c6)', kpiId:'kpi6' },
+  { name:'Mahima',     empId:'DMG002', dept:'Google Ads', cssClass:'m5',  color:'var(--c5)',  kpiId:'kpi5'  },
+  { name:'Jefri',      empId:'DMG001', dept:'Google Ads', cssClass:'m6',  color:'var(--c6)',  kpiId:'kpi6'  },
+  { name:'Thasitha',   empId:'DMG003', dept:'Google Ads', cssClass:'m7',  color:'var(--c7)',  kpiId:'kpi7'  },
+  { name:'Theekshy',   empId:'DMG004', dept:'Google Ads', cssClass:'m8',  color:'var(--c8)',  kpiId:'kpi8'  },
+  { name:'Ripson',     empId:'DMG005', dept:'Google Ads', cssClass:'m9',  color:'var(--c9)',  kpiId:'kpi9'  },
+  { name:'Thanishtika',empId:'DMG006', dept:'Google Ads', cssClass:'m10', color:'var(--c10)', kpiId:'kpi10' },
 ];
 
 // Exact file dates verified from GitHub repo — 2026-08-07
@@ -360,20 +403,107 @@ const KNOWN_DATES = {
     '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
     '2026-07-27','2026-07-28','2026-07-29','2026-07-30',
   ],
+  Thasitha: [
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-29','2026-06-30',
+    '2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10',
+    '2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17',
+    '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
+    '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
+    '2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07',
+  ],
+  Theekshy: [
+    '2026-03-30','2026-03-31',
+    '2026-04-01','2026-04-02','2026-04-03','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10',
+    '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
+    '2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24',
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-29','2026-06-30',
+    '2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10',
+    '2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17',
+    '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
+    '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
+    '2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07',
+  ],
+  Ripson: [
+    '2026-03-30','2026-03-31',
+    '2026-04-01','2026-04-02','2026-04-03','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10',
+    '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
+    '2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24',
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28',
+    '2026-06-01','2026-06-02','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-30',
+    '2026-07-01','2026-07-02',
+  ],
+  Thanishtika: [
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-29','2026-06-30',
+    '2026-07-01','2026-07-02','2026-07-03',
+  ],
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let allRows      = [];
 let personFilter = 'all';
+let monthFilter  = 'all';
 let globalTaskSeq = 0;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() { loadAll(); })();
 
+// ── Month filter ──────────────────────────────────────────────────────────────
+function buildMonthButtons() {
+  const months = [...new Set(allRows.map(r => r.date.slice(0,7)))].sort().reverse();
+  const container = document.getElementById('monthBtns');
+  const allBtn = `<button class="mfbtn on" id="mf-all" onclick="setMonth('all')">All</button>`;
+  const monthBtns = months.map(ym => {
+    const [y,m] = ym.split('-');
+    const label = new Date(y, m-1, 1).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+    return `<button class="mfbtn" id="mf-${ym}" onclick="setMonth('${ym}')">${label}</button>`;
+  }).join('');
+  container.innerHTML = allBtn + monthBtns;
+}
+
+function setMonth(ym) {
+  monthFilter = ym;
+  document.querySelectorAll('.mfbtn').forEach(b => b.classList.remove('on'));
+  const active = document.getElementById('mf-' + ym);
+  if (active) active.classList.add('on');
+  renderTable();
+}
+
 // ── Person filter ─────────────────────────────────────────────────────────────
 function setFilter(who) {
   personFilter = who;
-  ['all','Sajeepan','Sonya','Thivagini','Thishoban','Mahima','Jefri'].forEach(n => {
+  ['all','Sajeepan','Sonya','Thivagini','Thishoban','Mahima','Jefri','Thasitha','Theekshy','Ripson','Thanishtika'].forEach(n => {
     const btn = document.getElementById('pf-' + n);
     if (!btn) return;
     btn.className = 'pfbtn';
@@ -445,6 +575,7 @@ async function loadAll() {
   document.getElementById('statRange').textContent = `${fmtDisp(spanFrom)} – ${fmtDisp(spanTo)}`;
 
   setProgress(0); setStatus('');
+  buildMonthButtons();
   updateKPIs();
   renderTable();
   document.getElementById('stateWrap').style.display = 'none';
@@ -963,6 +1094,7 @@ function renderTable() {
 
   const visible = allRows.filter(r => {
     if (personFilter !== 'all' && r.member.name !== personFilter) return false;
+    if (monthFilter !== 'all' && !r.date.startsWith(monthFilter)) return false;
     if (!q) return true;
     return [r.member.name,r.desc,r.dept,r.intentId,r.metricName,r.url,r.product].join(' ').toLowerCase().includes(q);
   });
