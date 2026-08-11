@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report 6 — UK Bundle Opportunity — Germany</title>
+<style>
+:root{--navy:#0c1a30;--navy-2:#13284a;--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f4f6f9;--card:#ffffff;--gold:#b98b1e;--gold-soft:#faf3e0;--accent:#1f5eff;--accent-soft:#eaf0ff;--red:#b91c1c;--red-soft:#fff5f5;--warn:#d97706;--warn-soft:#fffbeb;--good:#0a7d4f;--good-soft:#e5f5ee;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;}
+.topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--navy-2) 40%,var(--accent) 100%);}
+.masthead{background:var(--card);padding:20px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(12,26,48,.05);}
+.masthead .inner{max-width:1440px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:20px;}
+.mark{width:40px;height:40px;background:var(--navy);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#e8d59a;flex:none;border:1.5px solid var(--gold);}
+.headtxt{flex:1;min-width:220px;}
+.kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:3px;}
+.masthead h1{font-size:18px;font-weight:700;color:var(--navy);}
+.masthead .lede{font-size:12px;color:var(--muted);margin-top:2px;font-style:italic;}
+.statrow{display:flex;flex-wrap:wrap;gap:0;border-left:1px solid var(--line);padding-left:24px;}
+.stat{padding:0 20px;border-right:1px solid var(--line);}
+.stat:last-child{border-right:none;padding-right:0;}
+.stat .v{font-size:19px;font-weight:700;color:var(--navy);}
+.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:2px;}
+.page{max-width:1440px;margin:0 auto;padding:24px 32px 48px;}
+.tbar{font-size:11px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin-bottom:18px;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+.kpi .kv{font-size:22px;font-weight:700;color:var(--navy);}
+.kpi .kl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;}
+.kpi.warn .kv{color:var(--red);}
+.kpi.good .kv{color:var(--good);}
+.kpi.hi .kv{color:var(--accent);}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
+.filters{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
+.fpill{font-size:11px;font-weight:700;border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 13px;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap;}
+.fpill:hover{border-color:var(--navy);color:var(--navy);}
+.fpill.active{background:var(--navy);color:#e8d59a;border-color:var(--navy);}
+.search-wrap{position:relative;}
+.search-wrap input{font-size:12px;padding:7px 12px 7px 30px;border:1.5px solid var(--line);border-radius:8px;width:220px;outline:none;background:var(--card);color:var(--ink);}
+.search-wrap input:focus{border-color:var(--accent);}
+.search-wrap::before{content:"\2315";position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
+.tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{background:var(--bg);padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#f8f9fc;}
+.sku-txt{font-size:11.5px;font-weight:600;color:var(--ink);font-family:monospace;word-break:break-all;max-width:320px;}
+.badge-yes{background:var(--good-soft);color:var(--good);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+.badge-no{background:var(--red-soft);color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+.badge-ready{background:var(--good-soft);color:var(--good);border-radius:4px;padding:3px 10px;font-size:11px;font-weight:700;}
+.badge-miss{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:3px 10px;font-size:11px;font-weight:700;}
+.chip-list{display:flex;flex-wrap:wrap;gap:4px;max-width:360px;}
+.chip{font-size:10px;font-weight:600;font-family:monospace;border-radius:4px;padding:2px 6px;white-space:nowrap;}
+.chip.found{background:var(--good-soft);color:var(--good);}
+.chip.miss{background:var(--red-soft);color:var(--red);}
+.pager{display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px;}
+.pager-info{font-size:12px;color:var(--muted);}
+.pager-btns{display:flex;gap:6px;}
+.pager-btns button{font-size:12px;font-weight:600;padding:6px 14px;border:1.5px solid var(--line);border-radius:7px;background:var(--card);cursor:pointer;color:var(--navy);}
+.pager-btns button:disabled{opacity:.4;cursor:default;}
+.pager-btns button:not(:disabled):hover{background:var(--navy);color:#e8d59a;border-color:var(--navy);}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:6px 14px;margin-bottom:18px;transition:border-color .15s;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.csv-btn{font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-soft);color:var(--accent);cursor:pointer;white-space:nowrap;}
+.csv-btn:hover{background:var(--accent);color:#fff;}
+footer.site{max-width:1440px;margin:0 auto;padding:20px 32px 36px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center;}
+@media(max-width:640px){.masthead{padding:14px;}.page{padding:16px 12px 40px;}.search-wrap input{width:100%;}}
+
+/* Guide panel */
+.guide-toggle{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1.5px solid var(--accent);border-radius:8px;padding:6px 14px;cursor:pointer;margin-bottom:14px;transition:all .15s;float:right;}
+.guide-toggle:hover{background:var(--accent);color:#fff;}
+.guide-panel{display:none;background:var(--card);border:1.5px solid var(--accent);border-radius:12px;padding:22px 26px;margin-bottom:20px;clear:both;}
+.guide-panel.open{display:block;}
+.guide-panel h2{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.guide-section{margin-bottom:18px;}
+.guide-section h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--line);}
+.guide-section p{font-size:12.5px;color:var(--ink);line-height:1.7;margin-bottom:6px;}
+.guide-section ul{font-size:12.5px;color:var(--ink);line-height:1.8;padding-left:18px;}
+.guide-section ul li{margin-bottom:3px;}
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:8px;}
+.guide-card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
+.guide-card .gc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+.guide-card .gc-val{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.guide-card .gc-desc{font-size:11.5px;color:var(--muted);line-height:1.5;}
+.guide-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.gc-chip{font-size:11px;font-weight:700;border-radius:4px;padding:3px 9px;}
+.gc-chip.found{background:var(--good-soft);color:var(--good);}
+.gc-chip.miss{background:var(--red-soft);color:var(--red);}
+.gc-chip.ready{background:var(--good-soft);color:var(--good);}
+.gc-chip.warn{background:var(--warn-soft);color:var(--warn);}
+.gc-chip.info{background:var(--accent-soft);color:var(--accent);}
+</style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<header class="masthead">
+  <div class="inner">
+    <div class="mark">6</div>
+    <div class="headtxt">
+      <p class="kicker">Report 6 &middot; Germany DE</p>
+      <h1>UK Bundle Opportunity &mdash; Germany Coverage Gap</h1>
+      <p class="lede" id="lede-txt">Loading live data&hellip;</p>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="v" id="stat-total-uk">—</div><div class="l">Total UK Bundles</div></div>
+      <div class="stat"><div class="v" id="stat-not-in-de">—</div><div class="l">Not in Germany</div></div>
+      <div class="stat"><div class="v" id="stat-ready">—</div><div class="l">Ready for Review</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+
+  <a class="back-btn" href="../index.html">&#8592; Back to Hub</a>
+  <button class="guide-toggle" onclick="toggleGuide()"><span id="guide-icon">&#9432;</span> How to Use This Report</button>
+
+  <!-- Guide Panel -->
+  <div class="guide-panel" id="guide-panel">
+    <h2>&#9432; How to Use This Report</h2>
+
+    <div class="guide-section">
+      <h3>What This Report Does</h3>
+      <p>This report compares <strong>all active UK bundle SKUs</strong> (from eBay UK, Amazon UK, Shopify UK) against <strong>Germany's current warehouse stock</strong> to find bundle opportunities — bundles that exist in the UK but are not yet listed in Germany.</p>
+      <p>A <strong>bundle SKU</strong> is any SKU containing a <code>+</code> sign, e.g. <code>CRSF100BM+SCRN70BM+PHSH1PBRYB</code>. Each part separated by <code>+</code> is a <strong>component SKU</strong>.</p>
+      <p><strong>This report does NOT calculate build quantities or recommend creating bundles.</strong> It is an opportunity identification tool only.</p>
+    </div>
+
+    <div class="guide-section">
+      <h3>Summary Cards Explained</h3>
+      <div class="guide-grid">
+        <div class="guide-card">
+          <div class="gc-label">Total UK Bundle SKUs</div>
+          <div class="gc-val">23,247</div>
+          <div class="gc-desc">All distinct bundle SKUs found across UK eBay, Amazon and Shopify listings (active only).</div>
+        </div>
+        <div class="guide-card">
+          <div class="gc-label">Already Exists in Germany</div>
+          <div class="gc-val" style="color:var(--good)">10,059</div>
+          <div class="gc-desc">These UK bundles are already listed on at least one Germany channel (eBay DE, Amazon DE or Shopify DE). No action needed.</div>
+        </div>
+        <div class="guide-card">
+          <div class="gc-label">Not in Germany</div>
+          <div class="gc-val" style="color:var(--red)">13,188</div>
+          <div class="gc-desc">UK bundles with no matching Germany listing. These are the gap — the table shows these rows.</div>
+        </div>
+        <div class="guide-card">
+          <div class="gc-label">Ready for Review</div>
+          <div class="gc-val" style="color:var(--accent)">467</div>
+          <div class="gc-desc">Not-in-Germany bundles where <strong>every component SKU</strong> already has Germany warehouse stock. These are your highest-priority opportunities.</div>
+        </div>
+        <div class="guide-card">
+          <div class="gc-label">Missing Components</div>
+          <div class="gc-val">12,721</div>
+          <div class="gc-desc">Not-in-Germany bundles where at least one component has no Germany stock. Cannot be built yet without sourcing the missing part(s).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <h3>Filter Pills Explained</h3>
+      <ul>
+        <li><strong>All Not in Germany</strong> — Shows all 13,188 UK bundles that do not exist in Germany. Default view.</li>
+        <li><strong>&#10003; Ready for Review</strong> — Filters to bundles where all components are in Germany stock. Start here — these 467 are actionable today.</li>
+        <li><strong>Missing Components</strong> — Filters to bundles where one or more components are missing from Germany stock. Use this to identify what stock needs to be sourced first.</li>
+        <li><strong>Search SKU</strong> — Type any part of a bundle SKU to find it instantly. Works across all filter states.</li>
+      </ul>
+    </div>
+
+    <div class="guide-section">
+      <h3>Table Columns Explained</h3>
+      <ul>
+        <li><strong>UK Bundle SKU</strong> — The full bundle SKU as listed in UK channels, e.g. <code>CRSF100BM+SCRN70BM</code>.</li>
+        <li><strong># Parts</strong> — Number of component SKUs in this bundle.</li>
+        <li><strong>Component List</strong> — Each component shown as a chip:
+          <div class="guide-chip-row">
+            <span class="gc-chip found">&#10003; CRSF100BM</span> <span style="font-size:11px;color:var(--muted)">= found in Germany stock</span>
+          </div>
+          <div class="guide-chip-row" style="margin-top:5px;">
+            <span class="gc-chip miss">&#10007; SCRN70YB</span> <span style="font-size:11px;color:var(--muted)">= NOT in Germany stock</span>
+          </div>
+        </li>
+        <li><strong>DE Bundle</strong> — Always <span style="background:var(--red-soft);color:var(--red);border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;">&#10007; No</span> in this table (only not-in-Germany bundles are shown).</li>
+        <li><strong>Found</strong> — How many components are confirmed in Germany stock out of total (e.g. <code>4 / 4</code>).</li>
+        <li><strong>Missing</strong> — Count of components with no Germany stock. Zero means Ready for Review.</li>
+        <li><strong>Opportunity Status</strong> —
+          <div class="guide-chip-row" style="margin-top:5px;">
+            <span class="gc-chip ready">&#10003; Ready for Review</span> <span style="font-size:11px;color:var(--muted)">= all components in DE stock, can proceed to listing</span>
+          </div>
+          <div class="guide-chip-row" style="margin-top:5px;">
+            <span class="gc-chip warn">Missing 2 component(s)</span> <span style="font-size:11px;color:var(--muted)">= needs stock sourcing first</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="guide-section">
+      <h3>Recommended Workflow</h3>
+      <ul>
+        <li><strong>Step 1:</strong> Click <strong>&#10003; Ready for Review</strong> filter — these 467 bundles have all stock in Germany and are your immediate opportunity.</li>
+        <li><strong>Step 2:</strong> Export CSV using the <strong>↓ Export CSV</strong> button and share with the listings team.</li>
+        <li><strong>Step 3:</strong> For the <strong>Missing Components</strong> group — check which missing SKUs appear most frequently across many bundles. Sourcing one key SKU may unlock dozens of bundles.</li>
+        <li><strong>Step 4:</strong> Search a specific SKU (e.g. <code>CRSF100BM</code>) to see all bundles containing it.</li>
+      </ul>
+    </div>
+
+    <div class="guide-section">
+      <h3>Data &amp; Refresh</h3>
+      <p>Data is pulled <strong>live from the database</strong> and auto-refreshes every <strong>5 seconds</strong>. Numbers update automatically as listings are added or stock changes. The <em>refresh date</em> in the source bar shows the last successful data pull.</p>
+      <p><strong>Important:</strong> This report shows opportunity only — it does not calculate how many units of a bundle can be built, and it does not recommend or trigger any listing creation.</p>
+    </div>
+  </div>
+  <!-- /Guide Panel -->
+
+  <div class="tbar">
+    <strong>Source:</strong> listings.ebay_listings (UK, all_list=1) &middot; amazon_listings (UK) &middot; shopify_listings (UK, all_list=1) &middot; inventory.local_inventory_current_stock_location_wise (Germany) &middot; <span id="refresh-date">loading&hellip;</span>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kv" id="kpi-total-uk">—</div><div class="kl">Total UK Bundle SKUs</div></div>
+    <div class="kpi good"><div class="kv" id="kpi-already-de">—</div><div class="kl">Already Exists in Germany</div></div>
+    <div class="kpi warn"><div class="kv" id="kpi-not-de">—</div><div class="kl">Not in Germany</div></div>
+    <div class="kpi hi"><div class="kv" id="kpi-ready">—</div><div class="kl">Ready for Review</div></div>
+    <div class="kpi"><div class="kv" id="kpi-missing-comps">—</div><div class="kl">Missing Components</div></div>
+  </div>
+
+  <div class="controls">
+    <div class="filters" id="filter-bar">
+      <button class="fpill active" data-filter="all" id="pill-all">All Not in Germany (—)</button>
+      <button class="fpill" data-filter="ready" id="pill-ready">&#10003; Ready for Review (—)</button>
+      <button class="fpill" data-filter="missing" id="pill-missing">Missing Components (—)</button>
+    </div>
+    <div class="search-wrap"><input type="text" id="search" placeholder="Search SKU..." oninput="onSearch()"></div>
+    <button class="csv-btn" onclick="exportCSV()">&#8595; Export CSV</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>UK Bundle SKU</th>
+          <th style="width:60px"># Parts</th>
+          <th>Component List</th>
+          <th style="width:100px">DE Bundle</th>
+          <th style="width:80px">Found</th>
+          <th style="width:80px">Missing</th>
+          <th style="width:160px">Opportunity Status</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <div class="pager-info" id="pager-info"></div>
+    <div class="pager-btns">
+      <button id="btn-prev" onclick="changePage(-1)">&#8592; Prev</button>
+      <button id="btn-next" onclick="changePage(1)">Next &#8594;</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site">
+  Germany Sales Decline Dashboard &middot; Report 6 &mdash; UK Bundle Opportunity &middot; AIOS &middot; <span id="footer-date">live</span>
+</footer>
+
+<script>
+
+var DATA = [];
+var filtered = [];
+var page = 0;
+var PAGE_SIZE = 100;
+var activeFilter = 'all';
+var searchTerm = '';
+
+function fmt(n){ return Number(n).toLocaleString(); }
+
+function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function applyFilters(){
+  filtered = DATA.filter(function(r){
+    var matchSearch = !searchTerm || r.b.toLowerCase().indexOf(searchTerm) !== -1;
+    var matchFilter = true;
+    if(activeFilter === 'ready')   matchFilter = r.ready === true;
+    if(activeFilter === 'missing') matchFilter = r.ready !== true;
+    return matchSearch && matchFilter;
+  });
+  page = 0;
+  render();
+}
+
+function onSearch(){
+  searchTerm = document.getElementById('search').value.toLowerCase().trim();
+  applyFilters();
+}
+
+document.getElementById('filter-bar').addEventListener('click', function(e){
+  var btn = e.target.closest('.fpill');
+  if(!btn) return;
+  document.querySelectorAll('#filter-bar .fpill').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  activeFilter = btn.dataset.filter;
+  applyFilters();
+});
+
+function changePage(dir){
+  page += dir;
+  render();
+}
+
+function render(){
+  var total   = filtered.length;
+  var maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+  if(page > maxPage) page = maxPage;
+  if(page < 0) page = 0;
+  var start = page * PAGE_SIZE;
+  var end   = Math.min(start + PAGE_SIZE, total);
+  var slice = filtered.slice(start, end);
+
+  var rows = slice.map(function(r){
+    var compChips = r.components.map(function(c){
+      var isFound = r.found.indexOf(c) !== -1;
+      return '<span class="chip ' + (isFound ? 'found' : 'miss') + '">' + escH(c) + '</span>';
+    }).join('');
+
+    var statusBadge = r.ready
+      ? '<span class="badge-ready">&#10003; Ready for Review</span>'
+      : '<span class="badge-miss">Missing ' + r.mc + ' component' + (r.mc > 1 ? 's' : '') + '</span>';
+
+    return '<tr>'
+      + '<td><div class="sku-txt">' + escH(r.b) + '</div></td>'
+      + '<td style="text-align:center;font-weight:700;">' + r.tc + '</td>'
+      + '<td><div class="chip-list">' + compChips + '</div></td>'
+      + '<td><span class="badge-no">&#10007; No</span></td>'
+      + '<td style="text-align:center;">' + r.fc + ' / ' + r.tc + '</td>'
+      + '<td style="text-align:center;' + (r.mc > 0 ? 'color:var(--red);font-weight:700;' : '') + '">' + r.mc + '</td>'
+      + '<td>' + statusBadge + '</td>'
+      + '</tr>';
+  }).join('');
+
+  document.getElementById('tbody').innerHTML = rows ||
+    '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">No results</td></tr>';
+  document.getElementById('pager-info').textContent =
+    'Showing ' + (total === 0 ? 0 : start + 1) + '–' + end + ' of ' + fmt(total) + ' bundles';
+  document.getElementById('btn-prev').disabled = page === 0;
+  document.getElementById('btn-next').disabled = page >= maxPage;
+}
+
+function updateDashboard(s, d){
+  var notInDE = s.notInDE || 0;
+  var ready   = s.readyForReview || 0;
+  var missing = s.missingComps || 0;
+
+  document.getElementById('stat-total-uk').textContent   = fmt(s.totalUK);
+  document.getElementById('stat-not-in-de').textContent  = fmt(notInDE);
+  document.getElementById('stat-ready').textContent      = fmt(ready);
+
+  document.getElementById('lede-txt').textContent =
+    fmt(s.totalUK) + ' UK bundle SKUs checked against Germany — ' +
+    fmt(ready) + ' fully buildable from existing DE stock';
+
+  document.getElementById('kpi-total-uk').textContent      = fmt(s.totalUK);
+  document.getElementById('kpi-already-de').textContent    = fmt(s.alreadyInDE);
+  document.getElementById('kpi-not-de').textContent        = fmt(notInDE);
+  document.getElementById('kpi-ready').textContent         = fmt(ready);
+  document.getElementById('kpi-missing-comps').textContent = fmt(missing);
+
+  document.getElementById('pill-all').textContent     = 'All Not in Germany (' + fmt(notInDE) + ')';
+  document.getElementById('pill-ready').textContent   = '✓ Ready for Review (' + fmt(ready) + ')';
+  document.getElementById('pill-missing').textContent = 'Missing Components (' + fmt(missing) + ')';
+
+  document.getElementById('refresh-date').textContent = d;
+  document.getElementById('footer-date').textContent  = d;
+}
+
+function exportCSV(){
+  var headers = ['UK Bundle SKU','# Components','Components','DE Bundle Exists','Found','Missing','Opportunity Status'];
+  var csvRows = filtered.map(function(r){
+    return [
+      r.b,
+      r.tc,
+      '"' + r.components.join(' | ') + '"',
+      'No',
+      r.fc + '/' + r.tc,
+      r.mc,
+      r.ready ? 'Ready for Review' : 'Missing ' + r.mc + ' component(s)'
+    ].join(',');
+  });
+  var csv = headers.join(',') + '\n' + csvRows.join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'de_uk_bundle_opportunity_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+async function loadLive(){
+  var tbody = document.getElementById('tbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">&#9203; Loading live data&hellip;</td></tr>';
+  try{
+    var res  = await fetch('/api/intel-api?service=germany&type=uk-bundle', { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    var json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'API error');
+    DATA = json.rows;
+    var d = json.refreshed_at ? json.refreshed_at.slice(0,10) : 'live';
+    updateDashboard(json.summary, d);
+    applyFilters();
+  } catch(err){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--red)">&#9888; Failed to load: ' + err.message + '</td></tr>';
+  }
+}
+
+function toggleGuide(){
+  var panel = document.getElementById('guide-panel');
+  var icon  = document.getElementById('guide-icon');
+  var open  = panel.classList.toggle('open');
+  icon.textContent = open ? '✕' : '①';
+}
+
+loadLive();
+
+// Auto-poll every 5 seconds — same mechanism as existing Germany reports
+setInterval(async function(){
+  try{
+    var res  = await fetch('/api/intel-api?service=germany&type=uk-bundle', { cache: 'no-store' });
+    if(!res.ok) return;
+    var json = await res.json();
+    if(!json.ok || !json.rows) return;
+    DATA = json.rows;
+    var d = json.refreshed_at ? json.refreshed_at.slice(0,10) : 'live';
+    updateDashboard(json.summary, d);
+    applyFilters();
+  } catch(e){}
+}, 5000);
+
+</script>
+
+</body>
+</html>

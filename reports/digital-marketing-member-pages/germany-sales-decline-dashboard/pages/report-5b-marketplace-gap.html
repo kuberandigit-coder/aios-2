@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Report 5 - Marketplace Gap — DE In-Stock SKUs</title>
+
+<style>:root{--navy:#0c1a30;--navy-2:#13284a;--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f4f6f9;--card:#ffffff;--gold:#b98b1e;--gold-soft:#faf3e0;--accent:#1f5eff;--accent-soft:#eaf0ff;--red:#b91c1c;--red-soft:#fff5f5;--warn:#d97706;--warn-soft:#fffbeb;--good:#0a7d4f;--good-soft:#e5f5ee;}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;}
+
+.topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--navy-2) 40%,var(--accent) 100%);}
+
+.masthead{background:var(--card);padding:20px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(12,26,48,.05);}
+
+.masthead .inner{max-width:1440px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:20px;}
+
+.mark{width:40px;height:40px;background:var(--navy);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#e8d59a;flex:none;border:1.5px solid var(--gold);}
+
+.headtxt{flex:1;min-width:220px;}
+
+.kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:3px;}
+
+.masthead h1{font-size:18px;font-weight:700;color:var(--navy);}
+
+.masthead .lede{font-size:12px;color:var(--muted);margin-top:2px;font-style:italic;}
+
+.statrow{display:flex;flex-wrap:wrap;gap:0;border-left:1px solid var(--line);padding-left:24px;}
+
+.stat{padding:0 20px;border-right:1px solid var(--line);}
+
+.stat:last-child{border-right:none;padding-right:0;}
+
+.stat .v{font-size:19px;font-weight:700;color:var(--navy);}
+
+.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:2px;}
+
+.page{max-width:1440px;margin:0 auto;padding:24px 32px 48px;}
+
+.tbar{font-size:11px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin-bottom:18px;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+
+.kpi .kv{font-size:22px;font-weight:700;color:var(--navy);}
+
+.kpi .kl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;}
+
+.kpi.warn .kv{color:var(--red);}
+
+.kpi.good .kv{color:var(--good);}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
+
+.filters{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
+
+.fpill{font-size:11px;font-weight:700;border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 13px;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap;}
+
+.fpill:hover{border-color:var(--navy);color:var(--navy);}
+
+.fpill.active{background:var(--navy);color:#e8d59a;border-color:var(--navy);}
+
+.search-wrap{position:relative;}
+
+.search-wrap input{font-size:12px;padding:7px 12px 7px 30px;border:1.5px solid var(--line);border-radius:8px;width:220px;outline:none;background:var(--card);color:var(--ink);}
+
+.search-wrap input:focus{border-color:var(--accent);}
+
+.search-wrap::before{content:"\2315";position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
+
+.tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+
+th{background:var(--bg);padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;}
+
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+
+tr:last-child td{border-bottom:none;}
+
+tr:hover td{background:#f8f9fc;}
+
+.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--line);flex:none;display:block;}
+
+.thumb-fallback{width:44px;height:44px;border-radius:8px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:11px;color:#e8d59a;font-weight:700;flex:none;}
+
+.sku-txt{font-size:11.5px;font-weight:600;color:var(--ink);font-family:monospace;word-break:break-all;max-width:280px;}
+
+.badge-yes{background:var(--good-soft);color:var(--good);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+
+.badge-no{background:var(--red-soft);color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+
+.miss-0{background:var(--good-soft);color:var(--good);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+
+.miss-1{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+
+.miss-2,.miss-3{background:var(--red-soft);color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+
+.pager{display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px;}
+
+.pager-info{font-size:12px;color:var(--muted);}
+
+.pager-btns{display:flex;gap:6px;}
+
+.pager-btns button{font-size:12px;font-weight:600;padding:6px 14px;border:1.5px solid var(--line);border-radius:7px;background:var(--card);cursor:pointer;color:var(--navy);}
+
+.pager-btns button:disabled{opacity:.4;cursor:default;}
+
+.pager-btns button:not(:disabled):hover{background:var(--navy);color:#e8d59a;border-color:var(--navy);}
+
+footer.site{max-width:1440px;margin:0 auto;padding:20px 32px 36px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center;}
+
+@media(max-width:640px){.masthead{padding:14px;}.page{padding:16px 12px 40px;}.search-wrap input{width:100%;}}
+
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:6px 14px;margin-bottom:18px;transition:border-color .15s;}
+
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+.csv-btn{font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-soft);color:var(--accent);cursor:pointer;white-space:nowrap;}
+
+.csv-btn:hover{background:var(--accent);color:#fff;}
+
+
+.tab-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;}
+.tab-btn{border:none;background:transparent;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--accent-soft);color:var(--accent);}
+.tab-btn.active{background:var(--navy);color:#e8d59a;}
+.tb-count{font-size:11px;font-weight:400;opacity:.8;margin-left:4px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.mark-btn{font-size:10px;font-weight:700;padding:2px 7px;border:1.5px solid var(--warn);border-radius:4px;background:var(--warn-soft);color:var(--warn);cursor:pointer;margin-left:5px;white-space:nowrap;vertical-align:middle;}
+.mark-btn:hover{background:var(--warn);color:#fff;}
+.mark-btn.done{border-color:var(--good);background:var(--good-soft);color:var(--good);cursor:default;pointer-events:none;}
+.badge-pend{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+.badge-conf{background:var(--good-soft);color:var(--good);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;}
+.log-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
+.log-empty{text-align:center;padding:40px;color:var(--muted);font-size:13px;}
+
+.acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:22px;}
+.acc-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+.acc-card .acc-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;}
+.acc-card .acc-nums{display:flex;gap:16px;align-items:flex-end;}
+.acc-card .acc-listed{font-size:20px;font-weight:700;color:var(--good);}
+.acc-card .acc-missing{font-size:20px;font-weight:700;color:var(--red);}
+.acc-card .acc-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}
+.acc-card .acc-bar{height:5px;border-radius:999px;background:var(--line);margin-top:10px;overflow:hidden;}
+.acc-card .acc-bar-fill{height:100%;background:var(--good);border-radius:999px;transition:width .4s;}
+.acc-tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;}
+.acc-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
+</style>
+
+</head>
+
+<body>
+
+
+
+<div class="topbar"></div>
+
+<header class="masthead">
+
+  <div class="inner">
+
+    <div class="mark">5</div>
+
+    <div class="headtxt">
+
+      <p class="kicker">Report 5 &middot; Germany DE</p>
+
+      <h1>Marketplace Gap &mdash; DE In-Stock SKUs</h1>
+
+      <p class="lede" id="lede-txt">Loading live data&hellip;</p>
+
+    </div>
+
+    <div class="statrow">
+
+      <div class="stat"><div class="v" id="stat-total">—</div><div class="l">Total DE SKUs</div></div>
+
+      <div class="stat"><div class="v" id="stat-not-anywhere">—</div><div class="l">Not Listed Anywhere</div></div>
+
+      <div class="stat"><div class="v" id="stat-all3">—</div><div class="l">Listed All 3</div></div>
+
+    </div>
+
+  </div>
+
+</header>
+
+
+
+<main class="page">
+
+
+
+  <a class="back-btn" href="../index.html">&#8592; Back to Hub</a>
+
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" id="tab-btn-1" onclick="showTab(1)" role="tab">Gap Report</button>
+    <button class="tab-btn" id="tab-btn-2" onclick="showTab(2)" role="tab">Listing Added Log <span class="tb-count" id="log-count-badge">(0)</span></button>
+    <button class="tab-btn" id="tab-btn-3" onclick="showTab(3)" role="tab">eBay Accounts</button>
+  </nav>
+
+  <div class="tab-panel active" id="tab-panel-1">
+
+
+
+  <div class="tbar">
+
+    <strong>Source:</strong> listings.amazon_listings &middot; ebay_listings (all_list=1) &middot; shopify_listings (all_list=1) &middot; site='Germany' &middot; inventory.local_inventory_current_stock_location_wise &middot; <span id="refresh-date">loading&hellip;</span>
+
+  </div>
+
+
+
+  <div class="kpi-row">
+
+    <div class="kpi"><div class="kv" id="kpi-total">—</div><div class="kl">Total DE In-Stock SKUs</div></div>
+
+    <div class="kpi warn"><div class="kv" id="kpi-not-anywhere">—</div><div class="kl">Not Listed Anywhere</div></div>
+
+    <div class="kpi warn"><div class="kv" id="kpi-missing-amazon">—</div><div class="kl">Missing Amazon DE</div></div>
+
+    <div class="kpi good"><div class="kv" id="kpi-all3">—</div><div class="kl">Listed All 3 Channels</div></div>
+
+    <div class="kpi"><div class="kv" id="kpi-missing-ebay">—</div><div class="kl">Missing eBay DE</div></div>
+
+    <div class="kpi"><div class="kv" id="kpi-missing-shopify">—</div><div class="kl">Missing Shopify DE</div></div>
+
+
+  </div>
+
+
+
+  <div class="controls">
+
+    <div class="filters" id="filter-bar">
+
+      <button class="fpill active" data-filter="all" id="pill-all">All (—)</button>
+
+      <button class="fpill" data-filter="none" id="pill-none">Not Listed Anywhere (—)</button>
+
+      <button class="fpill" data-filter="no-amz" id="pill-no-amz">Missing Amazon (—)</button>
+
+      <button class="fpill" data-filter="no-ebay" id="pill-no-ebay">Missing eBay (—)</button>
+
+      <button class="fpill" data-filter="no-shop" id="pill-no-shop">Missing Shopify (—)</button>
+
+      <button class="fpill" data-filter="all3" id="pill-all3">Listed All 3 (—)</button>
+
+    </div>
+
+    <div class="search-wrap"><input type="text" id="search" placeholder="Search SKU..." oninput="onSearch()"></div>
+
+    <button class="csv-btn" onclick="exportCSV()">&#8595; Export CSV</button>
+
+  </div>
+
+
+
+  <div class="tbl-wrap">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th style="width:56px">Image</th>
+
+          <th>SKU</th>
+
+          <th>DE Stock</th>
+
+          <th>Amazon DE</th>
+
+          <th>eBay DE</th>
+
+          <th>Shopify DE</th>
+
+          <th>Missing</th><th style="width:100px">Add</th>
+
+        </tr>
+
+      </thead>
+
+      <tbody id="tbody"></tbody>
+
+    </table>
+
+  </div>
+
+
+
+  <div class="pager">
+
+    <div class="pager-info" id="pager-info"></div>
+
+    <div class="pager-btns">
+
+      <button id="btn-prev" onclick="changePage(-1)">← Prev</button>
+
+      <button id="btn-next" onclick="changePage(1)">Next →</button>
+
+    </div>
+
+  </div>
+
+
+
+  </div><!-- /tab-panel-1 -->
+
+  <div class="tab-panel" id="tab-panel-2">
+
+    <div class="log-controls">
+      <select id="log-channel-filter" onchange="log_render()" style="font-size:12px;padding:7px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);">
+        <option value="all">All Channels</option>
+        <option value="Amazon DE">Amazon DE</option>
+        <option value="eBay DE">eBay DE</option>
+        <option value="Shopify DE">Shopify DE</option>
+      </select>
+      <select id="log-status-filter" onchange="log_render()" style="font-size:12px;padding:7px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);">
+        <option value="all">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Confirmed">Confirmed Live</option>
+      </select>
+      <button class="csv-btn" onclick="log_exportCSV()" style="margin-left:auto;">&#8595; Export Log CSV</button>
+      <button onclick="log_clearAll()" style="font-size:11px;font-weight:700;padding:6px 14px;border:1.5px solid var(--red);border-radius:8px;background:var(--red-soft);color:var(--red);cursor:pointer;">Clear All</button>
+    </div>
+
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;">
+      Saved in your browser &middot; <strong>Confirmed</strong> = API now shows SKU is live on that channel &middot; <strong>Pending</strong> = not yet verified
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>SKU</th><th>Channel</th><th>DE Stock</th><th>Marked Added</th><th>Status</th><th style="width:80px">Remove</th>
+        </tr></thead>
+        <tbody id="log-tbody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /tab-panel-2 -->
+
+  <div class="tab-panel" id="tab-panel-3">
+
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:14px;">
+      Per-account coverage across all <strong id="acc-total-lbl">—</strong> DE in-stock SKUs. <em>Listed</em> = SKU covered by that account. <em>Missing</em> = not covered.
+    </div>
+
+    <!-- Account summary cards -->
+    <div class="acc-grid" id="acc-cards"></div>
+
+    <!-- SKU table for missing-eBay SKUs with per-account breakdown -->
+    <div class="acc-controls">
+      <div class="search-wrap"><input type="text" id="acc-search" placeholder="Search SKU..." oninput="accSearch()"></div>
+      <select id="acc-filter" onchange="accApply()" style="font-size:12px;padding:7px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);">
+        <option value="missing-ebay">Missing eBay (any account)</option>
+        <option value="all">All DE SKUs</option>
+        <option disabled>── By Account ──</option>
+        <option value="miss-e1">Missing: led_sone</option>
+        <option value="miss-e4">Missing: sunsone</option>
+        <option value="miss-e22">Missing: electricalsone</option>
+        <option value="miss-e27">Missing: ledsonede</option>
+        <option value="miss-e28">Missing: huettenlampen</option>
+        <option value="miss-e222">Missing: homin_gmbh</option>
+      </select>
+      <button class="csv-btn" onclick="accExportCSV()">&#8595; Export CSV</button>
+    </div>
+
+    <div class="acc-tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>SKU</th>
+          <th>DE Stock</th>
+          <th>eBay Overall</th>
+          <th>led_sone</th>
+          <th>sunsone</th>
+          <th>electricalsone</th>
+          <th>ledsonede</th>
+          <th>huettenlampen</th>
+          <th>homin_gmbh</th>
+        </tr></thead>
+        <tbody id="acc-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <div class="pager-info" id="acc-pager-info"></div>
+      <div class="pager-btns">
+        <button id="acc-btn-prev" onclick="accChangePage(-1)">← Prev</button>
+        <button id="acc-btn-next" onclick="accChangePage(1)">Next →</button>
+      </div>
+    </div>
+
+  </div><!-- /tab-panel-3 -->
+
+
+</main>
+
+
+
+<footer class="site">
+
+  Germany Sales Decline Dashboard &middot; Report 5 &mdash; Marketplace Gap &middot; AIOS &middot; <span id="footer-date">live</span>
+
+</footer>
+
+
+
+<script>
+
+
+
+var DATA=[];
+
+var PAGE_SIZE=100;
+
+var filtered=DATA;
+
+var page=0;
+
+var activeFilter='all';
+
+var searchTerm='';
+
+
+
+function applyFilters(){
+
+  filtered=DATA.filter(function(r){
+
+    var matchSearch=!searchTerm||r.s.toLowerCase().indexOf(searchTerm)!==-1;
+
+    var matchFilter=true;
+
+    if(activeFilter==='none') matchFilter=!r.a&&!r.e&&!r.sh;
+
+    else if(activeFilter==='no-amz') matchFilter=!r.a;
+
+    else if(activeFilter==='no-ebay') matchFilter=!r.e;
+
+    else if(activeFilter==='no-shop') matchFilter=!r.sh;
+
+    else if(activeFilter==='all3') matchFilter=r.a&&r.e&&r.sh;
+
+    return matchSearch&&matchFilter;
+
+  });
+
+  page=0;
+
+  render();
+
+}
+
+
+
+function onSearch(){
+
+  searchTerm=document.getElementById('search').value.toLowerCase().trim();
+
+  applyFilters();
+
+}
+
+
+
+document.getElementById('filter-bar').addEventListener('click',function(e){
+
+  var btn=e.target.closest('.fpill');
+
+  if(!btn) return;
+
+  document.querySelectorAll('#filter-bar .fpill').forEach(function(b){b.classList.remove('active');});
+
+  btn.classList.add('active');
+
+  activeFilter=btn.dataset.filter;
+
+  applyFilters();
+
+});
+
+
+
+
+function changePage(dir){
+
+  page+=dir;
+
+  render();
+
+}
+
+
+
+function imgErr(el){
+
+  el.style.display='none';
+
+  if(el.nextElementSibling) el.nextElementSibling.style.display='flex';
+
+}
+
+
+
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+
+
+
+
+function exportCSV(){
+
+  var headers=['SKU','DE Stock','Amazon DE','eBay DE','Shopify DE','Missing Channels'];
+
+  var rows=filtered.map(function(r){
+
+    var miss=3-(r.a+r.e+r.sh);
+
+    var missLabel=miss===0?'None':miss===1?'1 channel':miss===2?'2 channels':'3 channels';
+
+    return [r.s,r.st,r.a?'Listed':'No',r.e?'Listed':'No',r.sh?'Listed':'No',missLabel].join(',');
+
+  });
+
+  var csv=headers.join(',')+'\n'+rows.join('\n');
+
+  var blob=new Blob([csv],{type:'text/csv'});
+
+  var a=document.createElement('a');
+
+  a.href=URL.createObjectURL(blob);
+
+  a.download='de_marketplace_gap_'+new Date().toISOString().slice(0,10)+'.csv';
+
+  a.click();
+
+}
+
+
+
+function render(){
+
+  var total=filtered.length;
+
+  var maxPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
+
+  if(page>maxPage) page=maxPage;
+
+  if(page<0) page=0;
+
+  var start=page*PAGE_SIZE;
+
+  var end=Math.min(start+PAGE_SIZE,total);
+
+  var slice=filtered.slice(start,end);
+
+
+
+  var rows=slice.map(function(r){
+
+    var miss=3-(r.a+r.e+r.sh);
+
+    var missClass=miss===0?'miss-0':miss===1?'miss-1':miss===2?'miss-2':'miss-3';
+
+    var missLabel=miss===0?'None':miss===1?'1 channel':miss===2?'2 channels':'3 channels';
+
+    var prefix=r.s.substring(0,2);
+
+    var imgCell='<span class="thumb-fallback">'+escH(prefix)+'</span>';
+
+    function _cell(sku,ch,dbListed){
+      if(dbListed) return '<span class="badge-yes">&#10003; Listed</span>';
+      return '<span class="badge-no">&#10007; No</span>';
+    }
+    var _anyL=log_load().some(function(e){return e.sku===r.s;});
+
+    return '<tr>'
+
+      +'<td>'+imgCell+'</td>'
+
+      +'<td><div class="sku-txt">'+escH(r.s)+'</div></td>'
+
+      +'<td>'+r.st.toLocaleString()+'</td>'
+
+      +'<td>'+_cell(r.s,'Amazon DE',r.a)+'</td>'
+
+      +'<td>'+_cell(r.s,'eBay DE',r.e)+'</td>'
+
+      +'<td>'+_cell(r.s,'Shopify DE',r.sh)+'</td>'
+
+      +'<td><span class="'+missClass+'">'+missLabel+'</span></td>'
+
+      +'<td style="font-size:11px;">'+(_anyL?'<span style="color:var(--warn);font-weight:700">&#9679; Logged</span>':'')+'</td>'
+
+      +'</tr>';
+
+  }).join('');
+
+
+
+  document.getElementById('tbody').innerHTML=rows||'<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted)">No results</td></tr>';
+
+  document.getElementById('pager-info').textContent='Showing '+(total===0?0:start+1)+'–'+end+' of '+total.toLocaleString()+' SKUs';
+
+  document.getElementById('btn-prev').disabled=page===0;
+
+  document.getElementById('btn-next').disabled=page>=maxPage;
+
+}
+
+
+
+loadLive();
+
+
+
+
+function fmt(n){return Number(n).toLocaleString();}
+
+function updateDashboard(s,d){
+  document.getElementById('stat-total').textContent=fmt(s.total);
+  document.getElementById('stat-not-anywhere').textContent=fmt(s.notAnywhere);
+  document.getElementById('stat-all3').textContent=fmt(s.allThree);
+
+  document.getElementById('lede-txt').textContent=fmt(s.total)+' SKUs with Germany warehouse stock — showing which are missing Amazon DE, eBay DE or Shopify DE listings';
+
+  document.getElementById('kpi-total').textContent=fmt(s.total);
+  document.getElementById('kpi-not-anywhere').textContent=fmt(s.notAnywhere);
+  document.getElementById('kpi-missing-amazon').textContent=fmt(s.missingAmazon);
+  document.getElementById('kpi-all3').textContent=fmt(s.allThree);
+  document.getElementById('kpi-missing-ebay').textContent=fmt(s.missingEbay);
+  document.getElementById('kpi-missing-shopify').textContent=fmt(s.missingShopify);
+
+  document.getElementById('pill-all').textContent='All ('+fmt(s.total)+')';
+  document.getElementById('pill-none').textContent='Not Listed Anywhere ('+fmt(s.notAnywhere)+')';
+  document.getElementById('pill-no-amz').textContent='Missing Amazon ('+fmt(s.missingAmazon)+')';
+  document.getElementById('pill-no-ebay').textContent='Missing eBay ('+fmt(s.missingEbay)+')';
+  document.getElementById('pill-no-shop').textContent='Missing Shopify ('+fmt(s.missingShopify)+')';
+  document.getElementById('pill-all3').textContent='Listed All 3 ('+fmt(s.allThree)+')';
+
+  document.getElementById('refresh-date').textContent=d;
+  document.getElementById('footer-date').textContent=d;
+}
+
+// eBay Accounts tab state
+var ACC_SUMMARY=[];
+var accFiltered=[];
+var accPage=0;
+var ACC_PAGE_SIZE=100;
+var accSearchTerm='';
+var accFilterMode='missing-ebay';
+
+var ACC_COLS=[
+  {key:'e1', label:'led_sone'},
+  {key:'e4', label:'sunsone'},
+  {key:'e22',label:'electricalsone'},
+  {key:'e27',label:'ledsonede'},
+  {key:'e28',label:'huettenlampen'},
+  {key:'e222',label:'homin_gmbh'},
+];
+
+function accSearch(){
+  accSearchTerm=document.getElementById('acc-search').value.toLowerCase().trim();
+  accApply();
+}
+
+function accApply(){
+  accFilterMode=document.getElementById('acc-filter').value;
+  accFiltered=DATA.filter(function(r){
+    var matchSearch=!accSearchTerm||r.s.toLowerCase().indexOf(accSearchTerm)!==-1;
+    var matchFilter=true;
+    if(accFilterMode==='missing-ebay') matchFilter=!r.e;
+    else if(accFilterMode.startsWith('miss-')){
+      var col=accFilterMode.replace('miss-','');
+      matchFilter=!r[col];
+    }
+    return matchSearch&&matchFilter;
+  });
+  accPage=0;
+  accRenderTable();
+}
+
+function accChangePage(dir){
+  accPage+=dir;
+  accRenderTable();
+}
+
+function accRenderCards(){
+  var el=document.getElementById('acc-cards');
+  if(!el||!ACC_SUMMARY.length) return;
+  var total=DATA.length||1;
+  document.getElementById('acc-total-lbl').textContent=total.toLocaleString();
+  el.innerHTML=ACC_SUMMARY.map(function(acc){
+    var pct=Math.round(acc.listed/total*100);
+    return '<div class="acc-card">'
+      +'<div class="acc-name">'+escH(acc.name)+'</div>'
+      +'<div class="acc-nums">'
+        +'<div><div class="acc-listed">'+acc.listed.toLocaleString()+'</div><div class="acc-lbl">Listed</div></div>'
+        +'<div><div class="acc-missing">'+acc.missing.toLocaleString()+'</div><div class="acc-lbl">Missing</div></div>'
+      +'</div>'
+      +'<div class="acc-bar"><div class="acc-bar-fill" style="width:'+pct+'%"></div></div>'
+      +'<div style="font-size:10px;color:var(--muted);margin-top:4px;">'+pct+'% coverage</div>'
+      +'</div>';
+  }).join('');
+}
+
+function accRenderTable(){
+  var total=accFiltered.length;
+  var maxPage=Math.max(0,Math.ceil(total/ACC_PAGE_SIZE)-1);
+  if(accPage>maxPage) accPage=maxPage;
+  if(accPage<0) accPage=0;
+  var start=accPage*ACC_PAGE_SIZE;
+  var end=Math.min(start+ACC_PAGE_SIZE,total);
+  var slice=accFiltered.slice(start,end);
+  var tbody=document.getElementById('acc-tbody');
+  if(!tbody) return;
+  if(!slice.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--muted)">No results</td></tr>';
+  } else {
+    var accLogEntries=accLog_load();
+    tbody.innerHTML=slice.map(function(r){
+      var accCells=ACC_COLS.map(function(c){
+        if(r[c.key]){
+          var logEntry=accLogEntries.find(function(e){return e.sku===r.s&&e.account===c.label;});
+          if(logEntry){
+            var d=new Date(logEntry.addedAt);
+            var ds=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+            return '<td><span class="badge-yes">&#10003; Listed</span><div style="font-size:10px;color:var(--muted);margin-top:3px;">added '+ds+'</div></td>';
+          }
+          return '<td><span class="badge-yes">&#10003; Listed</span></td>';
+        }
+        return '<td><span class="badge-no">&#10007; No</span></td>';
+      }).join('');
+      return '<tr>'
+        +'<td><div class="sku-txt">'+escH(r.s)+'</div></td>'
+        +'<td>'+r.st.toLocaleString()+'</td>'
+        +'<td>'+(r.e?'<span class="badge-yes">&#10003; Listed</span>':'<span class="badge-no">&#10007; No</span>')+'</td>'
+        +accCells
+        +'</tr>';
+    }).join('');
+  }
+  document.getElementById('acc-pager-info').textContent='Showing '+(total===0?0:start+1)+'–'+end+' of '+total.toLocaleString()+' SKUs';
+  document.getElementById('acc-btn-prev').disabled=accPage===0;
+  document.getElementById('acc-btn-next').disabled=accPage>=maxPage;
+}
+
+function accRender(){
+  accRenderCards();
+  accApply();
+}
+
+function accExportCSV(){
+  var headers=['SKU','DE Stock','eBay Overall','led_sone','sunsone','electricalsone','ledsonede','huettenlampen','homin_gmbh'];
+  var csvRows=accFiltered.map(function(r){
+    return [r.s,r.st,r.e?'Listed':'No',r.e1?'Listed':'No',r.e4?'Listed':'No',r.e22?'Listed':'No',r.e27?'Listed':'No',r.e28?'Listed':'No',r.e222?'Listed':'No'].join(',');
+  });
+  var csv=headers.join(',')+'\n'+csvRows.join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='de_ebay_accounts_gap_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+async function loadLive(){
+  var tbody=document.getElementById('tbody');
+  tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">&#9203; Loading live data&hellip;</td></tr>';
+
+  try{
+    var res=await fetch('/api/intel-api?service=germany&type=marketplace-gap',{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var json=await res.json();
+    if(!json.ok) throw new Error(json.error||'API error');
+
+    detectTransitions(json.rows);
+    DATA=json.rows;
+    ACC_SUMMARY=json.ebayAccounts||[];
+    var s=json.summary;
+    var d=json.refreshed_at?json.refreshed_at.slice(0,10):'live';
+
+    updateDashboard(s,d);
+    applyFilters();
+    updateLogBadge();
+    log_render();
+    accRenderCards();
+
+  }catch(err){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--red)">&#9888; Failed to load live data: '+err.message+'</td></tr>';
+  }
+}
+
+
+// Tabs
+function showTab(n){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-panel-'+n).classList.add('active');
+  document.getElementById('tab-btn-'+n).classList.add('active');
+  if(n===2) log_render();
+  if(n===3) accRender();
+}
+
+// Listing Added Log
+var LOG_KEY='de_marketplace_added_log_v1';
+var PREV_KEY='de_marketplace_prev_state_v1';
+function log_load(){try{return JSON.parse(localStorage.getItem(LOG_KEY)||'[]');}catch(e){return [];}}
+function log_save(e){localStorage.setItem(LOG_KEY,JSON.stringify(e));}
+
+// eBay account-level transition log
+var ACC_LOG_KEY='de_ebay_acc_added_log_v1';
+var ACC_PREV_KEY='de_ebay_acc_prev_v1';
+function accLog_load(){try{return JSON.parse(localStorage.getItem(ACC_LOG_KEY)||'[]');}catch(e){return [];}}
+function accLog_save(e){localStorage.setItem(ACC_LOG_KEY,JSON.stringify(e));}
+
+function detectTransitions(newRows){
+  // --- channel-level (Amazon/eBay/Shopify overall) ---
+  var prevMap={};
+  try{prevMap=JSON.parse(localStorage.getItem(PREV_KEY)||'{}');}catch(e){}
+  var newMap={};
+  newRows.forEach(function(r){newMap[r.s]={a:r.a,e:r.e,sh:r.sh};});
+  if(!Object.keys(prevMap).length){
+    localStorage.setItem(PREV_KEY,JSON.stringify(newMap));
+  } else {
+    var entries=log_load();
+    var changed=false;
+    var channels=[{key:'a',label:'Amazon DE'},{key:'e',label:'eBay DE'},{key:'sh',label:'Shopify DE'}];
+    newRows.forEach(function(r){
+      var prev=prevMap[r.s];
+      if(!prev) return;
+      channels.forEach(function(ch){
+        if(prev[ch.key]===0&&r[ch.key]===1){
+          if(!entries.some(function(e){return e.sku===r.s&&e.channel===ch.label;})){
+            entries.unshift({sku:r.s,channel:ch.label,addedAt:new Date().toISOString(),auto:true});
+            changed=true;
+          }
+        }
+      });
+    });
+    if(changed){log_save(entries);updateLogBadge();log_render();}
+    localStorage.setItem(PREV_KEY,JSON.stringify(newMap));
+  }
+
+  // --- per-account eBay transitions ---
+  var accPrevMap={};
+  try{accPrevMap=JSON.parse(localStorage.getItem(ACC_PREV_KEY)||'{}');}catch(e){}
+  var accNewMap={};
+  newRows.forEach(function(r){
+    accNewMap[r.s]={e1:r.e1,e4:r.e4,e22:r.e22,e27:r.e27,e28:r.e28,e222:r.e222};
+  });
+  if(!Object.keys(accPrevMap).length){
+    localStorage.setItem(ACC_PREV_KEY,JSON.stringify(accNewMap));
+  } else {
+    var accEntries=accLog_load();
+    var accChanged=false;
+    newRows.forEach(function(r){
+      var prev=accPrevMap[r.s];
+      if(!prev) return;
+      ACC_COLS.forEach(function(c){
+        if(prev[c.key]===0&&r[c.key]===1){
+          if(!accEntries.some(function(e){return e.sku===r.s&&e.account===c.label;})){
+            accEntries.unshift({sku:r.s,account:c.label,addedAt:new Date().toISOString()});
+            accChanged=true;
+          }
+        }
+      });
+    });
+    if(accChanged){
+      accLog_save(accEntries);
+      if(document.getElementById('tab-panel-3').classList.contains('active')) accRenderTable();
+    }
+    localStorage.setItem(ACC_PREV_KEY,JSON.stringify(accNewMap));
+  }
+}
+
+function log_remove(sku,channel){
+  log_save(log_load().filter(function(e){return !(e.sku===sku&&e.channel===channel);}));
+  updateLogBadge();
+  log_render();
+}
+
+function log_clearAll(){
+  if(!confirm('Clear all log entries?')) return;
+  localStorage.removeItem(LOG_KEY);
+  updateLogBadge();
+  log_render();
+}
+
+function updateLogBadge(){
+  var el=document.getElementById('log-count-badge');
+  if(el) el.textContent='('+log_load().length+')';
+}
+
+function log_isConfirmed(sku,channel){
+  var r=DATA.find(function(d){return d.s===sku;});
+  if(!r) return false;
+  if(channel==='Amazon DE') return r.a===1;
+  if(channel==='eBay DE')   return r.e===1;
+  if(channel==='Shopify DE') return r.sh===1;
+  return false;
+}
+
+function log_render(){
+  var tbody=document.getElementById('log-tbody');
+  if(!tbody) return;
+  var entries=log_load();
+  var chF=document.getElementById('log-channel-filter').value;
+  var stF=document.getElementById('log-status-filter').value;
+  var filtered=entries.filter(function(e){
+    if(chF!=='all'&&e.channel!==chF) return false;
+    var conf=log_isConfirmed(e.sku,e.channel);
+    if(stF==='Pending'&&conf) return false;
+    if(stF==='Confirmed'&&!conf) return false;
+    return true;
+  });
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="6" class="log-empty">No entries yet. When a missing SKU gets listed in the database, it will appear here automatically.</td></tr>';
+    return;
+  }
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  tbody.innerHTML=filtered.map(function(e){
+    var conf=log_isConfirmed(e.sku,e.channel);
+    var status=conf?'<span class="badge-conf">&#10003; Confirmed Live</span>':'<span class="badge-pend">&#9679; Pending</span>';
+    var d=new Date(e.addedAt);
+    var ds=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    var row=DATA.find(function(d){return d.s===e.sku;});
+    var stock=row?row.st.toLocaleString():'--';
+    return '<tr>'
+      +'<td><div class="sku-txt">'+esc(e.sku)+'</div></td>'
+      +'<td>'+esc(e.channel)+'</td>'
+      +'<td>'+stock+'</td>'
+      +'<td style="font-size:11.5px;color:var(--muted)">'+ds+'</td>'
+      +'<td>'+status+'</td>'
+      +'<td><button onclick="log_remove('+JSON.stringify(e.sku)+','+JSON.stringify(e.channel)+')" style="font-size:10px;font-weight:700;padding:2px 8px;border:1.5px solid var(--line);border-radius:4px;background:var(--card);cursor:pointer;color:var(--muted);">Remove</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function log_exportCSV(){
+  var entries=log_load();
+  var rows=entries.map(function(e){
+    var row=DATA.find(function(d){return d.s===e.sku;});
+    return [e.sku,e.channel,row?row.st:'',e.addedAt,log_isConfirmed(e.sku,e.channel)?'Confirmed Live':'Pending'].join(',');
+  });
+  var csv='SKU,Channel,DE Stock,Marked Added At,Status\n'+rows.join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='de_listing_added_log_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+
+// Auto-poll every 5 seconds — silently refresh DATA and re-render
+setInterval(async function(){
+  try{
+    var res=await fetch('/api/intel-api?service=germany&type=marketplace-gap',{cache:'no-store'});
+    if(!res.ok) return;
+    var json=await res.json();
+    if(!json.ok||!json.rows) return;
+    detectTransitions(json.rows);
+    DATA=json.rows;
+    ACC_SUMMARY=json.ebayAccounts||[];
+    var s=json.summary;
+    var d=json.refreshed_at?json.refreshed_at.slice(0,10):'live';
+    updateDashboard(s,d);
+    applyFilters();
+    updateLogBadge();
+    log_render();
+    // if eBay accounts tab is active, refresh it too
+    if(document.getElementById('tab-panel-3').classList.contains('active')) accRender();
+  }catch(e){}
+}, 5000);
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report 1C — Shopify DE Best Sellers Now Out of Stock</title>
+<style>
+:root{
+  --navy:#0c1a30;--navy-2:#13284a;--ink:#1a2233;--muted:#5b6577;
+  --line:#e3e7ee;--bg:#f4f6f9;--card:#ffffff;
+  --gold:#b98b1e;--gold-soft:#faf3e0;
+  --accent:#1f5eff;--accent-soft:#eaf0ff;
+  --red:#b91c1c;--red-soft:#fff5f5;
+  --warn:#d97706;--warn-soft:#fffbeb;
+  --good:#0a7d4f;--good-soft:#e5f5ee;
+  --shopify:#96bf48;--shopify-soft:#f2f8e8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;}
+.topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--navy-2) 40%,var(--shopify) 100%);}
+.masthead{background:var(--card);padding:20px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(12,26,48,.05);}
+.masthead .inner{max-width:1440px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:20px;}
+.mark{width:40px;height:40px;background:var(--navy);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#e8d59a;flex:none;border:1.5px solid var(--gold);}
+.headtxt{flex:1;min-width:220px;}
+.kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:3px;}
+.masthead h1{font-size:18px;font-weight:700;color:var(--navy);}
+.masthead .lede{font-size:12px;color:var(--muted);margin-top:2px;}
+.statrow{display:flex;flex-wrap:wrap;gap:0;border-left:1px solid var(--line);padding-left:24px;}
+.stat{padding:0 20px;border-right:1px solid var(--line);}
+.stat:last-child{border-right:none;padding-right:0;}
+.stat .v{font-size:19px;font-weight:700;color:var(--navy);}
+.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:2px;}
+.page{max-width:1440px;margin:0 auto;padding:24px 32px 48px;}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;padding:7px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+.kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+.kpi .val{font-size:22px;font-weight:700;margin-top:5px;line-height:1;}
+.kpi .note{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi.red .val{color:var(--red);}
+.kpi.warn .val{color:var(--warn);}
+.kpi.info .val{color:var(--accent);}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
+.search{height:38px;padding:0 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;width:260px;max-width:100%;outline:none;transition:border-color .15s,box-shadow .15s;}
+.search:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);}
+.sort-lbl{font-size:12px;color:var(--muted);font-weight:600;}
+.sortbtn{border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);transition:all .15s;}
+.sortbtn:hover,.sortbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.expbtn{border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;margin-left:auto;transition:opacity .15s;}
+.expbtn:hover{opacity:.85;}
+.row-count{font-size:12px;color:var(--muted);}
+.tbox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.tbar{padding:11px 18px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{position:sticky;top:0;background:#f0f3f8;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{background:#e6eaf2;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f8f9fc;}
+.prod{display:flex;align-items:center;gap:10px;}
+.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--line);flex:none;background:#f0f3f8;}
+.thumb-fallback{width:44px;height:44px;border-radius:8px;background:var(--shopify-soft);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--shopify);font-weight:700;flex:none;}
+.sku{font-size:12px;font-weight:700;color:var(--ink);max-width:260px;word-break:break-all;line-height:1.3;}
+.sev{display:inline-block;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap;}
+.sev.critical{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5;}
+.sev.high{background:var(--warn-soft);color:var(--warn);border:1px solid #fde68a;}
+.sev.medium{background:var(--gold-soft);color:var(--gold);border:1px solid #e8d59a;}
+.dbar{display:flex;align-items:center;gap:8px;}
+.dbar-track{width:70px;height:6px;background:#e3e7ee;border-radius:3px;overflow:hidden;flex:none;}
+.dbar-fill{height:100%;border-radius:3px;}
+.dbar-fill.critical{background:var(--red);}
+.dbar-fill.high{background:var(--warn);}
+.dbar-fill.medium{background:var(--gold);}
+.empty{padding:48px;text-align:center;color:var(--muted);font-size:14px;}
+footer.site{text-align:center;padding:24px 32px 40px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);margin-top:24px;}
+@media(max-width:640px){.masthead{padding:16px;}.page{padding:16px 12px 40px;}.statrow{border-left:none;padding-left:0;width:100%;}}
+
+.tab-bar{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--line);}
+.tab-btn{padding:10px 22px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--gold);}
+.tab-btn:hover:not(.active){color:var(--ink);background:var(--bg);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+.ppc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.ppc-note{background:var(--warn-soft);border:1px solid #fde68a;border-radius:10px;padding:11px 16px;font-size:12px;color:var(--warn);margin-bottom:16px;}
+.ppc-note strong{font-weight:700;}
+.ppc-search{height:38px;padding:0 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;width:260px;max-width:100%;outline:none;margin-bottom:14px;transition:border-color .15s,box-shadow .15s;}
+.ppc-search:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);}
+.ppc-row-count{font-size:12px;color:var(--muted);margin-bottom:14px;}
+
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<header class="masthead">
+  <div class="inner">
+    <div class="mark">DE</div>
+    <div class="headtxt">
+      <p class="kicker">Germany Sales Decline &middot; Report 1C</p>
+      <h1>Shopify DE &mdash; Best Sellers Now Out of Stock</h1>
+      <p class="lede">Products sold on ledsone.de (Shopify) in 2025 that currently have zero centralized warehouse stock &middot; Data: 2025-01-01 to 2025-12-31</p>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="v">52</div><div class="l">Products OOS</div></div>
+      <div class="stat"><div class="v">&euro;114,538</div><div class="l">Est. Lost Sales</div></div>
+      <div class="stat"><div class="v">269d</div><div class="l">Avg Days OOS</div></div>
+    </div>
+  </div>
+</header>
+<main class="page">
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="oos">OOS Products</button>
+  <button class="tab-btn" data-tab="ppc">Google Ads Spend</button>
+</div>
+<div id="tab-oos" class="tab-pane active">
+
+  <a class="back" href="../index.html">&#8592; Back to Dashboard</a>
+  <div class="kpis">
+    <div class="kpi red"><div class="lbl">Products Out of Stock</div><div class="val">51</div><div class="note">Shopify DE &middot; ledsone-de (sub 108)</div></div>
+    <div class="kpi warn"><div class="lbl">2025 Revenue (These SKUs)</div><div class="val">&#8364;2,575</div><div class="note">ledsone.de store</div></div>
+    <div class="kpi red"><div class="lbl">Est. Total Lost Sales</div><div class="val">&euro;1,863</div><div class="note">Daily rate &times; days OOS</div></div>
+    <div class="kpi warn"><div class="lbl">Units Sold in 2025</div><div class="val">184</div><div class="note">Before going out of stock</div></div>
+    <div class="kpi info"><div class="lbl">Avg Days Out of Stock</div><div class="val">266 days</div><div class="note">Across all 52 products</div></div>
+  </div>
+  <div class="controls">
+    <input class="search" id="search" type="text" placeholder="Search SKU&hellip;" aria-label="Search SKU">
+    <span class="sort-lbl">Sort by:</span>
+    <button class="sortbtn on" data-col="lost_sales_estimate_eur">Lost Sales</button>
+    <button class="sortbtn" data-col="last_year_sales_eur">2025 Sales</button>
+    <button class="sortbtn" data-col="days_out_of_stock">Days OOS</button>
+    <button class="sortbtn" data-col="last_year_qty_sold">Qty Sold</button>
+    <span class="row-count" id="row-count">Showing 52 of 52</span>
+    <button class="expbtn" id="exportBtn">&#11015; Export CSV</button>
+  </div>
+  <div class="tbox">
+    <div class="tbar">
+      <span>Shopify DE &middot; ledsone-de (sub_source 108) &middot; market_place = Germany (id 10) &middot; source_id = 3 (SHOPIFY)</span>
+      <span>Est. Lost Sales = (2025 annual sales &divide; 365) &times; days OOS &middot; OOS date proxy = last German order date</span>
+    </div>
+    <div class="scroll">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th class="num">2025 Sales (&euro;)</th>
+            <th class="num">2025 Qty</th>
+            <th class="num">Current Stock</th>
+            <th>Last Order Date</th>
+            <th class="num">Days OOS</th>
+            <th>Severity</th>
+            <th class="num">Est. Lost Sales (&euro;)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty" style="display:none">No products match your search.</div>
+    </div>
+  </div>
+
+</div>
+<div id="tab-ppc" class="tab-pane" style="display:none">
+
+<div class="ppc-note"><strong>&#9888; Wasted Spend Alert:</strong> Products below received Google Shopping ad spend on ledsone.de AFTER their last DE sale date but have zero centralized DE stock — wasted spend with no inventory to fulfil. Google Ads ledsone.de &middot; merchant 5351990695.</div>
+<div class="ppc-kpis">
+  <div class="kpi red"><div class="lbl">Google Ads Spend (OOS SKUs)</div><div class="val">&euro;200.58</div><div class="note">ledsone.de Shopping &middot; 2025</div></div>
+  <div class="kpi warn"><div class="lbl">Total Clicks</div><div class="val">647</div><div class="note">On OOS products</div></div>
+  <div class="kpi info"><div class="lbl">Conversions</div><div class="val">26.46</div><div class="note">Attributed to these SKUs</div></div>
+  <div class="kpi warn"><div class="lbl">Conversion Value</div><div class="val">&euro;567.27</div><div class="note">Revenue from ad conversions</div></div>
+</div>
+<input class="ppc-search" id="ppc-search-gads" type="text" placeholder="Filter by SKU&hellip;" aria-label="Filter PPC by SKU">
+<div class="ppc-row-count" id="ppc-count-gads">Showing 21 of 21 rows</div>
+<div class="tbox">
+  <div class="tbar"><span>Google Ads ledsone.de &middot; merchant 5351990695 &middot; Spend AFTER OOS date per SKU &middot; 2025-06-01 to 2026-07-23 &middot; OOS products only</span></div>
+  <div class="scroll">
+    <table id="ppc-table-gads">
+      <thead><tr>
+        <th>SKU</th><th class="num">2025 Spend (&euro;)</th><th class="num">Clicks</th><th class="num">Impressions</th><th class="num">Conversions</th><th class="num">Conv. Value (&euro;)</th><th class="num">Avg CPC (&euro;)</th>
+      </tr></thead>
+      <tbody id="ppc-tbody-gads"><tr data-sku="cot9abm5pk">
+<td><span class="sku" style="font-size:11.5px">COT9ABM5PK</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;59.94</td>
+<td class="num">136</td>
+<td class="num">8,389</td>
+<td class="num">9.49</td>
+<td class="num">&euro;182.88</td>
+<td class="num">&euro;0.1896</td>
+</tr><tr data-sku="pcbsm2fsn">
+<td><span class="sku" style="font-size:11.5px">PCBSM2FSN</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;38.90</td>
+<td class="num">183</td>
+<td class="num">5,758</td>
+<td class="num">2.67</td>
+<td class="num">&euro;62.27</td>
+<td class="num">&euro;0.0925</td>
+</tr><tr data-sku="cot9abm2pk">
+<td><span class="sku" style="font-size:11.5px">COT9ABM2PK</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;25.32</td>
+<td class="num">72</td>
+<td class="num">4,639</td>
+<td class="num">3.30</td>
+<td class="num">&euro;72.62</td>
+<td class="num">&euro;0.0994</td>
+</tr><tr data-sku="pcbs16t10bm">
+<td><span class="sku" style="font-size:11.5px">PCBS16T10BM</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;13.42</td>
+<td class="num">58</td>
+<td class="num">2,084</td>
+<td class="num">3.00</td>
+<td class="num">&euro;93.26</td>
+<td class="num">&euro;0.0510</td>
+</tr><tr data-sku="pcbs16t10bm3pk">
+<td><span class="sku" style="font-size:11.5px">PCBS16T10BM3PK</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;12.28</td>
+<td class="num">59</td>
+<td class="num">1,832</td>
+<td class="num">2.00</td>
+<td class="num">&euro;24.56</td>
+<td class="num">&euro;0.0358</td>
+</tr><tr data-sku="pcbsm2fbm">
+<td><span class="sku" style="font-size:11.5px">PCBSM2FBM</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;9.17</td>
+<td class="num">31</td>
+<td class="num">1,085</td>
+<td class="num">3.00</td>
+<td class="num">&euro;47.50</td>
+<td class="num">&euro;0.0530</td>
+</tr><tr data-sku="pladbs+lsdo210bs3pk">
+<td><span class="sku" style="font-size:11.5px">PLADBS+LSDO210BS3PK</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;7.88</td>
+<td class="num">18</td>
+<td class="num">1,844</td>
+<td class="num">1.00</td>
+<td class="num">&euro;40.20</td>
+<td class="num">&euro;0.0561</td>
+</tr><tr data-sku="pcft500ba">
+<td><span class="sku" style="font-size:11.5px">PCFT500BA</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;6.83</td>
+<td class="num">18</td>
+<td class="num">1,013</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0344</td>
+</tr><tr data-sku="pcft300ba">
+<td><span class="sku" style="font-size:11.5px">PCFT300BA</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;6.73</td>
+<td class="num">15</td>
+<td class="num">856</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0306</td>
+</tr><tr data-sku="pcbsm2fch">
+<td><span class="sku" style="font-size:11.5px">PCBSM2FCH</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;4.57</td>
+<td class="num">11</td>
+<td class="num">756</td>
+<td class="num">1.00</td>
+<td class="num">&euro;11.32</td>
+<td class="num">&euro;0.0217</td>
+</tr><tr data-sku="crsf100re+wsch135re+lsdo210re">
+<td><span class="sku" style="font-size:11.5px">CRSF100RE+WSCH135RE+LSDO210RE</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;2.85</td>
+<td class="num">6</td>
+<td class="num">349</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0197</td>
+</tr><tr data-sku="crsf100wh+phry2pcrye">
+<td><span class="sku" style="font-size:11.5px">CRSF100WH+PHRY2PCRYE</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;2.54</td>
+<td class="num">10</td>
+<td class="num">347</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0235</td>
+</tr><tr data-sku="wlhsbmsw10">
+<td><span class="sku" style="font-size:11.5px">WLHSBMSW10</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;2.18</td>
+<td class="num">4</td>
+<td class="num">474</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0293</td>
+</tr><tr data-sku="enc122">
+<td><span class="sku" style="font-size:11.5px">ENC122</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;2.17</td>
+<td class="num">5</td>
+<td class="num">205</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0223</td>
+</tr><tr data-sku="crsf100co+wsls155co+scrn70co+lstf40co">
+<td><span class="sku" style="font-size:11.5px">CRSF100CO+WSLS155CO+SCRN70CO+LSTF40CO</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;1.77</td>
+<td class="num">3</td>
+<td class="num">546</td>
+<td class="num">1.00</td>
+<td class="num">&euro;32.66</td>
+<td class="num">&euro;0.0253</td>
+</tr><tr data-sku="crsf100ye+wsch135ye+lsdo210ye+icst64e27">
+<td><span class="sku" style="font-size:11.5px">CRSF100YE+WSCH135YE+LSDO210YE+ICST64E27</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;1.19</td>
+<td class="num">6</td>
+<td class="num">144</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0270</td>
+</tr><tr data-sku="pcft800ba">
+<td><span class="sku" style="font-size:11.5px">PCFT800BA</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;1.13</td>
+<td class="num">6</td>
+<td class="num">442</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0059</td>
+</tr><tr data-sku="crsf100or+wsch135or+lsdo210or+icst64e27">
+<td><span class="sku" style="font-size:11.5px">CRSF100OR+WSCH135OR+LSDO210OR+ICST64E27</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;0.72</td>
+<td class="num">3</td>
+<td class="num">146</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0118</td>
+</tr><tr data-sku="wsiwbm">
+<td><span class="sku" style="font-size:11.5px">WSIWBM</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;0.47</td>
+<td class="num">1</td>
+<td class="num">341</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0052</td>
+</tr><tr data-sku="lhcce27wh+cgmlwh">
+<td><span class="sku" style="font-size:11.5px">LHCCE27WH+CGMLWH</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;0.26</td>
+<td class="num">1</td>
+<td class="num">40</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0118</td>
+</tr><tr data-sku="wsfs1bmyb+lscp150wh">
+<td><span class="sku" style="font-size:11.5px">WSFS1BMYB+LSCP150WH</span></td>
+<td class="num" style="font-weight:700;color:var(--red);">&euro;0.26</td>
+<td class="num">1</td>
+<td class="num">24</td>
+<td class="num">0.00</td>
+<td class="num">&euro;0.00</td>
+<td class="num">&euro;0.0153</td>
+</tr></tbody>
+    </table>
+  </div>
+</div>
+<script>
+(function(){
+  var rows=document.querySelectorAll('#ppc-tbody-gads tr');
+  document.getElementById('ppc-search-gads').addEventListener('input',function(){
+    var q=this.value.trim().toLowerCase(),shown=0;
+    rows.forEach(function(r){var m=!q||(r.dataset.sku||'').includes(q);r.style.display=m?'':'none';if(m)shown++;;});
+    document.getElementById('ppc-count-gads').textContent='Showing '+shown+' of '+rows.length+' rows';
+  });
+})();
+</script>
+</div>
+</main>
+<footer class="site">Germany Sales Decline Dashboard &middot; AIOS &middot; Report 1C Shopify DE &middot; 2025-01-01 to 2025-12-31 &middot; Generated 2026-07-23</footer>
+<script>
+const DATA=[{"sku":"WLHSBMSW10","product_title":"10W warm white black wall light","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/1752742536_6878ba88a3327.webp?v=1752742552","last_year_qty_sold":"15","last_year_sales_eur":"317.4","current_de_stock":"0","last_order_date":"2025-12-06T00:00:00.000Z","days_out_of_stock":"229","lost_sales_estimate_eur":"199.14","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-06","days_oos":229,"qty_sold":15,"sales_eur":317.4}]},{"sku":"ENC1571","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/products/Rot_Deckenleucte.jpg?v=1751602171","last_year_qty_sold":"8","last_year_sales_eur":"225.52","current_de_stock":"0","last_order_date":"2025-09-29T00:00:00.000Z","days_out_of_stock":"297","lost_sales_estimate_eur":"183.51","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-09-29","days_oos":297,"qty_sold":8,"sales_eur":225.52}]},{"sku":"PHUH1HETBM+LSHM300HE+ICST64E27","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/products/s-l1600_bfce4789-3d0f-4ea2-83e2-3c90a81c6e57.jpg?v=1585309345","last_year_qty_sold":"4","last_year_sales_eur":"141.96","current_de_stock":"0","last_order_date":"2025-05-12T00:00:00.000Z","days_out_of_stock":"437","lost_sales_estimate_eur":"169.96","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-05-12","days_oos":437,"qty_sold":4,"sales_eur":141.96}]},{"sku":"COT9ABM6PK","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/51eheDdBkoL.jpg?v=1760939234","last_year_qty_sold":"35","last_year_sales_eur":"253.94","current_de_stock":"0","last_order_date":"2025-12-21T00:00:00.000Z","days_out_of_stock":"214","lost_sales_estimate_eur":"148.89","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-21","days_oos":214,"qty_sold":35,"sales_eur":253.94}]},{"sku":"ENC1883","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/products/12044.jpg?v=1643369443","last_year_qty_sold":"1","last_year_sales_eur":"114.37","current_de_stock":"0","last_order_date":"2025-07-19T00:00:00.000Z","days_out_of_stock":"369","lost_sales_estimate_eur":"115.62","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-07-19","days_oos":369,"qty_sold":1,"sales_eur":114.37}]},{"sku":"PCBSM2FBM","product_title":"M20 Metric Male to M10 Female Thread Bush Reducing Conduit Pipe Connector","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/1745492049_680a1851f2f9c.webp?v=1767163407","last_year_qty_sold":"11","last_year_sales_eur":"118.06","current_de_stock":"0","last_order_date":"2025-12-25T00:00:00.000Z","days_out_of_stock":"210","lost_sales_estimate_eur":"67.92","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-25","days_oos":210,"qty_sold":11,"sales_eur":118.06}]},{"sku":"CRSF100SN+LHNSE27SN+SCRN70BA+LSTF40SN","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/products/modern_flush_light.jpg?v=1748493157","last_year_qty_sold":"7","last_year_sales_eur":"84.94","current_de_stock":"0","last_order_date":"2025-10-15T00:00:00.000Z","days_out_of_stock":"281","lost_sales_estimate_eur":"65.39","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-10-15","days_oos":281,"qty_sold":7,"sales_eur":84.94}]},{"sku":"ENC570","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/products/ENC570.jpg?v=1602493706","last_year_qty_sold":"3","last_year_sales_eur":"84.57","current_de_stock":"0","last_order_date":"2025-12-08T00:00:00.000Z","days_out_of_stock":"227","lost_sales_estimate_eur":"52.6","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-08","days_oos":227,"qty_sold":3,"sales_eur":84.57}]},{"sku":"LHCCE27WH+CGMLWH","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/files/CHRWEE27_8_11zon_9_11zon.webp?v=1723098877","last_year_qty_sold":"14","last_year_sales_eur":"85.96","current_de_stock":"0","last_order_date":"2025-12-30T00:00:00.000Z","days_out_of_stock":"205","lost_sales_estimate_eur":"48.28","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-30","days_oos":205,"qty_sold":14,"sales_eur":85.96}]},{"sku":"COT9ABM4PK","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/t-kabelverbinder-ip68-4er-schwarz.webp?v=1752736354","last_year_qty_sold":"10","last_year_sales_eur":"68.92","current_de_stock":"0","last_order_date":"2025-11-14T00:00:00.000Z","days_out_of_stock":"251","lost_sales_estimate_eur":"47.39","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-14","days_oos":251,"qty_sold":10,"sales_eur":68.92}]},{"sku":"WSIWBM","product_title":"Black Modern Wall Ceiling Vintage Retro Industrial Sconce Light Lamp Fitting Fixture","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/1745292473_68070cb9abe6f.webp?v=1745292513","last_year_qty_sold":"1","last_year_sales_eur":"37.24","current_de_stock":"0","last_order_date":"2025-05-22T00:00:00.000Z","days_out_of_stock":"427","lost_sales_estimate_eur":"43.57","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-05-22","days_oos":427,"qty_sold":1,"sales_eur":37.24}]},{"sku":"ENC7912","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/Wandleuchte_im_Industrial_Stil_f_r_K_che.jpg?v=1775637265","last_year_qty_sold":"2","last_year_sales_eur":"63.98","current_de_stock":"0","last_order_date":"2025-11-22T00:00:00.000Z","days_out_of_stock":"243","lost_sales_estimate_eur":"42.59","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-22","days_oos":243,"qty_sold":2,"sales_eur":63.98}]},{"sku":"ENC3404","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/57_5a5aa2e6-1969-4981-9f6a-03f38d7b0c3a.jpg?v=1740475025","last_year_qty_sold":"2","last_year_sales_eur":"60.42","current_de_stock":"0","last_order_date":"2025-11-19T00:00:00.000Z","days_out_of_stock":"246","lost_sales_estimate_eur":"40.72","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-19","days_oos":246,"qty_sold":2,"sales_eur":60.42}]},{"sku":"COT9ABM","product_title":"T connector","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/files/3_261f645f-7fe6-4a62-84c6-a9a7e9e3c7a7.webp?v=1684214200","last_year_qty_sold":"23","last_year_sales_eur":"65.45","current_de_stock":"0","last_order_date":"2025-12-21T00:00:00.000Z","days_out_of_stock":"214","lost_sales_estimate_eur":"38.37","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-21","days_oos":214,"qty_sold":23,"sales_eur":65.45}]},{"sku":"PCBS16T10BM","product_title":"M16 to M10 Thread Bush Reducer Metric Male to Female Pipe Connector","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/1742355504_67da3c30bfe8e.webp?v=1742355512","last_year_qty_sold":"6","last_year_sales_eur":"56.74","current_de_stock":"0","last_order_date":"2025-12-14T00:00:00.000Z","days_out_of_stock":"221","lost_sales_estimate_eur":"34.35","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-14","days_oos":221,"qty_sold":6,"sales_eur":56.74}]},{"sku":"PLADBS+LSDO210BS3PK","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/PLADBS_LSDO210BS3PK_ICST64E273PK__1__1771387020_6995388c62654.jpg?v=1771387023","last_year_qty_sold":"1","last_year_sales_eur":"47.05","current_de_stock":"0","last_order_date":"2025-12-12T00:00:00.000Z","days_out_of_stock":"223","lost_sales_estimate_eur":"28.75","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-12","days_oos":223,"qty_sold":1,"sales_eur":47.05}]},{"sku":"PLWEBC+PHHT1PBRBC+WCBNBC+ICT45E2760","product_title":"Combo Default Title.","product_img_url":"","last_year_qty_sold":"1","last_year_sales_eur":"28.39","current_de_stock":"0","last_order_date":"2025-07-27T00:00:00.000Z","days_out_of_stock":"361","lost_sales_estimate_eur":"28.08","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-07-27","days_oos":361,"qty_sold":1,"sales_eur":28.39}]},{"sku":"WCFRBM+LDMST64E274","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/57_143cf879-7d9b-4809-b107-901a1082fb2e.jpg?v=1737113280","last_year_qty_sold":"1","last_year_sales_eur":"21.77","current_de_stock":"0","last_order_date":"2025-06-02T00:00:00.000Z","days_out_of_stock":"416","lost_sales_estimate_eur":"24.81","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-06-02","days_oos":416,"qty_sold":1,"sales_eur":21.77}]},{"sku":"PHUH1HETBM+LSHM400HE+ICST64E27","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/s-l1600_27f4e961-4c38-4ae3-b3f1-b4d1f948004f.jpg?v=1744719044","last_year_qty_sold":"1","last_year_sales_eur":"36.44","current_de_stock":"0","last_order_date":"2025-12-08T00:00:00.000Z","days_out_of_stock":"227","lost_sales_estimate_eur":"22.66","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-08","days_oos":227,"qty_sold":1,"sales_eur":36.44}]},{"sku":"PHUH1HETBM+LSHM400HE","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/Beige_and_White_Be_Yourself_Square_Pillow_-_2026-06-26T103629.206.jpg?v=1782450878","last_year_qty_sold":"1","last_year_sales_eur":"33.92","current_de_stock":"0","last_order_date":"2025-11-22T00:00:00.000Z","days_out_of_stock":"243","lost_sales_estimate_eur":"22.58","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-22","days_oos":243,"qty_sold":1,"sales_eur":33.92}]},{"sku":"CRFF140GL+WSWH135BM+LSDO210YE","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/57_a57e3045-afe4-4bbf-9a0d-4b3bd87854e8.jpg?v=1745390750","last_year_qty_sold":"1","last_year_sales_eur":"22.99","current_de_stock":"0","last_order_date":"2025-08-05T00:00:00.000Z","days_out_of_stock":"352","lost_sales_estimate_eur":"22.17","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-08-05","days_oos":352,"qty_sold":1,"sales_eur":22.99}]},{"sku":"WSWTBM+ICT45E2760","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/1745293051_68070efb29cfd.webp?v=1745293069","last_year_qty_sold":"1","last_year_sales_eur":"38.29","current_de_stock":"0","last_order_date":"2025-12-27T00:00:00.000Z","days_out_of_stock":"208","lost_sales_estimate_eur":"21.82","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-27","days_oos":208,"qty_sold":1,"sales_eur":38.29}]},{"sku":"CRSF100RE+WSCH135RE+LSDO210RE","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/A_red_metal_wall_sconce_with_a_curved_arm_and_dome_shade_shown_lit_on_a_beige_wall_in_living_room_setting..webp?v=1783156269","last_year_qty_sold":"1","last_year_sales_eur":"25.13","current_de_stock":"0","last_order_date":"2025-09-18T00:00:00.000Z","days_out_of_stock":"308","lost_sales_estimate_eur":"21.21","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-09-18","days_oos":308,"qty_sold":1,"sales_eur":25.13}]},{"sku":"PCFT800BA","product_title":"800mm Female Threaded Pipe Fittings","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/80cm.webp?v=1741185522","last_year_qty_sold":"2","last_year_sales_eur":"30.76","current_de_stock":"0","last_order_date":"2025-11-16T00:00:00.000Z","days_out_of_stock":"249","lost_sales_estimate_eur":"20.98","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-16","days_oos":249,"qty_sold":2,"sales_eur":30.76}]},{"sku":"PHCT1BMRBM+PHDO1PBRBM+LSCY290SN+LDWWE2718","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/57_350fd309-d164-4b68-bd17-1b1f8069a5a6.jpg?v=1740475025","last_year_qty_sold":"1","last_year_sales_eur":"30.21","current_de_stock":"0","last_order_date":"2025-11-19T00:00:00.000Z","days_out_of_stock":"246","lost_sales_estimate_eur":"20.36","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-19","days_oos":246,"qty_sold":1,"sales_eur":30.21}]},{"sku":"ENC7669","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/57_d02808aa-631a-4d6b-b6c7-a0553ce5b546.jpg?v=1740475025","last_year_qty_sold":"1","last_year_sales_eur":"30.21","current_de_stock":"0","last_order_date":"2025-11-19T00:00:00.000Z","days_out_of_stock":"246","lost_sales_estimate_eur":"20.36","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-19","days_oos":246,"qty_sold":1,"sales_eur":30.21}]},{"sku":"WSFS1BMYB+LSCP150WH","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/57_f01ca770-4d46-4460-8c98-12b3d6cb26f0.jpg?v=1753787576","last_year_qty_sold":"1","last_year_sales_eur":"18.19","current_de_stock":"0","last_order_date":"2025-07-16T00:00:00.000Z","days_out_of_stock":"372","lost_sales_estimate_eur":"18.54","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-07-16","days_oos":372,"qty_sold":1,"sales_eur":18.19}]},{"sku":"ENC122","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/products/Untitled-2_0f500bfe-40b3-47cd-ae52-6f5b853373ac.jpg?v=1643972079","last_year_qty_sold":"2","last_year_sales_eur":"31.66","current_de_stock":"0","last_order_date":"2025-12-26T00:00:00.000Z","days_out_of_stock":"209","lost_sales_estimate_eur":"18.13","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-26","days_oos":209,"qty_sold":2,"sales_eur":31.66}]},{"sku":"LSDO400CB+RPR44WH","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/products/2a13cd8a-0b27-401f-be8d-f58f77f1a70b.jpg?v=1746676221","last_year_qty_sold":"2","last_year_sales_eur":"24.76","current_de_stock":"0","last_order_date":"2025-11-02T00:00:00.000Z","days_out_of_stock":"263","lost_sales_estimate_eur":"17.84","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-02","days_oos":263,"qty_sold":2,"sales_eur":24.76}]},{"sku":"CRSF100OR+WSCH135OR+LSDO210OR+ICST64E27","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/Artboard_7_6860bt.jpg?v=1779437590","last_year_qty_sold":"1","last_year_sales_eur":"28.25","current_de_stock":"0","last_order_date":"2025-12-14T00:00:00.000Z","days_out_of_stock":"221","lost_sales_estimate_eur":"17.1","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-14","days_oos":221,"qty_sold":1,"sales_eur":28.25}]},{"sku":"CRSF100YE+WSCH135YE+LSDO210YE+ICST64E27","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/Yellow_wall-mounted_lamp_with_a_curved_arm.webp?v=1783156233","last_year_qty_sold":"1","last_year_sales_eur":"28.25","current_de_stock":"0","last_order_date":"2025-12-14T00:00:00.000Z","days_out_of_stock":"221","lost_sales_estimate_eur":"17.1","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-14","days_oos":221,"qty_sold":1,"sales_eur":28.25}]},{"sku":"CRSF100BL+WSCH135BT+LSDO210BL+ICST64E27","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/Blue_wall-mounted_lamp.webp?v=1783156061","last_year_qty_sold":"1","last_year_sales_eur":"28.25","current_de_stock":"0","last_order_date":"2025-12-14T00:00:00.000Z","days_out_of_stock":"221","lost_sales_estimate_eur":"17.1","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-14","days_oos":221,"qty_sold":1,"sales_eur":28.25}]},{"sku":"PLOTBB+LDMST64E274","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/industrielle-pendelleuchte-schwarz-e27.jpg?v=1746008166","last_year_qty_sold":"1","last_year_sales_eur":"17.59","current_de_stock":"0","last_order_date":"2025-08-06T00:00:00.000Z","days_out_of_stock":"351","lost_sales_estimate_eur":"16.92","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-08-06","days_oos":351,"qty_sold":1,"sales_eur":17.59}]},{"sku":"LSDO400BYI","product_title":"400mm shiny black inner white dome","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/40cm_shiny_black_inner_white_lamp_shade_1742550641_67dd3671ba140.jpg?v=1742550644","last_year_qty_sold":"1","last_year_sales_eur":"16.69","current_de_stock":"0","last_order_date":"2025-08-15T00:00:00.000Z","days_out_of_stock":"342","lost_sales_estimate_eur":"15.64","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-08-15","days_oos":342,"qty_sold":1,"sales_eur":16.69}]},{"sku":"ENC8457","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/Retro_Wandlampe_verstellbar.jpg?v=1777538148","last_year_qty_sold":"1","last_year_sales_eur":"20.69","current_de_stock":"0","last_order_date":"2025-10-28T00:00:00.000Z","days_out_of_stock":"268","lost_sales_estimate_eur":"15.19","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-10-28","days_oos":268,"qty_sold":1,"sales_eur":20.69}]},{"sku":"CRSF100WH+PHRY2PCRYE","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/1761306848_68fb68e014ec3.webp?v=1773919700","last_year_qty_sold":"1","last_year_sales_eur":"22.26","current_de_stock":"0","last_order_date":"2025-11-22T00:00:00.000Z","days_out_of_stock":"243","lost_sales_estimate_eur":"14.82","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-22","days_oos":243,"qty_sold":1,"sales_eur":22.26}]},{"sku":"CRSF100CO+WSLS155CO+SCRN70CO+LSTF40CO","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/61YI-NSaV7L.jpg?v=1759127850","last_year_qty_sold":"2","last_year_sales_eur":"23.64","current_de_stock":"0","last_order_date":"2025-12-19T00:00:00.000Z","days_out_of_stock":"216","lost_sales_estimate_eur":"13.99","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-19","days_oos":216,"qty_sold":2,"sales_eur":23.64}]},{"sku":"CRSF100BM+WSCH135BM+LSHQ150BM","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/1739267005_67ab1bbd5cc1b.webp?v=1739267046","last_year_qty_sold":"1","last_year_sales_eur":"18.97","current_de_stock":"0","last_order_date":"2025-10-30T00:00:00.000Z","days_out_of_stock":"266","lost_sales_estimate_eur":"13.82","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-10-30","days_oos":266,"qty_sold":1,"sales_eur":18.97}]},{"sku":"PCBS16T10BM3PK","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0573/8178/1659/files/1784713389_6a6090ad29f34.webp?v=1784713402","last_year_qty_sold":"2","last_year_sales_eur":"21.56","current_de_stock":"0","last_order_date":"2025-12-08T00:00:00.000Z","days_out_of_stock":"227","lost_sales_estimate_eur":"13.41","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-08","days_oos":227,"qty_sold":2,"sales_eur":21.56}]},{"sku":"PC16FTNLBM","product_title":"Black Steel standard threaded Nipple For Conduit Pipe 16mm Male Thread","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/1745493079_680a1c572d00d.webp?v=1745493092","last_year_qty_sold":"2","last_year_sales_eur":"21.14","current_de_stock":"0","last_order_date":"2025-12-10T00:00:00.000Z","days_out_of_stock":"225","lost_sales_estimate_eur":"13.03","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-10","days_oos":225,"qty_sold":2,"sales_eur":21.14}]},{"sku":"LDSG125XMSE274","product_title":"E27 4w CHRISTMAS BULB","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/1761712806_69019aa6ca730.webp?v=1761713095","last_year_qty_sold":"1","last_year_sales_eur":"17.49","current_de_stock":"0","last_order_date":"2025-11-14T00:00:00.000Z","days_out_of_stock":"251","lost_sales_estimate_eur":"12.03","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-14","days_oos":251,"qty_sold":1,"sales_eur":17.49}]},{"sku":"PCFT500BA","product_title":"500mm Female Threaded Pipe Fittings","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/files/1728972253518_a1.jpg?v=1729829951","last_year_qty_sold":"1","last_year_sales_eur":"14.64","current_de_stock":"0","last_order_date":"2025-11-16T00:00:00.000Z","days_out_of_stock":"249","lost_sales_estimate_eur":"9.99","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-16","days_oos":249,"qty_sold":1,"sales_eur":14.64}]},{"sku":"PCGZ20NL3PK","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/1730096642331_3asda.jpg?v=1730097970","last_year_qty_sold":"1","last_year_sales_eur":"13.96","current_de_stock":"0","last_order_date":"2025-11-16T00:00:00.000Z","days_out_of_stock":"249","lost_sales_estimate_eur":"9.52","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-16","days_oos":249,"qty_sold":1,"sales_eur":13.96}]},{"sku":"PCBSM2FSN","product_title":"M20 Metric Male to M10 Female Thread Bush Reducing Conduit Pipe Connector","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/F2_1743047993_67e4cd393235d.jpg?v=1754560690","last_year_qty_sold":"1","last_year_sales_eur":"10.81","current_de_stock":"0","last_order_date":"2025-09-24T00:00:00.000Z","days_out_of_stock":"302","lost_sales_estimate_eur":"8.94","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-09-24","days_oos":302,"qty_sold":1,"sales_eur":10.81}]},{"sku":"CRSF100BM+WSSS70BM+LSOL180BG+ICST64E27","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0414/9864/0551/files/51BQZfjdZJL.jpg?v=1767349433","last_year_qty_sold":"1","last_year_sales_eur":"11.9","current_de_stock":"0","last_order_date":"2025-10-26T00:00:00.000Z","days_out_of_stock":"270","lost_sales_estimate_eur":"8.8","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-10-26","days_oos":270,"qty_sold":1,"sales_eur":11.9}]},{"sku":"PCBI5WC","product_title":"Black iron 5 dimensional 5 way","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/B5W1_1738993802_67a6f08a630f7_1752836737_687a2a81a5dee.jpg?v=1752836744","last_year_qty_sold":"1","last_year_sales_eur":"13.31","current_de_stock":"0","last_order_date":"2025-12-03T00:00:00.000Z","days_out_of_stock":"232","lost_sales_estimate_eur":"8.46","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-03","days_oos":232,"qty_sold":1,"sales_eur":13.31}]},{"sku":"PCBSM2FCH","product_title":"M20 Metric Male to M10 Female Thread Bush Reducing Conduit Pipe Connector","product_img_url":"https://cdn.shopify.com/s/files/1/0601/7774/3947/files/1742356308_67da3f54bbe2f.webp?v=1742356341","last_year_qty_sold":"1","last_year_sales_eur":"11.81","current_de_stock":"0","last_order_date":"2025-11-15T00:00:00.000Z","days_out_of_stock":"250","lost_sales_estimate_eur":"8.09","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-15","days_oos":250,"qty_sold":1,"sales_eur":11.81}]},{"sku":"PCFT300BA","product_title":"300mm Female Threaded Pipe Fittings","product_img_url":"https://cdn.shopify.com/s/files/1/0105/7135/0112/files/1728972253518_a1.jpg?v=1729829951","last_year_qty_sold":"1","last_year_sales_eur":"13.13","current_de_stock":"0","last_order_date":"2025-12-13T00:00:00.000Z","days_out_of_stock":"222","lost_sales_estimate_eur":"7.99","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-12-13","days_oos":222,"qty_sold":1,"sales_eur":13.13}]},{"sku":"PC16FT500BA","product_title":"16mm Diameter Round Seamless Steel Black 500mm Conduit Pipe Female Thread","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/5145LBUdUbL._AC_d3920a7b-d8af-4ecd-a748-ffc4f72544f2.webp?v=1758533709","last_year_qty_sold":"1","last_year_sales_eur":"11.96","current_de_stock":"0","last_order_date":"2025-11-23T00:00:00.000Z","days_out_of_stock":"242","lost_sales_estimate_eur":"7.93","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-23","days_oos":242,"qty_sold":1,"sales_eur":11.96}]},{"sku":"COT9ABM5PK","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0250/4094/5248/files/516P0jSlLsL.jpg?v=1760939234","last_year_qty_sold":"1","last_year_sales_eur":"6.18","current_de_stock":"0","last_order_date":"2025-11-12T00:00:00.000Z","days_out_of_stock":"253","lost_sales_estimate_eur":"4.28","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-12","days_oos":253,"qty_sold":1,"sales_eur":6.18}]},{"sku":"COT9ABM2PK","product_title":"Combo Default Title.","product_img_url":"https://cdn.shopify.com/s/files/1/0573/8178/1659/files/13182_1731487244_6734660c17bb9.jpg?v=1731487324","last_year_qty_sold":"1","last_year_sales_eur":"3.18","current_de_stock":"0","last_order_date":"2025-11-03T00:00:00.000Z","days_out_of_stock":"262","lost_sales_estimate_eur":"2.28","account_dates":[{"account_name":"ledsone-de","last_order_date":"2025-11-03","days_oos":262,"qty_sold":1,"sales_eur":3.18}]}];
+let sortCol='lost_sales_estimate_eur',sortAsc=false;
+const MAX_DAYS=Math.max(...DATA.map(r=>+r.days_out_of_stock));
+function severity(d){return d>=365?'critical':d>=180?'high':'medium';}
+function sevLabel(d){return d>=365?'Critical':d>=180?'High':'Medium';}
+function fmt(n){return parseFloat(n).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function render(filtered){
+  const tbody=document.getElementById('tbody'),empty=document.getElementById('empty');
+  document.getElementById('row-count').textContent='Showing '+filtered.length+' of '+DATA.length;
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=filtered.map(r=>{
+    const days=+r.days_out_of_stock,sev=severity(days);
+    const pct=Math.min(100,Math.round(days/MAX_DAYS*100));
+    const img=r.product_img_url
+      ?'<img class="thumb" src="'+r.product_img_url+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+       +'<span class="thumb-fallback" style="display:none">IMG</span>'
+      :'<span class="thumb-fallback">IMG</span>';
+    return '<tr>'
+      +'<td><div class="prod">'+img+'<span class="sku">'+r.sku+'</span></div></td>'
+      +'<td class="num">&euro;'+fmt(r.last_year_sales_eur)+'</td>'
+      +'<td class="num">'+parseInt(r.last_year_qty_sold).toLocaleString()+'</td>'
+      +'<td class="num" style="color:var(--red);font-weight:700;">0</td>'
+      +'<td>'+r.last_order_date+'</td>'
+      +'<td class="num"><div class="dbar"><div class="dbar-track"><div class="dbar-fill '+sev+'" style="width:'+pct+'%"></div></div>'+days+'d</div></td>'
+      +'<td><span class="sev '+sev+'">'+sevLabel(days)+'</span></td>'
+      +'<td class="num" style="font-weight:700;color:var(--red);">&euro;'+fmt(r.lost_sales_estimate_eur)+'</td>'
+      +'</tr>';
+  }).join('');
+}
+function getFiltered(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  let arr=q?DATA.filter(r=>r.sku.toLowerCase().includes(q)):[...DATA];
+  arr.sort((a,b)=>sortAsc?(+a[sortCol])-(+b[sortCol]):(+b[sortCol])-(+a[sortCol]));
+  return arr;
+}
+function refresh(){render(getFiltered());}
+document.getElementById('search').addEventListener('input',refresh);
+document.querySelectorAll('.sortbtn').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    const col=this.dataset.col;
+    if(sortCol===col){sortAsc=!sortAsc;}else{sortCol=col;sortAsc=false;}
+    document.querySelectorAll('.sortbtn').forEach(b=>b.classList.remove('on'));
+    this.classList.add('on');
+    refresh();
+  });
+});
+document.getElementById('exportBtn').addEventListener('click',function(){
+  const filtered=getFiltered();
+  const h=['SKU','Product Image URL','2025 Sales (EUR)','2025 Qty Sold','Current DE Stock','Last Order Date','Days OOS','Est. Lost Sales (EUR)'];
+  const body=filtered.map(r=>['"'+r.sku+'"','"'+(r.product_img_url||'')+'"',r.last_year_sales_eur,r.last_year_qty_sold,r.current_de_stock,r.last_order_date,r.days_out_of_stock,r.lost_sales_estimate_eur].join(','));
+  const csv=[h.join(','),...body].join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='report-1c-shopify-de-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+});
+refresh();
+
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');p.style.display='none';});
+    this.classList.add('active');
+    var pane=document.getElementById('tab-'+this.dataset.tab);
+    pane.classList.add('active');
+    pane.style.display='block';
+  });
+});
+
+</script>
+</body>
+</html>

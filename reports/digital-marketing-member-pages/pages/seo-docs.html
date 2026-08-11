@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Guide — SEO Intelligence ledsone.co.uk</title>
+<style>
+:root{
+  --navy:#0c1a30;--navy-2:#13284a;--ink:#1a2233;--muted:#5b6577;
+  --line:#e3e7ee;--bg:#f4f6f9;--card:#ffffff;
+  --gold:#b98b1e;--gold-soft:#faf3e0;
+  --accent:#1f5eff;--accent-soft:#eaf0ff;
+  --red:#b91c1c;--red-soft:#fff5f5;
+  --warn:#d97706;--warn-soft:#fffbeb;
+  --good:#0a7d4f;--good-soft:#e5f5ee;
+  --na:#64748b;--na-soft:#eef2f7;
+  --purple:#9333ea;--purple-soft:#f5f3ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;}
+.topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--navy-2) 55%,var(--gold) 100%);}
+.masthead{background:var(--card);padding:22px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(12,26,48,.05);}
+.masthead .inner{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:18px;}
+.mark{width:44px;height:44px;background:var(--navy);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#e8d59a;flex:none;border:1.5px solid var(--gold);}
+.kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:3px;}
+.masthead h1{font-size:19px;font-weight:700;color:var(--navy);}
+.masthead .lede{font-size:12.5px;color:var(--muted);margin-top:3px;}
+.back{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:12px;font-weight:600;transition:all .15s;margin-left:auto;}
+.back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+.page{max-width:960px;margin:0 auto;padding:28px 32px 72px;}
+
+/* Audience toggle */
+.audience-bar{display:flex;gap:8px;margin-bottom:24px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;align-items:center;flex-wrap:wrap;}
+.audience-bar span{font-size:12px;color:var(--muted);font-weight:600;margin-right:4px;}
+.aud-btn{padding:6px 16px;border-radius:20px;border:1px solid var(--line);background:var(--bg);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--muted);}
+.aud-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.aud-hint{font-size:11.5px;color:var(--muted);margin-left:auto;}
+
+/* TOC */
+.toc-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:28px;}
+.toc-box h2{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);margin-bottom:14px;}
+.toc-phases{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.toc-phase{display:flex;align-items:center;gap:10px;text-decoration:none;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 13px;transition:all .15s;}
+.toc-phase:hover{background:var(--accent-soft);border-color:var(--accent);}
+.toc-phase .tp-num{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none;}
+.toc-phase .tp-name{font-size:12.5px;font-weight:600;color:var(--navy);}
+.toc-phase .tp-sub{font-size:10.5px;color:var(--muted);margin-top:1px;}
+.toc-divider{margin:16px 0 10px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+/* Section */
+.section{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:20px;scroll-margin-top:80px;overflow:hidden;}
+.sec-head{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 20px;border-bottom:1px solid var(--line);}
+.sec-icon{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;}
+.sec-meta{flex:1;}
+.sec-phase{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;}
+.sec-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+.sec-sub{font-size:13px;color:var(--muted);}
+.sec-badges{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;}
+.sec-body{padding:22px 28px;}
+
+/* Sub-tab pills */
+.subtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+.subtab{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;background:var(--bg);border:1px solid var(--line);color:var(--ink);}
+.subtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.subtab.warn{background:var(--warn-soft);color:var(--warn);border-color:#fde68a;}
+.subtab.purple{background:var(--purple-soft);color:var(--purple);border-color:#ddd6fe;}
+
+/* Body text */
+.body-text{font-size:13.5px;color:#2d3748;line-height:1.8;margin-bottom:14px;}
+.body-text strong{color:var(--navy);}
+
+/* Fact grid */
+.fact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;margin:14px 0;}
+.fact{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+.fact .fl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.fact .fv{font-size:13px;font-weight:500;color:var(--navy);line-height:1.5;}
+.fact.accent{background:var(--accent-soft);border-color:#c5d6ff;}.fact.accent .fl{color:var(--accent);}
+.fact.good{background:var(--good-soft);border-color:#b7e8d0;}.fact.good .fl{color:var(--good);}
+.fact.warn{background:var(--warn-soft);border-color:#fde68a;}.fact.warn .fl{color:var(--warn);}
+.fact.purple{background:var(--purple-soft);border-color:#ddd6fe;}.fact.purple .fl{color:var(--purple);}
+
+/* Sub-section */
+.subsec{margin-top:20px;}
+.subsec-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+
+/* Table */
+.col-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px;}
+.col-table th{background:var(--bg);padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);}
+.col-table td{padding:9px 12px;border:1px solid var(--line);vertical-align:top;line-height:1.55;}
+.col-table tr:hover td{background:#fafbff;}
+
+/* Chips */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.chip.live{background:#dcfce7;color:#166534;}
+.chip.weekly{background:var(--accent-soft);color:var(--accent);}
+.chip.daily{background:var(--purple-soft);color:var(--purple);}
+.chip.manual{background:var(--warn-soft);color:var(--warn);}
+.chip.realtime{background:#fce7f3;color:#9d174d;}
+.chip.gsc{background:var(--good-soft);color:var(--good);}
+.chip.semrush{background:var(--gold-soft);color:var(--gold);}
+
+/* Notes */
+.info-note{background:var(--accent-soft);border:1px solid #c5d6ff;border-radius:9px;padding:11px 15px;font-size:13px;color:#1e3a8a;margin-top:14px;line-height:1.6;}
+.warn-note{background:var(--warn-soft);border:1px solid #fde68a;border-radius:9px;padding:11px 15px;font-size:13px;color:#78350f;margin-top:14px;line-height:1.6;}
+.good-note{background:var(--good-soft);border:1px solid #b7e8d0;border-radius:9px;padding:11px 15px;font-size:13px;color:#065f46;margin-top:14px;line-height:1.6;}
+
+/* Tech block */
+.tech-block{margin-top:16px;display:none;}
+.tech-block.visible{display:block;}
+details.tech-details{background:#0c1a30;border-radius:11px;overflow:hidden;}
+details.tech-details summary{padding:11px 16px;cursor:pointer;font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;list-style:none;display:flex;align-items:center;gap:8px;user-select:none;}
+details.tech-details summary::before{content:"▶";font-size:9px;transition:transform .2s;color:#64748b;}
+details.tech-details[open] summary::before{transform:rotate(90deg);}
+details.tech-details summary:hover{color:#e8d59a;}
+.tech-body{padding:14px 18px 16px;border-top:1px solid #1e3a5f;}
+.tech-body p{color:#94a3b8;font-size:12.5px;line-height:1.7;margin-bottom:8px;}
+.tech-body p code{background:#1e3a5f;padding:1px 6px;border-radius:4px;font-size:11px;color:#7dd3fc;}
+.tech-body .tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tech-body .tbl th{color:#64748b;padding:5px 10px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;letter-spacing:1px;}
+.tech-body .tbl td{color:#cbd5e1;padding:6px 10px;border-bottom:1px solid #1e293b;vertical-align:top;line-height:1.5;}
+.tech-body .tbl td code{background:#1e3a5f;padding:1px 6px;border-radius:4px;font-size:11px;color:#7dd3fc;}
+
+/* Glossary */
+.gloss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
+.gloss-item{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 15px;}
+.gloss-term{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.gloss-def{font-size:12.5px;color:#2d3748;line-height:1.6;}
+
+@media(max-width:640px){
+  .masthead,.page{padding-left:16px;padding-right:16px;}
+  .sec-head{flex-direction:column;gap:10px;}
+  .back{margin-left:0;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<div class="masthead">
+  <div class="inner">
+    <div class="mark">LS</div>
+    <div>
+      <div class="kicker">ledsone.co.uk · SEO Intelligence</div>
+      <h1>Dashboard Data Guide</h1>
+      <div class="lede">What each tab shows, where the data comes from, when it updates, and how to use it</div>
+    </div>
+    <a href="/pages/seo.html" class="back">← Back to Dashboard</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Audience toggle -->
+  <div class="audience-bar">
+    <span>I am reading this as:</span>
+    <button class="aud-btn active" id="btn-seo" onclick="setAudience('seo')">📈 SEO / Marketing</button>
+    <button class="aud-btn" id="btn-dev" onclick="setAudience('dev')">💻 Developer</button>
+    <span class="aud-hint">Developer mode reveals database tables, API endpoints, and query parameters</span>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc-box">
+    <h2>Jump to a phase</h2>
+    <div class="toc-phases">
+      <a class="toc-phase" href="#phase1">
+        <div class="tp-num" style="background:#eaf0ff;color:var(--accent)">1</div>
+        <div><div class="tp-name">Executive Overview</div><div class="tp-sub">KPIs, trends, charts</div></div>
+      </a>
+      <a class="toc-phase" href="#phase2">
+        <div class="tp-num" style="background:var(--purple-soft);color:var(--purple)">2</div>
+        <div><div class="tp-name">Product Intelligence</div><div class="tp-sub">Product-level performance</div></div>
+      </a>
+      <a class="toc-phase" href="#phase3">
+        <div class="tp-num" style="background:var(--good-soft);color:var(--good)">3</div>
+        <div><div class="tp-name">Keyword Intelligence</div><div class="tp-sub">Rankings, gaps, trends</div></div>
+      </a>
+      <a class="toc-phase" href="#phase4">
+        <div class="tp-num" style="background:var(--warn-soft);color:var(--warn)">4</div>
+        <div><div class="tp-name">Landing Pages</div><div class="tp-sub">Page-level GSC data</div></div>
+      </a>
+      <a class="toc-phase" href="#phase5">
+        <div class="tp-num" style="background:var(--red-soft);color:var(--red)">5</div>
+        <div><div class="tp-name">Action Centre</div><div class="tp-sub">Priority fixes &amp; tasks</div></div>
+      </a>
+      <a class="toc-phase" href="#phase6">
+        <div class="tp-num" style="background:var(--na-soft);color:var(--na)">6</div>
+        <div><div class="tp-name">Technical SEO</div><div class="tp-sub">Coverage, cannibalization</div></div>
+      </a>
+      <a class="toc-phase" href="#phase7">
+        <div class="tp-num" style="background:var(--good-soft);color:var(--good)">7</div>
+        <div><div class="tp-name">AI Readiness</div><div class="tp-sub">GEO score &amp; checklist</div></div>
+      </a>
+    </div>
+    <div class="toc-divider">Also in this guide</div>
+    <div class="toc-phases">
+      <a class="toc-phase" href="#sources">
+        <div class="tp-num" style="background:var(--gold-soft);color:var(--gold)">→</div>
+        <div><div class="tp-name">Data Sources</div><div class="tp-sub">GSC, SEMrush, Ads, agents</div></div>
+      </a>
+      <a class="toc-phase" href="#glossary">
+        <div class="tp-num" style="background:var(--na-soft);color:var(--na)">→</div>
+        <div><div class="tp-name">Glossary</div><div class="tp-sub">Plain-English definitions</div></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── PHASE 1 ─────────────────────────────────────────────── -->
+  <div class="section" id="phase1">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:#eaf0ff;">📊</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--accent)">Phase 1</div>
+        <div class="sec-title">Executive Overview</div>
+        <div class="sec-sub">Weekly KPI monitoring, WoW comparison, 18-month trends, executive insights, alerts, 37-month organic chart, ads overlay, competitor comparison, backlinks</div>
+        <div class="sec-badges">
+          <span class="chip daily">GSC — Daily</span>
+          <span class="chip weekly">SEMrush — Weekly</span>
+          <span class="chip daily">Ads — Daily</span>
+          <span class="chip weekly">WoW — Weekly</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">This is the primary management dashboard. It gives a <strong>single-screen summary of ledsone's SEO health</strong> — you should be able to answer "how are we doing this week?" in 30 seconds from this tab alone. The tab now includes weekly KPI monitoring with week-on-week comparisons and 18-month historical trend charts.</p>
+
+      <div class="subsec">
+        <div class="subsec-title">🗓 SEO Weekly KPI Summary — top section (NEW)</div>
+        <p class="body-text">7 KPI cards showing this week vs last week with WoW % change, trend arrow, and green / amber / red status. Updates automatically every week as new GSC data flows in. No manual action required.</p>
+        <table class="col-table">
+          <tr><th>KPI Card</th><th>What it shows</th><th>Source</th><th>Green if…</th></tr>
+          <tr><td>Organic Clicks</td><td>Total clicks from Google search this week</td><td>GSC (daily pipeline)</td><td>WoW &gt; +2%</td></tr>
+          <tr><td>Organic Impressions</td><td>Times ledsone appeared in search results this week</td><td>GSC (daily pipeline)</td><td>WoW &gt; +2%</td></tr>
+          <tr><td>CTR</td><td>Click-through rate = clicks ÷ impressions × 100</td><td>GSC (daily pipeline)</td><td>WoW &gt; +2%</td></tr>
+          <tr><td>Avg Position</td><td>Average ranking position (lower number = better)</td><td>GSC (daily pipeline)</td><td>WoW improves (number falls)</td></tr>
+          <tr><td>Top 3 Keywords</td><td>Number of keywords ranking in positions 1–3</td><td>GSC (daily pipeline)</td><td>WoW &gt; +2%</td></tr>
+          <tr><td>Top 10 Keywords</td><td>Number of keywords ranking in positions 1–10</td><td>GSC (daily pipeline)</td><td>WoW &gt; +2%</td></tr>
+          <tr><td>SEMrush Organic Traffic</td><td>Estimated monthly organic visitors (monthly snapshot)</td><td>SEMrush via Neon DB</td><td>MoM &gt; +2% (monthly only)</td></tr>
+        </table>
+        <div class="info-note">⚠️ <strong>GSC pipeline note:</strong> The database stores approximately 50% of true GSC click totals due to device-level thresholding. Use these numbers for trend direction — not absolute benchmarks. The WoW % change is reliable even if the absolute numbers are halved.</div>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">📊 SEO KPI Weekly Comparison Table (NEW)</div>
+        <p class="body-text">A full tabular view of all 7 KPIs side by side: Current Week | Previous Week | Difference | WoW % | Trend status. Useful for sharing in management meetings or weekly reports. The table always shows the two most recent ISO weeks automatically.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">🧠 Executive Insights — Weekly Summary (NEW)</div>
+        <p class="body-text">Auto-generated text summary every time the tab loads. Shows:</p>
+        <table class="col-table">
+          <tr><th>Insight</th><th>How it works</th></tr>
+          <tr><td>Biggest Increase</td><td>KPI with the largest positive WoW % gain this week</td></tr>
+          <tr><td>Biggest Decline</td><td>KPI with the largest negative WoW % drop this week</td></tr>
+          <tr><td>Best Performing KPI</td><td>Same as biggest increase — highlighted separately</td></tr>
+          <tr><td>Worst Performing KPI</td><td>KPI furthest below prior week</td></tr>
+          <tr><td>Recommended Action</td><td>Auto-generated based on which KPI declined most and by how much</td></tr>
+          <tr><td>Priority</td><td>High / Medium / Low — set automatically by severity of decline</td></tr>
+        </table>
+        <p class="body-text">This section requires no input — it is fully computed from live weekly data on every page load.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">⚠ SEO Alerts (enhanced)</div>
+        <p class="body-text">The alerts panel now fires on both long-term signals (backlink drops, 6-month rank decline) <strong>and</strong> weekly WoW signals. New WoW-triggered alerts:</p>
+        <table class="col-table">
+          <tr><th>Alert</th><th>Trigger</th><th>Severity</th></tr>
+          <tr><td>Organic Clicks fell X% WoW</td><td>Clicks drop &gt; 15% week-on-week</td><td>Critical 🔴</td></tr>
+          <tr><td>Organic Clicks down X% WoW</td><td>Clicks drop 7–15%</td><td>Warning 🟡</td></tr>
+          <tr><td>Organic Clicks up X% WoW</td><td>Clicks rise &gt; 15%</td><td>Good 🟢</td></tr>
+          <tr><td>CTR dropped X% WoW</td><td>CTR falls &gt; 15%</td><td>Warning 🟡</td></tr>
+          <tr><td>Avg Position worsened</td><td>Position number rises &gt; 15%</td><td>Warning 🟡</td></tr>
+          <tr><td>Avg Position improved</td><td>Position number falls &gt; 10%</td><td>Good 🟢</td></tr>
+          <tr><td>Top 10 Keywords up/down</td><td>Top-10 keyword count changes &gt; 10%</td><td>Good 🟢 / Warning 🟡</td></tr>
+          <tr><td>Impressions up/down</td><td>Impressions change &gt; 20%</td><td>Good 🟢 / Warning 🟡</td></tr>
+        </table>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">📈 SEO KPI Trends — Last 18 Months (NEW)</div>
+        <p class="body-text">7 individual line charts showing each KPI over time. Charts automatically grow as new data arrives — no code changes needed.</p>
+        <table class="col-table">
+          <tr><th>Chart</th><th>Data source</th><th>History available</th><th>Auto-updates</th></tr>
+          <tr><td>Organic Clicks</td><td>GSC PostgreSQL pipeline</td><td>From Mar 2026 (pipeline start)</td><td>✅ Yes — daily</td></tr>
+          <tr><td>Organic Impressions</td><td>GSC PostgreSQL pipeline</td><td>From Mar 2026</td><td>✅ Yes — daily</td></tr>
+          <tr><td>CTR (%)</td><td>GSC PostgreSQL pipeline</td><td>From Mar 2026</td><td>✅ Yes — daily</td></tr>
+          <tr><td>Average Position</td><td>GSC PostgreSQL pipeline</td><td>From Mar 2026</td><td>✅ Yes — daily</td></tr>
+          <tr><td>Top 3 Keywords</td><td>SEMrush → Neon DB</td><td>Jul 2023 – present (36 months)</td><td>✅ Yes — weekly agent</td></tr>
+          <tr><td>Top 10 Keywords</td><td>SEMrush → Neon DB</td><td>Jul 2023 – present (36 months)</td><td>✅ Yes — weekly agent</td></tr>
+          <tr><td>Organic Traffic Estimate</td><td>SEMrush → Neon DB</td><td>Jul 2023 – present (36 months)</td><td>✅ Yes — weekly agent</td></tr>
+        </table>
+        <div class="info-note">📌 <strong>GSC history note:</strong> The GSC pipeline only started capturing data from March 2026. Until the pipeline has been running for 18 months (September 2027), the Clicks, Impressions, CTR and Position charts will show fewer than 18 months. No fake data is generated — the chart shows all available real data and displays a note explaining the limitation.</div>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">KPI cards — monthly snapshot row</div>
+        <table class="col-table">
+          <tr><th>Card</th><th>What it shows</th><th>Source</th><th>Updates</th></tr>
+          <tr><td>Organic Keywords</td><td>Total keywords ledsone ranks for (any position)</td><td>SEMrush via Neon DB</td><td>Weekly (Monday)</td></tr>
+          <tr><td>Traffic Estimate</td><td>Estimated monthly organic visitors</td><td>SEMrush via Neon DB</td><td>Weekly (Monday)</td></tr>
+          <tr><td>Domain Rank</td><td>SEMrush global domain rank (lower = stronger)</td><td>SEMrush via Neon DB</td><td>Weekly (Monday)</td></tr>
+          <tr><td>Clicks (pipeline)</td><td>GSC clicks this month (~50% of true total)</td><td>Google Search Console</td><td>Daily</td></tr>
+          <tr><td>Avg Position</td><td>Average ranking position across all queries</td><td>Google Search Console</td><td>Daily</td></tr>
+          <tr><td>Monthly Spend</td><td>Google Ads cost this month in GBP</td><td>Google Ads (Ledsone DB)</td><td>Daily</td></tr>
+          <tr><td>ROAS</td><td>Return on Ad Spend = conversion value ÷ cost</td><td>Google Ads (Ledsone DB)</td><td>Daily</td></tr>
+          <tr><td>Authority Score</td><td>SEMrush domain trust score 0–100</td><td>SEMrush via Neon DB</td><td>Weekly (Monday)</td></tr>
+          <tr><td>Referring Domains</td><td>Unique sites linking to ledsone</td><td>SEMrush via Neon DB</td><td>Weekly (Monday)</td></tr>
+          <tr><td>Total Backlinks</td><td>All links pointing to ledsone</td><td>SEMrush via Neon DB</td><td>Weekly (Monday)</td></tr>
+        </table>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">37-Month Trend Chart</div>
+        <p class="body-text">Shows ledsone's estimated organic traffic and keyword count from July 2023 to present. Use this to spot long-term growth or decline — a single bad month is noise, a 3-month downward trend is a signal. Source: SEMrush weekly snapshots stored in the cloud database.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Google Ads Overlay Chart</div>
+        <p class="body-text">Monthly ad spend (bars) and ROAS (line) from February 2020 to present. Lets you see whether paid investment is paying off and whether spend spikes correlate with organic traffic changes. Source: Google Ads pipeline, updated daily.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Competitor Traffic Comparison Chart</div>
+        <p class="body-text">ledsone vs 5 competitors (lightingcompany, ledhut, industville, vintagelightbulb, lampspares) — estimated monthly organic traffic. The key question is not "is our traffic going up?" but "are we growing faster or slower than competitors?" Source: SEMrush weekly snapshots, refreshed every Monday.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Backlinks Health Charts</div>
+        <p class="body-text">24-month trend of total backlinks and referring domains, plus a monthly net-change bar chart (green = gained, red = lost). A critical 86% backlink drop has been flagged — this is shown as a warning alert at the top of this section.</p>
+        <p class="body-text">The <strong>Lost & Gained Referring Domains</strong> chart compares the two most recent weekly SEMrush snapshots side by side, showing exactly which domains linked to ledsone last week but not this week (lost — red) and which are new this week (gained — green). Use this to spot important link losses early and take recovery action before rankings are affected.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Month-on-Month Comparison Table</div>
+        <p class="body-text">Side-by-side comparison of the last 6 months across all three data sources: GSC clicks, SEMrush estimated traffic, and Google Ads spend/ROAS. Useful for spotting which months were strong and why.</p>
+      </div>
+
+      <div class="info-note">💡 <strong>Date range filter:</strong> The date picker at the top of the dashboard now has presets: <strong>7d, 30d, 90d, 6m, 1y, 18m, All</strong>. It controls the GSC date range for KPIs and keyword tables. It does not affect SEMrush or Ads data — those always show the full available history. The Weekly KPI section always shows the two most recent ISO weeks regardless of the date filter.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Phase 1 API calls</summary>
+          <div class="tech-body">
+            <p>Executive tab fetches 9 endpoints in parallel on load:</p>
+            <table class="tbl">
+              <tr><th>Endpoint</th><th>Returns</th></tr>
+              <tr><td><code>?module=semrush&amp;type=history</code></td><td>36-month SEMrush organic history (rank, traffic, kw counts)</td></tr>
+              <tr><td><code>?module=semrush&amp;type=competitors</code></td><td>Monthly competitor traffic from semrush_competitor_history</td></tr>
+              <tr><td><code>?module=exec&amp;type=gsc-monthly</code></td><td>Monthly clicks, impressions, CTR, avg_position from GSC overview table</td></tr>
+              <tr><td><code>?module=exec&amp;type=gsc-weekly</code></td><td>Last 26 weeks: clicks, impressions, CTR, avg_position, kw_top3, kw_top10 (merged from overview + query tables)</td></tr>
+              <tr><td><code>?module=exec&amp;type=position-dist</code></td><td>Current-month keyword count by position bucket (1–3, 4–10, 11–20, 21–50, 51+)</td></tr>
+              <tr><td><code>?module=exec&amp;type=ads-monthly</code></td><td>Monthly Google Ads spend, ROAS, campaigns</td></tr>
+              <tr><td><code>?module=exec&amp;type=data-quality</code></td><td>Data source status and coverage dates</td></tr>
+              <tr><td><code>?module=semrush&amp;type=backlinks-history</code></td><td>Monthly backlinks + referring domains (24 months)</td></tr>
+              <tr><td><code>?module=semrush&amp;type=backlinks</code></td><td>Latest backlink snapshot (authority score, counts)</td></tr>
+            </table>
+            <p>Weekly KPI data: <code>gsc-weekly</code> queries <code>google_search_console.overview</code> (grouped by ISO week) and <code>google_search_console.query</code> (COUNT DISTINCT keywords by position bucket per week). Both queries run in parallel, merged by week_start date. Returns last 26 weeks.</p>
+            <p>18-Month charts: GSC charts use the <code>gsc-monthly</code> response (no additional API call). SEMrush charts use the <code>semrush/history</code> response fields: <code>kw_top3</code>, <code>kw_top4_10</code>, <code>traffic_est</code>. All data already loaded — no extra fetches.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 2 ─────────────────────────────────────────────── -->
+  <div class="section" id="phase2">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--purple-soft);">🛒</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--purple)">Phase 2</div>
+        <div class="sec-title">Product Intelligence</div>
+        <div class="sec-sub">Which individual products and collections are driving organic traffic and clicks</div>
+        <div class="sec-badges">
+          <span class="chip gsc">GSC — Daily</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">This tab breaks down SEO performance <strong>at the product level</strong> rather than site-wide. You can see which specific product pages or collection pages are pulling in the most Google traffic — and which ones with good rankings are failing to convert that into clicks.</p>
+
+      <div class="subsec">
+        <div class="subsec-title">What you can do in this tab</div>
+        <table class="col-table">
+          <tr><th>What you see</th><th>What it tells you</th><th>Action to take</th></tr>
+          <tr><td>Products with high impressions, low clicks</td><td>Google is showing the page but people aren't clicking — the title or meta description is weak</td><td>Rewrite the meta title and description to be more compelling</td></tr>
+          <tr><td>Products with good position (1–10) but 0 clicks</td><td>Ranking well but something is stopping clicks — possibly a rich snippet competitor is stealing attention</td><td>Add review schema, FAQ schema, or improve the snippet</td></tr>
+          <tr><td>Products with declining position</td><td>Ranking is slipping — possible competitor improvement or content freshness issue</td><td>Update product description, add more content, check for cannibalization</td></tr>
+          <tr><td>Products with 0 impressions</td><td>Google isn't indexing or ranking this page at all</td><td>Check indexation in Technical SEO tab, check internal linking</td></tr>
+        </table>
+      </div>
+
+      <div class="info-note">💡 All data is from Google Search Console — real clicks and impressions, not estimates. Filtered to product and collection URL patterns (<code>/products/</code> and <code>/collections/</code>).</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Phase 2 API</summary>
+          <div class="tech-body">
+            <p>API module: <code>?module=products</code>. Queries Ledsone PostgreSQL <code>google_search_console.page</code> table, filtered with <code>ILIKE '%/products/%' OR ILIKE '%/collections/%'</code>. Aggregates clicks, impressions, CTR, avg_position by page URL over the global date range. Shopify product handle extracted from URL path for display.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 3 ─────────────────────────────────────────────── -->
+  <div class="section" id="phase3">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--good-soft);">🔑</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--good)">Phase 3</div>
+        <div class="sec-title">Keyword Intelligence</div>
+        <div class="sec-sub">9 sub-tabs covering keyword rankings, opportunities, trends, CTR benchmarks, rank distribution, and competitor gaps</div>
+        <div class="sec-badges">
+          <span class="chip gsc">GSC — Daily</span>
+          <span class="chip weekly">SEMrush — Weekly</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">The most detailed tab in the dashboard. Split into 9 sub-tabs covering different angles of keyword performance — from what's ranking today to CTR benchmarks, rank trends, and competitor gaps.</p>
+
+      <div class="subtabs">
+        <span class="subtab active">Top Keywords</span>
+        <span class="subtab">Opportunities</span>
+        <span class="subtab">↑ Rising</span>
+        <span class="subtab">↓ Declining</span>
+        <span class="subtab purple">SEMrush Rankings</span>
+        <span class="subtab warn">🔓 Keyword Gap</span>
+        <span class="subtab" style="border-left:2px solid #9333ea">📉 CTR Benchmark</span>
+        <span class="subtab" style="border-left:2px solid #0891b2">📊 Rank Distribution</span>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Top Keywords — GSC</div>
+        <p class="body-text">All queries ledsone currently ranks for, sorted by clicks. Source: Google Search Console — <strong>real click data</strong>. Each row shows the search term, clicks, impressions, CTR, and average position. You can sort by any column and search by keyword. The intent filter (Transactional / Commercial / Informational) classifies why someone searched that term.</p>
+        <p class="body-text">Also shows which landing page received the click for each keyword — useful for checking if the right page is ranking for the right term. Each row has a <strong>📈 button</strong> — click it to expand an 18-month position history chart for that keyword, showing how its ranking and clicks have trended over time.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Opportunities — GSC</div>
+        <p class="body-text">Keywords where ledsone ranks in positions <strong>4–20</strong> — meaning Google thinks the page is relevant but it's not getting much traffic yet. These are the highest-value quick wins: a position improvement from 8 to 3 can multiply clicks by 4x without creating any new content. Just improving the existing page (freshness, internal links, better content) is often enough.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">↑ Rising — GSC</div>
+        <p class="body-text">Keywords where ledsone's ranking position improved this month compared to last month. Positive signals — shows which pages Google is rewarding. Use this to understand what's working so you can replicate it on weaker pages.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">↓ Declining — GSC</div>
+        <p class="body-text">Keywords where ranking position dropped this month. These need attention — a ranking drop today leads to a traffic drop in 2–4 weeks. Check if a competitor updated their page, if the ledsone page lost backlinks, or if the content has gone stale.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">SEMrush Rankings — SEMrush</div>
+        <p class="body-text">The top 50 keywords SEMrush currently shows ledsone ranking for in the UK, with estimated search volume, Keyword Difficulty (KD), and search intent. Source: SEMrush — refreshed every Monday. Use this to see keywords that GSC might not show (low-volume queries that fall under Google's privacy threshold).</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">🔓 Keyword Gap — SEMrush</div>
+        <p class="body-text">Keywords where a competitor ranks in the top 10 but ledsone does not rank at all (or ranks below position 20). These are proven UK lighting keywords with real search volume — competitors are already getting traffic from them. Use the <strong>competitor selector buttons</strong> at the top to switch between ledhut.co.uk, lightingcompany.co.uk, and industville.co.uk. Each shows its own set of gap keywords sorted by Opportunity Score.</p>
+        <p class="body-text">Opportunity Score = volume × (10 ÷ competitor position). Sort by this and filter KD &lt; 30 to find the easiest wins. Source: SEMrush, refreshed every Monday by Cloud Agent 4 for all 3 competitors.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">📉 CTR Benchmark</div>
+        <p class="body-text">Compares ledsone's actual click-through rate for each keyword against the <strong>industry average CTR for that rank position</strong> (based on Sistrix/Backlinko benchmarks: position 1 = 28.5%, position 2 = 15.7%, etc.). Keywords are sorted by biggest gap — where the most clicks are being left on the table.</p>
+        <p class="body-text">The <strong>Potential Clicks/mo</strong> column shows how many extra monthly clicks you'd earn if you improved CTR to the benchmark for that position. Use this to prioritise meta title and description rewrites — these improve CTR without needing a ranking improvement.</p>
+        <table class="col-table">
+          <tr><th>Column</th><th>What it means</th></tr>
+          <tr><td>Actual CTR</td><td>Real CTR from Google Search Console</td></tr>
+          <tr><td>Expected CTR</td><td>Industry average for that rank position</td></tr>
+          <tr><td>Gap</td><td>Expected minus actual — negative means underperforming</td></tr>
+          <tr><td>Status</td><td>Under (red, &gt;5% gap) / Slight (amber) / On Track (green)</td></tr>
+          <tr><td>Potential Clicks</td><td>Extra clicks/month if CTR reached the benchmark</td></tr>
+        </table>
+        <p class="body-text">Source: GSC real data — no extra data fetch needed, uses the already-loaded Top Keywords data.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">📊 Rank Distribution</div>
+        <p class="body-text">A month-by-month stacked bar chart showing how ledsone's keywords are distributed across rank buckets: <strong style="color:#16a34a">positions 1–3</strong> (top results), 4–10, 11–20, 21–50, and <strong style="color:#dc2626">51+</strong>. This is one of the clearest ways to see if SEO is improving over time — the green bar should be growing and the red bar shrinking.</p>
+        <p class="body-text">Each month counts the number of unique keywords that appear in GSC data at that position range. A sudden drop in a bucket may indicate a Google algorithm update or competitor activity. Source: GSC real data, shown for the selected date range.</p>
+      </div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Phase 3 API</summary>
+          <div class="tech-body">
+            <p>GSC sub-tabs: <code>?module=keywords&type=top|opportunity|rising|declining</code> — queries Ledsone PostgreSQL <code>google_search_console.query</code> table. Rising/declining compare current vs previous month using window functions. Keyword position history: <code>?module=keywords&type=kw-history&q=KEYWORD</code> — returns monthly avg position, clicks, impressions for a single query over 18 months. Rank distribution: <code>?module=keywords&type=rank-dist</code> — COUNT(DISTINCT query) grouped by month and position bucket. CTR Benchmark: pure frontend calculation using Top Keywords data with Sistrix/Backlinko industry benchmarks. SEMrush sub-tab: <code>?module=semrush&type=semrush</code>. Keyword Gap: <code>?module=semrush&type=keyword-gap&competitor=DOMAIN</code> — reads <code>semrush_keyword_gap</code> from Neon, supports ledhut.co.uk, lightingcompany.co.uk, industville.co.uk. Competitor list: <code>?module=semrush&type=gap-competitors</code>.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 4 ─────────────────────────────────────────────── -->
+  <div class="section" id="phase4">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--warn-soft);">📄</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--warn)">Phase 4</div>
+        <div class="sec-title">Landing Pages</div>
+        <div class="sec-sub">4 sub-tabs showing page-level performance, type breakdown, month-on-month changes, and zero-click audits</div>
+        <div class="sec-badges">
+          <span class="chip gsc">GSC — Daily</span>
+          <span class="chip weekly">SEMrush Pages — Weekly</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">Where the Keyword Intelligence tab shows performance by search term, this tab shows performance <strong>by URL</strong>. Every page on ledsone.co.uk that has appeared in Google results is listed here. Click any page URL to open it in a new tab. Click <strong>▶ Trend</strong> to expand a month-by-month history for that page inline.</p>
+
+      <div class="subtabs">
+        <span class="subtab active">GSC All Pages</span>
+        <span class="subtab">By Page Type</span>
+        <span class="subtab">Month-on-Month</span>
+        <span class="subtab purple">SEMrush Pages</span>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">GSC All Pages</div>
+        <p class="body-text">Every URL on ledsone.co.uk that Google has shown in search results, sorted by clicks. Columns: page URL (clickable), page type (Product / Collection / Other), clicks, impressions, CTR, average position, days with data, and a <strong>▶ Trend</strong> button.</p>
+        <p class="body-text"><strong>▶ Trend button:</strong> Click it to expand a monthly breakdown for that page showing clicks, impressions, and position month by month. Click again to collapse. This lets you see if a page's traffic is growing, steady, or declining over time without leaving the tab.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">By Page Type</div>
+        <p class="body-text">Groups pages into Products, Collections, and Other pages and shows aggregate performance for each group. Useful for understanding whether product pages or category pages are driving more traffic, and which group is improving or declining.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Month-on-Month</div>
+        <p class="body-text">Shows each page's performance this month versus last month — clicks change, position change, impressions change. Sorted by biggest movers. Use this to quickly find pages that suddenly dropped or spiked, which is often a sign of a Google algorithm update affecting specific page types.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">SEMrush Pages — Zero-Click Audit</div>
+        <p class="body-text">Pages that have high impressions in Google but <strong>zero or very low clicks</strong>. These pages are visible on Google but failing to attract any traffic. The audit shows why and suggests a fix — for example, if a page ranks position 5–10 with zero clicks, the meta title/description needs rewriting to be more compelling.</p>
+        <p class="body-text">Source: SEMrush page-level data, refreshed weekly.</p>
+      </div>
+
+      <div class="info-note">💡 <strong>Page URLs are clickable links</strong> — click any URL in the table to open that ledsone page in a new tab. Use this to quickly review the page content alongside its SEO data.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Phase 4 API</summary>
+          <div class="tech-body">
+            <p>GSC sub-tabs: <code>?module=landing&type=pages|by-type|top-pages</code> — queries Ledsone PostgreSQL <code>google_search_console.page</code> table. Trend endpoint: <code>?module=landing&type=page-trend&page=URL</code> — returns monthly aggregates for a single page URL. SEMrush Pages: <code>?module=landing&type=semrush-pages</code> — reads from Neon <code>semrush_keywords</code> table, grouped by URL with zero-click filter. Page type classification via URL pattern matching (<code>/products/</code>, <code>/collections/</code>).</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 5 ─────────────────────────────────────────────── -->
+  <div class="section" id="phase5">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--red-soft);">🎯</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--red)">Phase 5</div>
+        <div class="sec-title">Action Centre</div>
+        <div class="sec-sub">Prioritised list of the highest-impact SEO tasks right now — what to work on this week</div>
+        <div class="sec-badges">
+          <span class="chip gsc">GSC — Daily</span>
+          <span class="chip weekly">SEMrush — Weekly</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">The Action Centre takes data from every other tab and turns it into a <strong>prioritised task list</strong>. Instead of spending time analysing charts, you open this tab and see exactly what to do — ranked by impact.</p>
+
+      <p class="body-text">Each action item shows: what the issue is, which page it affects, why it matters (the impact), and what to do. Items are colour-coded by priority — red is critical, amber is high priority, green is improvement opportunity.</p>
+
+      <div class="subsec">
+        <div class="subsec-title">Types of actions generated</div>
+        <table class="col-table">
+          <tr><th>Action type</th><th>What triggers it</th><th>What to do</th></tr>
+          <tr><td>High impression, zero clicks</td><td>Page has 500+ impressions but under 5 clicks this month</td><td>Rewrite meta title and description — the page is visible but not compelling</td></tr>
+          <tr><td>Ranking opportunity</td><td>Keyword ranking in positions 4–10 with decent volume</td><td>Improve the page content, add internal links — a small push can double traffic</td></tr>
+          <tr><td>Declining keyword</td><td>Keyword position dropped 3+ places month-on-month</td><td>Investigate competitor changes, refresh page content</td></tr>
+          <tr><td>Backlink loss</td><td>Significant drop in referring domains this month</td><td>Identify lost links, attempt to recover or build replacements</td></tr>
+          <tr><td>Keyword gap opportunity</td><td>High opportunity-score gap keyword (ledhut ranks, ledsone doesn't)</td><td>Create or improve a page targeting this keyword</td></tr>
+          <tr><td>AI Readiness gap</td><td>GEO checklist item not completed</td><td>Complete the specific technical or content improvement</td></tr>
+        </table>
+      </div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Phase 5 API</summary>
+          <div class="tech-body">
+            <p>API module: <code>?module=actions</code>. Runs multiple sub-queries across both databases and synthesises into a ranked action list. Priority scoring: critical (score &gt; 80), high (50–80), medium (20–50). Actions are generated server-side from live data on each request — not stored.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 6 ─────────────────────────────────────────────── -->
+  <div class="section" id="phase6">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--na-soft);">⚙️</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--na)">Phase 6</div>
+        <div class="sec-title">Technical SEO</div>
+        <div class="sec-sub">4 sub-tabs: index coverage, keyword cannibalization, zero-click page audit, and live Core Web Vitals</div>
+        <div class="sec-badges">
+          <span class="chip gsc">GSC — Daily</span>
+          <span class="chip" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0">PageSpeed — On Demand</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">Technical SEO issues are often invisible — pages that aren't indexed, keywords where two ledsone pages compete against each other, or pages that rank but never get clicked. This tab surfaces those hidden problems.</p>
+
+      <div class="subtabs">
+        <span class="subtab active">Index Coverage</span>
+        <span class="subtab">Cannibalization</span>
+        <span class="subtab">Zero-Click Pages</span>
+        <span class="subtab" style="border-left:2px solid #16a34a">⚡ Core Web Vitals</span>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Index Coverage</div>
+        <p class="body-text">Shows how many ledsone pages Google has indexed broken down by type (products, collections, other pages). If the number of indexed products is much lower than the total products in your Shopify store, some products are not appearing in Google at all — they need to be fixed before any other optimisation will help them.</p>
+        <p class="body-text">Also shows the date range of GSC data available, so you know how current the coverage picture is.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Cannibalization</div>
+        <p class="body-text"><strong>Keyword cannibalization</strong> happens when two or more ledsone pages both try to rank for the same search term and end up competing against each other. This confuses Google and usually means both pages rank lower than one well-optimised page would on its own. This tab identifies keyword-page pairs where this is happening so you can merge or redirect the weaker page.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Zero-Click Pages</div>
+        <p class="body-text">Pages that appear in Google results (impressions &gt; 0) but receive zero clicks. High impressions + zero clicks usually means the meta title or description is not matching what the user was looking for, or a competitor's snippet is far more attractive. Each page is shown with a suggested fix.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">⚡ Core Web Vitals — Google PageSpeed Insights</div>
+        <p class="body-text">Fetches <strong>live performance scores</strong> for ledsone.co.uk from Google's PageSpeed Insights API — the same tool Google uses when evaluating Core Web Vitals as a ranking signal. Shows both mobile and desktop scores. Mobile loads first, desktop follows.</p>
+        <table class="col-table">
+          <tr><th>Metric</th><th>What it measures</th><th>Good threshold</th></tr>
+          <tr><td>LCP — Largest Contentful Paint</td><td>How long until the main content is visible</td><td>&lt; 2.5 seconds</td></tr>
+          <tr><td>INP — Interaction to Next Paint</td><td>How fast the page responds to clicks/taps</td><td>&lt; 200 ms</td></tr>
+          <tr><td>CLS — Cumulative Layout Shift</td><td>How much the page jumps around while loading</td><td>&lt; 0.1</td></tr>
+          <tr><td>FCP — First Contentful Paint</td><td>When the first content appears on screen</td><td>&lt; 1.8 seconds</td></tr>
+          <tr><td>TTFB — Time to First Byte</td><td>Server response speed</td><td>&lt; 0.8 seconds</td></tr>
+          <tr><td>Speed Index</td><td>How quickly the visible page content is populated</td><td>&lt; 3.4 seconds</td></tr>
+        </table>
+        <p class="body-text">Each metric is colour-coded: <strong style="color:#16a34a">Good</strong> (green) / <strong style="color:#d97706">Needs Improvement</strong> (amber) / <strong style="color:#dc2626">Poor</strong> (red). Use the ↻ Refresh button to re-fetch at any time. Data is fetched on-demand — not stored.</p>
+      </div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Phase 6 API</summary>
+          <div class="tech-body">
+            <p>GSC sub-tabs: <code>?module=technical&type=coverage|cannibalization|zero-click</code> — all query Ledsone PostgreSQL <code>google_search_console</code> schema. Cannibalization: finds keywords where the same query maps to 2+ distinct page URLs with clicks. Zero-click: <code>SUM(impressions) &gt; 50 AND SUM(clicks) = 0</code>. Core Web Vitals: <code>?module=technical&type=cwv&strategy=mobile|desktop</code> — proxies Google PageSpeed Insights API (<code>pagespeedonline.googleapis.com/v5/runPagespeed</code>) using <code>PSI_KEY</code> Vercel env var. Fetched sequentially (mobile first, then desktop) to stay within Vercel Hobby 10s function limit. Uses Node.js <code>https</code> module — not global fetch.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 7 ─────────────────────────────────────────────── -->
+  <div class="section" id="phase7">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:#f0fdf4;">🤖</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--good)">Phase 7</div>
+        <div class="sec-title">AI Readiness (GEO)</div>
+        <div class="sec-sub">Live score showing how ready ledsone.co.uk is to be cited by ChatGPT, Gemini, Claude, and Perplexity</div>
+        <div class="sec-badges">
+          <span class="chip realtime">Live — recalculates on every load</span>
+          <span class="chip manual">Manual checklist</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">GEO (Generative Engine Optimisation) is about being recommended by AI, not just ranked by Google. When someone asks ChatGPT "best place to buy LED lights in the UK?", ChatGPT looks for authoritative, well-structured websites to cite. This tab measures how ready ledsone.co.uk is for that.</p>
+
+      <p class="body-text">Unlike every other tab, <strong>the score recalculates every time you open this tab</strong> by scanning the live ledsone.co.uk website. Changes you make today appear in the score immediately.</p>
+
+      <div class="subsec">
+        <div class="subsec-title">What the score is made of — 7 dimensions (each scored 0–10)</div>
+        <table class="col-table">
+          <tr><th>Dimension</th><th>What it checks</th><th>How to improve it</th></tr>
+          <tr><td>Crawler Access</td><td>Are ChatGPT, Claude, Perplexity, Google AI bots allowed in robots.txt?</td><td>Don't block AI crawlers — check robots.txt and remove any Disallow rules for GPTBot, ClaudeBot, PerplexityBot, Google-Extended</td></tr>
+          <tr><td>Authority</td><td>Is the domain trusted enough for AI to cite?</td><td>Build more backlinks from reputable UK websites — this directly raises Authority Score</td></tr>
+          <tr><td>Entity Clarity</td><td>Can AI identify exactly what ledsone is as a business?</td><td>Add sameAs links in Organization schema pointing to Wikipedia, Wikidata, LinkedIn. Create a Wikidata entry.</td></tr>
+          <tr><td>Content Format</td><td>Is content structured so AI can extract and quote it?</td><td>Add FAQPage schema to product pages. Write blog posts with clear heading structure.</td></tr>
+          <tr><td>E-E-A-T</td><td>Does the site signal genuine expertise and trustworthiness?</td><td>Add product review schema, author bios on blog posts, a credentials/about page</td></tr>
+          <tr><td>Organic Footprint</td><td>Does ledsone rank for enough keywords for AI to encounter it?</td><td>Target more keywords — use the Keyword Gap tab to find the best opportunities</td></tr>
+          <tr><td>Structured Data</td><td>Is there enough machine-readable markup for AI to understand the site?</td><td>Add Schema.org types: Product, FAQPage, BreadcrumbList, Article, Organization</td></tr>
+        </table>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">The manual checklist — 8 items</div>
+        <p class="body-text">Some improvements can't be auto-detected, so they appear as a manual checklist. Tick each item in the dashboard when completed — the score updates immediately.</p>
+        <table class="col-table">
+          <tr><th>Item</th><th>Why it matters for AI</th></tr>
+          <tr><td>FAQPage Schema</td><td>AI systems extract FAQ answers and cite the source URL directly in responses</td></tr>
+          <tr><td>Aggregate Rating</td><td>Social proof is a key trust signal — AI prefers citing reviewed products</td></tr>
+          <tr><td>sameAs — Organisation</td><td>Connects ledsone to the global knowledge graph AI systems use to identify businesses</td></tr>
+          <tr><td>Wikidata Entity</td><td>Primary knowledge base used by ChatGPT, Claude, and Gemini to identify who a business is</td></tr>
+          <tr><td>Author Schema</td><td>Named authors with expertise signal credibility — core E-E-A-T requirement</td></tr>
+          <tr><td>Credentials Page</td><td>Explicit expertise page (years in business, certifications) weighted heavily by AI systems</td></tr>
+          <tr><td>Blog 30+ Posts</td><td>More content = wider surface area for AI to encounter ledsone when answering lighting questions</td></tr>
+          <tr><td>Link Building 5+</td><td>5+ new referring domains this quarter rebuilds authority lost in the backlink drop</td></tr>
+        </table>
+      </div>
+
+      <div class="good-note">✅ <strong>Score interpretation:</strong> 60–100 = well positioned for AI citations. 40–60 = partially ready, gaps remain. Below 40 = AI systems are likely ignoring ledsone.co.uk even when it's the most relevant answer.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Phase 7 API</summary>
+          <div class="tech-body">
+            <p>API module: <code>?module=geo</code>. Live fetches: <code>https://ledsone.co.uk/robots.txt</code> (AbortSignal 6s) + homepage HTML (8s). Parses ld+json blocks, sameAs arrays, OG tags, robots rules for GPTBot/ChatGPT-User/ClaudeBot/PerplexityBot/Google-Extended. DB reads from Neon: <code>semrush_history</code> (latest AS + keyword count), <code>semrush_backlinks</code> (latest AS), <code>geo_checklist</code> (8 manual items). Toggle endpoint: <code>POST ?module=geo&type=toggle&key=X&done=Y</code> — updates <code>geo_checklist.done</code> in Neon. Score = sum of 7 dimensions × (100/70).</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DATA SOURCES SUMMARY ───────────────────────────────── -->
+  <div class="section" id="sources">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--gold-soft);">🗄️</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--gold)">Reference</div>
+        <div class="sec-title">Data Sources &amp; Refresh Schedule</div>
+        <div class="sec-sub">Where every number on the dashboard comes from and when it updates</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <table class="col-table">
+        <tr><th>Source</th><th>What it provides</th><th>How it arrives</th><th>Updates</th><th>Real or Estimate?</th></tr>
+        <tr><td><strong>Google Search Console</strong></td><td>Clicks, impressions, CTR, position, queries, landing pages</td><td>Background pipeline → Ledsone PostgreSQL</td><td>Daily (2–3 day delay)</td><td>✅ Real data</td></tr>
+        <tr><td><strong>Google Ads</strong></td><td>Monthly spend, ROAS, conversion value</td><td>Background pipeline → Ledsone PostgreSQL</td><td>Daily</td><td>✅ Real data</td></tr>
+        <tr><td><strong>SEMrush — Organic</strong></td><td>Traffic estimates, keyword rankings, authority score, 37-month history</td><td>Cloud Agent 1 (Monday 03:00 UTC) → Neon DB</td><td>Weekly</td><td>⚠️ Estimates</td></tr>
+        <tr><td><strong>SEMrush — Competitors</strong></td><td>Estimated traffic for 5 competitor domains</td><td>Cloud Agent 2 (Monday 03:00 UTC) → Neon DB</td><td>Weekly</td><td>⚠️ Estimates</td></tr>
+        <tr><td><strong>SEMrush — Backlinks</strong></td><td>Total backlinks, referring domains, authority score</td><td>Cloud Agent 3 (Monday 03:00 UTC) → Neon DB</td><td>Weekly</td><td>⚠️ Estimates</td></tr>
+        <tr><td><strong>SEMrush — Keyword Gap</strong></td><td>Keywords ledhut, lightingcompany & industville rank for but ledsone doesn't (3 competitors)</td><td>Cloud Agent 4 (Monday 03:00 UTC) → Neon DB</td><td>Weekly</td><td>⚠️ Estimates</td></tr>
+        <tr><td><strong>Google PageSpeed Insights</strong></td><td>Core Web Vitals — LCP, INP, CLS, FCP, TTFB for mobile & desktop</td><td>On-demand via Vercel serverless proxy</td><td>On demand (↻ Refresh button)</td><td>✅ Real data</td></tr>
+        <tr><td><strong>ledsone.co.uk live scan</strong></td><td>robots.txt rules, schema markup, sameAs links, OG tags</td><td>Direct HTTP fetch on page load</td><td>Real-time (every load)</td><td>✅ Real data</td></tr>
+        <tr><td><strong>GEO Checklist</strong></td><td>8 manual checklist items (done/not done)</td><td>You toggle them in the AI Readiness tab → Neon DB</td><td>Manual</td><td>✅ Manual input</td></tr>
+      </table>
+
+      <div class="warn-note">⚠️ <strong>SEMrush is estimates, not real traffic.</strong> All SEMrush figures are models built from keyword rankings and average click-through rates. The actual number could be ±20–30%. They are useful for trends and competitor comparisons — but always use Google Search Console for real performance decisions.</div>
+    </div>
+  </div>
+
+  <!-- ── GLOSSARY ────────────────────────────────────────────── -->
+  <div class="section" id="glossary">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--na-soft);">📖</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--na)">Reference</div>
+        <div class="sec-title">Glossary</div>
+        <div class="sec-sub">Plain-English definitions of every term used in the dashboard</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="gloss-grid">
+        <div class="gloss-item"><div class="gloss-term">Authority Score (AS)</div><div class="gloss-def">SEMrush's 0–100 measure of domain trust. Built from backlink quality and traffic signals. Higher = easier to rank in Google.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Backlink</div><div class="gloss-def">A link from another website pointing to ledsone.co.uk. Treated by Google as a vote of confidence.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Cannibalization</div><div class="gloss-def">When two ledsone pages compete for the same keyword, splitting authority and both ranking lower than one strong page would.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Clicks</div><div class="gloss-def">How many times someone clicked a ledsone result in Google search. From GSC — real data, not an estimate.</div></div>
+        <div class="gloss-item"><div class="gloss-term">CTR (Click-Through Rate)</div><div class="gloss-def">Clicks ÷ Impressions × 100. A 5% CTR means 5 of every 100 people who saw the result clicked it.</div></div>
+        <div class="gloss-item"><div class="gloss-term">CTR Benchmark</div><div class="gloss-def">Industry average CTR by rank position (e.g. position 1 ≈ 28.5%, position 3 ≈ 11%). If your actual CTR is below the benchmark you're leaving clicks on the table — fix it with a better meta title or description.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Core Web Vitals (CWV)</div><div class="gloss-def">Google's set of user experience metrics that are a confirmed ranking signal: LCP (loading speed), INP (interactivity), and CLS (visual stability). Poor scores can directly hurt rankings.</div></div>
+        <div class="gloss-item"><div class="gloss-term">LCP — Largest Contentful Paint</div><div class="gloss-def">Time until the main content of a page is visible. Google's target: under 2.5 seconds. The most impactful CWV metric for SEO.</div></div>
+        <div class="gloss-item"><div class="gloss-term">CLS — Cumulative Layout Shift</div><div class="gloss-def">How much a page's layout jumps around as it loads (e.g. images popping in and pushing content down). Target: under 0.1.</div></div>
+        <div class="gloss-item"><div class="gloss-term">INP — Interaction to Next Paint</div><div class="gloss-def">How fast the page visually responds after a user click or tap. Target: under 200 ms. Replaced FID as the interactivity CWV metric in March 2024.</div></div>
+        <div class="gloss-item"><div class="gloss-term">E-E-A-T</div><div class="gloss-def">Experience, Expertise, Authoritativeness, Trustworthiness — Google and AI systems use these signals to judge whether a site is a credible source.</div></div>
+        <div class="gloss-item"><div class="gloss-term">GEO</div><div class="gloss-def">Generative Engine Optimisation. Making your website ready to be cited by AI systems like ChatGPT and Google AI Overviews.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Impressions</div><div class="gloss-def">How many times a ledsone result appeared on a Google results page. Seeing it without clicking still counts. From GSC — real data.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Intent</div><div class="gloss-def">Why someone searched. Transactional = ready to buy. Commercial = comparing options. Informational = learning. Navigational = finding a specific site.</div></div>
+        <div class="gloss-item"><div class="gloss-term">KD (Keyword Difficulty)</div><div class="gloss-def">SEMrush's 0–100 score for how hard it is to rank on page 1 of Google. Under 30 = achievable. Over 70 = very competitive.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Keyword Gap</div><div class="gloss-def">Keywords where a competitor ranks top-10 but ledsone doesn't appear in the top 20. Each is a proven content opportunity.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Opportunity Score</div><div class="gloss-def">Volume × (10 ÷ competitor position). Ranks keyword gap entries by potential traffic impact. Higher = bigger opportunity.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Position</div><div class="gloss-def">Where a page ranks in Google results. Position 1 = top result. Position 10 = bottom of page 1. Position 11+ = page 2 (almost no clicks).</div></div>
+        <div class="gloss-item"><div class="gloss-term">Referring Domains</div><div class="gloss-def">Number of unique websites linking to ledsone. 50 different sites linking once is much stronger than 1 site linking 50 times.</div></div>
+        <div class="gloss-item"><div class="gloss-term">ROAS</div><div class="gloss-def">Return on Ad Spend = Conversion Value ÷ Ad Cost. ROAS of 4 means £4 revenue for every £1 spent on Google Ads.</div></div>
+        <div class="gloss-item"><div class="gloss-term">sameAs</div><div class="gloss-def">Schema.org property linking your website's Organization data to your Wikipedia, Wikidata, or LinkedIn page. Helps AI identify who ledsone is.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Schema / Structured Data</div><div class="gloss-def">Invisible code added to web pages that tells Google and AI exactly what a page contains — product, FAQ, review, organisation. Makes pages machine-readable.</div></div>
+        <div class="gloss-item"><div class="gloss-term">SEMrush Traffic Estimate</div><div class="gloss-def">SEMrush's model of how much organic traffic a domain receives. Based on rankings × average CTR per position. Not real traffic — an estimate. Good for trends and comparisons.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Wikidata</div><div class="gloss-def">A free public knowledge base used by Wikipedia, Google, and AI systems to store facts about organisations. Having an entry helps AI confidently reference ledsone.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Zero-Click Page</div><div class="gloss-def">A page that appears in Google results (impressions) but receives no clicks. High impressions + zero clicks = the snippet isn't compelling enough.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:32px;font-size:12.5px;color:var(--muted);">
+    SEO Intelligence Dashboard — ledsone.co.uk &nbsp;·&nbsp; Built by AIOS &nbsp;·&nbsp;
+    <a href="/pages/seo.html" style="color:var(--accent);text-decoration:none;font-weight:600;">← Back to Dashboard</a>
+  </div>
+
+</div>
+
+<script>
+function setAudience(mode) {
+  document.getElementById('btn-seo').classList.toggle('active', mode === 'seo');
+  document.getElementById('btn-dev').classList.toggle('active', mode === 'dev');
+  document.querySelectorAll('.tech-block').forEach(el => {
+    el.classList.toggle('visible', mode === 'dev');
+  });
+}
+document.querySelectorAll('.toc-phase').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+</script>
+</body>
+</html>

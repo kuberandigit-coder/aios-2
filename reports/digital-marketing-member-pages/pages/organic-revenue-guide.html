@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Guide — Organic Revenue Intelligence ledsone.co.uk</title>
+<style>
+:root{
+  --navy:#0c1a30;--navy-2:#13284a;--ink:#1a2233;--muted:#5b6577;
+  --line:#e3e7ee;--bg:#f4f6f9;--card:#ffffff;
+  --gold:#b98b1e;--gold-soft:#faf3e0;
+  --accent:#1f5eff;--accent-soft:#eaf0ff;
+  --red:#b91c1c;--red-soft:#fff5f5;
+  --warn:#d97706;--warn-soft:#fffbeb;
+  --good:#0a7d4f;--good-soft:#e5f5ee;
+  --na:#64748b;--na-soft:#eef2f7;
+  --teal:#0e7490;--teal-soft:#ecfeff;
+  --purple:#9333ea;--purple-soft:#f5f3ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;}
+
+.topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--teal) 50%,var(--good) 100%);}
+
+.masthead{background:var(--card);padding:22px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(12,26,48,.05);}
+.masthead .inner{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:18px;}
+.mark{width:44px;height:44px;background:var(--good);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex:none;border:1.5px solid var(--good);line-height:1.2;text-align:center;}
+.kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--good);margin-bottom:3px;}
+.masthead h1{font-size:19px;font-weight:700;color:var(--navy);}
+.masthead .lede{font-size:12.5px;color:var(--muted);margin-top:3px;}
+.back{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--muted);text-decoration:none;font-size:12px;font-weight:600;transition:all .15s;margin-left:auto;}
+.back:hover{background:var(--good-soft);color:var(--good);border-color:var(--good);}
+.page{max-width:960px;margin:0 auto;padding:28px 32px 72px;}
+
+/* Audience toggle */
+.audience-bar{display:flex;gap:8px;margin-bottom:24px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;align-items:center;flex-wrap:wrap;}
+.audience-bar span{font-size:12px;color:var(--muted);font-weight:600;margin-right:4px;}
+.aud-btn{padding:6px 16px;border-radius:20px;border:1px solid var(--line);background:var(--bg);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--muted);}
+.aud-btn.active{background:var(--good);color:#fff;border-color:var(--good);}
+.aud-hint{font-size:11.5px;color:var(--muted);margin-left:auto;}
+
+/* TOC */
+.toc-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:28px;}
+.toc-box h2{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);margin-bottom:14px;}
+.toc-phases{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.toc-phase{display:flex;align-items:center;gap:10px;text-decoration:none;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 13px;transition:all .15s;}
+.toc-phase:hover{background:var(--good-soft);border-color:var(--good);}
+.toc-phase .tp-num{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none;}
+.toc-phase .tp-name{font-size:12.5px;font-weight:600;color:var(--navy);}
+.toc-phase .tp-sub{font-size:10.5px;color:var(--muted);margin-top:1px;}
+.toc-divider{margin:16px 0 10px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+/* Sections */
+.section{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:20px;scroll-margin-top:80px;overflow:hidden;}
+.sec-head{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 20px;border-bottom:1px solid var(--line);}
+.sec-icon{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;}
+.sec-meta{flex:1;}
+.sec-phase{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;}
+.sec-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+.sec-sub{font-size:13px;color:var(--muted);}
+.sec-badges{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;}
+.sec-body{padding:22px 28px;}
+
+/* Sub-tab pills */
+.subtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+.subtab{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;background:var(--bg);border:1px solid var(--line);color:var(--ink);}
+.subtab.active{background:var(--good);color:#fff;border-color:var(--good);}
+
+/* Body text */
+.body-text{font-size:13.5px;color:#2d3748;line-height:1.8;margin-bottom:14px;}
+.body-text strong{color:var(--navy);}
+
+/* Fact grid */
+.fact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;margin:14px 0;}
+.fact{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+.fact .fl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.fact .fv{font-size:13px;font-weight:500;color:var(--navy);line-height:1.5;}
+.fact.good{background:var(--good-soft);border-color:#b7e8d0;}.fact.good .fl{color:var(--good);}
+.fact.teal{background:var(--teal-soft);border-color:#a5f3fc;}.fact.teal .fl{color:var(--teal);}
+.fact.warn{background:var(--warn-soft);border-color:#fde68a;}.fact.warn .fl{color:var(--warn);}
+.fact.accent{background:var(--accent-soft);border-color:#c5d6ff;}.fact.accent .fl{color:var(--accent);}
+.fact.purple{background:var(--purple-soft);border-color:#ddd6fe;}.fact.purple .fl{color:var(--purple);}
+
+/* Sub-section */
+.subsec{margin-top:20px;}
+.subsec-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+
+/* Table */
+.col-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px;}
+.col-table th{background:var(--bg);padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);}
+.col-table td{padding:9px 12px;border:1px solid var(--line);vertical-align:top;line-height:1.55;}
+.col-table tr:hover td{background:#f9fffe;}
+
+/* Chips */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.chip.daily{background:var(--good-soft);color:var(--good);}
+.chip.realtime{background:var(--teal-soft);color:var(--teal);}
+.chip.manual{background:var(--warn-soft);color:var(--warn);}
+.chip.measured{background:#dcfce7;color:#166534;}
+
+/* Notes */
+.info-note{background:var(--good-soft);border:1px solid #b7e8d0;border-radius:9px;padding:11px 15px;font-size:13px;color:#065f46;margin-top:14px;line-height:1.6;}
+.warn-note{background:var(--warn-soft);border:1px solid #fde68a;border-radius:9px;padding:11px 15px;font-size:13px;color:#78350f;margin-top:14px;line-height:1.6;}
+.teal-note{background:var(--teal-soft);border:1px solid #a5f3fc;border-radius:9px;padding:11px 15px;font-size:13px;color:#155e75;margin-top:14px;line-height:1.6;}
+
+/* Tech block */
+.tech-block{margin-top:16px;display:none;}
+.tech-block.visible{display:block;}
+details.tech-details{background:#0c1a30;border-radius:11px;overflow:hidden;}
+details.tech-details summary{padding:11px 16px;cursor:pointer;font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;list-style:none;display:flex;align-items:center;gap:8px;user-select:none;}
+details.tech-details summary::before{content:"▶";font-size:9px;transition:transform .2s;color:#64748b;}
+details.tech-details[open] summary::before{transform:rotate(90deg);}
+details.tech-details summary:hover{color:#6ee7b7;}
+.tech-body{padding:14px 18px 16px;border-top:1px solid #1e3a5f;}
+.tech-body p{color:#94a3b8;font-size:12.5px;line-height:1.7;margin-bottom:8px;}
+.tech-body p code{background:#1e3a5f;padding:1px 6px;border-radius:4px;font-size:11px;color:#6ee7b7;}
+.tech-body .tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tech-body .tbl th{color:#64748b;padding:5px 10px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;letter-spacing:1px;}
+.tech-body .tbl td{color:#cbd5e1;padding:6px 10px;border-bottom:1px solid #1e293b;vertical-align:top;line-height:1.5;}
+.tech-body .tbl td code{background:#1e3a5f;padding:1px 6px;border-radius:4px;font-size:11px;color:#6ee7b7;}
+
+/* Glossary */
+.gloss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
+.gloss-item{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 15px;}
+.gloss-term{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.gloss-def{font-size:12.5px;color:#2d3748;line-height:1.6;}
+
+@media(max-width:640px){
+  .masthead,.page{padding-left:16px;padding-right:16px;}
+  .sec-head{flex-direction:column;gap:10px;}
+  .back{margin-left:0;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<div class="masthead">
+  <div class="inner">
+    <div class="mark">ORG<br>REV</div>
+    <div>
+      <div class="kicker">ledsone.co.uk · Phase 8 · Organic Revenue</div>
+      <h1>Dashboard Data Guide</h1>
+      <div class="lede">What each tab shows, where the data comes from, when it updates, and how to use it</div>
+    </div>
+    <a href="/pages/organic-revenue.html" class="back">← Back to Dashboard</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Audience toggle -->
+  <div class="audience-bar">
+    <span>I am reading this as:</span>
+    <button class="aud-btn active" id="btn-seo" onclick="setAudience('seo')">📈 Marketing / Analyst</button>
+    <button class="aud-btn" id="btn-dev" onclick="setAudience('dev')">💻 Developer</button>
+    <span class="aud-hint">Developer mode reveals database tables, API endpoints, and SQL patterns</span>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc-box">
+    <h2>Jump to a section</h2>
+    <div class="toc-phases">
+      <a class="toc-phase" href="#tab1">
+        <div class="tp-num" style="background:var(--good-soft);color:var(--good)">1</div>
+        <div><div class="tp-name">Overview</div><div class="tp-sub">KPIs + Top 10 pages</div></div>
+      </a>
+      <a class="toc-phase" href="#tab2">
+        <div class="tp-num" style="background:var(--teal-soft);color:var(--teal)">2</div>
+        <div><div class="tp-name">By Landing Page</div><div class="tp-sub">Full table, search, export</div></div>
+      </a>
+      <a class="toc-phase" href="#tab3">
+        <div class="tp-num" style="background:var(--purple-soft);color:var(--purple)">3</div>
+        <div><div class="tp-name">By Page Type</div><div class="tp-sub">Home / Product / Collection</div></div>
+      </a>
+      <a class="toc-phase" href="#tab4">
+        <div class="tp-num" style="background:var(--accent-soft);color:var(--accent)">4</div>
+        <div><div class="tp-name">Revenue Trend</div><div class="tp-sub">Monthly charts</div></div>
+      </a>
+    </div>
+    <div class="toc-divider">Also in this guide</div>
+    <div class="toc-phases">
+      <a class="toc-phase" href="#sources">
+        <div class="tp-num" style="background:var(--gold-soft);color:var(--gold)">→</div>
+        <div><div class="tp-name">Data Source</div><div class="tp-sub">GA4, pipeline, update schedule</div></div>
+      </a>
+      <a class="toc-phase" href="#glossary">
+        <div class="tp-num" style="background:var(--na-soft);color:var(--na)">→</div>
+        <div><div class="tp-name">Glossary</div><div class="tp-sub">Plain-English definitions</div></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── TAB 1: OVERVIEW ───────────────────────────────────────── -->
+  <div class="section" id="tab1">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--good-soft);">💰</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--good)">Tab 1</div>
+        <div class="sec-title">Overview</div>
+        <div class="sec-sub">6 KPI cards showing total organic revenue, sessions, orders, and efficiency metrics — plus a top 10 revenue pages snapshot</div>
+        <div class="sec-badges">
+          <span class="chip daily">GA4 — Daily (2-day lag)</span>
+          <span class="chip measured">Measured — not estimated</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">This is the first tab you see when you open the dashboard. It gives a <strong>single-screen snapshot of how much revenue organic search is generating for ledsone.co.uk</strong> — you should be able to answer "how much money is organic search making us?" in 30 seconds from this tab alone.</p>
+
+      <p class="body-text">All numbers come from <strong>GA4 ecommerce tracking</strong> — this is real, measured revenue attributed to organic sessions by Google Analytics. It is not an estimate and it is not from SEMrush models.</p>
+
+      <div class="subsec">
+        <div class="subsec-title">The 6 KPI cards — what each one means</div>
+        <table class="col-table">
+          <tr><th>Card</th><th>What it shows</th><th>Why it matters</th></tr>
+          <tr><td><strong>Total Organic Revenue</strong></td><td>Sum of all purchase_revenue from organic search sessions in the latest snapshot period (approximately 90 days rolling)</td><td>The headline number — how much money Google organic is driving</td></tr>
+          <tr><td><strong>Organic Sessions</strong></td><td>Total number of sessions where the user arrived via organic search</td><td>The volume input — sessions × conversion rate = orders</td></tr>
+          <tr><td><strong>Total Orders</strong></td><td>Number of eCommerce purchases completed by organic sessions</td><td>Conversion volume — separate from revenue to catch high-order-count, low-value vs low-order, high-value pages</td></tr>
+          <tr><td><strong>Revenue / Session</strong></td><td>Total revenue ÷ total sessions</td><td>The efficiency metric — a higher Rev/Session means organic traffic is landing on the right pages. Target: above £1.00</td></tr>
+          <tr><td><strong>Avg Order Value (AOV)</strong></td><td>Total revenue ÷ total orders</td><td>Basket size from organic buyers. Useful for comparing organic vs paid AOV</td></tr>
+          <tr><td><strong>Pages with Revenue</strong></td><td>Count of distinct landing pages that generated at least £0.01 revenue in the period</td><td>Breadth of revenue — are 5 pages doing all the work, or is revenue spread across hundreds of pages?</td></tr>
+        </table>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Top 10 pages by revenue</div>
+        <p class="body-text">Below the KPI cards you see the <strong>top 10 highest-revenue landing pages</strong> for the current snapshot period. Each row shows the page URL, page type (Home / Product / Collection / Content), sessions, orders, revenue with a proportional bar, average order value, and revenue per session.</p>
+        <p class="body-text">The <strong>green revenue bar</strong> in each row is proportional to the top page — the page with the most revenue gets the widest bar. This makes it visually instant to see how revenue is concentrated.</p>
+        <p class="body-text">The <strong>Rev/Session</strong> column (teal) is often more useful than raw revenue — a page with 50 sessions and £500 revenue (Rev/Session = £10.00) is more efficient than a page with 5,000 sessions and £1,000 revenue (Rev/Session = £0.20).</p>
+      </div>
+
+      <div class="fact-grid">
+        <div class="fact good"><div class="fl">Data type</div><div class="fv">GA4 eCommerce — measured revenue at session level</div></div>
+        <div class="fact good"><div class="fl">NULL rows</div><div class="fv">Zero — all rows have a revenue value (0 or positive)</div></div>
+        <div class="fact warn"><div class="fl">Data lag</div><div class="fv">Latest data is always 1–2 days behind today (GA4 processing delay)</div></div>
+        <div class="fact teal"><div class="fl">Channel filter</div><div class="fv">Organic Search only — paid, direct, and referral excluded</div></div>
+      </div>
+
+      <div class="info-note">✅ <strong>Measured, not estimated:</strong> Every revenue figure in this dashboard is sourced from GA4's <code>purchase_revenue</code> field — actual eCommerce transactions attributed to organic sessions by Google Analytics. There are zero NULL revenue rows in the pipeline.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Overview API</summary>
+          <div class="tech-body">
+            <p>Endpoint: <code>GET /api/organic-revenue?type=overview</code></p>
+            <p>Queries: <code>google_analytics.organic_landing_page_revenue</code> filtered to <code>run_date = (SELECT MAX(run_date) ...)</code> and <code>session_default_channel_group = 'Organic Search'</code>. Returns 3 parallel queries: totals (SUM aggregates), top10 (per-URL, ordered by SUM(purchase_revenue) DESC, LIMIT 10), meta (MAX run_date, MAX date_end, MIN date_start). Page type classification via SQL CASE on landing_page URL patterns. Rev/session and AOV computed server-side.</p>
+            <table class="tbl">
+              <tr><th>DB Column</th><th>Used as</th></tr>
+              <tr><td><code>purchase_revenue</code></td><td>Revenue in GBP</td></tr>
+              <tr><td><code>ecommerce_purchases</code></td><td>Order count</td></tr>
+              <tr><td><code>sessions</code></td><td>Session count</td></tr>
+              <tr><td><code>run_date</code></td><td>Snapshot date (used as filter key)</td></tr>
+              <tr><td><code>session_default_channel_group</code></td><td>Channel filter — 'Organic Search'</td></tr>
+            </table>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: BY LANDING PAGE ─────────────────────────────────── -->
+  <div class="section" id="tab2">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--teal-soft);">📄</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--teal)">Tab 2</div>
+        <div class="sec-title">By Landing Page</div>
+        <div class="sec-sub">Full sortable table of every organic landing page — search, filter by type, filter by revenue, and export to CSV</div>
+        <div class="sec-badges">
+          <span class="chip daily">GA4 — Daily</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">This tab shows <strong>every organic landing page on ledsone.co.uk</strong> that received at least one session via organic search in the selected date range — up to 1,000 rows, sorted by revenue descending by default. You can search, filter, sort, and export everything.</p>
+
+      <div class="subtabs">
+        <span class="subtab active">All Pages</span>
+        <span class="subtab">Revenue &gt; 0 filter</span>
+        <span class="subtab">Search by URL</span>
+        <span class="subtab">Filter by type</span>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Stats bar — summary across filtered rows</div>
+        <p class="body-text">The green stats bar at the top of the tab always reflects the currently visible rows (after any filters you apply). It shows: Total Revenue, Pages, Pages with Revenue, Total Sessions, and Total Orders. These update live as you filter.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Table columns explained</div>
+        <table class="col-table">
+          <tr><th>Column</th><th>What it shows</th><th>How to use it</th></tr>
+          <tr><td>Landing Page</td><td>The URL path where the organic session started</td><td>Click the column header to sort A–Z. Hover to see full URL if truncated.</td></tr>
+          <tr><td>Type</td><td>Home / Product / Collection / Content / Other — classified by URL pattern</td><td>Use the Type filter dropdown to show only one page type</td></tr>
+          <tr><td>Sessions</td><td>Total organic sessions that started on this page</td><td>Sort to find highest-traffic pages that are not converting</td></tr>
+          <tr><td>Orders</td><td>eCommerce purchases from sessions that started here</td><td>A high sessions : low orders ratio = conversion problem on that page</td></tr>
+          <tr><td>Revenue</td><td>Total purchase_revenue from organic sessions starting here, with a proportional bar</td><td>Sort descending (default) to see your top earners. Sort ascending to find zero-revenue pages.</td></tr>
+          <tr><td>Avg Order</td><td>Revenue ÷ orders for this page</td><td>Pages with high AOV but low orders are valuable — they just need more traffic</td></tr>
+          <tr><td>Rev/Session</td><td>Revenue ÷ sessions for this page (teal)</td><td>The most useful column for identifying high-efficiency pages to double down on</td></tr>
+        </table>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Date range filter</div>
+        <p class="body-text">The date range bar (shown only when this tab is active) controls which rows appear. It filters by <code>date_end</code> — the end of the reporting window for each GA4 run. Preset buttons: <strong>30d, 90d (default), 6m, 1y, All</strong>. You can also enter custom dates manually.</p>
+        <p class="body-text">The Overview, By Page Type, and Trend tabs always show the latest snapshot — only this tab responds to the date range filter.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">CSV Export</div>
+        <p class="body-text">The <strong>↓ Export CSV</strong> button in the top right exports all currently filtered rows (up to 1,000). The file includes: landing_page, page_type, sessions, active_users, orders, revenue_gbp, avg_order_value, rev_per_session. File is named with today's date for easy archiving.</p>
+      </div>
+
+      <div class="warn-note">⚠️ <strong>Zero-revenue rows:</strong> Blog posts and informational pages often show 0 orders and £0 revenue — this is expected. These pages attract informational traffic that rarely converts directly. Use the <strong>Revenue &gt; 0 only</strong> filter to hide them and focus on pages that generate sales.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — By Landing Page API</summary>
+          <div class="tech-body">
+            <p>Endpoint: <code>GET /api/organic-revenue?type=by-page&from=YYYY-MM-DD&to=YYYY-MM-DD</code></p>
+            <p>Queries <code>google_analytics.organic_landing_page_revenue</code> filtered to <code>run_date = MAX(run_date)</code> and <code>date_end BETWEEN $1 AND $2</code>. Groups by landing_page, returns up to 1,000 rows ordered by SUM(purchase_revenue) DESC. Page type classification via SQL CASE expression. Sorting, searching, and type filtering all happen client-side in the browser after the initial fetch — no second API call on filter changes.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB 3: BY PAGE TYPE ─────────────────────────────────────── -->
+  <div class="section" id="tab3">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--purple-soft);">🏷️</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--purple)">Tab 3</div>
+        <div class="sec-title">By Page Type</div>
+        <div class="sec-sub">Revenue broken down by page category — Home, Product, Collection, Content, and Other — with share percentages and a donut chart</div>
+        <div class="sec-badges">
+          <span class="chip daily">GA4 — Latest Snapshot</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">This tab answers the question: <strong>"What type of page is driving organic revenue?"</strong> It groups every landing page into one of 5 buckets based on the URL pattern, then shows how revenue, sessions, and orders are distributed across those buckets.</p>
+
+      <div class="subsec">
+        <div class="subsec-title">The 5 page type buckets</div>
+        <table class="col-table">
+          <tr><th>Type</th><th>URL Pattern</th><th>Colour</th><th>What it means</th></tr>
+          <tr><td><strong>Home</strong></td><td>Exactly <code>/</code></td><td style="color:#3b82f6">Blue</td><td>Sessions that landed on the homepage. Usually brand searches or generic "LED lights UK"-style queries.</td></tr>
+          <tr><td><strong>Product</strong></td><td><code>/products/...</code></td><td style="color:#10b981">Green</td><td>Individual product pages. High-intent — these visitors are usually ready to buy.</td></tr>
+          <tr><td><strong>Collection</strong></td><td><code>/collections/...</code></td><td style="color:#8b5cf6">Purple</td><td>Category / collection pages. Mid-funnel — browsing a range of products.</td></tr>
+          <tr><td><strong>Content</strong></td><td><code>/blogs/...</code> or <code>/pages/...</code></td><td style="color:#f59e0b">Amber</td><td>Blog posts and guide pages. Mostly informational traffic — lower direct conversion but builds brand and assists later purchases.</td></tr>
+          <tr><td><strong>Other</strong></td><td>Everything else</td><td style="color:#94a3b8">Grey</td><td>Search pages, account pages, misc URLs. Usually very low revenue.</td></tr>
+        </table>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Cards and the share bar</div>
+        <p class="body-text">Each page type has a card showing: total revenue, share % of all organic revenue, sessions, orders, pages in the type, pages within that type that have revenue, average order value, and revenue per session. The coloured bar below the revenue figure shows that type's proportion visually.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">How to use this tab</div>
+        <p class="body-text"><strong>If Collections drive the most revenue</strong> — prioritise improving collection page copy, internal linking from blog posts to collections, and ranking more collection pages higher in GSC.</p>
+        <p class="body-text"><strong>If Products have high AOV but low sessions</strong> — there is revenue upside from driving more organic traffic to product pages (via keyword improvements, better internal linking from collections).</p>
+        <p class="body-text"><strong>If Content has very low Rev/Session but high sessions</strong> — this is typical. Content pages rarely convert directly. Consider adding product recommendation modules or internal links within blog posts to product/collection pages.</p>
+      </div>
+
+      <div class="info-note">💡 <strong>Donut chart:</strong> The chart at the bottom of this tab shows revenue share by page type visually. Hover over each segment to see the exact revenue and percentage.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — By Page Type API</summary>
+          <div class="tech-body">
+            <p>Endpoint: <code>GET /api/organic-revenue?type=by-type</code></p>
+            <p>Queries <code>google_analytics.organic_landing_page_revenue</code> filtered to <code>run_date = MAX(run_date)</code> and <code>session_default_channel_group = 'Organic Search'</code>. Groups by the SQL CASE expression for page_type. Returns SUM(purchase_revenue), SUM(sessions), SUM(ecommerce_purchases), COUNT(DISTINCT landing_page), COUNT(DISTINCT CASE WHEN purchase_revenue > 0 THEN landing_page END), plus computed rev_per_session and avg_order_value. Ordered by SUM(purchase_revenue) DESC.</p>
+            <p>Page type SQL: <code>CASE WHEN landing_page = '/' THEN 'Home' WHEN landing_page LIKE '/products/%' THEN 'Product' WHEN landing_page LIKE '/collections/%' THEN 'Collection' WHEN landing_page LIKE '/blogs/%' OR landing_page LIKE '/pages/%' THEN 'Content' ELSE 'Other' END</code></p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB 4: TREND ────────────────────────────────────────────── -->
+  <div class="section" id="tab4">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--accent-soft);">📈</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--accent)">Tab 4</div>
+        <div class="sec-title">Revenue Trend</div>
+        <div class="sec-sub">Monthly revenue bar chart with trend line, plus sessions and orders charts — and a last-12-months MoM table</div>
+        <div class="sec-badges">
+          <span class="chip daily">GA4 — Monthly Aggregation</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p class="body-text">This tab answers: <strong>"Is organic revenue growing month on month?"</strong> It aggregates the GA4 data by calendar month (using <code>run_date</code>) to show the trend over time. This is the clearest view of whether organic search is becoming more or less valuable to the business.</p>
+
+      <div class="subsec">
+        <div class="subsec-title">The 3 charts</div>
+        <table class="col-table">
+          <tr><th>Chart</th><th>What it shows</th><th>What to look for</th></tr>
+          <tr><td>Monthly Organic Revenue</td><td>Green bars (monthly revenue) with a blue trend line overlay</td><td>Is the trend line going up? Month-to-month variation is normal — the trend line smooths it out. A consistently rising line = organic is growing. A flat or falling line = a problem.</td></tr>
+          <tr><td>Monthly Sessions</td><td>Teal line — total organic sessions per month</td><td>Compare with revenue chart. If sessions are rising but revenue is flat, conversion is weakening. If revenue rises faster than sessions, AOV or conversion rate improved.</td></tr>
+          <tr><td>Monthly Orders</td><td>Purple line — total eCommerce purchases per month</td><td>If orders drop but revenue stays flat, AOV increased (bigger baskets). If orders rise but revenue drops, basket size shrank.</td></tr>
+        </table>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">Month-on-Month table — last 12 months</div>
+        <p class="body-text">Below the charts is a table showing the last 12 months with MoM % change for revenue (green = growth, red = decline). Use this to identify which specific months had drops and correlate with business events — a sale, a Google algorithm update, a product launch, a change in paid spend.</p>
+      </div>
+
+      <div class="subsec">
+        <div class="subsec-title">How the monthly aggregation works</div>
+        <p class="body-text">The GA4 pipeline writes one snapshot per day to the DB (each snapshot covers an approximately 90-day rolling window). The trend chart groups these snapshots by <code>DATE_TRUNC('month', run_date)</code> — so each point on the chart represents the sum across all daily runs within that calendar month.</p>
+        <p class="body-text">This means <strong>the most recent month on the chart will usually look lower than previous months</strong> because it only has a partial month of daily runs (e.g. if today is Aug 4, only 4 daily runs exist for August). This is not a decline — it is an incomplete month. Compare completed months only for trend decisions.</p>
+      </div>
+
+      <div class="warn-note">⚠️ <strong>Partial month warning:</strong> The current month on the trend chart is always incomplete — it only includes days elapsed so far. Do not compare it to previous full months when assessing MoM performance. Use the prior full month vs the month before it for a fair comparison.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — Trend API</summary>
+          <div class="tech-body">
+            <p>Endpoint: <code>GET /api/organic-revenue?type=trend</code></p>
+            <p>Queries <code>google_analytics.organic_landing_page_revenue</code> filtered to <code>session_default_channel_group = 'Organic Search'</code>. Groups by <code>DATE_TRUNC('month', run_date)::date</code>. Returns month, MAX(run_date), SUM(sessions), SUM(ecommerce_purchases), SUM(purchase_revenue), COUNT(DISTINCT landing_page), COUNT(DISTINCT CASE WHEN purchase_revenue &gt; 0 THEN landing_page END). No date range filter applied — returns all available months. Ordered ASC by month.</p>
+            <p>Note: because each daily run covers an overlapping 90-day window, the monthly SUM is the sum of all daily snapshot rows within that calendar month — not a deduplicated 30-day revenue figure. This is consistent across all months, so the trend direction is valid even though absolute monthly totals include overlap.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DATA SOURCES ────────────────────────────────────────────── -->
+  <div class="section" id="sources">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--gold-soft);">🗄️</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--gold)">Reference</div>
+        <div class="sec-title">Data Source &amp; Update Schedule</div>
+        <div class="sec-sub">Where every number comes from, how it arrives in the database, and when it updates</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <table class="col-table">
+        <tr><th>Item</th><th>Detail</th></tr>
+        <tr><td><strong>Data source</strong></td><td>Google Analytics 4 (GA4) — eCommerce tracking on ledsone.co.uk</td></tr>
+        <tr><td><strong>DB table</strong></td><td><code>google_analytics.organic_landing_page_revenue</code> (Ledsone PostgreSQL)</td></tr>
+        <tr><td><strong>Pipeline</strong></td><td>Background ETL job runs daily, pulls GA4 Data API export, writes one row per landing_page per run_date</td></tr>
+        <tr><td><strong>Update frequency</strong></td><td>Daily — confirmed: 29 of 30 consecutive days had gap_days = 1 (one day of data per day)</td></tr>
+        <tr><td><strong>GA4 processing lag</strong></td><td>GA4 processes session data with a 24–48h delay before it is available via the API. This means today's (Aug 4) latest data will be from Aug 2. This is Google's standard processing time — not a pipeline fault.</td></tr>
+        <tr><td><strong>Revenue type</strong></td><td>Measured eCommerce revenue (purchase_revenue field) — actual GBP transactions attributed by GA4 to organic sessions. Not estimated, not modelled.</td></tr>
+        <tr><td><strong>Channel filter</strong></td><td>Only <code>session_default_channel_group = 'Organic Search'</code> rows are shown. Paid, Direct, Email, Referral, and Social are excluded.</td></tr>
+        <tr><td><strong>NULL revenue rows</strong></td><td>Zero — validated 2026-08-04. All 306,685 rows have a purchase_revenue value (0 or positive).</td></tr>
+        <tr><td><strong>Reporting window</strong></td><td>Each daily run covers an approximately 90-day rolling window (date_start to date_end). The Overview and By Type tabs always show the latest run. The Trend tab aggregates all runs by month.</td></tr>
+        <tr><td><strong>Snapshot size</strong></td><td>~5,800–6,000 landing pages per daily run. ~306,000 total rows across all runs.</td></tr>
+      </table>
+
+      <div class="subsec">
+        <div class="subsec-title">How GA4 attributes revenue to landing pages</div>
+        <p class="body-text">GA4 records the <strong>landing page</strong> — the first URL a user visited in their session. If that session had an organic source (Google, Bing, etc.) and the user completed a purchase before the session ended, GA4 attributes that purchase revenue to that landing page and that channel group.</p>
+        <p class="body-text">This means if a user lands on <code>/collections/pendant-lights</code> from Google, browses to <code>/products/xyz</code>, and then purchases — the revenue is attributed to <code>/collections/pendant-lights</code> (the landing page) under Organic Search. This is standard GA4 session attribution and is what makes the By Landing Page tab meaningful.</p>
+      </div>
+
+      <div class="info-note">✅ <strong>No Shopify join required:</strong> The revenue figures come directly from GA4's own eCommerce tracking — GA4 records the transaction at the moment of purchase and already knows which session and channel it came from. There is no need to join GA4 session data to Shopify order data for this dashboard.</div>
+
+      <div class="tech-block">
+        <details class="tech-details">
+          <summary>Technical details — API architecture</summary>
+          <div class="tech-body">
+            <p>API file: <code>api/organic-revenue.js</code> — Vercel serverless function, Node.js 24, maxDuration 60s. Single file routing via <code>?type=</code> parameter. Connects to Ledsone PostgreSQL via <code>process.env.POSTGRES_URL</code> with SSL. Connection per request (no pool — Vercel serverless). Statement timeout: 30s. Four handlers: <code>handleOverview</code>, <code>handleByPage</code>, <code>handleTrend</code>, <code>handleByType</code>. CORS headers: <code>Access-Control-Allow-Origin: *</code>. Cache-Control: <code>no-store</code> to always serve fresh data.</p>
+            <p>Page type SQL CASE is defined as a constant <code>PAGE_TYPE_SQL</code> and reused across all 4 handlers — single source of truth for classification logic.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GLOSSARY ─────────────────────────────────────────────────── -->
+  <div class="section" id="glossary">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:var(--na-soft);">📖</div>
+      <div class="sec-meta">
+        <div class="sec-phase" style="color:var(--na)">Reference</div>
+        <div class="sec-title">Glossary</div>
+        <div class="sec-sub">Plain-English definitions of every term used in the dashboard</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="gloss-grid">
+        <div class="gloss-item"><div class="gloss-term">AOV — Average Order Value</div><div class="gloss-def">Total revenue divided by number of orders. A higher AOV means customers are buying more per transaction. Useful for comparing different page types — product pages often have higher AOV than collection pages.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Channel Group</div><div class="gloss-def">How a user arrived at the site. Organic Search = clicked a non-paid Google/Bing result. This dashboard only shows Organic Search rows — all other channels are excluded.</div></div>
+        <div class="gloss-item"><div class="gloss-term">date_end / date_start</div><div class="gloss-def">The start and end of the reporting window for each GA4 run. Each daily run covers approximately 90 days. date_end is always the day before the pipeline ran.</div></div>
+        <div class="gloss-item"><div class="gloss-term">eCommerce Purchase</div><div class="gloss-def">A completed transaction tracked by GA4. This is when a customer clicks "Place Order" and the order is confirmed. Counted per session — one session can have multiple purchases but this is rare.</div></div>
+        <div class="gloss-item"><div class="gloss-term">GA4 — Google Analytics 4</div><div class="gloss-def">Google's current analytics platform, replacing Universal Analytics. Tracks sessions, events, and eCommerce on ledsone.co.uk. The source of all data in this dashboard.</div></div>
+        <div class="gloss-item"><div class="gloss-term">GA4 Processing Lag</div><div class="gloss-def">GA4 takes 24–48 hours to finalise session data before it is available via the export API. This is why today's dashboard data is always 1–2 days behind today's date. It is a Google constraint, not a pipeline fault.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Landing Page</div><div class="gloss-def">The first URL a visitor sees in their session — where they "landed" from organic search. Revenue is attributed to this URL regardless of where on the site the purchase eventually happened.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Organic Search</div><div class="gloss-def">Traffic that arrived via unpaid (non-advertised) search results on Google, Bing, or other search engines. Google Ads traffic is NOT included — that falls under "Paid Search".</div></div>
+        <div class="gloss-item"><div class="gloss-term">Page Type</div><div class="gloss-def">A classification applied to each landing page based on its URL pattern: Home (/), Product (/products/…), Collection (/collections/…), Content (/blogs/… or /pages/…), or Other. Applied in the API — not stored in the database.</div></div>
+        <div class="gloss-item"><div class="gloss-term">purchase_revenue</div><div class="gloss-def">The GA4 database column containing the GBP revenue value for a session. This is the real transaction value passed to GA4 by the Shopify checkout. It is measured data, not an estimate.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Rev/Session</div><div class="gloss-def">Revenue per Session = total revenue ÷ total sessions for a page. The most useful single efficiency metric for organic landing pages. A page with Rev/Session of £5.00 is 10x more efficient than one with £0.50 — even if the £0.50 page has more raw sessions.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Rolling Window</div><div class="gloss-def">Each daily GA4 run covers a fixed number of days back from the run date (approximately 90 days). The window "rolls" forward by one day each day. This is why the total figures in Overview are cumulative over a period, not a single day's revenue.</div></div>
+        <div class="gloss-item"><div class="gloss-term">run_date</div><div class="gloss-def">The date the GA4 pipeline ran and wrote data to the database. The dashboard always shows data from the most recent run_date by default. The Trend tab groups by month using run_date.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Session</div><div class="gloss-def">A single visit to ledsone.co.uk. A session starts when someone arrives and ends after 30 minutes of inactivity. One person can generate multiple sessions — but each session has one landing page and one channel group.</div></div>
+        <div class="gloss-item"><div class="gloss-term">Zero-Revenue Page</div><div class="gloss-def">A landing page that had organic sessions but no purchases in the period. Blog posts and guide pages commonly show £0 revenue — they attract informational traffic that does not convert directly. Use the Revenue &gt; 0 filter to hide these.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:32px;font-size:12.5px;color:var(--muted);">
+    Organic Revenue Intelligence — ledsone.co.uk &nbsp;·&nbsp; Phase 8 &nbsp;·&nbsp; Built by AIOS &nbsp;·&nbsp;
+    <a href="/pages/organic-revenue.html" style="color:var(--good);text-decoration:none;font-weight:600;">← Back to Dashboard</a>
+  </div>
+
+</div>
+
+<script>
+function setAudience(mode) {
+  document.getElementById('btn-seo').classList.toggle('active', mode === 'seo');
+  document.getElementById('btn-dev').classList.toggle('active', mode === 'dev');
+  document.querySelectorAll('.tech-block').forEach(el => {
+    el.classList.toggle('visible', mode === 'dev');
+  });
+}
+document.querySelectorAll('.toc-phase').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) { e.preventDefault(); el.scrollIntoView({ behavior:'smooth' }); }
+  });
+});
+</script>
+</body>
+</html>

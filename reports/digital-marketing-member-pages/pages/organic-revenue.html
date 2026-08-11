@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organic Revenue Intelligence — ledsone.co.uk</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0c1a30;--navy-2:#13284a;--ink:#1a2233;--muted:#5b6577;
+  --line:#e3e7ee;--bg:#f4f6f9;--card:#ffffff;
+  --gold:#b98b1e;--gold-soft:#faf3e0;
+  --accent:#1f5eff;--accent-soft:#eaf0ff;
+  --red:#b91c1c;--red-soft:#fff5f5;
+  --warn:#d97706;--warn-soft:#fffbeb;
+  --good:#0a7d4f;--good-soft:#e5f5ee;
+  --na:#64748b;--na-soft:#eef2f7;
+  --purple:#9333ea;--purple-soft:#f5f3ff;
+  --teal:#0e7490;--teal-soft:#ecfeff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;}
+
+.topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--teal) 50%,var(--good) 100%);}
+
+.masthead{background:var(--card);padding:22px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(12,26,48,.05);}
+.masthead .inner{max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:22px;}
+.mark{width:44px;height:44px;background:var(--good);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex:none;border:1.5px solid var(--good);letter-spacing:.3px;text-align:center;line-height:1.2;}
+.headtxt{flex:1;min-width:220px;}
+.kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--good);margin-bottom:3px;}
+.masthead h1{font-size:19px;font-weight:700;color:var(--navy);}
+.masthead .lede{font-size:12px;color:var(--muted);margin-top:3px;}
+.statrow{display:flex;flex-wrap:wrap;gap:0;border-left:1px solid var(--line);padding-left:26px;}
+.stat{padding:0 18px;border-right:1px solid var(--line);}
+.stat:last-child{border-right:none;padding-right:0;}
+.stat .v{font-size:18px;font-weight:700;color:var(--navy);}
+.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:2px;}
+
+.page{max-width:1280px;margin:0 auto;padding:22px 32px 48px;}
+
+/* Tab nav */
+.top-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
+.nav-btn{border:none;background:transparent;border-radius:10px;padding:9px 18px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;}
+.nav-btn:hover{background:var(--good-soft);color:var(--good);}
+.nav-btn.active{background:var(--good);color:#fff;}
+.nav-btn .nl{display:block;font-size:10.5px;font-weight:400;margin-top:1px;opacity:.8;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Section titles */
+.section-title{display:flex;align-items:center;gap:12px;font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy-2);margin:22px 0 12px;}
+.section-title::after{content:"";flex:1;height:1px;background:var(--line);}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 17px;position:relative;}
+.kpi .src{position:absolute;top:10px;right:12px;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);background:var(--bg);border-radius:4px;padding:1px 5px;}
+.kpi .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-right:40px;}
+.kpi .val{font-size:22px;font-weight:700;margin-top:5px;line-height:1;color:var(--navy);}
+.kpi .note{font-size:10.5px;color:var(--muted);margin-top:4px;}
+.kpi.revenue .val{color:var(--good);}
+.kpi.warn .val{color:var(--warn);}
+
+/* Chart cards */
+.chart-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+.chart-card h3{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.chart-card .ch-sub{font-size:11px;color:var(--muted);margin-bottom:14px;}
+.chart-wrap{position:relative;height:260px;}
+.chart-wrap canvas{max-height:260px;}
+
+/* Stats bar */
+.stats-bar{display:flex;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:14px;}
+.sb-item{flex:1;min-width:120px;padding:13px 17px;border-right:1px solid var(--line);}
+.sb-item:last-child{border-right:none;}
+.sb-item .sb-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+.sb-item .sb-val{font-size:19px;font-weight:700;color:var(--navy);margin-top:3px;}
+.sb-item .sb-sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
+.sb-item.revenue .sb-val{color:var(--good);}
+
+/* Table */
+.tbox{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.tbar{padding:11px 17px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.tbar strong{color:var(--ink);font-weight:700;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{background:#f0f3f8;text-align:left;padding:9px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{background:#e8edf6;}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f8fafc;}
+
+/* Controls */
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+.srch{border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--ink);background:var(--card);width:260px;outline:none;}
+.srch:focus{border-color:var(--good);}
+select.fsel{border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:12.5px;color:var(--ink);background:var(--card);outline:none;cursor:pointer;}
+.exp-btn{border:none;border-radius:8px;padding:7px 14px;font-size:11.5px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;margin-left:auto;}
+.exp-btn:hover{opacity:.85;}
+
+/* Badges */
+.badge{display:inline-block;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;}
+.badge-live{background:var(--good-soft);color:var(--good);}
+.pt-home      {background:#dbeafe;color:#1e40af;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;}
+.pt-product   {background:#d1fae5;color:#065f46;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;}
+.pt-collection{background:#ede9fe;color:#5b21b6;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;}
+.pt-content   {background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;}
+.pt-other     {background:#f1f5f9;color:#475569;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;}
+
+/* Revenue bar in table */
+.rev-bar-wrap{display:flex;align-items:center;gap:8px;}
+.rev-bar{height:5px;border-radius:3px;background:var(--good);flex:none;}
+.rev-val{font-weight:700;color:var(--good);white-space:nowrap;}
+
+/* Page type breakdown cards */
+.type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:18px;}
+.type-card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px 20px;border-top:4px solid var(--line);}
+.type-card.home       {border-top-color:#3b82f6;}
+.type-card.product    {border-top-color:#10b981;}
+.type-card.collection {border-top-color:#8b5cf6;}
+.type-card.content    {border-top-color:#f59e0b;}
+.type-card.other      {border-top-color:#94a3b8;}
+.type-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+.type-rev{font-size:26px;font-weight:800;color:var(--navy);line-height:1;}
+.type-meta{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.7;}
+.type-share-bar{height:5px;border-radius:3px;background:var(--line);margin:10px 0 4px;}
+.type-share-fill{height:100%;border-radius:3px;}
+
+/* Info note */
+.info-note{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:10px 14px;font-size:11.5px;color:#14532d;margin-bottom:14px;line-height:1.6;}
+
+/* Loading */
+.loading{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px;}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--good);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:10px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Last updated pill */
+.updated-pill{display:inline-flex;align-items:center;gap:6px;background:var(--good-soft);border:1px solid #bbf7d0;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--good);}
+.updated-pill .dot{width:7px;height:7px;background:var(--good);border-radius:50%;display:inline-block;}
+
+/* Lag note */
+.lag-note{background:var(--warn-soft);border:1px solid #fde68a;border-radius:8px;padding:8px 14px;font-size:11.5px;color:#78350f;margin-bottom:14px;}
+
+/* Sort arrows */
+th .sort-arrow{font-size:9px;opacity:.4;margin-left:3px;}
+th.sorted-asc .sort-arrow::after{content:"▲";opacity:1;}
+th.sorted-desc .sort-arrow::after{content:"▼";opacity:1;}
+
+/* Top 10 rank */
+.rank-num{font-size:12px;font-weight:800;color:var(--muted);width:24px;text-align:center;}
+
+footer.site{margin-top:28px;color:var(--muted);font-size:11.5px;text-align:center;}
+
+@media(max-width:900px){
+  .chart-row{grid-template-columns:1fr;}
+  .statrow{border-left:none;padding-left:0;margin-top:10px;}
+}
+@media(max-width:600px){
+  .page{padding:16px 14px 36px;}
+  .masthead{padding:16px 14px;}
+  .kpi .val{font-size:18px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Auth Overlay ── -->
+<div id="auth-overlay" style="position:fixed;inset:0;z-index:9999;background:#0c1a30;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.35);text-align:center;">
+    <div style="width:52px;height:52px;border-radius:12px;background:#0a7d4f;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;margin:0 auto 16px;">GA4</div>
+    <div style="font-size:18px;font-weight:700;color:#0f1f33;margin-bottom:4px;">Organic Revenue</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:28px;">GA4 · Daily Updates — Authorised access only</div>
+    <div style="text-align:left;margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Username</label>
+      <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div style="text-align:left;margin-bottom:22px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Password</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div id="auth-error" style="display:none;margin-bottom:14px;padding:9px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12.5px;color:#b91c1c;font-weight:600;">Incorrect username or password.</div>
+    <button id="auth-btn" onclick="authCheck()" style="width:100%;padding:12px;border:none;border-radius:9px;background:#0a7d4f;color:#fff;font-size:14px;font-weight:700;cursor:pointer;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign In</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY='auth_organic';
+  if(sessionStorage.getItem(KEY)==='1'||sessionStorage.getItem('auth_admin')==='1') document.getElementById('auth-overlay').style.display='none';
+  function setLoading(on){const b=document.getElementById('auth-btn');b.disabled=on;b.textContent=on?'Signing in…':'Sign In';b.style.opacity=on?'.6':'1';}
+  async function authCheck(){
+    const u=document.getElementById('auth-user').value.trim().toLowerCase();
+    const p=document.getElementById('auth-pass').value;
+    document.getElementById('auth-error').style.display='none';
+    if(!u||!p) return;
+    setLoading(true);
+    try{
+      const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,page_key:'organic'})});
+      const d=await r.json();
+      if(d.ok){sessionStorage.setItem(KEY,'1');document.getElementById('auth-overlay').style.display='none';}
+      else{document.getElementById('auth-error').style.display='block';document.getElementById('auth-pass').value='';document.getElementById('auth-pass').focus();}
+    }catch(e){document.getElementById('auth-error').textContent='Network error. Please try again.';document.getElementById('auth-error').style.display='block';}
+    finally{setLoading(false);}
+  }
+  window.authCheck=authCheck;
+  document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('auth-overlay').style.display!=='none')authCheck();});
+  // show logout after successful login
+  new MutationObserver(function(){
+    if(document.getElementById('auth-overlay').style.display==='none')
+      document.getElementById('logout-btn').style.display='flex';
+  }).observe(document.getElementById('auth-overlay'),{attributes:true,attributeFilter:['style']});
+})();
+</script>
+
+<!-- Logout Button -->
+<div id="logout-btn" style="display:none;position:fixed;top:14px;right:18px;z-index:9998;align-items:center;gap:7px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.09);font-family:'Segoe UI',system-ui,sans-serif;transition:all .15s;" onmouseover="this.style.background='#fef2f2';this.style.color='#b91c1c';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fff';this.style.color='#64748b';this.style.borderColor='#e2e8f0';" onclick="sessionStorage.removeItem('auth_organic');location.reload();">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout
+</div>
+<script>
+if(sessionStorage.getItem('auth_organic')==='1') document.getElementById('logout-btn').style.display='flex';
+</script>
+
+<div class="topbar"></div>
+
+<div class="masthead">
+  <div class="inner">
+    <div class="mark">ORG<br>REV</div>
+    <div class="headtxt">
+      <div class="kicker">AIOS &bull; Phase 8 &bull; ledsone.co.uk</div>
+      <h1>Organic Revenue Intelligence</h1>
+      <p class="lede">GA4 measured revenue &bull; Organic Search channel &bull; Daily updates &bull; <span id="hd-lag" style="color:var(--warn)">Loading…</span></p>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="v" id="hd-revenue">—</div><div class="l">Total Revenue</div></div>
+      <div class="stat"><div class="v" id="hd-orders">—</div><div class="l">Total Orders</div></div>
+      <div class="stat"><div class="v" id="hd-sessions">—</div><div class="l">Sessions</div></div>
+      <div class="stat"><div class="v" id="hd-updated">—</div><div class="l">Last Updated</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="top-nav">
+    <button class="nav-btn active" onclick="switchTab('overview',this)">Overview<span class="nl">KPIs + Top Pages</span></button>
+    <button class="nav-btn"        onclick="switchTab('bypage',this)">By Landing Page<span class="nl">Full Table</span></button>
+    <button class="nav-btn"        onclick="switchTab('bytype',this)">By Page Type<span class="nl">Home / Product / Collection</span></button>
+    <button class="nav-btn"        onclick="switchTab('trend',this)">Revenue Trend<span class="nl">Monthly Chart</span></button>
+    <a href="/pages/organic-revenue-guide.html" class="nav-btn" style="text-decoration:none;margin-left:auto;border:1.5px solid var(--good);color:var(--good);">📖 Guide<span class="nl">Data Docs</span></a>
+  </div>
+
+
+  <!-- ── Tab 1: Overview ──────────────────────────────────────── -->
+  <div id="tab-overview" class="tab-panel active">
+    <div id="overview-content">
+      <div class="loading"><div class="spinner"></div><br>Loading organic revenue data…</div>
+    </div>
+  </div>
+
+  <!-- ── Tab 2: By Landing Page ───────────────────────────────── -->
+  <div id="tab-bypage" class="tab-panel">
+    <div id="bypage-content">
+      <div class="loading"><div class="spinner"></div><br>Loading landing page data…</div>
+    </div>
+  </div>
+
+  <!-- ── Tab 3: By Page Type ──────────────────────────────────── -->
+  <div id="tab-bytype" class="tab-panel">
+    <div id="bytype-content">
+      <div class="loading"><div class="spinner"></div><br>Loading page type breakdown…</div>
+    </div>
+  </div>
+
+  <!-- ── Tab 4: Revenue Trend ─────────────────────────────────── -->
+  <div id="tab-trend" class="tab-panel">
+    <div id="trend-content">
+      <div class="loading"><div class="spinner"></div><br>Loading revenue trend…</div>
+    </div>
+  </div>
+
+  <footer class="site">AIOS Organic Revenue Intelligence &bull; ledsone.co.uk &bull; Phase 8 &bull; GA4 Measured Revenue &bull; Daily Updates</footer>
+</div>
+
+<script>
+/* ── State ─────────────────────────────────────────────────── */
+const loaded   = { overview: false, bypage: false, bytype: false, trend: false };
+const cache    = { overview: null,  bypage: null,  bytype: null,  trend: null  };
+const charts   = {};
+let byPageAllRows = [];
+let byPageSearch  = '';
+let byPageType    = 'all';
+let byPageSortCol = 'revenue';
+let byPageSortDir = 'desc';
+
+/* ── Helpers ───────────────────────────────────────────────── */
+function fNum(n, dec) {
+  if (n === null || n === undefined || n === '') return '—';
+  const v = parseFloat(n);
+  if (isNaN(v)) return '—';
+  return v.toLocaleString('en-GB', { minimumFractionDigits: dec||0, maximumFractionDigits: dec||0 });
+}
+function fGBP(n, dec) {
+  if (!n || isNaN(parseFloat(n))) return '—';
+  return '£' + parseFloat(n).toLocaleString('en-GB', { minimumFractionDigits: dec??0, maximumFractionDigits: dec??2 });
+}
+function fDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+function fMonth(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + (iso.length === 7 ? '-01' : ''));
+  return d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+}
+function ptBadge(t) {
+  const map = { Home:'pt-home', Product:'pt-product', Collection:'pt-collection', Content:'pt-content', Other:'pt-other' };
+  return `<span class="${map[t]||'pt-other'}">${t||'Other'}</span>`;
+}
+function ptClass(t) {
+  return (t||'other').toLowerCase();
+}
+function ptColor(t) {
+  const map = { Home:'#3b82f6', Product:'#10b981', Collection:'#8b5cf6', Content:'#f59e0b', Other:'#94a3b8' };
+  return map[t] || '#94a3b8';
+}
+
+/* ── Tab switching ─────────────────────────────────────────── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'overview') loadOverview();
+  if (id === 'bypage')   loadByPage();
+  if (id === 'bytype')   loadByType();
+  if (id === 'trend')    loadTrend();
+}
+
+/* ── OVERVIEW ──────────────────────────────────────────────── */
+async function loadOverview() {
+  if (loaded.overview) return renderOverview(cache.overview);
+  const wrap = document.getElementById('overview-content');
+  try {
+    const res  = await fetch('/api/intel-api?service=organic&type=overview');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    cache.overview   = data;
+    loaded.overview  = true;
+    updateHeader(data);
+    renderOverview(data);
+  } catch(e) {
+    wrap.innerHTML = `<div class="lag-note"><strong>Error:</strong> ${e.message}</div>`;
+  }
+}
+
+function updateHeader(data) {
+  const t = data.totals || {};
+  const m = data.meta   || {};
+  const el = id => document.getElementById(id);
+  if (el('hd-revenue'))  el('hd-revenue').textContent  = fGBP(t.total_revenue, 0);
+  if (el('hd-orders'))   el('hd-orders').textContent   = fNum(t.total_orders);
+  if (el('hd-sessions')) el('hd-sessions').textContent = fNum(t.total_sessions);
+  if (el('hd-updated'))  el('hd-updated').textContent  = m.last_updated ? fDate(m.last_updated) : '—';
+  if (el('hd-lag'))      el('hd-lag').textContent      = m.data_through
+    ? `Data through ${fDate(m.data_through)} · GA4 24–48h lag`
+    : 'GA4 24–48h lag';
+}
+
+function renderOverview(data) {
+  const t   = data.totals || {};
+  const m   = data.meta   || {};
+  const top = data.top10  || [];
+
+  /* KPI cards */
+  const kpiHtml = `
+    <div class="kpis">
+      <div class="kpi revenue">
+        <div class="src">GA4</div>
+        <div class="lbl">Total Organic Revenue</div>
+        <div class="val">${fGBP(t.total_revenue, 0)}</div>
+        <div class="note">Measured — not estimated</div>
+      </div>
+      <div class="kpi">
+        <div class="src">GA4</div>
+        <div class="lbl">Organic Sessions</div>
+        <div class="val">${fNum(t.total_sessions)}</div>
+        <div class="note">Organic Search channel</div>
+      </div>
+      <div class="kpi">
+        <div class="src">GA4</div>
+        <div class="lbl">Total Orders</div>
+        <div class="val">${fNum(t.total_orders)}</div>
+        <div class="note">eCommerce purchases</div>
+      </div>
+      <div class="kpi revenue">
+        <div class="src">GA4</div>
+        <div class="lbl">Revenue / Session</div>
+        <div class="val">${fGBP(t.rev_per_session, 2)}</div>
+        <div class="note">Organic revenue efficiency</div>
+      </div>
+      <div class="kpi">
+        <div class="src">GA4</div>
+        <div class="lbl">Avg Order Value</div>
+        <div class="val">${fGBP(t.avg_order_value, 2)}</div>
+        <div class="note">Revenue per purchase</div>
+      </div>
+      <div class="kpi">
+        <div class="src">GA4</div>
+        <div class="lbl">Pages with Revenue</div>
+        <div class="val">${fNum(t.revenue_pages)}</div>
+        <div class="note">of ${fNum(t.total_pages)} total pages</div>
+      </div>
+    </div>`;
+
+  /* Top 10 pages */
+  const maxRev = top.length ? parseFloat(top[0].revenue) : 1;
+  let topRows = '';
+  top.forEach((r, i) => {
+    const barW = Math.round((parseFloat(r.revenue) / maxRev) * 120);
+    topRows += `<tr>
+      <td><span class="rank-num">${i+1}</span></td>
+      <td>${ptBadge(r.page_type)}</td>
+      <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--navy)" title="${r.landing_page}">${r.landing_page}</td>
+      <td class="num">${fNum(r.sessions)}</td>
+      <td class="num">${fNum(r.orders)}</td>
+      <td class="num">
+        <div class="rev-bar-wrap">
+          <div class="rev-bar" style="width:${barW}px"></div>
+          <span class="rev-val">${fGBP(r.revenue, 0)}</span>
+        </div>
+      </td>
+      <td class="num">${fGBP(r.avg_order_value, 2)}</td>
+      <td class="num" style="color:var(--teal);font-weight:600">${fGBP(r.rev_per_session, 2)}</td>
+    </tr>`;
+  });
+
+  document.getElementById('overview-content').innerHTML = `
+    <div class="lag-note">
+      &#8505; Data through <strong>${fDate(m.data_through)}</strong> &nbsp;·&nbsp;
+      Last pipeline run: <strong>${fDate(m.last_updated)}</strong> &nbsp;·&nbsp;
+      GA4 processes sessions with a 24–48h delay — this is expected behaviour, not a gap.
+    </div>
+
+    <div class="section-title">Revenue KPIs — Latest Snapshot</div>
+    ${kpiHtml}
+
+    <div class="section-title">Top 10 Pages by Organic Revenue</div>
+    <div class="tbox">
+      <div class="tbar">
+        <strong>Top Revenue Landing Pages</strong>
+        <span>Latest run · Organic Search channel · Sorted by revenue</span>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Landing Page</th>
+              <th class="num">Sessions</th>
+              <th class="num">Orders</th>
+              <th class="num">Revenue</th>
+              <th class="num">Avg Order</th>
+              <th class="num">Rev/Session</th>
+            </tr>
+          </thead>
+          <tbody>${topRows || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">No revenue data found</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="info-note">
+      &#10003; Revenue source: <strong>GA4 ecommerce tracking</strong> (purchase_revenue field) — measured at session level, attributed to the organic landing page.
+      This is <strong>not estimated</strong>. Zero NULL rows in the pipeline as of last validation (2026-08-04).
+    </div>
+  `;
+}
+
+/* ── BY LANDING PAGE ───────────────────────────────────────── */
+async function loadByPage() {
+  if (loaded.bypage) return renderByPage(cache.bypage);
+  const wrap = document.getElementById('bypage-content');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading landing page data…</div>';
+  try {
+    const res  = await fetch('/api/intel-api?service=organic&type=by-page');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    cache.bypage  = data;
+    loaded.bypage = true;
+    byPageAllRows = data.rows || [];
+    byPageSearch  = '';
+    byPageType    = 'all';
+    renderByPage(data);
+  } catch(e) {
+    wrap.innerHTML = `<div class="lag-note"><strong>Error:</strong> ${e.message}</div>`;
+  }
+}
+
+function renderByPage(data) {
+  const rows = data.rows || [];
+  byPageAllRows = rows;
+
+  const totalRev = rows.reduce((s,r) => s + parseFloat(r.revenue||0), 0);
+  const maxRev   = rows.length ? Math.max(...rows.map(r => parseFloat(r.revenue||0))) : 1;
+
+  const wrap = document.getElementById('bypage-content');
+  wrap.innerHTML = `
+    <div class="stats-bar">
+      <div class="sb-item revenue"><div class="sb-lbl">Total Revenue</div><div class="sb-val" id="bp-stat-rev">${fGBP(totalRev,0)}</div><div class="sb-sub">Filtered rows</div></div>
+      <div class="sb-item"><div class="sb-lbl">Pages</div><div class="sb-val" id="bp-stat-pages">${fNum(rows.length)}</div><div class="sb-sub">All landing pages</div></div>
+      <div class="sb-item"><div class="sb-lbl">Pages w/ Revenue</div><div class="sb-val" id="bp-stat-rev-pages">${fNum(rows.filter(r=>parseFloat(r.revenue)>0).length)}</div><div class="sb-sub">purchase_revenue &gt; 0</div></div>
+      <div class="sb-item"><div class="sb-lbl">Total Sessions</div><div class="sb-val" id="bp-stat-sess">${fNum(rows.reduce((s,r)=>s+parseInt(r.sessions||0),0))}</div><div class="sb-sub">Organic Search</div></div>
+      <div class="sb-item"><div class="sb-lbl">Total Orders</div><div class="sb-val" id="bp-stat-orders">${fNum(rows.reduce((s,r)=>s+parseInt(r.orders||0),0))}</div><div class="sb-sub">eCommerce purchases</div></div>
+    </div>
+
+    <div class="controls">
+      <input class="srch" type="text" placeholder="Search landing page URL…" oninput="filterByPage(this.value)" id="bp-search">
+      <select class="fsel" onchange="filterByPageType(this.value)" id="bp-type-filter">
+        <option value="all">All Types</option>
+        <option value="Home">Home</option>
+        <option value="Product">Product</option>
+        <option value="Collection">Collection</option>
+        <option value="Content">Content</option>
+        <option value="Other">Other</option>
+      </select>
+      <select class="fsel" onchange="filterByRevenueOnly(this.value)" id="bp-rev-filter">
+        <option value="all">All Pages</option>
+        <option value="revenue">Revenue &gt; 0 only</option>
+      </select>
+      <button class="exp-btn" onclick="exportByPageCSV()">&#8659; Export CSV</button>
+    </div>
+
+    <div class="tbox">
+      <div class="tbar">
+        <strong>Landing Page Revenue Table</strong>
+        <span id="bp-count">${fNum(rows.length)} pages</span>
+      </div>
+      <div class="scroll">
+        <table id="bp-table">
+          <thead>
+            <tr>
+              <th onclick="sortByPage('landing_page')" title="Sort">Landing Page <span class="sort-arrow"></span></th>
+              <th>Type</th>
+              <th class="num" onclick="sortByPage('sessions')" title="Sort">Sessions <span class="sort-arrow"></span></th>
+              <th class="num" onclick="sortByPage('orders')" title="Sort">Orders <span class="sort-arrow"></span></th>
+              <th class="num" onclick="sortByPage('revenue')" title="Sort">Revenue <span class="sort-arrow"></span></th>
+              <th class="num" onclick="sortByPage('avg_order_value')" title="Sort">Avg Order <span class="sort-arrow"></span></th>
+              <th class="num" onclick="sortByPage('rev_per_session')" title="Sort">Rev/Session <span class="sort-arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody id="bp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  byPageSortCol = 'revenue';
+  byPageSortDir = 'desc';
+  applyByPageFilters();
+}
+
+function filterByPage(val) {
+  byPageSearch = val.toLowerCase();
+  applyByPageFilters();
+}
+function filterByPageType(val) {
+  byPageType = val;
+  applyByPageFilters();
+}
+function filterByRevenueOnly(val) {
+  window.bpRevFilter = val;
+  applyByPageFilters();
+}
+function sortByPage(col) {
+  if (byPageSortCol === col) byPageSortDir = byPageSortDir === 'asc' ? 'desc' : 'asc';
+  else { byPageSortCol = col; byPageSortDir = 'desc'; }
+  applyByPageFilters();
+  /* update header arrows */
+  document.querySelectorAll('#bp-table thead th').forEach(th => {
+    th.classList.remove('sorted-asc','sorted-desc');
+  });
+}
+
+function applyByPageFilters() {
+  let rows = [...byPageAllRows];
+  if (byPageSearch)  rows = rows.filter(r => r.landing_page.toLowerCase().includes(byPageSearch));
+  if (byPageType !== 'all') rows = rows.filter(r => r.page_type === byPageType);
+  if (window.bpRevFilter === 'revenue') rows = rows.filter(r => parseFloat(r.revenue||0) > 0);
+
+  rows.sort((a, b) => {
+    const av = byPageSortCol === 'landing_page' ? (a[byPageSortCol]||'') : parseFloat(a[byPageSortCol]||0);
+    const bv = byPageSortCol === 'landing_page' ? (b[byPageSortCol]||'') : parseFloat(b[byPageSortCol]||0);
+    if (av < bv) return byPageSortDir === 'asc' ? -1 : 1;
+    if (av > bv) return byPageSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const maxRev = rows.length ? Math.max(...rows.map(r => parseFloat(r.revenue||0))) : 1;
+  const display = rows.slice(0, 500);
+
+  const countEl = document.getElementById('bp-count');
+  if (countEl) countEl.textContent = fNum(rows.length) + ' pages' + (rows.length > 500 ? ' (showing top 500)' : '');
+
+  const tbody = document.getElementById('bp-tbody');
+  if (!tbody) return;
+  if (!display.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No pages match the current filter</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = display.map(r => {
+    const barW = maxRev > 0 ? Math.round((parseFloat(r.revenue||0) / maxRev) * 80) : 0;
+    return `<tr>
+      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--navy)" title="${r.landing_page}">${r.landing_page}</td>
+      <td>${ptBadge(r.page_type)}</td>
+      <td class="num">${fNum(r.sessions)}</td>
+      <td class="num">${fNum(r.orders)}</td>
+      <td class="num">
+        <div class="rev-bar-wrap" style="justify-content:flex-end">
+          <div class="rev-bar" style="width:${barW}px;opacity:${parseFloat(r.revenue)>0?1:0}"></div>
+          <span class="${parseFloat(r.revenue)>0?'rev-val':''}">
+            ${parseFloat(r.revenue)>0 ? fGBP(r.revenue,2) : '<span style="color:var(--muted)">£0</span>'}
+          </span>
+        </div>
+      </td>
+      <td class="num">${r.avg_order_value && parseFloat(r.avg_order_value)>0 ? fGBP(r.avg_order_value,2) : '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="num" style="color:var(--teal);font-weight:600">${r.rev_per_session && parseFloat(r.rev_per_session)>0 ? fGBP(r.rev_per_session,2) : '<span style="color:var(--muted)">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportByPageCSV() {
+  let rows = [...byPageAllRows];
+  if (byPageSearch) rows = rows.filter(r => r.landing_page.toLowerCase().includes(byPageSearch));
+  if (byPageType !== 'all') rows = rows.filter(r => r.page_type === byPageType);
+  if (window.bpRevFilter === 'revenue') rows = rows.filter(r => parseFloat(r.revenue||0) > 0);
+  const headers = 'landing_page,page_type,sessions,active_users,orders,revenue_gbp,avg_order_value,rev_per_session';
+  const lines = rows.map(r =>
+    [r.landing_page, r.page_type, r.sessions, r.active_users, r.orders,
+     r.revenue, r.avg_order_value, r.rev_per_session].join(',')
+  );
+  const blob = new Blob([headers + '\n' + lines.join('\n')], { type:'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `organic-revenue-by-page-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+/* ── BY PAGE TYPE ──────────────────────────────────────────── */
+async function loadByType() {
+  if (loaded.bytype) return renderByType(cache.bytype);
+  const wrap = document.getElementById('bytype-content');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading…</div>';
+  try {
+    const res  = await fetch('/api/intel-api?service=organic&type=by-type');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    cache.bytype  = data;
+    loaded.bytype = true;
+    renderByType(data);
+  } catch(e) {
+    wrap.innerHTML = `<div class="lag-note"><strong>Error:</strong> ${e.message}</div>`;
+  }
+}
+
+function renderByType(data) {
+  const rows     = data.rows || [];
+  const totalRev = rows.reduce((s,r) => s + parseFloat(r.revenue||0), 0);
+
+  const cards = rows.map(r => {
+    const share = totalRev > 0 ? Math.round(parseFloat(r.revenue) / totalRev * 100) : 0;
+    return `
+      <div class="type-card ${ptClass(r.page_type)}">
+        <div class="type-lbl">${ptBadge(r.page_type)}</div>
+        <div class="type-rev">${fGBP(r.revenue, 0)}</div>
+        <div class="type-share-bar"><div class="type-share-fill" style="width:${share}%;background:${ptColor(r.page_type)}"></div></div>
+        <div class="type-meta">
+          <strong>${share}%</strong> of organic revenue<br>
+          ${fNum(r.sessions)} sessions &bull; ${fNum(r.orders)} orders<br>
+          ${fNum(r.pages)} pages &bull; ${fNum(r.revenue_pages)} with revenue<br>
+          Avg order: <strong>${fGBP(r.avg_order_value,2)}</strong> &bull; Rev/session: <strong>${fGBP(r.rev_per_session,2)}</strong>
+        </div>
+      </div>`;
+  }).join('');
+
+  /* Table */
+  let tableRows = '';
+  rows.forEach(r => {
+    const share = totalRev > 0 ? ((parseFloat(r.revenue)/totalRev)*100).toFixed(1) : '0';
+    tableRows += `<tr>
+      <td>${ptBadge(r.page_type)}</td>
+      <td class="num">${fNum(r.pages)}</td>
+      <td class="num">${fNum(r.revenue_pages)}</td>
+      <td class="num">${fNum(r.sessions)}</td>
+      <td class="num">${fNum(r.orders)}</td>
+      <td class="num" style="color:var(--good);font-weight:700">${fGBP(r.revenue,0)}</td>
+      <td class="num">${share}%</td>
+      <td class="num">${fGBP(r.avg_order_value,2)}</td>
+      <td class="num" style="color:var(--teal);font-weight:600">${fGBP(r.rev_per_session,2)}</td>
+    </tr>`;
+  });
+
+  document.getElementById('bytype-content').innerHTML = `
+    <div class="section-title">Revenue by Page Type</div>
+    <div class="type-grid">${cards}</div>
+
+    <div class="section-title">Comparison Table</div>
+    <div class="tbox">
+      <div class="tbar"><strong>Page Type Breakdown</strong><span>Latest snapshot · Organic Search</span></div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Page Type</th>
+              <th class="num">Total Pages</th>
+              <th class="num">Revenue Pages</th>
+              <th class="num">Sessions</th>
+              <th class="num">Orders</th>
+              <th class="num">Revenue</th>
+              <th class="num">Share %</th>
+              <th class="num">Avg Order</th>
+              <th class="num">Rev/Session</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top:14px">
+      <h3>Revenue Share by Page Type</h3>
+      <div class="ch-sub">Organic Search channel · Latest snapshot</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-bytype"></canvas></div>
+    </div>
+  `;
+
+  /* Donut chart */
+  if (charts.bytype) charts.bytype.destroy();
+  charts.bytype = new Chart(document.getElementById('chart-bytype'), {
+    type: 'doughnut',
+    data: {
+      labels: rows.map(r => r.page_type),
+      datasets: [{
+        data:            rows.map(r => parseFloat(r.revenue||0)),
+        backgroundColor: rows.map(r => ptColor(r.page_type)),
+        borderWidth: 2,
+        borderColor: '#fff',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { font: { size:12 }, boxWidth:14 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${fGBP(ctx.parsed, 0)} (${((ctx.parsed/totalRev)*100).toFixed(1)}%)`
+          }
+        }
+      }
+    }
+  });
+}
+
+/* ── TREND ─────────────────────────────────────────────────── */
+async function loadTrend() {
+  if (loaded.trend) return renderTrend(cache.trend);
+  const wrap = document.getElementById('trend-content');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading trend data…</div>';
+  try {
+    const res  = await fetch('/api/intel-api?service=organic&type=trend');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    cache.trend  = data;
+    loaded.trend = true;
+    renderTrend(data);
+  } catch(e) {
+    wrap.innerHTML = `<div class="lag-note"><strong>Error:</strong> ${e.message}</div>`;
+  }
+}
+
+function renderTrend(data) {
+  const rows = data.rows || [];
+  if (!rows.length) {
+    document.getElementById('trend-content').innerHTML = '<div class="lag-note">No trend data available.</div>';
+    return;
+  }
+
+  const labels   = rows.map(r => fMonth(r.month));
+  const revenues = rows.map(r => parseFloat(r.revenue||0));
+  const sessions = rows.map(r => parseInt(r.sessions||0));
+  const orders   = rows.map(r => parseInt(r.orders||0));
+
+  /* MoM table */
+  let momRows = '';
+  rows.slice(-12).forEach((r, i, arr) => {
+    const prev = i > 0 ? arr[i-1] : null;
+    const revChg = prev && parseFloat(prev.revenue) > 0
+      ? ((parseFloat(r.revenue) - parseFloat(prev.revenue)) / parseFloat(prev.revenue) * 100).toFixed(1)
+      : null;
+    const chgHtml = revChg === null ? '<span style="color:var(--muted)">—</span>'
+      : `<span style="color:${parseFloat(revChg)>=0?'var(--good)':'var(--red)'}; font-weight:700">${parseFloat(revChg)>=0?'▲':'▼'}${Math.abs(revChg)}%</span>`;
+    momRows += `<tr>
+      <td><strong>${fMonth(r.month)}</strong></td>
+      <td class="num" style="color:var(--good);font-weight:700">${fGBP(r.revenue,0)}</td>
+      <td class="num">${chgHtml}</td>
+      <td class="num">${fNum(r.sessions)}</td>
+      <td class="num">${fNum(r.orders)}</td>
+      <td class="num">${fNum(r.pages)}</td>
+      <td class="num">${fNum(r.revenue_pages)}</td>
+    </tr>`;
+  });
+
+  document.getElementById('trend-content').innerHTML = `
+    <div class="section-title">Monthly Organic Revenue Trend</div>
+    <div class="chart-card" style="margin-bottom:14px">
+      <h3>Organic Revenue — Monthly (GA4 run_date aggregation)</h3>
+      <div class="ch-sub">Organic Search channel · Data starts ${fDate(rows[0].month)} · Latest: ${fDate(rows[rows.length-1].month)}</div>
+      <div class="chart-wrap" style="height:280px"><canvas id="chart-trend-rev"></canvas></div>
+    </div>
+
+    <div class="chart-row" style="margin-bottom:14px">
+      <div class="chart-card">
+        <h3>Monthly Sessions (Organic)</h3>
+        <div class="ch-sub">Total organic sessions attributed to landing pages</div>
+        <div class="chart-wrap"><canvas id="chart-trend-sess"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Monthly Orders</h3>
+        <div class="ch-sub">eCommerce purchases from organic sessions</div>
+        <div class="chart-wrap"><canvas id="chart-trend-orders"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-title">Month-on-Month — Last 12 Months</div>
+    <div class="tbox">
+      <div class="tbar"><strong>Monthly Trend Table</strong><span>Last 12 months · Organic Search</span></div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="num">Revenue</th>
+              <th class="num">MoM Change</th>
+              <th class="num">Sessions</th>
+              <th class="num">Orders</th>
+              <th class="num">Total Pages</th>
+              <th class="num">Revenue Pages</th>
+            </tr>
+          </thead>
+          <tbody>${momRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  const commonFont = { family: "'Segoe UI', system-ui, sans-serif", size: 11 };
+
+  if (charts.trendRev) charts.trendRev.destroy();
+  charts.trendRev = new Chart(document.getElementById('chart-trend-rev'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Organic Revenue (£)',
+        data: revenues,
+        backgroundColor: 'rgba(10,125,79,0.75)',
+        borderColor: '#0a7d4f',
+        borderWidth: 1,
+        borderRadius: 4,
+      }, {
+        label: 'Trend',
+        data: revenues,
+        type: 'line',
+        borderColor: '#1f5eff',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 3,
+        tension: 0.35,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { labels:{ font:commonFont, boxWidth:12 } },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fGBP(ctx.parsed.y, 0)}` }
+        }
+      },
+      scales: {
+        x: { ticks:{ font:commonFont } },
+        y: { ticks:{ font:commonFont, callback: v => '£' + (v>=1000?(v/1000).toFixed(0)+'k':v) } }
+      }
+    }
+  });
+
+  if (charts.trendSess) charts.trendSess.destroy();
+  charts.trendSess = new Chart(document.getElementById('chart-trend-sess'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets:[{ label:'Sessions', data:sessions, borderColor:'#0e7490', backgroundColor:'rgba(14,116,144,0.08)', fill:true, tension:0.3, pointRadius:2 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{labels:{font:commonFont,boxWidth:12}} },
+      scales:{ x:{ticks:{font:commonFont}}, y:{ticks:{font:commonFont}} }
+    }
+  });
+
+  if (charts.trendOrders) charts.trendOrders.destroy();
+  charts.trendOrders = new Chart(document.getElementById('chart-trend-orders'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets:[{ label:'Orders', data:orders, borderColor:'#9333ea', backgroundColor:'rgba(147,51,234,0.08)', fill:true, tension:0.3, pointRadius:2 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{labels:{font:commonFont,boxWidth:12}} },
+      scales:{ x:{ticks:{font:commonFont}}, y:{ticks:{font:commonFont}} }
+    }
+  });
+}
+
+/* ── Bootstrap ─────────────────────────────────────────────── */
+loadOverview();
+</script>
+</body>
+</html>

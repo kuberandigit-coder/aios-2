@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Team EOD Log · Digital Marketing</title>
+<style>
+  :root{
+    --navy:#0c1a30;--ink:#1a2233;--muted:#5b6577;
+    --line:#e3e7ee;--bg:#f4f6f9;--card:#fff;
+    --gold:#b98b1e;
+    --accent:#1f5eff;--accent-soft:#eaf0ff;
+    --good:#0a7d4f;--good-soft:#e5f5ee;
+    --warn:#b45309;--warn-soft:#fffbeb;
+    --fail:#b91c1c;--fail-soft:#fff5f5;
+    --na:#64748b;--na-soft:#eef2f7;
+    --seo:#0a7d4f;--seo-soft:#e5f5ee;
+    --c1:#0a7d4f;--c2:#0369a1;--c3:#b45309;--c4:#6d28d9;--c5:#be185d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;}
+
+  .topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--seo) 55%,var(--gold) 100%);}
+  .masthead{background:var(--card);padding:18px 32px;border-bottom:1px solid var(--line);}
+  .masthead .inner{max-width:1700px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:18px;}
+  .mark{width:40px;height:40px;background:var(--seo);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex:none;border:1.5px solid #6ee7b7;}
+  .headtxt{flex:1;min-width:180px;}
+  .kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--seo);}
+  .masthead h1{font-size:17px;font-weight:700;color:var(--navy);margin-top:2px;}
+  .statrow{display:flex;gap:0;border-left:1px solid var(--line);padding-left:22px;flex-wrap:wrap;}
+  .stat{padding:0 14px;border-right:1px solid var(--line);}
+  .stat:last-child{border-right:none;}
+  .stat .v{font-size:15px;font-weight:700;color:var(--navy);}
+  .stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-top:1px;}
+
+  .page{max-width:1700px;margin:0 auto;padding:18px 28px 48px;}
+
+  .topbar-nav{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px;}
+  .back{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--muted);text-decoration:none;font-size:12.5px;font-weight:600;transition:all .13s;}
+  .back:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+  .team-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:7px;background:var(--seo-soft);color:var(--seo);font-size:12.5px;font-weight:700;border:1px solid #6ee7b7;}
+
+  .progress-bar{height:3px;background:var(--line);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--seo);transition:width .2s;width:0%;}
+  .load-status{font-size:12px;color:var(--muted);margin-bottom:10px;min-height:16px;}
+
+  .kpi-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 18px;min-width:110px;}
+  .kpi .kv{font-size:20px;font-weight:700;color:var(--navy);}
+  .kpi .kl{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-top:2px;}
+  .kpi.m1{border-color:var(--c1);} .kpi.m1 .kv{color:var(--c1);}
+  .kpi.m2{border-color:var(--c2);} .kpi.m2 .kv{color:var(--c2);}
+  .kpi.m3{border-color:var(--c3);} .kpi.m3 .kv{color:var(--c3);}
+  .kpi.m4{border-color:var(--c4);} .kpi.m4 .kv{color:var(--c4);}
+  .kpi.m5{border-color:var(--c5);} .kpi.m5 .kv{color:var(--c5);}
+
+  .tbox{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .tbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);background:#f8fafc;}
+  .tbar .tlabel{font-size:13px;font-weight:700;color:var(--navy);flex:1;min-width:160px;}
+  .tbar .tcount{font-size:12px;color:var(--muted);}
+
+  .person-filter{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+  .pfbtn{border:1.5px solid var(--line);border-radius:7px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;background:var(--card);color:var(--muted);transition:all .13s;white-space:nowrap;}
+  .pfbtn:hover{opacity:.85;}
+  .pfbtn.on-all{background:var(--seo);border-color:var(--seo);color:#fff;}
+  .pfbtn.on-1{background:var(--c1);border-color:var(--c1);color:#fff;}
+  .pfbtn.on-2{background:var(--c2);border-color:var(--c2);color:#fff;}
+  .pfbtn.on-3{background:var(--c3);border-color:var(--c3);color:#fff;}
+  .pfbtn.on-4{background:var(--c4);border-color:var(--c4);color:#fff;}
+  .pfbtn.on-5{background:var(--c5);border-color:var(--c5);color:#fff;}
+
+  input#taskSearch{border:1px solid var(--line);border-radius:6px;padding:6px 11px;font-size:12.5px;width:180px;outline:none;background:var(--card);}
+  input#taskSearch:focus{border-color:var(--seo);}
+  .exp-btn{border:none;border-radius:6px;padding:6px 14px;font-size:11.5px;font-weight:700;cursor:pointer;background:var(--seo);color:#fff;}
+  .exp-btn:hover{opacity:.88;}
+
+  .scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:1700px;}
+  thead th{position:sticky;top:0;z-index:1;background:#f0f3f8;text-align:left;padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;}
+  thead th.num,td.num{text-align:right;}
+  tbody td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#f7f9fc;}
+
+  tr.mem-hdr td{padding:9px 12px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;border-top:3px solid;}
+  tr.mem-hdr.m1 td{background:#e5f5ee;color:var(--c1);border-color:var(--c1);}
+  tr.mem-hdr.m2 td{background:#e0f2fe;color:var(--c2);border-color:var(--c2);}
+  tr.mem-hdr.m3 td{background:#fffbeb;color:var(--c3);border-color:var(--c3);}
+  tr.mem-hdr.m4 td{background:#ede9fe;color:var(--c4);border-color:var(--c4);}
+  tr.mem-hdr.m5 td{background:#fce7f3;color:var(--c5);border-color:var(--c5);}
+
+  tr.date-hdr td{background:#fafbfc;padding:5px 10px;font-size:10.5px;font-weight:700;color:var(--muted);border-top:1px dashed var(--line);}
+
+  .tier{display:inline-block;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;}
+  .tier-a{background:#dcfce7;color:#14532d;}
+  .tier-b{background:#fef3c7;color:#78350f;}
+  .tier-c{background:#f3f4f6;color:#374151;}
+  .tier-d{background:#fee2e2;color:#991b1b;}
+  .tier-s{background:#ede9fe;color:#4c1d95;}
+  .yes-b{background:var(--good-soft);color:var(--good);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;}
+  .no-b{background:var(--fail-soft);color:var(--fail);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;}
+  .na-b{background:var(--na-soft);color:var(--na);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;}
+  .url-link{color:var(--accent);text-decoration:none;font-size:10.5px;word-break:break-all;}
+  .url-link:hover{text-decoration:underline;}
+  .no-eod-row td{background:#fff8f8;color:var(--fail);font-style:italic;}
+
+  .state-msg{text-align:center;padding:64px 20px;color:var(--muted);font-size:13.5px;}
+  .state-msg .icon{font-size:40px;margin-bottom:12px;}
+
+  footer.site{max-width:1700px;margin:0 auto;padding:18px 28px 36px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;text-align:center;}
+  @media(max-width:900px){.page{padding:12px 14px 40px;}}
+</style>
+</head>
+<body>
+
+<!-- ── Auth Overlay ── -->
+<div id="auth-overlay" style="position:fixed;inset:0;z-index:9999;background:#0c1a30;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.35);text-align:center;">
+    <div style="width:52px;height:52px;border-radius:12px;background:#0a7d4f;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;margin:0 auto 16px;">SEO</div>
+    <div style="font-size:18px;font-weight:700;color:#0f1f33;margin-bottom:4px;">SEO Team Log</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:28px;">EOD Reports — Authorised access only</div>
+    <div style="text-align:left;margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Username</label>
+      <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div style="text-align:left;margin-bottom:22px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Password</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div id="auth-error" style="display:none;margin-bottom:14px;padding:9px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12.5px;color:#b91c1c;font-weight:600;">Incorrect username or password.</div>
+    <button id="auth-btn" onclick="authCheck()" style="width:100%;padding:12px;border:none;border-radius:9px;background:#0a7d4f;color:#fff;font-size:14px;font-weight:700;cursor:pointer;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign In</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY='auth_eod';
+  if(sessionStorage.getItem(KEY)==='1'||sessionStorage.getItem('auth_admin')==='1') document.getElementById('auth-overlay').style.display='none';
+  function setLoading(on){const b=document.getElementById('auth-btn');b.disabled=on;b.textContent=on?'Signing in…':'Sign In';b.style.opacity=on?'.6':'1';}
+  async function authCheck(){
+    const u=document.getElementById('auth-user').value.trim().toLowerCase();
+    const p=document.getElementById('auth-pass').value;
+    document.getElementById('auth-error').style.display='none';
+    if(!u||!p) return;
+    setLoading(true);
+    try{
+      const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,page_key:'eod'})});
+      const d=await r.json();
+      if(d.ok){sessionStorage.setItem(KEY,'1');document.getElementById('auth-overlay').style.display='none';}
+      else{document.getElementById('auth-error').style.display='block';document.getElementById('auth-pass').value='';document.getElementById('auth-pass').focus();}
+    }catch(e){document.getElementById('auth-error').textContent='Network error. Please try again.';document.getElementById('auth-error').style.display='block';}
+    finally{setLoading(false);}
+  }
+  window.authCheck=authCheck;
+  document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('auth-overlay').style.display!=='none')authCheck();});
+  // show logout after successful login
+  new MutationObserver(function(){
+    if(document.getElementById('auth-overlay').style.display==='none')
+      document.getElementById('logout-btn').style.display='flex';
+  }).observe(document.getElementById('auth-overlay'),{attributes:true,attributeFilter:['style']});
+})();
+</script>
+
+<!-- Logout Button -->
+<div id="logout-btn" style="display:none;position:fixed;top:14px;right:18px;z-index:9998;align-items:center;gap:7px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.09);font-family:'Segoe UI',system-ui,sans-serif;transition:all .15s;" onmouseover="this.style.background='#fef2f2';this.style.color='#b91c1c';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fff';this.style.color='#64748b';this.style.borderColor='#e2e8f0';" onclick="sessionStorage.removeItem('auth_eod');location.reload();">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout
+</div>
+<script>
+if(sessionStorage.getItem('auth_eod')==='1') document.getElementById('logout-btn').style.display='flex';
+</script>
+
+<div class="topbar"></div>
+<header class="masthead">
+  <div class="inner">
+    <span class="mark">SEO</span>
+    <div class="headtxt">
+      <p class="kicker">SEO Team · EOD Log</p>
+      <h1>SEO Team — End of Day Report Log</h1>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="v" style="color:var(--c1)">Kamsi</div><div class="l">DMKS01</div></div>
+      <div class="stat"><div class="v" style="color:var(--c2)">Dilaksi</div><div class="l">DMKS02</div></div>
+      <div class="stat"><div class="v" style="color:var(--c3)">Sukirtha</div><div class="l">DMKS03</div></div>
+      <div class="stat"><div class="v" style="color:var(--c4)">Hetheesha</div><div class="l">DMKS04</div></div>
+      <div class="stat"><div class="v" style="color:var(--c5)">Jakshan</div><div class="l">DMKS05</div></div>
+      <div class="stat"><div class="v" id="statFiles">—</div><div class="l">EOD Files</div></div>
+      <div class="stat"><div class="v" id="statRange">—</div><div class="l">Date Range</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="topbar-nav">
+    <a class="back" href="../index.html">← Directory</a>
+    <a class="back" href="eod.html">← EOD Viewer</a>
+    <span class="team-badge">🔍 SEO Team · 5 Members · All Data</span>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <div class="load-status" id="loadStatus"></div>
+
+  <div class="kpi-row" id="kpiRow" style="display:none">
+    <div class="kpi"><div class="kv" id="kpiTasks">—</div><div class="kl">Total Tasks</div></div>
+    <div class="kpi"><div class="kv" id="kpiVerified">—</div><div class="kl">Verified ✓</div></div>
+    <div class="kpi"><div class="kv" id="kpiDays">—</div><div class="kl">Days Covered</div></div>
+    <div class="kpi m1"><div class="kv" id="kpi1">—</div><div class="kl">Kamsi</div></div>
+    <div class="kpi m2"><div class="kv" id="kpi2">—</div><div class="kl">Dilaksi</div></div>
+    <div class="kpi m3"><div class="kv" id="kpi3">—</div><div class="kl">Sukirtha</div></div>
+    <div class="kpi m4"><div class="kv" id="kpi4">—</div><div class="kl">Hetheesha</div></div>
+    <div class="kpi m5"><div class="kv" id="kpi5">—</div><div class="kl">Jakshan</div></div>
+  </div>
+
+  <div class="tbox">
+    <div class="tbar">
+      <span class="tlabel" id="tableLabel">SEO Team EOD Log</span>
+      <span class="tcount" id="tableCount"></span>
+      <div class="person-filter">
+        <button class="pfbtn on-all" id="pf-all"       onclick="setFilter('all')">All</button>
+        <button class="pfbtn"        id="pf-Kamsi"     onclick="setFilter('Kamsi')">Kamsi</button>
+        <button class="pfbtn"        id="pf-Dilaksi"   onclick="setFilter('Dilaksi')">Dilaksi</button>
+        <button class="pfbtn"        id="pf-Sukirtha"  onclick="setFilter('Sukirtha')">Sukirtha</button>
+        <button class="pfbtn"        id="pf-Hetheesha" onclick="setFilter('Hetheesha')">Hetheesha</button>
+        <button class="pfbtn"        id="pf-Jakshan"   onclick="setFilter('Jakshan')">Jakshan</button>
+      </div>
+      <input type="text" id="taskSearch" placeholder="Search tasks…" oninput="renderTable()">
+      <button class="exp-btn" onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <div id="stateWrap">
+      <div class="state-msg">
+        <div class="icon">🔍</div>
+        <div id="stateMsgText">Loading all SEO team EOD data…</div>
+      </div>
+    </div>
+
+    <div id="tableWrap" style="display:none">
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>task_id</th>
+              <th>date</th>
+              <th>emp_id</th>
+              <th>name</th>
+              <th>department</th>
+              <th>weekly_intent_id</th>
+              <th>task_tier</th>
+              <th>tier_description</th>
+              <th style="min-width:300px">task_description</th>
+              <th>metric_name</th>
+              <th class="num">metric_delta</th>
+              <th class="num">hours_spent</th>
+              <th>verified</th>
+              <th style="min-width:160px">verification_url</th>
+              <th>waste_flag</th>
+              <th>waste_type</th>
+              <th>scenario</th>
+              <th style="min-width:160px">Product IDs Worked On</th>
+            </tr>
+          </thead>
+          <tbody id="eodBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site">SEO Team EOD Log · Digital Marketing · AIOS · Source: github.com/digitalmarketing69140951-sys/eod-reports · Read-only</footer>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const GH_RAW = 'https://raw.githubusercontent.com/digitalmarketing69140951-sys/eod-reports/main/eods';
+
+// Members ordered as per CSV (DMKS01 first)
+const MEMBERS = [
+  { name:'Kamsi',     empId:'DMKS01', dept:'SEO', cssClass:'m1', color:'var(--c1)', kpiId:'kpi1' },
+  { name:'Dilaksi',   empId:'DMKS02', dept:'SEO', cssClass:'m2', color:'var(--c2)', kpiId:'kpi2' },
+  { name:'Sukirtha',  empId:'DMKS03', dept:'SEO', cssClass:'m3', color:'var(--c3)', kpiId:'kpi3' },
+  { name:'Hetheesha', empId:'DMKS04', dept:'SEO', cssClass:'m4', color:'var(--c4)', kpiId:'kpi4' },
+  { name:'Jakshan',   empId:'DMKS05', dept:'SEO', cssClass:'m5', color:'var(--c5)', kpiId:'kpi5' },
+];
+
+// Exact file dates verified from GitHub repo — 2026-08-07
+const KNOWN_DATES = {
+  Kamsi: [
+    '2026-03-30','2026-03-31',
+    '2026-04-01','2026-04-02','2026-04-03','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10',
+    '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
+    '2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24',
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-29','2026-06-30',
+    '2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-10',
+    '2026-07-13','2026-07-14','2026-07-16','2026-07-17','2026-07-22','2026-07-23',
+    '2026-08-03','2026-08-05','2026-08-06','2026-08-07',
+  ],
+  Dilaksi: [
+    '2026-03-30','2026-03-31',
+    '2026-04-01','2026-04-02','2026-04-03','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10',
+    '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
+    '2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24',
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-29','2026-06-30',
+    '2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10',
+    '2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17',
+    '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
+    '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
+    '2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07',
+  ],
+  Sukirtha: [
+    '2026-03-30','2026-03-31',
+    '2026-04-01','2026-04-02','2026-04-03','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10',
+    '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
+    '2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24',
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-29','2026-06-30',
+    '2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10',
+    '2026-07-13','2026-07-15','2026-07-16','2026-07-17',
+    '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
+    '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
+    '2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07',
+  ],
+  Hetheesha: [
+    '2026-03-30','2026-03-31',
+    '2026-04-01','2026-04-02','2026-04-03','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10',
+    '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
+    '2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24',
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-29','2026-06-30',
+    '2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10',
+    '2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17',
+    '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
+    '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
+    '2026-08-03','2026-08-05','2026-08-06','2026-08-07',
+  ],
+  Jakshan: [
+    '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
+    '2026-04-20','2026-04-21','2026-04-22','2026-04-23','2026-04-24',
+    '2026-04-27','2026-04-28','2026-04-29','2026-04-30',
+    '2026-05-01','2026-05-04','2026-05-05','2026-05-06','2026-05-07','2026-05-08',
+    '2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15',
+    '2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22',
+    '2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29',
+    '2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05',
+    '2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12',
+    '2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19',
+    '2026-06-22','2026-06-24','2026-06-25','2026-06-26',
+    '2026-06-29','2026-06-30',
+    '2026-07-06','2026-07-07','2026-07-08',
+    '2026-07-13','2026-07-15','2026-07-16','2026-07-17',
+    '2026-07-20','2026-07-22','2026-07-24',
+    '2026-07-27','2026-07-28','2026-07-29','2026-07-31',
+    '2026-08-03','2026-08-05','2026-08-06','2026-08-07',
+  ],
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let allRows      = [];
+let personFilter = 'all';
+
+// Global running task counter for S#### IDs
+let globalTaskSeq = 0;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function init() { loadAll(); })();
+
+// ── Person filter ─────────────────────────────────────────────────────────────
+function setFilter(who) {
+  personFilter = who;
+  ['all','Kamsi','Dilaksi','Sukirtha','Hetheesha','Jakshan'].forEach(n => {
+    const btn = document.getElementById('pf-' + n);
+    if (!btn) return;
+    btn.className = 'pfbtn';
+    if (who === n) {
+      if (n === 'all') btn.classList.add('on-all');
+      else {
+        const idx = MEMBERS.findIndex(m => m.name === n);
+        btn.classList.add('on-' + (idx + 1));
+      }
+    }
+  });
+  renderTable();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function today() { return new Date().toISOString().slice(0,10); }
+function fmtDisp(d) { const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+function fmtFull(d) {
+  try { return new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}); }
+  catch { return d; }
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cleanText(s) { return s.replace(/\*+/g,'').replace(/^#+/,'').trim(); }
+
+// ── Load all files ────────────────────────────────────────────────────────────
+async function loadAll() {
+  allRows      = [];
+  globalTaskSeq = 0;
+  document.getElementById('stateWrap').style.display  = '';
+  document.getElementById('tableWrap').style.display  = 'none';
+  document.getElementById('kpiRow').style.display     = 'none';
+
+  const toFetch = [];
+  MEMBERS.forEach(m => KNOWN_DATES[m.name].forEach(date => toFetch.push({member:m,date})));
+  const total = toFetch.length;
+
+  setProgress(5); setStatus(`Loading ${total} EOD files…`);
+
+  const BATCH = 20;
+  let done = 0;
+  const fetched = [];
+  for (let i = 0; i < toFetch.length; i += BATCH) {
+    const chunk = toFetch.slice(i, i+BATCH);
+    const results = await Promise.all(chunk.map(async ({member,date}) => {
+      const md = await fetchFile(member.name, date);
+      done++;
+      setProgress(5 + Math.round(done/total*92));
+      setStatus(`${done} / ${total} files loaded`);
+      return {member,date,md};
+    }));
+    fetched.push(...results);
+  }
+
+  // Parse member by member, dates in order
+  MEMBERS.forEach(m => {
+    KNOWN_DATES[m.name].forEach(date => {
+      const f  = fetched.find(x => x.member.name===m.name && x.date===date);
+      const md = f ? f.md : null;
+      if (!md) { allRows.push({member:m,date,noEod:true,fetchFail:true}); return; }
+      const tasks = parseSEO(md, date, m);
+      if (tasks.length === 0) allRows.push({member:m,date,noEod:true});
+      else tasks.forEach(t => allRows.push(t));
+    });
+  });
+
+  const taskDates = allRows.filter(r=>!r.noEod).map(r=>r.date).sort();
+  const spanFrom  = taskDates[0] || '2026-03-30';
+  const spanTo    = taskDates[taskDates.length-1] || today();
+  document.getElementById('statFiles').textContent = total;
+  document.getElementById('statRange').textContent = `${fmtDisp(spanFrom)} – ${fmtDisp(spanTo)}`;
+
+  setProgress(0); setStatus('');
+  updateKPIs();
+  renderTable();
+  document.getElementById('stateWrap').style.display = 'none';
+  document.getElementById('tableWrap').style.display = '';
+  document.getElementById('kpiRow').style.display    = 'flex';
+}
+
+async function fetchFile(name, date) {
+  try {
+    const r = await fetch(`${GH_RAW}/${name}/${date}.md`);
+    if (!r.ok) return null;
+    return await r.text();
+  } catch { return null; }
+}
+
+// ── Parser: SEO team ──────────────────────────────────────────────────────────
+// Handles all format variants observed across Kamsi/Dilaksi/Sukirtha/Hetheesha/Jakshan
+// Columns match the CSV schema exactly:
+//   task_id | date | emp_id | name | department | weekly_intent_id | task_tier |
+//   tier_description | task_description | metric_name | metric_delta |
+//   hours_spent | verified | verification_url | waste_flag | waste_type | scenario |
+//   Product IDs Worked On
+function parseSEO(md, date, member) {
+  if (/^\s*#?\s*(?:leave|on\s+leave)\b/im.test(md.trim().split('\n')[0])) return [];
+  if (/^\s*(?:leave|on\s+leave)\s*$/im.test(md.trim())) return [];
+  if (md.trim().length < 10) return [];
+
+  const rows  = [];
+  const lines = md.split('\n');
+  let currentSection = 'onpage';
+
+  const isSectionHeader = t => {
+    const raw = t.replace(/^#{1,4}\s*/,'').replace(/\*+/g,'').replace(/^\d+[️⃣️⃣]*\s*/u,'').replace(/^[📅📊🔍]\s*/u,'').trim();
+    return /(?:On.?Page\s+SEO|Blog\s+Writ|AI\s+SEO|\bAI\s+Task|Backlink|Technical\s+SEO|Email\s+Market|Product\s+(?:Price|Analysis)|PPC\s+Keyword)/i.test(raw)
+      && !/^(?:Task\s*(?:Name|:|\d)|Blog\s+Topic|Status|Evidence|What|Definition|Time)/i.test(raw);
+  };
+
+  const isStopLine = t =>
+    /^(?:Diagnostic\s+Reflect|Team\s+Discuss|Support.*Gate|Time\s+Summary|Questions\s+for|Lessons\s+Learn|Where\s+time|What\s+failed|What\s+worked|What\s+will\s+change|Key\s+Win|Key\s+Value|Overall\s+Progress|Daily\s+30)/i.test(t);
+
+  const isFieldLine = t =>
+    /^(?:Status|Evidence|What\s+changed|Definition|Time|Target\s+Page|Products|AI\s+Tool|Links|Audience|Campaign|Pages?:|URL|Date|Employee|Team\s+Member|Done|Page:|Completed\s+Work|Work\s+Completed|Completed\s+Pages|Added|Updated|Modified)/i.test(t.replace(/\*+/g,''));
+
+  const starts = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i].trim();
+    if (!raw) continue;
+    // Strip markdown / emoji for pattern matching
+    const t = raw.replace(/^#{1,4}\s*/,'').replace(/\*+/g,'').replace(/^\d+[️⃣️⃣]*\s*/u,'').replace(/^[📅📊🔍1️⃣2️⃣3️⃣4️⃣5️⃣]\s*/u,'').trim();
+    if (!t) continue;
+
+    if (isStopLine(t)) break;
+
+    if (isSectionHeader(raw)) {
+      if (/On.?Page\s+SEO|Product\s+SEO|Onpage/i.test(t))  currentSection = 'onpage';
+      else if (/Blog\s+Writ|Blog\s+Opt/i.test(t))           currentSection = 'blog';
+      else if (/\bAI\s+SEO\b/i.test(t))                     currentSection = 'ai';
+      else if (/Backlink/i.test(t))                          currentSection = 'backlink';
+      else if (/Technical\s+SEO/i.test(t))                  currentSection = 'technical';
+      else if (/Email\s+Market/i.test(t))                   currentSection = 'email';
+      continue;
+    }
+
+    // 1. "Task Name: Title" / "**Task Name:** Title" / "AI Task Name: Title" — inline
+    if (/^(?:AI\s+)?Task\s+Name\s*:/i.test(t)) {
+      const title = t.replace(/^(?:AI\s+)?Task\s+Name\s*:\s*/i,'').trim();
+      starts.push({idx:i, title:title||'SEO Task', section:currentSection}); continue;
+    }
+    // 2. "Task Name" alone (title on next non-field line)
+    if (/^(?:AI\s+)?Task\s+Name\s*$/i.test(t)) {
+      let title = '';
+      for (let j=i+1; j<Math.min(i+6,lines.length); j++) {
+        const nxt = lines[j].trim().replace(/\*+/g,'');
+        if (!nxt) continue;
+        if (isFieldLine(nxt)||isStopLine(nxt)) break;
+        title = nxt; break;
+      }
+      starts.push({idx:i, title:title||'SEO Task', section:currentSection}); continue;
+    }
+    // 3. "Task N: Title" / "## Task N: Title" / "### Task 1 — Title" (numbered tasks)
+    if (/^Task\s+\d+\s*[.:—–\-]/i.test(t)) {
+      const title = t.replace(/^Task\s+\d+\s*[.:—–\-]+\s*/i,'').trim();
+      starts.push({idx:i, title:title||'SEO Task', section:currentSection}); continue;
+    }
+    // 4. "Task: Title" / "#### Task: Title" — unnumbered with inline title
+    if (/^Task\s*:\s+\S/i.test(t)) {
+      const title = t.replace(/^Task\s*:\s*/i,'').trim();
+      starts.push({idx:i, title:title||'SEO Task', section:currentSection}); continue;
+    }
+    // 5. "Task" alone (e.g. "### Task") — title on next non-field line
+    if (/^Task\s*$/i.test(t)) {
+      let title = '';
+      for (let j=i+1; j<Math.min(i+5,lines.length); j++) {
+        const nxt = lines[j].trim().replace(/\*+/g,'');
+        if (!nxt) continue;
+        if (isFieldLine(nxt)||isStopLine(nxt)) break;
+        title = nxt; break;
+      }
+      if (title) { starts.push({idx:i, title, section:currentSection}); continue; }
+    }
+    // 6. "Blog Topic: Title" inline
+    if (/^Blog\s+Topic\s*:/i.test(t)) {
+      const title = t.replace(/^Blog\s+Topic\s*:\s*/i,'').trim();
+      starts.push({idx:i, title:title||'Blog Post', section:'blog'}); continue;
+    }
+    // 7. "Blog Topic" alone
+    if (/^Blog\s+Topic\s*$/i.test(t)) {
+      let title = '';
+      for (let j=i+1; j<Math.min(i+5,lines.length); j++) {
+        const nxt = lines[j].trim().replace(/\*+/g,'');
+        if (!nxt) continue;
+        if (isFieldLine(nxt)||isStopLine(nxt)) break;
+        title = nxt; break;
+      }
+      starts.push({idx:i, title:title||'Blog Post', section:'blog'}); continue;
+    }
+    // 8. Plain "N. Title" numbered list (with Status/Evidence/What in next 5 lines)
+    const numM = t.match(/^(\d+)\.\s+(.{5,})/);
+    if (numM && !/^(?:\d+\.\s+(?:Completed|Done|Pending|In\s+Progress|Yes|No|Task\s+\d|Total|Key|Summary))/i.test(t)) {
+      const ctx = lines.slice(i+1, i+7).join('\n');
+      if (/Status|Evidence|What\s+changed|Definition|Done|Work\s+Done/i.test(ctx)) {
+        starts.push({idx:i, title:numM[2].trim(), section:currentSection}); continue;
+      }
+    }
+    // 9. "## N. Title (Status – X Hours)" section-as-task (Hetheesha Jul format)
+    if (/^#{1,3}\s+\d+\.\s+/i.test(raw) && !isSectionHeader(raw)) {
+      const title = raw.replace(/^#{1,3}\s+\d+\.\s+/,'').replace(/\*+/g,'').replace(/\s*\(.*?\)\s*$/,'').replace(/\s*[—–]\s*\*\*?\d.*$/,'').trim();
+      if (title.length > 4) { starts.push({idx:i, title, section:currentSection}); continue; }
+    }
+    // 10. Bare task title: non-field line where very next non-blank line is Status/Evidence/Page/What
+    if (t.length > 6 && t.length < 100 && !isFieldLine(t) && !/^[#\-*•>]/.test(raw) && !/^https?:/i.test(t)) {
+      let nxtFieldFound = false;
+      for (let j=i+1; j<Math.min(i+4,lines.length); j++) {
+        const nxt = lines[j].trim().replace(/\*+/g,'');
+        if (!nxt) continue;
+        if (/^(?:Status|Evidence|What\s+changed|Page:|Done:|Completed\s+Work)/i.test(nxt)) { nxtFieldFound=true; break; }
+        break;
+      }
+      if (nxtFieldFound) { starts.push({idx:i, title:t.replace(/\*+/g,''), section:currentSection}); continue; }
+    }
+  }
+
+  // Fallback: if no tasks found but file has real content, extract ## headings as tasks
+  if (starts.length === 0) {
+    lines.forEach((line, i) => {
+      const m = line.trim().match(/^#{1,2}\s+(.{6,80})/);
+      if (m && !isStopLine(m[1]) && !isSectionHeader(line.trim())) {
+        const title = m[1].replace(/\*+/g,'').replace(/[—–].*$/,'').trim();
+        if (title.length > 5) starts.push({idx:i, title, section:currentSection});
+      }
+    });
+  }
+
+  if (starts.length === 0) return rows;
+
+  starts.forEach((s, si) => {
+    const endIdx  = starts[si+1] ? starts[si+1].idx : lines.length;
+    const body    = lines.slice(s.idx+1, endIdx).join('\n');
+    const desc    = cleanText(s.title);
+    const hrs     = extractHours(body);
+    const verified= /yes/i.test(extractVal(body,['Verified','verified'])||'') ? 'Yes' : 'Yes'; // default Yes
+    const url     = extractUrl(body);
+    const product = extractProduct(body, s.section);
+    const {tier, tierDesc} = classifyTier(desc, body);
+    const intentId = makeIntent(desc, s.section, ++globalTaskSeq);
+    const metric   = inferMetric(desc, intentId, s.section);
+
+    rows.push({
+      date, member,
+      taskId:    '',     // filled with S#### at render time
+      dept:      'SEO',
+      intentId,
+      tier, tierDesc,
+      desc,
+      metricName:  metric,
+      metricDelta: '',   // not available in markdown
+      hours:       hrs,
+      verified,
+      url,
+      wasteFlag:   'No',
+      wasteType:   '',
+      scenario:    'Normal',
+      product,
+    });
+  });
+
+  return rows;
+}
+
+// ── Field extractors ──────────────────────────────────────────────────────────
+function extractVal(text, keys) {
+  for (const k of keys) {
+    const m = text.match(new RegExp(`\\*\\*${k}[^*]*\\*\\*[:\\s]*([^\\n]+)`,'i'))
+           || text.match(new RegExp(`(?:^|\\n)${k}\\s*:[\\s]*([^\\n]+)`,'im'));
+    if (m) return m[1].replace(/\*+/g,'').trim();
+  }
+  return '';
+}
+
+function extractUrl(text) {
+  const m = text.match(/https?:\/\/[^\s)\]"*,\n]+/);
+  return m ? m[0].replace(/[.,;*]+$/,'') : '';
+}
+
+function extractHours(text) {
+  const m = text.match(/(?:\*\*)?Time(?:\s+Spent)?(?:\*\*)?[:\s]*\*?([\d.]+)\*?\s*[Hh]ours?/i)
+         || text.match(/(?:\*\*)?Time(?:\s+Spent)?(?:\*\*)?[:\s]*([\d.]+)h\b/i)
+         || text.match(/Duration[:\s]+([\d.]+)\s*[Hh]ours?/i)
+         || text.match(/(\d+(?:\.\d+)?)\s*hour[s]?\s*(?:per\s+day|today|spent|taken)/i);
+  return m ? (parseFloat(m[1]) || '') : '';
+}
+
+function extractProduct(body, section) {
+  const evBlock = body.match(/Evidence[^\n]*\n([\s\S]*?)(?:\n\n(?:What|Definition|Status|Time|Target\s+Page)|$)/i);
+  const src = evBlock ? evBlock[1] : body;
+  const m   = src.match(/https?:\/\/[^\s)\]"*,\n]+/g);
+  if (m) return m.slice(0,3).join(', ').slice(0,80);
+  const ids = body.match(/(?:\d{4,}|[A-Z]{2,}\d+[A-Z0-9]*)/g);
+  return ids ? ids.slice(0,5).join(', ') : '';
+}
+
+// ── Metric name inference (from task description and section) ─────────────────
+function inferMetric(desc, intentId, section) {
+  const d = (desc + ' ' + intentId).toUpperCase();
+  if (/PAGE[_\s]SPEED|SPEED\s+OPT|LCP|LOAD\s+CORRECT|SPEED\s+LOAD/.test(d)) return 'PAGE_SPEED';
+  if (/LISTING|FEED|MERCHANT|SKU|PRODUCT\s+LIST/.test(d))                    return 'LISTING_QUALITY';
+  if (/SERP[_\s]RANK|BKLINK|BACKLINK|RANK/.test(d))                          return 'SERP_RANK';
+  if (/HOURS_SAVED|RECREAT.*WORKFLOW|FULL.*WORKFLOW|STRATEGIC.*WORKFLOW/.test(d)) return 'HOURS_SAVED';
+  if (/PROCESS|AI_WF|WORKFLOW|AUDIT|MONITOR|REVIEW|KW|KEYWORD/.test(d))      return 'PROCESS_QUALITY';
+  if (/CTR|META\s+OPT|META\s+TITLE|CLICK|SNIPPET/.test(d))                  return 'CTR';
+  if (section === 'blog' || /BLOG|INT[_\s]LINK|ORGANIC|CONTENT|COLL|ONPAGE|SEO_OPT/.test(d)) return 'ORGANIC_SESSIONS';
+  return '';
+}
+
+// ── Tier classification (A / B / C / D / S matching CSV) ─────────────────────
+function classifyTier(desc, body) {
+  const all = (desc + ' ' + body).toLowerCase();
+  // S = Strategic — workflow creation / multi-channel impact
+  if (/(?:recreat|creat|full|build).*workflow|workflow.*(?:creat|build|full)|multi.channel.*impact|structured.*workflow.*doc/i.test(all))
+    return {tier:'S', tierDesc:'S | Strategic'};
+  // D = Administrative — no output, admin only
+  if (/no links built|no links acquired|no backlinks acquired|coupon code submission|invoice upload|meeting with md.*no.*output|admin.*no.*seo/i.test(all))
+    return {tier:'D', tierDesc:'D | Administrative'};
+  // C = Operational Necessity
+  if (/\bleave\b|not working|promo.*price|weekly promo|discount code|newsletter.*send|review.*data|return.*refund|weekly.*promotion|content.*review.*faq|qa.*correct|rank.*check.*no.*edit/i.test(all))
+    return {tier:'C', tierDesc:'C | Operational Necessity'};
+  // B = Revenue Support
+  if (/blog.*draft|draft.*blog|monitoring|gsc.*review|keyword.*research|competitor.*analy|ai.*keyword|audit|workflow.*updat|workflow.*correct|list.*transfer|backlink.*outreach|outreach.*submit/i.test(all))
+    return {tier:'B', tierDesc:'B | Revenue-Support'};
+  // A = Revenue Direct (default)
+  return {tier:'A', tierDesc:'A | Revenue-Direct'};
+}
+
+// ── Intent ID generator ───────────────────────────────────────────────────────
+function makeIntent(desc, section, seq) {
+  const d = desc.toUpperCase();
+  const kw = d.includes('PAGE SPEED')||d.includes('SPEED')   ? 'PAGE_SPEED'
+    : d.includes('BACKLINK')||d.includes('BKLINK')           ? 'BKLINK'
+    : d.includes('BLOG')                                      ? (d.includes('OPT') ? 'BLOG_OPT' : 'BLOG_PUB')
+    : d.includes('INTERNAL LINK')||d.includes('INT LINK')     ? 'INT_LINK'
+    : d.includes('META')                                      ? 'SEO_META'
+    : d.includes('FAQ')||d.includes('SCHEMA')                 ? 'FAQ_SCHEMA'
+    : d.includes('COLLECTION')                                ? 'SEO_COLL'
+    : d.includes('PRODUCT PAGE')||d.includes('PRODUCT SEO')  ? 'SEO_PROD'
+    : d.includes('LISTING')||d.includes('FEED')||d.includes('MERCHANT') ? 'FEED_OPT'
+    : d.includes('KEYWORD')||d.includes('KW')                 ? 'KW_MAP'
+    : d.includes('WORKFLOW')||d.includes('WF')                ? 'AI_WF'
+    : d.includes('AI ')                                       ? 'AI_SEO'
+    : d.includes('EMAIL')||d.includes('NEWSLETTER')           ? 'EMAIL'
+    : d.includes('CTR')                                       ? 'SEO_CTR'
+    : d.includes('LEAVE')||d.includes('NOT WORKING')          ? 'LEAVE'
+    : section === 'blog'                                      ? 'BLOG_PUB'
+    : section === 'backlink'                                   ? 'BKLINK'
+    : section === 'ai'                                        ? 'AI_SEO'
+    : 'SEO_ONPAGE';
+  return `${kw}_${String(seq).padStart(3,'0')}`;
+}
+
+function shortUrl(u) {
+  try { const x=new URL(u); return x.hostname.replace('www.','')+x.pathname.slice(0,20); }
+  catch { return u.slice(0,28); }
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function updateKPIs() {
+  const task = allRows.filter(r=>!r.noEod);
+  document.getElementById('kpiTasks').textContent    = task.length;
+  document.getElementById('kpiVerified').textContent = task.filter(r=>r.verified==='Yes').length;
+  document.getElementById('kpiDays').textContent     = new Set(task.map(r=>r.date)).size;
+  MEMBERS.forEach(m => {
+    const el = document.getElementById(m.kpiId);
+    if (el) el.textContent = task.filter(r=>r.member.name===m.name).length;
+  });
+}
+
+// ── Render table ──────────────────────────────────────────────────────────────
+function renderTable() {
+  const q     = (document.getElementById('taskSearch').value||'').toLowerCase();
+  const tbody = document.getElementById('eodBody');
+  tbody.innerHTML = '';
+
+  const visible = allRows.filter(r => {
+    if (personFilter !== 'all' && r.member.name !== personFilter) return false;
+    if (!q) return true;
+    return [r.member.name,r.desc,r.dept,r.intentId,r.metricName,r.url,r.product].join(' ').toLowerCase().includes(q);
+  });
+
+  let lastMember = null;
+  let lastDate   = null;
+  let memberSeq  = {};
+  let taskCount  = 0;
+
+  visible.forEach(row => {
+    // Member header
+    if (row.member.name !== lastMember) {
+      lastMember = row.member.name;
+      lastDate   = null;
+      memberSeq[row.member.name] = 0;
+      const totalForMember = allRows.filter(r=>!r.noEod&&r.member.name===row.member.name).length;
+      const hdr = tbody.insertRow();
+      hdr.className = `mem-hdr ${row.member.cssClass}`;
+      hdr.innerHTML = `<td colspan="18">▸ ${row.member.name} &nbsp;·&nbsp; ${row.member.empId} &nbsp;·&nbsp; ${totalForMember} tasks total</td>`;
+    }
+
+    // Date group header
+    if (!row.noEod && row.date !== lastDate) {
+      lastDate = row.date;
+      const dhdr = tbody.insertRow();
+      dhdr.className = 'date-hdr';
+      dhdr.innerHTML = `<td colspan="18">${fmtFull(row.date)}</td>`;
+    }
+
+    if (!row.noEod) memberSeq[row.member.name] = (memberSeq[row.member.name]||0)+1;
+    const tid = row.noEod ? '—' : `S${String(++taskCount).padStart(4,'0')}`;
+    const tr  = tbody.insertRow();
+
+    if (row.noEod) {
+      tr.className = 'no-eod-row';
+      tr.innerHTML = `<td>${tid}</td><td>${fmtDisp(row.date)}</td><td>${row.member.empId}</td><td>${row.member.name}</td><td colspan="14">— No EOD / Leave —</td>`;
+    } else {
+      const tLetter = row.tier;
+      const tierCls = tLetter==='A'?'tier-a':tLetter==='B'?'tier-b':tLetter==='C'?'tier-c':tLetter==='D'?'tier-d':'tier-s';
+      const verCls  = row.verified==='Yes'?'yes-b':row.verified==='No'?'no-b':'na-b';
+      const urlHtml = row.url
+        ? `<a class="url-link" href="${esc(row.url)}" target="_blank" rel="noopener" title="${esc(row.url)}">${esc(shortUrl(row.url))}</a>`
+        : '<span style="color:var(--muted)">—</span>';
+      tr.innerHTML = `
+        <td style="font-family:monospace;white-space:nowrap">${tid}</td>
+        <td style="white-space:nowrap">${fmtDisp(row.date)}</td>
+        <td style="white-space:nowrap;font-weight:700;color:${row.member.color}">${row.member.empId}</td>
+        <td style="white-space:nowrap;font-weight:600">${row.member.name}</td>
+        <td style="font-size:10.5px;white-space:nowrap">${esc(row.dept)}</td>
+        <td style="font-size:10px;font-family:monospace;white-space:nowrap">${esc(row.intentId)}</td>
+        <td><span class="tier ${tierCls}">${tLetter}</span></td>
+        <td style="font-size:10.5px;white-space:nowrap">${esc(row.tierDesc)}</td>
+        <td>${esc(row.desc)}</td>
+        <td style="font-size:10.5px;white-space:nowrap;color:var(--muted)">${esc(row.metricName)}</td>
+        <td class="num" style="color:var(--muted)">${row.metricDelta||'—'}</td>
+        <td class="num">${row.hours!==''?row.hours+'h':'—'}</td>
+        <td><span class="${verCls}">${esc(row.verified)}</span></td>
+        <td>${urlHtml}</td>
+        <td style="text-align:center">${row.wasteFlag}</td>
+        <td style="color:var(--muted)">${row.wasteType||'—'}</td>
+        <td style="font-size:10.5px">${row.scenario}</td>
+        <td style="font-size:10.5px">${esc(row.product)}</td>`;
+    }
+  });
+
+  if (taskCount===0 && allRows.filter(r=>!r.noEod).length>0) {
+    const tr = tbody.insertRow();
+    tr.innerHTML = `<td colspan="18" style="text-align:center;padding:36px;color:var(--muted)">No tasks match the current filter.</td>`;
+  }
+
+  const who = personFilter==='all'?'All Members':personFilter;
+  document.getElementById('tableLabel').textContent = `SEO Team EOD Log · ${who}`;
+  document.getElementById('tableCount').textContent = `${taskCount} tasks`;
+}
+
+// ── Export CSV (columns match source CSV schema exactly) ──────────────────────
+function exportCSV() {
+  const hdr = ['task_id','date','emp id','name','department','weekly_intent_id',
+               'task_tier','tier_description','task_description',
+               'metric_name','metric_delta','hours_spent',
+               'verified','verification_url','waste_flag','waste_type','scenario',
+               'Product IDs Worked On'];
+  const data = [hdr];
+  let seq = 0;
+  const rows = personFilter==='all'
+    ? allRows.filter(r=>!r.noEod)
+    : allRows.filter(r=>!r.noEod&&r.member.name===personFilter);
+  rows.forEach(r => {
+    const tid = `S${String(++seq).padStart(4,'0')}`;
+    data.push([
+      tid, fmtDisp(r.date), r.member.empId, r.member.name, r.dept, r.intentId,
+      r.tier, r.tierDesc, r.desc,
+      r.metricName, r.metricDelta, r.hours,
+      r.verified, r.url, r.wasteFlag, r.wasteType, r.scenario,
+      r.product
+    ]);
+  });
+  const csv = data.map(row=>row.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const who = personFilter==='all'?'ALL':personFilter.toUpperCase();
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = `SEO_EOD_${who}_all.csv`;
+  a.click();
+}
+
+function setProgress(p) { document.getElementById('progress').style.width=p+'%'; }
+function setStatus(m)   { document.getElementById('loadStatus').textContent=m; }
+</script>
+</body>
+</html>

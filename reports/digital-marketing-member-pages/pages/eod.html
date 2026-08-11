@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EOD Reports · Digital Marketing Team</title>
+<style>
+:root{
+  --sidebar-bg:#0c1a30;
+  --sidebar-w:220px;
+  --sidebar-border:#1a2d4a;
+  --sidebar-muted:#7a8fa8;
+  --sidebar-hover:#162540;
+  --sidebar-active:#1f3a5f;
+  --sidebar-section:#4a6080;
+  --gold:#c9982a;
+  --gold-soft:#faf3e0;
+  --body-bg:#f0f2f6;
+  --card:#ffffff;
+  --ink:#0f1f33;
+  --muted:#64748b;
+  --line:#e2e8f0;
+  --accent:#1a73e8;
+  --accent-soft:#e8f0fe;
+  --good:#0a7d4f;
+  --good-soft:#e5f5ee;
+  --warn:#b45309;
+  --tec:#0369a1;
+  --tec-soft:#e0f2fe;
+  --seo:#0a7d4f;
+  --seo-soft:#e5f5ee;
+  --ads:#7c3aed;
+  --ads-soft:#ede9fe;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--body-bg);color:var(--ink);}
+
+/* ── Layout shell ── */
+.shell{display:flex;height:100vh;overflow:hidden;}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar-w);flex:none;
+  background:var(--sidebar-bg);
+  display:flex;flex-direction:column;
+  border-right:1px solid var(--sidebar-border);
+  overflow:hidden;
+}
+.sb-brand{
+  padding:18px 16px 14px;
+  border-bottom:1px solid var(--sidebar-border);
+  flex:none;
+}
+.sb-brand .logo{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#fff;
+  letter-spacing:.5px;border:1.5px solid #4a9eed;
+  margin-bottom:8px;
+}
+.sb-brand .brand-name{font-size:13px;font-weight:700;color:#fff;line-height:1.2;}
+.sb-brand .brand-sub{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--sidebar-muted);margin-top:2px;}
+
+.sb-scroll{flex:1;overflow-y:auto;padding:10px 0 6px;}
+.sb-scroll::-webkit-scrollbar{width:4px;}
+.sb-scroll::-webkit-scrollbar-track{background:transparent;}
+.sb-scroll::-webkit-scrollbar-thumb{background:#1f3a5f;border-radius:2px;}
+
+.sb-section{
+  font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--sidebar-section);padding:14px 16px 5px;
+}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 14px;cursor:pointer;
+  border-radius:0;transition:background .12s;
+  text-decoration:none;border-left:3px solid transparent;
+}
+.sb-item:hover{background:var(--sidebar-hover);}
+.sb-item.active{background:var(--sidebar-active);border-left-color:var(--accent);}
+.sb-item.active .sb-name{color:#fff;}
+.sb-avatar{
+  width:28px;height:28px;border-radius:6px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;
+  text-transform:uppercase;letter-spacing:.3px;
+}
+.sb-avatar.tec{background:var(--tec);}
+.sb-avatar.seo{background:var(--seo);}
+.sb-avatar.ads{background:var(--ads);}
+.sb-name{font-size:12.5px;font-weight:600;color:#b8cde0;line-height:1.2;flex:1;}
+.sb-badge{
+  font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;
+  color:#fff;letter-spacing:.3px;
+}
+.sb-badge.tec{background:var(--tec);}
+.sb-badge.seo{background:var(--seo);}
+.sb-badge.ads{background:var(--ads);}
+
+.sb-divider{height:1px;background:var(--sidebar-border);margin:8px 14px;}
+
+.sb-footer{
+  padding:12px 14px;border-top:1px solid var(--sidebar-border);flex:none;
+  background:rgba(255,255,255,.03);
+}
+.sb-footer .dev{font-size:10px;color:var(--sidebar-muted);}
+.sb-footer .dev strong{color:var(--gold);font-weight:700;}
+
+/* ── Quick nav links in sidebar ── */
+.sb-navlink{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 14px;cursor:pointer;transition:background .12s;
+  text-decoration:none;border-left:3px solid transparent;
+}
+.sb-navlink:hover{background:var(--sidebar-hover);}
+.sb-navlink .sb-icon{
+  width:28px;height:28px;border-radius:6px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;background:rgba(255,255,255,.06);
+}
+.sb-navlink .sb-label{font-size:12.5px;font-weight:600;color:#b8cde0;}
+
+/* ── Main area ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── Topbar ── */
+.topbar{
+  flex:none;background:var(--card);
+  border-bottom:1px solid var(--line);
+  padding:0 28px;height:58px;
+  display:flex;align-items:center;gap:16px;
+}
+.topbar-gradient{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent) 0%,var(--tec) 33%,var(--seo) 66%,var(--gold) 100%);}
+.tb-title{font-size:17px;font-weight:700;color:var(--ink);flex:1;}
+.tb-title span{color:var(--accent);}
+.live-badge{
+  display:flex;align-items:center;gap:6px;
+  background:#f0f4f8;border:1px solid var(--line);
+  border-radius:999px;padding:5px 13px;
+  font-size:11.5px;font-weight:600;color:var(--muted);
+}
+.live-dot{width:7px;height:7px;background:var(--good);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.btn-refresh{
+  display:flex;align-items:center;gap:6px;
+  background:var(--accent);color:#fff;
+  border:none;border-radius:8px;padding:8px 16px;
+  font-size:12px;font-weight:700;cursor:pointer;transition:opacity .13s;
+}
+.btn-refresh:hover{opacity:.88;}
+
+/* ── Content scroll area ── */
+.content{flex:1;overflow-y:auto;padding:24px 28px 40px;}
+
+/* ── KPI strip ── */
+.kpi-strip{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap;}
+.kpi-card{
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:14px 20px;flex:1;min-width:140px;
+  border-top:3px solid var(--line);
+  transition:border-color .15s;
+}
+.kpi-card.tec{border-top-color:var(--tec);}
+.kpi-card.seo{border-top-color:var(--seo);}
+.kpi-card.ads{border-top-color:var(--ads);}
+.kpi-card .kv{font-size:22px;font-weight:700;color:var(--ink);}
+.kpi-card .kl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+
+/* ── Viewer ── */
+.viewer{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.viewer-toolbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  padding:12px 18px;border-bottom:1px solid var(--line);
+  background:#f8fafc;
+}
+.vt-who{font-size:15px;font-weight:700;color:var(--ink);flex:1;min-width:140px;}
+.team-pill{display:inline-block;border-radius:999px;padding:3px 12px;font-size:11px;font-weight:700;}
+.team-pill.tec{background:var(--tec-soft);color:var(--tec);}
+.team-pill.seo{background:var(--seo-soft);color:var(--seo);}
+.team-pill.ads{background:var(--ads-soft);color:var(--ads);}
+
+select#datePicker{
+  border:1px solid var(--line);border-radius:8px;padding:7px 12px;
+  font-size:13px;color:var(--ink);background:var(--card);
+  outline:none;cursor:pointer;min-width:180px;
+}
+select#datePicker:focus{border-color:var(--accent);}
+.nav-arrows{display:flex;gap:4px;}
+.nav-arrows button{
+  border:1px solid var(--line);border-radius:7px;
+  width:32px;height:32px;background:var(--card);
+  cursor:pointer;font-size:16px;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;transition:all .12s;
+}
+.nav-arrows button:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.nav-arrows button:disabled{opacity:.3;cursor:default;}
+
+/* ── Log links bar ── */
+.log-links{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.log-link{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:8px;
+  font-size:12px;font-weight:700;text-decoration:none;
+  border:1.5px solid;transition:all .13s;
+}
+.log-link:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.log-link.tec{background:var(--tec-soft);color:var(--tec);border-color:#7dd3fc;}
+.log-link.seo{background:var(--seo-soft);color:var(--seo);border-color:#6ee7b7;}
+.log-link.ads{background:var(--ads-soft);color:var(--ads);border-color:#c4b5fd;}
+
+/* ── Viewer body ── */
+.viewer-body{padding:24px 28px;min-height:320px;}
+.state-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;color:var(--muted);font-size:13.5px;gap:10px;}
+.state-msg .icon{font-size:40px;}
+.state-msg .hint{font-size:12px;color:#94a3b8;}
+
+/* ── Markdown styles ── */
+.md-render h1,.md-render h2,.md-render h3{color:var(--ink);margin-top:22px;margin-bottom:8px;line-height:1.35;}
+.md-render h1{font-size:18px;border-bottom:2px solid var(--line);padding-bottom:6px;margin-top:0;}
+.md-render h2{font-size:15px;border-bottom:1px solid var(--line);padding-bottom:4px;}
+.md-render h3{font-size:13.5px;color:#374151;}
+.md-render p{margin-top:8px;font-size:13.5px;line-height:1.65;}
+.md-render ul,.md-render ol{margin:8px 0 8px 22px;font-size:13.5px;}
+.md-render li{margin-top:4px;line-height:1.6;}
+.md-render strong{color:var(--ink);font-weight:700;}
+.md-render em{color:var(--muted);}
+.md-render hr{border:none;border-top:1px solid var(--line);margin:16px 0;}
+.md-render a{color:var(--accent);text-decoration:none;}
+.md-render a:hover{text-decoration:underline;}
+.md-render blockquote{border-left:3px solid var(--gold);margin:10px 0;padding:6px 14px;background:var(--gold-soft);border-radius:0 6px 6px 0;font-size:13px;color:var(--muted);}
+.md-render code{background:#f1f5f9;border-radius:4px;padding:1px 6px;font-size:12px;font-family:monospace;}
+.md-render pre{background:#f1f5f9;border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:12px;margin:10px 0;}
+.md-render table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0;}
+.md-render th{background:#f0f4f8;padding:8px 10px;text-align:left;border:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.4px;}
+.md-render td{padding:7px 10px;border:1px solid var(--line);}
+.md-render tr:nth-child(even) td{background:#f8fafc;}
+
+/* ── No-member state (welcome) ── */
+.welcome-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:8px;}
+.welcome-card{
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:16px 14px;display:flex;align-items:center;gap:12px;
+  cursor:pointer;transition:all .13s;
+}
+.welcome-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(31,94,255,.1);transform:translateY(-1px);}
+.wc-avatar{
+  width:38px;height:38px;border-radius:8px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;
+}
+.wc-avatar.tec{background:var(--tec);}
+.wc-avatar.seo{background:var(--seo);}
+.wc-avatar.ads{background:var(--ads);}
+.wc-info .wc-name{font-size:13px;font-weight:700;color:var(--ink);}
+.wc-info .wc-team{font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .content{padding:16px;}
+  .topbar{padding:0 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Auth Overlay ── -->
+<div id="auth-overlay" style="position:fixed;inset:0;z-index:9999;background:#0c1a30;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.35);text-align:center;">
+    <div style="width:52px;height:52px;border-radius:12px;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;margin:0 auto 16px;">EOD</div>
+    <div style="font-size:18px;font-weight:700;color:#0f1f33;margin-bottom:4px;">EOD Reports</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:28px;">13 Members · 3 Teams — Authorised access only</div>
+    <div style="text-align:left;margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Username</label>
+      <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div style="text-align:left;margin-bottom:22px;">
+      <label style="font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;">Password</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" style="display:block;width:100%;margin-top:6px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
+    <div id="auth-error" style="display:none;margin-bottom:14px;padding:9px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12.5px;color:#b91c1c;font-weight:600;">Incorrect username or password.</div>
+    <button id="auth-btn" onclick="authCheck()" style="width:100%;padding:12px;border:none;border-radius:9px;background:#7c3aed;color:#fff;font-size:14px;font-weight:700;cursor:pointer;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign In</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY='auth_eod';
+  if(sessionStorage.getItem(KEY)==='1'||sessionStorage.getItem('auth_admin')==='1') document.getElementById('auth-overlay').style.display='none';
+  function setLoading(on){const b=document.getElementById('auth-btn');b.disabled=on;b.textContent=on?'Signing in…':'Sign In';b.style.opacity=on?'.6':'1';}
+  async function authCheck(){
+    const u=document.getElementById('auth-user').value.trim().toLowerCase();
+    const p=document.getElementById('auth-pass').value;
+    document.getElementById('auth-error').style.display='none';
+    if(!u||!p) return;
+    setLoading(true);
+    try{
+      const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,page_key:'eod'})});
+      const d=await r.json();
+      if(d.ok){sessionStorage.setItem(KEY,'1');document.getElementById('auth-overlay').style.display='none';}
+      else{document.getElementById('auth-error').style.display='block';document.getElementById('auth-pass').value='';document.getElementById('auth-pass').focus();}
+    }catch(e){document.getElementById('auth-error').textContent='Network error. Please try again.';document.getElementById('auth-error').style.display='block';}
+    finally{setLoading(false);}
+  }
+  window.authCheck=authCheck;
+  document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('auth-overlay').style.display!=='none')authCheck();});
+  // show logout after successful login
+  new MutationObserver(function(){
+    if(document.getElementById('auth-overlay').style.display==='none')
+      document.getElementById('logout-btn').style.display='flex';
+  }).observe(document.getElementById('auth-overlay'),{attributes:true,attributeFilter:['style']});
+})();
+</script>
+
+<!-- Logout Button -->
+<div id="logout-btn" style="display:none;position:fixed;top:14px;right:18px;z-index:9998;align-items:center;gap:7px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.09);font-family:'Segoe UI',system-ui,sans-serif;transition:all .15s;" onmouseover="this.style.background='#fef2f2';this.style.color='#b91c1c';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fff';this.style.color='#64748b';this.style.borderColor='#e2e8f0';" onclick="sessionStorage.removeItem('auth_eod');location.reload();">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout
+</div>
+<script>
+if(sessionStorage.getItem('auth_eod')==='1') document.getElementById('logout-btn').style.display='flex';
+</script>
+
+<div class="shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="logo">EOD</div>
+      <div class="brand-name">DM Dashboard</div>
+      <div class="brand-sub">EOD Reports</div>
+    </div>
+
+    <div class="sb-scroll">
+
+      <!-- Main nav -->
+      <div class="sb-section">Main</div>
+      <a class="sb-navlink" href="https://digital-marketing-member-pages.vercel.app/">
+        <span class="sb-icon">🏠</span>
+        <span class="sb-label">Home</span>
+      </a>
+      <a class="sb-navlink" href="../index.html">
+        <span class="sb-icon">📁</span>
+        <span class="sb-label">Directory</span>
+      </a>
+
+      <div class="sb-divider"></div>
+
+      <!-- Team Logs -->
+      <div class="sb-section">Team Logs</div>
+      <a class="sb-navlink" href="eod-tec.html">
+        <span class="sb-icon" style="background:rgba(3,105,161,.18);font-size:12px;">⚙</span>
+        <span class="sb-label" style="color:#7dd3fc;">TEC Team Log</span>
+      </a>
+      <a class="sb-navlink" href="eod-seo.html">
+        <span class="sb-icon" style="background:rgba(10,125,79,.18);font-size:12px;">🔍</span>
+        <span class="sb-label" style="color:#6ee7b7;">SEO Team Log</span>
+      </a>
+      <a class="sb-navlink" href="eod-ads.html">
+        <span class="sb-icon" style="background:rgba(124,58,237,.18);font-size:12px;">📊</span>
+        <span class="sb-label" style="color:#c4b5fd;">ADS Team Log</span>
+      </a>
+
+      <div class="sb-divider"></div>
+
+      <!-- TEC Team -->
+      <div class="sb-section">TEC Team</div>
+      <div class="sb-item" data-name="Kuberan" data-team="TEC" onclick="selectMember({name:'Kuberan',team:'TEC'})">
+        <span class="sb-avatar tec">K</span>
+        <span class="sb-name">Kuberan</span>
+        <span class="sb-badge tec">TEC01</span>
+      </div>
+      <div class="sb-item" data-name="Piranav" data-team="TEC" onclick="selectMember({name:'Piranav',team:'TEC'})">
+        <span class="sb-avatar tec">P</span>
+        <span class="sb-name">Piranav</span>
+        <span class="sb-badge tec">TEC02</span>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- SEO Team -->
+      <div class="sb-section">SEO Team</div>
+      <div class="sb-item" data-name="Kamsi" data-team="SEO" onclick="selectMember({name:'Kamsi',team:'SEO'})">
+        <span class="sb-avatar seo">K</span>
+        <span class="sb-name">Kamsi</span>
+        <span class="sb-badge seo">DMKS01</span>
+      </div>
+      <div class="sb-item" data-name="Dilaksi" data-team="SEO" onclick="selectMember({name:'Dilaksi',team:'SEO'})">
+        <span class="sb-avatar seo">D</span>
+        <span class="sb-name">Dilaksi</span>
+        <span class="sb-badge seo">DMKS02</span>
+      </div>
+      <div class="sb-item" data-name="Sukirtha" data-team="SEO" onclick="selectMember({name:'Sukirtha',team:'SEO'})">
+        <span class="sb-avatar seo">S</span>
+        <span class="sb-name">Sukirtha</span>
+        <span class="sb-badge seo">DMKS03</span>
+      </div>
+      <div class="sb-item" data-name="Hetheesha" data-team="SEO" onclick="selectMember({name:'Hetheesha',team:'SEO'})">
+        <span class="sb-avatar seo">H</span>
+        <span class="sb-name">Hetheesha</span>
+        <span class="sb-badge seo">DMKS04</span>
+      </div>
+      <div class="sb-item" data-name="Jakshan" data-team="SEO" onclick="selectMember({name:'Jakshan',team:'SEO'})">
+        <span class="sb-avatar seo">J</span>
+        <span class="sb-name">Jakshan</span>
+        <span class="sb-badge seo">DMKS05</span>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- ADS Team -->
+      <div class="sb-section">ADS Team</div>
+      <div class="sb-item" data-name="Sajeepan" data-team="ADS" onclick="selectMember({name:'Sajeepan',team:'ADS'})">
+        <span class="sb-avatar ads">S</span>
+        <span class="sb-name">Sajeepan</span>
+        <span class="sb-badge ads">DMK001</span>
+      </div>
+      <div class="sb-item" data-name="Sonya" data-team="ADS" onclick="selectMember({name:'Sonya',team:'ADS'})">
+        <span class="sb-avatar ads">S</span>
+        <span class="sb-name">Sonya</span>
+        <span class="sb-badge ads">DMK002</span>
+      </div>
+      <div class="sb-item" data-name="Thivagini" data-team="ADS" onclick="selectMember({name:'Thivagini',team:'ADS'})">
+        <span class="sb-avatar ads">T</span>
+        <span class="sb-name">Thivagini</span>
+        <span class="sb-badge ads">DMK003</span>
+      </div>
+      <div class="sb-item" data-name="Thishoban" data-team="ADS" onclick="selectMember({name:'Thishoban',team:'ADS'})">
+        <span class="sb-avatar ads">T</span>
+        <span class="sb-name">Thishoban</span>
+        <span class="sb-badge ads">DMK004</span>
+      </div>
+      <div class="sb-item" data-name="Mahima" data-team="ADS" onclick="selectMember({name:'Mahima',team:'ADS'})">
+        <span class="sb-avatar ads">M</span>
+        <span class="sb-name">Mahima</span>
+        <span class="sb-badge ads">DMG002</span>
+      </div>
+      <div class="sb-item" data-name="Jefri" data-team="ADS" onclick="selectMember({name:'Jefri',team:'ADS'})">
+        <span class="sb-avatar ads">J</span>
+        <span class="sb-name">Jefri</span>
+        <span class="sb-badge ads">DMG001</span>
+      </div>
+
+    </div><!-- /sb-scroll -->
+
+    <div class="sb-footer">
+      <div class="dev">Developed by <strong>Piranav</strong></div>
+      <div style="font-size:10px;color:#3d5470;margin-top:3px;">AIOS · Digit Web Lanka</div>
+    </div>
+  </aside>
+
+  <!-- ── Main area ── -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar" style="position:relative;">
+      <div class="topbar-gradient"></div>
+      <div class="tb-title" id="tbTitle">EOD Reports &mdash; <span>Digital Marketing Team</span></div>
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        <span id="liveDate">—</span>
+      </div>
+      <button class="btn-refresh" onclick="refreshPage()">↻ Refresh</button>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="content">
+
+      <!-- KPI strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card tec">
+          <div class="kv">2</div>
+          <div class="kl">TEC Members</div>
+        </div>
+        <div class="kpi-card seo">
+          <div class="kv">5</div>
+          <div class="kl">SEO Members</div>
+        </div>
+        <div class="kpi-card ads">
+          <div class="kv">6</div>
+          <div class="kl">ADS Members</div>
+        </div>
+        <div class="kpi-card" style="border-top-color:#c9982a;">
+          <div class="kv">13</div>
+          <div class="kl">Total Members</div>
+        </div>
+        <div class="kpi-card" style="border-top-color:#1a73e8;">
+          <div class="kv" id="kpiFiles" style="font-size:14px;margin-top:3px;">—</div>
+          <div class="kl">EOD Files (Selected)</div>
+        </div>
+        <div class="kpi-card" style="border-top-color:#0a7d4f;">
+          <div class="kv" id="kpiDateRange" style="font-size:13px;margin-top:4px;">—</div>
+          <div class="kl">Date Range</div>
+        </div>
+      </div>
+
+      <!-- Log links -->
+      <div class="log-links">
+        <a class="log-link tec" href="eod-tec.html">⚙ TEC Team Full Log</a>
+        <a class="log-link seo" href="eod-seo.html">🔍 SEO Team Full Log</a>
+        <a class="log-link ads" href="eod-ads.html">📊 ADS Team Full Log</a>
+      </div>
+
+      <!-- EOD Viewer -->
+      <div class="viewer" id="viewer">
+        <div class="viewer-toolbar">
+          <span class="vt-who" id="viewerWho">Select a member from the sidebar</span>
+          <span class="team-pill" id="viewerTeam" style="display:none"></span>
+          <select id="datePicker" style="display:none" onchange="loadEOD()">
+            <option value="">Select date…</option>
+          </select>
+          <div class="nav-arrows">
+            <button id="btnPrev" title="Previous day" disabled onclick="stepDate(-1)">‹</button>
+            <button id="btnNext" title="Next day" disabled onclick="stepDate(1)">›</button>
+          </div>
+        </div>
+        <div class="viewer-body" id="viewerBody">
+          <div class="state-msg">
+            <span class="icon">👈</span>
+            <span>Select a team member from the sidebar to view their EOD reports.</span>
+            <span class="hint">Source: GitHub · digitalmarketing69140951-sys/eod-reports</span>
+
+            <!-- Quick-select welcome grid -->
+            <div class="welcome-grid" style="width:100%;max-width:780px;">
+              <div class="welcome-card" onclick="selectMember({name:'Kuberan',team:'TEC'})">
+                <span class="wc-avatar tec">K</span>
+                <div class="wc-info"><div class="wc-name">Kuberan</div><div class="wc-team">TEC Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Piranav',team:'TEC'})">
+                <span class="wc-avatar tec">P</span>
+                <div class="wc-info"><div class="wc-name">Piranav</div><div class="wc-team">TEC Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Kamsi',team:'SEO'})">
+                <span class="wc-avatar seo">K</span>
+                <div class="wc-info"><div class="wc-name">Kamsi</div><div class="wc-team">SEO Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Dilaksi',team:'SEO'})">
+                <span class="wc-avatar seo">D</span>
+                <div class="wc-info"><div class="wc-name">Dilaksi</div><div class="wc-team">SEO Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Sukirtha',team:'SEO'})">
+                <span class="wc-avatar seo">S</span>
+                <div class="wc-info"><div class="wc-name">Sukirtha</div><div class="wc-team">SEO Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Hetheesha',team:'SEO'})">
+                <span class="wc-avatar seo">H</span>
+                <div class="wc-info"><div class="wc-name">Hetheesha</div><div class="wc-team">SEO Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Jakshan',team:'SEO'})">
+                <span class="wc-avatar seo">J</span>
+                <div class="wc-info"><div class="wc-name">Jakshan</div><div class="wc-team">SEO Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Sajeepan',team:'ADS'})">
+                <span class="wc-avatar ads">S</span>
+                <div class="wc-info"><div class="wc-name">Sajeepan</div><div class="wc-team">ADS Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Sonya',team:'ADS'})">
+                <span class="wc-avatar ads">S</span>
+                <div class="wc-info"><div class="wc-name">Sonya</div><div class="wc-team">ADS Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Thivagini',team:'ADS'})">
+                <span class="wc-avatar ads">T</span>
+                <div class="wc-info"><div class="wc-name">Thivagini</div><div class="wc-team">ADS Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Thishoban',team:'ADS'})">
+                <span class="wc-avatar ads">T</span>
+                <div class="wc-info"><div class="wc-name">Thishoban</div><div class="wc-team">ADS Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Mahima',team:'ADS'})">
+                <span class="wc-avatar ads">M</span>
+                <div class="wc-info"><div class="wc-name">Mahima</div><div class="wc-team">ADS Team</div></div>
+              </div>
+              <div class="welcome-card" onclick="selectMember({name:'Jefri',team:'ADS'})">
+                <span class="wc-avatar ads">J</span>
+                <div class="wc-info"><div class="wc-name">Jefri</div><div class="wc-team">ADS Team</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+</div><!-- /shell -->
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const GH_OWNER = 'digitalmarketing69140951-sys';
+const GH_REPO  = 'eod-reports';
+const GH_API   = 'https://api.github.com';
+
+function ghHeaders() {
+  return { 'Accept':'application/vnd.github.v3+json','User-Agent':'staff-eod-dashboard' };
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentMember = null;
+let currentDates  = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('liveDate').textContent =
+  new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+function refreshPage() { location.reload(); }
+
+// ── Sidebar active state ───────────────────────────────────────────────────────
+function setActiveSidebar(name) {
+  document.querySelectorAll('.sb-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.name === name);
+  });
+}
+
+// ── Member selection ──────────────────────────────────────────────────────────
+async function selectMember(m) {
+  currentMember = m;
+  currentDates  = [];
+  setActiveSidebar(m.name);
+
+  const teamClass = m.team.toLowerCase();
+
+  // Update topbar
+  document.getElementById('tbTitle').innerHTML =
+    `EOD Reports &mdash; <span>${m.name}</span>`;
+
+  // Update viewer toolbar
+  document.getElementById('viewerWho').textContent = m.name;
+  const pill = document.getElementById('viewerTeam');
+  pill.textContent = m.team + ' Team';
+  pill.className = 'team-pill ' + teamClass;
+  pill.style.display = '';
+
+  const picker = document.getElementById('datePicker');
+  picker.style.display = 'none';
+  picker.innerHTML = '<option value="">Loading dates…</option>';
+  document.getElementById('btnPrev').disabled = true;
+  document.getElementById('btnNext').disabled = true;
+  document.getElementById('kpiFiles').textContent = '…';
+  document.getElementById('kpiDateRange').textContent = '…';
+
+  setViewerBody(`<div class="state-msg"><span class="icon">⏳</span><span>Loading available dates for ${m.name}…</span></div>`);
+
+  const res = await fetch(
+    `${GH_API}/repos/${GH_OWNER}/${GH_REPO}/contents/eods/${encodeURIComponent(m.name)}`,
+    { headers: ghHeaders() }
+  );
+
+  if (!res.ok) {
+    setViewerBody(`<div class="state-msg"><span class="icon">⚠️</span><span>Could not load dates (GitHub ${res.status}). Rate limit may apply — try again in a minute.</span></div>`);
+    document.getElementById('kpiFiles').textContent = '—';
+    document.getElementById('kpiDateRange').textContent = '—';
+    return;
+  }
+
+  const files = await res.json();
+  currentDates = files
+    .filter(f => f.name.endsWith('.md'))
+    .map(f => f.name.replace('.md',''))
+    .sort()
+    .reverse();
+
+  picker.innerHTML = currentDates.map(d => `<option value="${d}">${fmtDate(d)}</option>`).join('');
+  picker.style.display = '';
+  setBtnState();
+
+  // KPI update
+  document.getElementById('kpiFiles').textContent = currentDates.length + ' files';
+  if (currentDates.length) {
+    const sorted = [...currentDates].sort();
+    document.getElementById('kpiDateRange').textContent =
+      fmtShort(sorted[0]) + ' – ' + fmtShort(sorted[sorted.length-1]);
+  }
+
+  if (currentDates.length) loadEOD();
+  else setViewerBody('<div class="state-msg"><span class="icon">📭</span><span>No EOD reports found for this member.</span></div>');
+}
+
+// ── Date navigation ───────────────────────────────────────────────────────────
+function stepDate(dir) {
+  const picker = document.getElementById('datePicker');
+  const idx = currentDates.indexOf(picker.value);
+  const next = idx + dir;
+  if (next >= 0 && next < currentDates.length) {
+    picker.value = currentDates[next];
+    loadEOD();
+  }
+}
+
+function setBtnState() {
+  const picker = document.getElementById('datePicker');
+  const idx = currentDates.indexOf(picker.value);
+  document.getElementById('btnPrev').disabled = (idx <= 0);
+  document.getElementById('btnNext').disabled = (idx < 0 || idx >= currentDates.length - 1);
+}
+
+// ── EOD load + render ─────────────────────────────────────────────────────────
+async function loadEOD() {
+  const picker = document.getElementById('datePicker');
+  const date = picker.value;
+  if (!date || !currentMember) return;
+  setBtnState();
+
+  setViewerBody('<div class="state-msg"><span class="icon">⏳</span><span>Loading EOD report…</span></div>');
+
+  const res = await fetch(
+    `${GH_API}/repos/${GH_OWNER}/${GH_REPO}/contents/eods/${encodeURIComponent(currentMember.name)}/${date}.md`,
+    { headers: ghHeaders() }
+  );
+
+  if (res.status === 404) {
+    setViewerBody('<div class="state-msg"><span class="icon">📭</span><span>No EOD report was submitted for this date.</span></div>');
+    return;
+  }
+  if (!res.ok) {
+    setViewerBody(`<div class="state-msg"><span class="icon">⚠️</span><span>GitHub error ${res.status} — rate limit may apply.</span></div>`);
+    return;
+  }
+
+  const data = await res.json();
+  const md   = atob(data.content.replace(/\n/g,''));
+  setViewerBody(`<div class="md-render">${mdToHtml(md)}</div>`);
+}
+
+function setViewerBody(html) { document.getElementById('viewerBody').innerHTML = html; }
+
+// ── Markdown renderer ─────────────────────────────────────────────────────────
+function mdToHtml(md) {
+  let h = escHtml(md);
+  h = h.replace(/```[\s\S]*?```/g, m => { const i=m.slice(3,-3).replace(/^\w+\n/,''); return `<pre><code>${i}</code></pre>`; });
+  h = h.replace(/`([^`]+)`/g,'<code>$1</code>');
+  h = h.replace(/^#### (.+)$/gm,'<h4>$1</h4>');
+  h = h.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  h = h.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  h = h.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  h = h.replace(/^---+$/gm,'<hr>');
+  h = h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  h = h.replace(/\*([^*]+)\*/g,'<em>$1</em>');
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  h = h.replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>');
+  h = h.replace(/((?:^- .+\n?)+)/gm, m => `<ul>${m.trim().split('\n').map(l=>`<li>${l.replace(/^- /,'')}</li>`).join('')}</ul>`);
+  h = h.replace(/((?:^\d+\. .+\n?)+)/gm, m => `<ol>${m.trim().split('\n').map(l=>`<li>${l.replace(/^\d+\. /,'')}</li>`).join('')}</ol>`);
+  h = h.replace(/((?:^\|.+\|\n?)+)/gm, m => {
+    const rows = m.trim().split('\n').filter(r => !/^\|[-| :]+\|$/.test(r.trim()));
+    if (rows.length < 2) return m;
+    const [head,...body] = rows;
+    const th = head.split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');
+    const trs = body.map(r=>`<tr>${r.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('')}</tr>`).join('');
+    return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
+  });
+  h = h.replace(/^(?!<[a-z]).+$/gm, m => `<p>${m}</p>`);
+  h = h.replace(/(<\/(?:h[1-6]|p|ul|ol|hr|blockquote|table|pre)>)\s*(<(?:h[1-6]|p|ul|ol|hr|blockquote|table|pre))/g,'$1$2');
+  return h;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtDate(d) {
+  try { return new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}); }
+  catch { return d; }
+}
+function fmtShort(d) {
+  try { return new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit',timeZone:'UTC'}); }
+  catch { return d; }
+}
+</script>
+</body>
+</html>
