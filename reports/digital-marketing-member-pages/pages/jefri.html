@@ -488,9 +488,11 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
       <thead style="position:sticky;top:0;z-index:5;"><tr>
         <th>Level</th>
         <th data-k="parentProductId">Parent Product ID</th>
+        <th data-k="sku">SKU</th>
+        <th class="num" data-k="totalSales">Total Sales (Store)</th>
         <th data-k="itemId">Item ID</th>
       </tr></thead>
-      <tbody id="r4tbody"><tr><td colspan="3" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+      <tbody id="r4tbody"><tr><td colspan="5" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r4empty" style="display:none;">No items match the current filters.</div>
@@ -513,7 +515,9 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <strong>Scope:</strong> every distinct Item ID Jefri's 5 campaigns have EVER had (no date window &mdash; "gather all") &mdash; not just currently-active products.<br>
   <strong>Parent Product ID resolution:</strong> if the Item ID itself resolves to a Shopify PARENT listing, Parent Product ID = that same Item ID. If it resolves to a Shopify VARIANT (child) listing, Parent Product ID is looked up via <code>listings.shopify_listings_parent_child_mapping</code>. Confirmed live: 100% of matched variants (4,543/4,543) resolve to exactly one parent &mdash; no many-to-one conflicts for Jefri's items.<br>
   <strong>Default row order:</strong> grouped by parent &mdash; each Parent (Rollup) row is followed immediately by its own Variant rows, then the next parent group. Unmatched rows (no parent to group under) are sorted last. Clicking a column header to sort overrides this grouping.<br>
-  <strong>Unmatched rows (Parent Product ID blank):</strong> the Item ID does not correspond to any Shopify product/variant ID in this database at all &mdash; confirmed to be 17&ndash;20 digit IDs (real Shopify IDs are 13&ndash;14 digits), concentrated in one campaign ("Shoparize ALL | All Products"). This is a genuine data gap, not a query failure &mdash; these rows are shown, not hidden, so the gap stays visible.
+  <strong>Unmatched rows (Parent Product ID blank):</strong> the Item ID does not correspond to any Shopify product/variant ID in this database at all &mdash; confirmed to be 17&ndash;20 digit IDs (real Shopify IDs are 13&ndash;14 digits), concentrated in one campaign ("Shoparize ALL | All Products"). This is a genuine data gap, not a query failure &mdash; these rows are shown, not hidden, so the gap stays visible.<br>
+  <strong>SKU:</strong> from <code>listings.shopify_listings.sku</code>. Only populated on Variant rows &mdash; Shopify assigns SKU to child/variant listings only, so Parent (Rollup) rows correctly show "N/A (multiple SKUs)" rather than an invented single SKU.<br>
+  <strong>Total Sales (Store):</strong> <strong>GROSS</strong> revenue &mdash; <code>SUM(item_price &times; item_quantity)</code> from <code>order_management.order_item_info</code>, joined to <code>orders</code> where <code>status='Completed'</code> (excludes Refunded/Cancelled/Inprogress/New) and <code>sub_source_id=108</code> (Shopify ledsone-de). <strong>Not net-of-tax</strong> &mdash; a different "netSales" definition exists elsewhere in this codebase for a different store; which definition T-04 should ultimately use is an open decision, see <code>evidence/jefri/T-04-data-discovery.md</code>. Currently <strong>all-time</strong> (no date range picker yet, matching this tab's "gather all" scope) &mdash; date filtering is a later build step. Parent (Rollup) Total Sales = every Completed order line sharing that Parent Product ID (this already includes all its variants' sales; not separately re-summed from the Variant rows). Shows &euro;0.00 (a real zero) for a matched Parent/Variant with no completed orders &mdash; N/A is reserved for Unmatched rows only, where Total Sales genuinely cannot be computed.
 </div>
 </div>
 
@@ -1251,9 +1255,12 @@ function r4Render(){
 
   tbody.innerHTML = pageRows.map(function(r){
     const levelLabel = r.level === 'Parent' ? 'Parent (Rollup)' : (r.level === 'Variant' ? 'Variant' : 'Unmatched');
+    const skuCell = r.sku ? esc(r.sku) : (r.level === 'Parent' ? '<span style="color:var(--na);">N/A (multiple SKUs)</span>' : '<span style="color:var(--na);">N/A</span>');
     return '<tr>' +
       '<td>' + esc(levelLabel) + '</td>' +
       '<td>' + (r.parentProductId ? esc(r.parentProductId) : '<span style="color:var(--na);">N/A &mdash; no Shopify match</span>') + '</td>' +
+      '<td>' + skuCell + '</td>' +
+      '<td class="num">' + (r.level === 'Unmatched' ? '<span style="color:var(--na);">N/A</span>' : eur(r.totalSales != null ? r.totalSales : 0)) + '</td>' +
       '<td>' + esc(r.itemId) + '</td>' +
       '</tr>';
   }).join('');
@@ -1266,9 +1273,11 @@ function r4Render(){
 
 function r4ExportCsv(){
   const rows = r4FilteredRows();
-  const lines = ['Parent Product ID,Item ID'];
+  const lines = ['Level,Parent Product ID,SKU,Total Sales (Store),Item ID'];
   rows.forEach(function(r){
-    lines.push([r.parentProductId || '', r.itemId].map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','));
+    const levelLabel = r.level === 'Parent' ? 'Parent (Rollup)' : (r.level === 'Variant' ? 'Variant' : 'Unmatched');
+    const totalSalesCsv = r.level === 'Unmatched' ? '' : (r.totalSales != null ? r.totalSales : 0);
+    lines.push([levelLabel, r.parentProductId || '', r.sku || '', totalSalesCsv, r.itemId].map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','));
   });
   const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
   const a = document.createElement('a');

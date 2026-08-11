@@ -5040,6 +5040,29 @@ child_to_parent AS (
   SELECT m.child_id AS listing_pk, p.item_id AS parent_product_id
   FROM listings.shopify_listings_parent_child_mapping m
   JOIN listings.shopify_listings p ON p.id = m.parent_id
+),
+-- Total Sales (Store): gross line-item revenue (item_price x item_quantity),
+-- status='Completed' (excludes Refunded/Cancelled/Inprogress/New), Shopify
+-- DE only (sub_source_id=108). All-time, matching this tab's "gather all"
+-- scope (no date picker yet — same limitation as the Item ID list itself).
+-- Parent rollup = SUM of every order line sharing that Parent Product ID
+-- (order_item_info.product_id is shared across all its variants, so this
+-- already IS the full rollup — proven, not re-summed from child rows).
+-- Documented as GROSS, not net-of-tax — see evidence/jefri/T-04-data-discovery.md
+-- for the unresolved gross-vs-net decision.
+parent_sales AS (
+  SELECT oii.product_id, SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS total_sales
+  FROM order_management.orders o
+  JOIN order_management.order_item_info oii ON oii.order_id = o.id
+  WHERE o.sub_source_id = 108 AND o.status = 'Completed'
+  GROUP BY oii.product_id
+),
+variant_sales AS (
+  SELECT oii.variant_id, SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS total_sales
+  FROM order_management.orders o
+  JOIN order_management.order_item_info oii ON oii.order_id = o.id
+  WHERE o.sub_source_id = 108 AND o.status = 'Completed'
+  GROUP BY oii.variant_id
 )
 SELECT
   m.product_item_id AS item_id,
@@ -5049,9 +5072,16 @@ SELECT
     ELSE NULL
   END AS parent_product_id,
   CASE WHEN m.is_parent = 1 THEN 'Parent' WHEN m.is_child = 1 THEN 'Variant' ELSE 'Unmatched' END AS level,
-  m.sku
+  m.sku,
+  CASE
+    WHEN m.is_parent = 1 THEN ps.total_sales
+    WHEN m.is_child = 1 THEN vs.total_sales
+    ELSE NULL
+  END AS total_sales
 FROM matched m
 LEFT JOIN child_to_parent ctp ON ctp.listing_pk = m.listing_pk
+LEFT JOIN parent_sales ps ON m.is_parent = 1 AND ps.product_id = m.matched_shopify_id
+LEFT JOIN variant_sales vs ON m.is_child = 1 AND vs.variant_id = m.matched_shopify_id
 ORDER BY
   COALESCE(CASE WHEN m.is_parent = 1 THEN m.matched_shopify_id WHEN m.is_child = 1 THEN ctp.parent_product_id ELSE NULL END, '~unmatched') ASC,
   CASE WHEN m.is_parent = 1 THEN 0 WHEN m.is_child = 1 THEN 1 ELSE 2 END ASC,
@@ -5085,6 +5115,7 @@ ORDER BY
         parentProductId: r.parent_product_id,
         level: r.level,
         sku: r.sku || null,
+        totalSales: r.total_sales !== null && r.total_sales !== undefined ? Number(r.total_sales) : null,
       }));
       const payload = {
         generatedAt: new Date().toISOString(),
