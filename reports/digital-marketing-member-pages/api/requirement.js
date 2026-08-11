@@ -5135,6 +5135,21 @@ ORDER BY
         res.status(200).json(cached.data);
         return;
       }
+      // Static snapshot — same pattern as jefri-product-status/jefri-req3/
+      // jefri-search-terms (see api/scripts/generate-snapshots.js "postgres"
+      // mode, hourly cron). This query is a full-table 8,073-row scan with
+      // two nested Postgres aggregations, too slow to run on every cold
+      // start; the snapshot survives cold starts, unlike CACHE above.
+      const fs = require('fs');
+      const path = require('path');
+      const staticPath = path.join(__dirname, 'data', 'jefri-req4-mapping-snapshot.json');
+      if (fs.existsSync(staticPath)) {
+        const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+        const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+        CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+        res.status(200).json(payload);
+        return;
+      }
     }
     const client = await getPool().connect().catch((err) => {
       console.error('[jefri/req4-mapping] DB connect failed:', err && err.message);

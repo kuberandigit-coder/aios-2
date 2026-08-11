@@ -70,6 +70,7 @@ const POSTGRES_ENDPOINTS = [
   { fn: 'jefri-product-status', outFile: 'jefri-product-status-snapshot.json' },
   { fn: 'jefri-search-terms', outFile: 'jefri-search-terms-snapshot.json' },
   { fn: 'jefri-req3', outFile: 'jefri-req3-snapshot.json' },
+  { fn: 'jefri-req4-mapping', outFile: 'jefri-req4-mapping-snapshot.json' },
   { fn: 'mahima-req1', outFile: 'mahima-req1-snapshot.json' },
   { fn: 'mahima-req2', outFile: 'mahima-req2-snapshot.json' },
   { fn: 'mahima-search-terms', outFile: 'mahima-search-terms-snapshot.json' },
