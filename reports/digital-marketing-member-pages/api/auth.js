@@ -94,6 +94,8 @@ const ROLE_LANDING = {
   thivajini: 'pages/thivajini.html',
   hetheesha: 'pages/hetheesha.html',
   jakshan: 'pages/jakshan.html',
+  kuberan: 'pages/kuberan.html',
+  piranav: 'pages/piranav.html',
 };
 
 async function readJsonBody(req) {
@@ -119,7 +121,7 @@ async function handleLogin(req, res) {
   }
 
   const db = getPool();
-  const { rows } = await db.query('SELECT id, username, password_hash, role, staff_key, display_name FROM users WHERE username = $1', [username]);
+  const { rows } = await db.query('SELECT id, username, password_hash, role, staff_key, display_name, can_manage_users FROM users WHERE username = $1', [username]);
   const user = rows[0];
 
   // Constant-shape response timing: still run a bcrypt compare even on
@@ -137,6 +139,7 @@ async function handleLogin(req, res) {
     username: user.username,
     role: user.role,
     staff_key: user.staff_key,
+    can_manage_users: !!user.can_manage_users,
     exp: Date.now() + SESSION_TTL_MS,
   });
   setSessionCookie(res, token, SESSION_TTL_MS);
@@ -146,7 +149,7 @@ async function handleLogin(req, res) {
   const redirect = ROLE_LANDING[user.staff_key] || null;
   return res.status(200).json({
     success: true,
-    user: { username: user.username, role: user.role, staff_key: user.staff_key, display_name: user.display_name },
+    user: { username: user.username, role: user.role, staff_key: user.staff_key, display_name: user.display_name, can_manage_users: !!user.can_manage_users },
     redirect,
   });
 }
@@ -157,12 +160,44 @@ async function handleSession(req, res) {
   if (!session) return res.status(401).json({ success: false, error: 'Not authenticated.' });
   return res.status(200).json({
     success: true,
-    user: { username: session.username, role: session.role, staff_key: session.staff_key },
+    user: { username: session.username, role: session.role, staff_key: session.staff_key, can_manage_users: !!session.can_manage_users },
   });
 }
 
 function handleLogout(req, res) {
   clearSessionCookie(res);
+  return res.status(200).json({ success: true });
+}
+
+async function handleListUsers(req, res) {
+  const cookies = parseCookies(req);
+  const session = verify(cookies[COOKIE_NAME]);
+  if (!session || session.role !== 'admin') {
+    return res.status(401).json({ success: false, error: 'Not authenticated.' });
+  }
+  const db = getPool();
+  const { rows } = await db.query(
+    'SELECT id, username, role, staff_key, display_name, can_manage_users, last_login_at FROM users ORDER BY id'
+  );
+  return res.status(200).json({ success: true, users: rows });
+}
+
+async function handleUpdatePassword(req, res) {
+  const cookies = parseCookies(req);
+  const session = verify(cookies[COOKIE_NAME]);
+  if (!session || !session.can_manage_users) {
+    return res.status(403).json({ success: false, error: 'Not authorized.' });
+  }
+  const body = await readJsonBody(req);
+  const targetUsername = (body.target_username || '').toString().trim().toLowerCase();
+  const newPassword = (body.new_password || '').toString();
+  if (!targetUsername || !newPassword || newPassword.length < 8) {
+    return res.status(400).json({ success: false, error: 'target_username and a new_password (8+ chars) are required.' });
+  }
+  const db = getPool();
+  const hash = await bcrypt.hash(newPassword, 12);
+  const { rowCount } = await db.query('UPDATE users SET password_hash = $1 WHERE username = $2', [hash, targetUsername]);
+  if (!rowCount) return res.status(404).json({ success: false, error: 'User not found.' });
   return res.status(200).json({ success: true });
 }
 
@@ -173,6 +208,8 @@ module.exports = async function handler(req, res) {
     if (action === 'login' && req.method === 'POST') return await handleLogin(req, res);
     if (action === 'session' && req.method === 'GET') return await handleSession(req, res);
     if (action === 'logout' && req.method === 'POST') return handleLogout(req, res);
+    if (action === 'list-users' && req.method === 'GET') return await handleListUsers(req, res);
+    if (action === 'update-password' && req.method === 'POST') return await handleUpdatePassword(req, res);
     return res.status(400).json({ success: false, error: 'Unknown action or wrong HTTP method.' });
   } catch (err) {
     console.error('auth.js error:', err);

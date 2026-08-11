@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piranav — DM Admin</title>
+<style>html{visibility:hidden;}</style>
+<script>
+(function () {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/auth?action=session', false);
+    xhr.withCredentials = true;
+    xhr.send(null);
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      if (data && data.success && data.user && data.user.staff_key === 'piranav') {
+        window.__dmUser = data.user;
+        document.documentElement.style.visibility = 'visible';
+        return;
+      }
+    }
+  } catch (e) { /* fall through to login */ }
+  window.location.replace('../login.html');
+})();
+</script>
+<style>
+:root{--navy:#0c1a30;--gold:#c9a227;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--good-soft:#e6f6ec;--bad:#c62828;--bad-soft:#fdecea;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+header{background:var(--navy);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;}
+header .brand{font-weight:700;font-size:16px;letter-spacing:.3px;}
+header .brand span{color:var(--gold);}
+header .who{font-size:12.5px;color:#aab4c8;}
+#logoutBtn{background:transparent;border:1px solid #3a4a6b;color:#cdd5e6;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12.5px;margin-left:14px;}
+#logoutBtn:hover{background:#16223d;}
+.wrap{max-width:1100px;margin:0 auto;padding:28px;}
+.tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);}
+.tab{padding:10px 18px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.panel{display:none;}
+.panel.active{display:block;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;}
+h2{font-size:15px;margin-bottom:14px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.pagelink{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px;background:#fafbfd;transition:border-color .15s,background .15s;}
+.pagelink:hover{border-color:var(--accent);background:var(--accent-soft);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge.admin{background:var(--accent-soft);color:var(--accent);}
+.badge.staff{background:#eef1f6;color:var(--muted);}
+.pwbtn{padding:5px 12px;border:1px solid var(--accent);border-radius:7px;background:#fff;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600;}
+.pwbtn:hover{background:var(--accent-soft);}
+.msg{font-size:12.5px;margin-top:10px;}
+.msg.ok{color:var(--good);}
+.msg.err{color:var(--bad);}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">LEDSone <span>DM Admin</span></div>
+  <div style="display:flex;align-items:center;">
+    <span class="who" id="whoLbl"></span>
+    <button id="logoutBtn">Log Out</button>
+  </div>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-panel="pagesPanel">Requirement Pages</div>
+    <div class="tab" data-panel="usersPanel">Users</div>
+  </div>
+
+  <div class="panel active" id="pagesPanel">
+    <div class="card">
+      <h2>All Staff Requirement Pages</h2>
+      <div class="grid" id="pagesGrid"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="usersPanel">
+    <div class="card">
+      <h2>All Users</h2>
+      <table>
+        <thead><tr><th>Username</th><th>Display Name</th><th>Role</th><th>Last Login</th><th></th></tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+      <div class="msg" id="usersMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var STAFF_PAGES = [
+  ['jefri','Jefri'],['dilaksi','Dilaksi'],['kamsi','Kamsi'],['mahima','Mahima'],
+  ['thasitha','Thasitha'],['sukirtha','Sukirtha'],['sonya','Sonya'],['sajeepan','Sajeepan'],
+  ['theekshy','Theekshy'],['thivajini','Thivajini'],['hetheesha','Hetheesha'],['jakshan','Jakshan']
+];
+
+(function initUI() {
+  var u = window.__dmUser || {};
+  document.getElementById('whoLbl').textContent = (u.display_name || u.username || '') + ' (admin)';
+
+  var grid = document.getElementById('pagesGrid');
+  STAFF_PAGES.forEach(function (p) {
+    var a = document.createElement('a');
+    a.className = 'pagelink';
+    a.href = p[0] + '.html';
+    a.textContent = p[1];
+    grid.appendChild(a);
+  });
+  var muguntha = document.createElement('a');
+  muguntha.className = 'pagelink';
+  muguntha.href = 'muguntha.html';
+  muguntha.textContent = 'Muguntha (Admin Dashboard)';
+  grid.appendChild(muguntha);
+
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById(tab.getAttribute('data-panel')).classList.add('active');
+      if (tab.getAttribute('data-panel') === 'usersPanel') loadUsers();
+    });
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function () {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/auth?action=logout', true);
+    xhr.withCredentials = true;
+    xhr.onload = function () { window.location.replace('../login.html'); };
+    xhr.send(null);
+  });
+})();
+
+function loadUsers() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/auth?action=list-users', true);
+  xhr.withCredentials = true;
+  xhr.onload = function () {
+    var msg = document.getElementById('usersMsg');
+    if (xhr.status !== 200) { msg.textContent = 'Failed to load users.'; msg.className = 'msg err'; return; }
+    var data = JSON.parse(xhr.responseText);
+    if (!data.success) { msg.textContent = data.error || 'Failed to load users.'; msg.className = 'msg err'; return; }
+    msg.textContent = ''; msg.className = 'msg';
+    var body = document.getElementById('usersBody');
+    body.innerHTML = '';
+    data.users.forEach(function (u) {
+      var tr = document.createElement('tr');
+      var last = u.last_login_at ? new Date(u.last_login_at).toLocaleString() : '—';
+      tr.innerHTML =
+        '<td>' + u.username + '</td>' +
+        '<td>' + (u.display_name || '') + '</td>' +
+        '<td><span class="badge ' + (u.role === 'admin' ? 'admin' : 'staff') + '">' + u.role + '</span></td>' +
+        '<td>' + last + '</td>' +
+        '<td></td>';
+      var td = tr.lastElementChild;
+      var btn = document.createElement('button');
+      btn.className = 'pwbtn';
+      btn.textContent = 'Change Password';
+      btn.addEventListener('click', function () { changePassword(u.username); });
+      td.appendChild(btn);
+      body.appendChild(tr);
+    });
+  };
+  xhr.send(null);
+}
+
+function changePassword(username) {
+  var pw = window.prompt('New password for "' + username + '" (min 8 characters):');
+  if (!pw) return;
+  if (pw.length < 8) { window.alert('Password must be at least 8 characters.'); return; }
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/auth?action=update-password', true);
+  xhr.withCredentials = true;
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function () {
+    var msg = document.getElementById('usersMsg');
+    if (xhr.status === 200) {
+      msg.textContent = 'Password updated for ' + username + '.';
+      msg.className = 'msg ok';
+    } else {
+      var data = {};
+      try { data = JSON.parse(xhr.responseText); } catch (e) {}
+      msg.textContent = data.error || 'Failed to update password.';
+      msg.className = 'msg err';
+    }
+  };
+  xhr.send(JSON.stringify({ target_username: username, new_password: pw }));
+}
+</script>
+</body>
+</html>
