@@ -149,16 +149,15 @@ tbody tr:hover td:first-child{color:var(--accent);}
     <div class="txt brand-txt"><b>LEDSone</b><span>DM Dashboard</span></div>
   </div>
 
-  <div class="navlabel">Main</div>
-  <ul class="navlist">
-    <li><a href="../home.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span class="lbl">Overview</span></a></li>
-    <li><a href="./sales2.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><span class="lbl">Sales</span></a></li>
-    <li><a href="./cost.html"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span><span class="lbl">Cost Dashboard</span></a></li>
+  <div class="navlabel">Overview</div>
+  <ul class="navlist" id="mgOverviewNav">
+    <li><a href="#" data-tab="pages" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span class="lbl">Requirement Pages</span></a></li>
+    <li><a href="#" data-tab="users"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="lbl">Users</span></a></li>
   </ul>
 
   <div class="navlabel">Performance Analysis</div>
   <ul class="navlist">
-    <li><a href="#" id="perfAnalysisLink" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Performance</span></a></li>
+    <li><a href="#" id="perfAnalysisLink"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="lbl">Performance</span></a></li>
   </ul>
 
   <div class="navlabel">Tools</div>
@@ -402,6 +401,25 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
       </div>
     </div>
   </div>
+
+  <div class="content" id="tabPanelPages" style="display:none;">
+    <div class="tablebox" style="padding:22px 24px;">
+      <h2 style="font-size:15px;margin-bottom:14px;">All Staff Requirement Pages</h2>
+      <div id="mgPagesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+    </div>
+  </div>
+
+  <div class="content" id="tabPanelUsers" style="display:none;">
+    <div class="tablebox" style="padding:22px 24px;">
+      <h2 style="font-size:15px;margin-bottom:14px;">All Users</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr><th style="text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);">Username</th><th style="text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);">Display Name</th><th style="text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);">Role</th><th style="text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);">Last Login</th></tr></thead>
+        <tbody id="mgUsersBody"></tbody>
+      </table>
+      <div id="mgUsersMsg" style="font-size:12.5px;margin-top:10px;"></div>
+    </div>
+  </div>
+
   <div id="mgToolFrame" style="display:none;height:calc(100vh - 100px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
     <iframe id="mgToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
   </div>
@@ -680,7 +698,7 @@ const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriF
 const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-placeholder'];
 
 function selectMember(key){
-  mgShowContent();
+  mgShowView('performance');
   document.querySelectorAll('.sidebar .navlist a').forEach((a) => a.classList.remove('active'));
   document.getElementById('perfAnalysisLink').classList.add('active');
   const sel = document.getElementById('memberSelect');
@@ -732,8 +750,17 @@ document.getElementById('perfAnalysisLink').addEventListener('click', (e) => {
   selectMember(document.getElementById('memberSelect').value || 'sonya');
 });
 
+function mgShowView(view){
+  document.body.classList.remove('tool-open');
+  document.querySelector('.topbar').style.display = (view === 'performance') ? '' : 'none';
+  document.getElementById('mgContentArea').style.display = (view === 'performance') ? '' : 'none';
+  document.getElementById('tabPanelPages').style.display = (view === 'pages') ? '' : 'none';
+  document.getElementById('tabPanelUsers').style.display = (view === 'users') ? '' : 'none';
+  document.getElementById('mgToolFrame').style.display = 'none';
+}
+
 function mgShowTool(url){
-  document.getElementById('mgContentArea').style.display = 'none';
+  mgShowView('tool');
   const frame = document.getElementById('mgToolFrame');
   const iframe = document.getElementById('mgToolFrameIframe');
   if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
@@ -741,9 +768,7 @@ function mgShowTool(url){
   document.body.classList.add('tool-open');
 }
 function mgShowContent(){
-  document.body.classList.remove('tool-open');
-  document.getElementById('mgToolFrame').style.display = 'none';
-  document.getElementById('mgContentArea').style.display = '';
+  selectMember(document.getElementById('memberSelect').value || 'sonya');
 }
 document.querySelectorAll('.sidebar a[data-tool]').forEach((a) => {
   a.addEventListener('click', (e) => {
@@ -754,6 +779,68 @@ document.querySelectorAll('.sidebar a[data-tool]').forEach((a) => {
     mgShowTool(a.getAttribute('data-tool'));
   });
 });
+
+var MG_STAFF_PAGES = [
+  ['jefri','Jefri'],['dilaksi','Dilaksi'],['kamsi','Kamsi'],['mahima','Mahima'],
+  ['thasitha','Thasitha'],['sukirtha','Sukirtha'],['sonya','Sonya'],['sajeepan','Sajeepan'],
+  ['theekshy','Theekshy'],['thivajini','Thivajini'],['hetheesha','Hetheesha'],['jakshan','Jakshan']
+];
+(function buildMgPagesGrid(){
+  var grid = document.getElementById('mgPagesGrid');
+  MG_STAFF_PAGES.forEach(function (p) {
+    var a = document.createElement('a');
+    a.href = p[0] + '.html';
+    a.textContent = p[1];
+    a.style.cssText = 'display:block;padding:14px 16px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px;background:#fafbfd;';
+    grid.appendChild(a);
+  });
+  [['kuberan.html','Kuberan (Admin)'],['piranav.html','Piranav (Admin)']].forEach(function (p) {
+    var a = document.createElement('a');
+    a.href = p[0];
+    a.textContent = p[1];
+    a.style.cssText = 'display:block;padding:14px 16px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px;background:#fafbfd;';
+    grid.appendChild(a);
+  });
+})();
+
+var mgUsersLoaded = false;
+function loadMgUsers() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/auth?action=list-users', true);
+  xhr.withCredentials = true;
+  xhr.onload = function () {
+    var msg = document.getElementById('mgUsersMsg');
+    if (xhr.status !== 200) { msg.textContent = 'Failed to load users.'; return; }
+    var data = JSON.parse(xhr.responseText);
+    if (!data.success) { msg.textContent = data.error || 'Failed to load users.'; return; }
+    msg.textContent = '';
+    var body = document.getElementById('mgUsersBody');
+    body.innerHTML = '';
+    data.users.forEach(function (u) {
+      var tr = document.createElement('tr');
+      var last = u.last_login_at ? new Date(u.last_login_at).toLocaleString() : '—';
+      tr.innerHTML =
+        '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + u.username + '</td>' +
+        '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + (u.display_name || '') + '</td>' +
+        '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + u.role + '</td>' +
+        '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + last + '</td>';
+      body.appendChild(tr);
+    });
+  };
+  xhr.send(null);
+}
+
+document.querySelectorAll('#mgOverviewNav a[data-tab]').forEach(function (a) {
+  a.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.querySelectorAll('.sidebar .navlist a').forEach(function (x) { x.classList.remove('active'); });
+    a.classList.add('active');
+    var key = a.getAttribute('data-tab');
+    mgShowView(key === 'users' ? 'users' : 'pages');
+    if (key === 'users' && !mgUsersLoaded) { mgUsersLoaded = true; loadMgUsers(); }
+  });
+});
+mgShowView('pages');
 </script>
 </body>
 </html>
