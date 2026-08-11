@@ -624,6 +624,10 @@ function parseADS(md, date, member) {
   tasks = parseDashMinLines(md, date, member);
   if (tasks.length > 0) { tasks.forEach(t => rows.push(t)); return rows; }
 
+  // Strategy 5b: Thasitha paren-time format — "Task Name (X min)" or "Task Name (X min ✅)" lines
+  tasks = parseParenTimeLines(md, date, member);
+  if (tasks.length > 0) { tasks.forEach(t => rows.push(t)); return rows; }
+
   // Strategy 6: Generic — extract any bold headings or lines that look like task titles
   tasks = parseGeneric(md, date, member);
   tasks.forEach(t => rows.push(t));
@@ -643,6 +647,45 @@ function parseDashMinLines(md, date, member) {
     if (/^(?:google\s+ads|meta\s+ads|analysis|insights?|learning|merchant|summary)/i.test(desc) && !m[3]) continue;
     const isMin = /^min/i.test(m[3]);
     const hrs = isMin ? Math.round((parseFloat(m[2]) / 60) * 4) / 4 : parseFloat(m[2]);
+    const {tier, tierDesc} = classifyTierADS(desc, '');
+    const intentId = makeIntentADS(desc, ++globalTaskSeq);
+    const metric   = inferMetricADS(desc, intentId);
+    rows.push(makeRow(date, member, desc, hrs, '', '', tier, tierDesc, intentId, metric));
+  }
+  return rows;
+}
+
+// ── Strategy 5b: Paren-time lines (Thasitha May format) ──────────────────────
+// Handles: "Campaign Optimization (65 min ✅)", "Fine Tuning (3659 – 35 min)", "1. Task (1 hr)"
+function parseParenTimeLines(md, date, member) {
+  const rows = [];
+  const lines = md.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (!t || t.length < 8) continue;
+    // Skip pure feedback/comment lines (checkmarks, warnings, arrows, bullets)
+    if (/^[✔📌⚠❗👉➡•\-]/u.test(t)) continue;
+    // Skip section stop words that appear alone (no time paren)
+    if (/^(?:Actions\s+Completed|Decisions\s+Applied|Campaign\/IDs|Active\s+Google|Conducted|Performed|Documented|Identified)/i.test(t) && !t.includes('(')) continue;
+    // Must contain a paren group
+    const parenIdx = t.indexOf('(');
+    if (parenIdx < 0) continue;
+    const parenContent = t.match(/\(([^)]+)\)/);
+    if (!parenContent) continue;
+    // Extract time from inside the paren: finds last number followed by min/hr in the paren
+    const timeM = parenContent[1].match(/(\d+(?:\.\d+)?)\s*(h(?:rs?|ours?)?|min(?:s|utes?)?)/i);
+    if (!timeM) continue;
+    // Task name = text before the first paren, strip leading emoji and "N. " prefixes
+    let beforeParen = t.slice(0, parenIdx).trim();
+    beforeParen = beforeParen
+      .replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}✅✔⚠\u{1F900}-\u{1F9FF}]+\s*/u, '')
+      .replace(/^\d+\.\s*/, '')
+      .trim();
+    const desc = cleanText(beforeParen);
+    if (!desc || desc.length < 4) continue;
+    const isMin = /^min/i.test(timeM[2]);
+    const hrs = isMin ? Math.round((parseFloat(timeM[1]) / 60) * 4) / 4 : parseFloat(timeM[1]);
+    if (!hrs) continue;
     const {tier, tierDesc} = classifyTierADS(desc, '');
     const intentId = makeIntentADS(desc, ++globalTaskSeq);
     const metric   = inferMetricADS(desc, intentId);
