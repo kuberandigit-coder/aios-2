@@ -7,7 +7,8 @@
 <style>
 :root{--navy:#0c1a30;--navy2:#0e2143;--gold:#c9a227;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--bad:#c62828;--bad-soft:#fdecea;}
 *{box-sizing:border-box;}
-body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;}
+body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .18s ease;}
+body.dm-ready{opacity:1;}
 
 .card{width:100%;max-width:400px;background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(12,26,48,.14);border:1px solid var(--line);}
 .card-top{background:linear-gradient(160deg,var(--navy),var(--navy2) 75%);padding:34px 36px 26px;border-bottom:3px solid var(--gold);}
@@ -99,6 +100,7 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-tran
   </div>
 
 <script>
+requestAnimationFrame(function () { document.body.classList.add('dm-ready'); });
 const form = document.getElementById('loginForm');
 const errorBox = document.getElementById('errorBox');
 const errorText = document.getElementById('errorText');
@@ -135,7 +137,9 @@ form.addEventListener('submit', async (e) => {
       throw new Error(data.error || 'Invalid username or password.');
     }
     if (!data.redirect) throw new Error('No landing page configured for this account.');
-    window.location.href = data.redirect;
+    document.body.style.transition = 'opacity .16s ease';
+    document.body.style.opacity = '0';
+    setTimeout(function () { window.location.href = data.redirect; }, 160);
   } catch (err) {
     errorText.textContent = err.message || 'Something went wrong. Please try again.';
     errorBox.classList.add('show');

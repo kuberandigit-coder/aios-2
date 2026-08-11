@@ -4,27 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LEDSone — DM Dashboard: Employee Performance</title>
-<style>html{visibility:hidden;}</style>
+<style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}</style>
 <script>
 // Auth guard — checked synchronously before paint so an unauthenticated
 // visitor never sees a flash of this page's content. Requires an active
 // dm_session cookie for the "muguntha" (admin) role, issued by
 // /api/auth?action=login (see ../login.html).
 (function () {
-  try {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/auth?action=session', false); // sync — intentional, guard runs before paint
-    xhr.withCredentials = true;
-    xhr.send(null);
-    if (xhr.status === 200) {
-      var data = JSON.parse(xhr.responseText);
+  fetch('/api/auth?action=session', { credentials: 'same-origin' }).then(function (r) {
+    if (r.status !== 200) { window.location.replace('../login.html'); return; }
+    return r.json();
+  }).then(function (data) {
+    if (!data) return;
       if (data && data.success && data.user && data.user.staff_key === 'muguntha') {
         document.documentElement.style.visibility = 'visible';
+        requestAnimationFrame(function () { document.documentElement.classList.add('dm-ready'); });
         return;
       }
-    }
-  } catch (e) { /* fall through to redirect */ }
-  window.location.replace('../login.html');
+    window.location.replace('../login.html');
+  }).catch(function () { window.location.replace('../login.html'); });
 })();
 </script>
 <style>
@@ -193,7 +191,7 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
   var lbl = document.getElementById('signOutLbl');
   if (lbl) lbl.textContent = 'Logging out…';
   fetch('/api/auth?action=logout', { method: 'POST', credentials: 'same-origin' })
-    .finally(function () { window.location.href = '../login.html'; });
+    .finally(function () { document.documentElement.classList.remove('dm-ready'); setTimeout(function () { window.location.href = '../login.html'; }, 160); });
 });
 </script>
 

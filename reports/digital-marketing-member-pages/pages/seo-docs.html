@@ -4,23 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Guide — SEO Intelligence ledsone.co.uk</title>
-<style>html{visibility:hidden;}</style>
+<style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}</style>
 <script>
 (function () {
-  try {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/auth?action=session', false);
-    xhr.withCredentials = true;
-    xhr.send(null);
-    if (xhr.status === 200) {
-      var data = JSON.parse(xhr.responseText);
+  fetch('/api/auth?action=session', { credentials: 'same-origin' }).then(function (r) {
+    if (r.status !== 200) { window.location.replace('../login.html'); return; }
+    return r.json();
+  }).then(function (data) {
+    if (!data) return;
       if (data && data.success && data.user && data.user.role === 'admin') {
         document.documentElement.style.visibility = 'visible';
+        requestAnimationFrame(function () { document.documentElement.classList.add('dm-ready'); });
         return;
       }
-    }
-  } catch (e) { /* fall through to login */ }
-  window.location.replace('../login.html');
+    window.location.replace('../login.html');
+  }).catch(function () { window.location.replace('../login.html'); });
 })();
 </script>
 <style>

@@ -4,24 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Jackshan — Requirements 1 &amp; 2 — GSC Analysis &amp; SEO Tracker</title>
-<style>html{visibility:hidden;}</style>
+<style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}</style>
 <script>
 (function () {
-  try {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/auth?action=session', false);
-    xhr.withCredentials = true;
-    xhr.send(null);
-    if (xhr.status === 200) {
-      var data = JSON.parse(xhr.responseText);
+  fetch('/api/auth?action=session', { credentials: 'same-origin' }).then(function (r) {
+    if (r.status !== 200) { window.location.replace('../login.html'); return; }
+    return r.json();
+  }).then(function (data) {
+    if (!data) return;
       if (data && data.success && data.user && (data.user.staff_key === 'jakshan' || data.user.role === 'admin')) {
         sessionStorage.setItem('auth_jakshan', '1');
         document.documentElement.style.visibility = 'visible';
+        requestAnimationFrame(function () { document.documentElement.classList.add('dm-ready'); });
         return;
       }
-    }
-  } catch (e) { /* fall through to login */ }
-  window.location.replace('../login.html');
+    window.location.replace('../login.html');
+  }).catch(function () { window.location.replace('../login.html'); });
 })();
 </script>
 <style>
@@ -1005,7 +1003,7 @@ document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
   var lbl = document.getElementById('msSignOutLbl');
   if (lbl) lbl.textContent = 'Logging out…';
   fetch('/api/auth?action=logout', { method: 'POST', credentials: 'same-origin' })
-    .finally(function () { window.location.href = '../login.html'; });
+    .finally(function () { document.documentElement.classList.remove('dm-ready'); setTimeout(function () { window.location.href = '../login.html'; }, 160); });
 });
 </script>
 
