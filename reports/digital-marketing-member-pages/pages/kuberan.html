@@ -25,23 +25,72 @@
 })();
 </script>
 <style>
-:root{--navy:#0c1a30;--gold:#c9a227;--ink:#1a2233;--muted:#5b6577;--line:#e6e9ef;--bg:#eef1f6;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--good-soft:#e6f6ec;--bad:#c62828;--bad-soft:#fdecea;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
-header{background:var(--navy);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;}
-header .brand{font-weight:700;font-size:16px;letter-spacing:.3px;}
-header .brand span{color:var(--gold);}
-header .who{font-size:12.5px;color:#aab4c8;}
-#logoutBtn{background:transparent;border:1px solid #3a4a6b;color:#cdd5e6;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12.5px;margin-left:14px;}
-#logoutBtn:hover{background:#16223d;}
-.wrap{max-width:1100px;margin:0 auto;padding:28px;}
-.tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);}
-.tab{padding:10px 18px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-.panel{display:none;}
-.panel.active{display:block;}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;}
-h2{font-size:15px;margin-bottom:14px;}
+:root{--sb-navy:#0c1a30;--sb-navy2:#0e2143;--sb-gold:#c9a227;--sb-text:#aab4c8;--sb-w:270px;--sb-w-collapsed:72px;--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;overflow-x:hidden;color:var(--ink);}
+.app-shell{min-height:100vh;}
+
+.t-sidebar{width:var(--sb-w-collapsed);background:var(--sb-navy);color:var(--sb-text);display:flex;flex-direction:column;padding:16px 10px;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;transition:width .18s ease,padding .18s ease;z-index:40;}
+.t-sidebar .t-brand-txt,.t-sidebar .t-navlabel,.t-sidebar .t-navlist a span.lbl,.t-sidebar .t-devbadge-txt,.t-sidebar .t-back span.lbl{display:none;}
+.t-sidebar .t-navlist a{justify-content:center;}
+.t-sidebar .t-brand{justify-content:center;}
+.t-sidebar .t-devbadge{justify-content:center;}
+.t-sidebar .t-back{justify-content:center;}
+body.sb-open .t-sidebar{width:var(--sb-w);padding:16px 14px;}
+body.sb-open .t-sidebar .t-brand-txt,body.sb-open .t-sidebar .t-navlabel,body.sb-open .t-sidebar .t-navlist a span.lbl,body.sb-open .t-sidebar .t-devbadge-txt,body.sb-open .t-sidebar .t-back span.lbl{display:block;}
+body.sb-open .t-sidebar .t-navlist a{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-brand{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-devbadge{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-back{justify-content:flex-start;}
+
+.t-collapse-btn{position:fixed;top:28px;left:var(--sb-w-collapsed);transform:translateX(-50%);width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:var(--sb-navy2);color:#c3cce3;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:left .18s ease;z-index:41;}
+.t-collapse-btn:hover{background:rgba(255,255,255,.12);}
+.t-collapse-btn svg{transition:transform .18s ease;}
+body.sb-open .t-collapse-btn{left:var(--sb-w);}
+body.sb-open .t-collapse-btn svg{transform:rotate(180deg);}
+
+.t-brand{display:flex;align-items:center;gap:10px;padding:6px 6px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;position:relative;}
+.t-brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
+.t-brand-txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
+.t-brand-txt span{display:block;font-size:10px;color:#7f8bab;letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;}
+
+.t-navlabel{font-size:10px;color:#5e6b8a;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:14px 10px 8px;white-space:nowrap;}
+.t-navlist{list-style:none;display:flex;flex-direction:column;gap:3px;margin:0;padding:0;}
+.t-navlist a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;color:var(--sb-text);text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease;border:1px solid transparent;}
+.t-navlist a .ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:.85;}
+.t-navlist a .ic svg{width:18px;height:18px;}
+.t-navlist a:hover{background:rgba(255,255,255,.06);color:#fff;transform:translateX(2px);}
+.t-navlist a.on{background:rgba(31,94,255,.16);color:#fff;border-color:rgba(31,94,255,.35);box-shadow:inset 3px 0 0 var(--accent);}
+.t-navlist a.on .ic{opacity:1;color:#8fb2ff;}
+.t-navlist a span.lbl{white-space:normal;line-height:1.25;}
+
+.t-sidebar-spacer{flex:1;}
+.t-back{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:#dfe4ee;text-decoration:none;font-size:12.5px;font-weight:700;margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;cursor:pointer;}
+.t-back:hover{color:#fff;}
+.t-devbadge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--sb-gold);border-radius:10px;padding:9px 10px;margin-top:10px;}
+.t-devbadge .av{width:26px;height:26px;border-radius:999px;background:var(--sb-navy);border:1px solid var(--sb-gold);display:flex;align-items:center;justify-content:center;color:#e8d59a;font-weight:800;font-size:11px;flex-shrink:0;}
+.t-devbadge b{display:block;color:#fff;font-size:11.5px;white-space:nowrap;}
+.t-devbadge span{display:block;color:#e8d59a;font-size:10px;white-space:nowrap;}
+
+.t-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;display:flex;flex-direction:column;transition:margin-left .18s ease;position:relative;z-index:1;}
+body.sb-open .t-main{margin-left:var(--sb-w) !important;}
+.t-topbar{background:var(--sb-navy2);color:#fff;padding:12px 26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:3px solid var(--sb-gold);}
+.t-topbar h1{font-size:16px;font-weight:800;margin-top:5px;letter-spacing:.2px;line-height:1.2;}
+.t-topbar .datestr{color:#9fb0d1;font-size:11px;margin-top:2px;}
+.t-topcontent{padding:18px 26px 36px;}
+
+@media(max-width:900px){
+  .t-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
+  body.sb-open .t-sidebar{width:var(--sb-w);}
+  body.sb-open .t-main{margin-left:var(--sb-w-collapsed) !important;}
+  .t-topcontent,.t-topbar{padding-left:16px;padding-right:16px;}
+}
+
+.tabpanel{display:none;}
+.tabpanel.on{display:block;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:16px;}
+.card h2{font-size:15px;margin-bottom:14px;}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
 .pagelink{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px;background:#fafbfd;transition:border-color .15s,background .15s;}
 .pagelink:hover{border-color:var(--accent);background:var(--accent-soft);}
@@ -59,36 +108,64 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">LEDSone <span>DM Admin</span></div>
-  <div style="display:flex;align-items:center;">
-    <span class="who" id="whoLbl"></span>
-    <button id="logoutBtn">Log Out</button>
-  </div>
-</header>
-<div class="wrap">
-  <div class="tabs">
-    <div class="tab active" data-panel="pagesPanel">Requirement Pages</div>
-    <div class="tab" data-panel="usersPanel">Users</div>
+<div class="app-shell">
+
+<button class="t-collapse-btn" id="tCollapseBtn" type="button" title="Toggle sidebar" aria-label="Toggle sidebar">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+<aside class="t-sidebar" id="tSidebar">
+  <div class="t-brand">
+    <div class="mark">K</div>
+    <div class="t-brand-txt"><b>Kuberan</b><span>DM Admin</span></div>
   </div>
 
-  <div class="panel active" id="pagesPanel">
-    <div class="card">
-      <h2>All Staff Requirement Pages</h2>
-      <div class="grid" id="pagesGrid"></div>
-    </div>
-  </div>
+  <div class="t-navlabel">Overview</div>
+  <ul class="t-navlist" id="tNavList">
+    <li><a href="#" data-tab="pages" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span class="lbl">Requirement Pages</span></a></li>
+    <li><a href="#" data-tab="users"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="lbl">Users</span></a></li>
+  </ul>
 
-  <div class="panel" id="usersPanel">
-    <div class="card">
-      <h2>All Users</h2>
-      <table>
-        <thead><tr><th>Username</th><th>Display Name</th><th>Role</th><th>Last Login</th><th></th></tr></thead>
-        <tbody id="usersBody"></tbody>
-      </table>
-      <div class="msg" id="usersMsg"></div>
+  <div class="t-sidebar-spacer"></div>
+
+  <a class="t-back" href="#" id="tSignOutBtn">
+    <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+    <span class="lbl" id="tSignOutLbl">Log Out</span>
+  </a>
+  <div class="t-devbadge">
+    <div class="av">K</div>
+    <div class="t-devbadge-txt"><b>Developed by</b><span>Kuberan</span></div>
+  </div>
+</aside>
+
+<div class="t-main">
+  <div class="t-topbar">
+    <div>
+      <h1>DM Admin Dashboard</h1>
+      <div class="datestr" id="whoLbl"></div>
     </div>
   </div>
+  <div class="t-topcontent">
+
+    <div class="tabpanel on" id="tabPanelPages">
+      <div class="card">
+        <h2>All Staff Requirement Pages</h2>
+        <div class="grid" id="pagesGrid"></div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tabPanelUsers">
+      <div class="card">
+        <h2>All Users</h2>
+        <table>
+          <thead><tr><th>Username</th><th>Display Name</th><th>Role</th><th>Last Login</th><th></th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+        <div class="msg" id="usersMsg"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
 </div>
 
 <script>
@@ -100,7 +177,7 @@ var STAFF_PAGES = [
 
 (function initUI() {
   var u = window.__dmUser || {};
-  document.getElementById('whoLbl').textContent = (u.display_name || u.username || '') + ' (admin)';
+  document.getElementById('whoLbl').textContent = 'Signed in as ' + (u.display_name || u.username || '') + ' (admin)';
 
   var grid = document.getElementById('pagesGrid');
   STAFF_PAGES.forEach(function (p) {
@@ -116,17 +193,24 @@ var STAFF_PAGES = [
   muguntha.textContent = 'Muguntha (Admin Dashboard)';
   grid.appendChild(muguntha);
 
-  document.querySelectorAll('.tab').forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
-      document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
-      tab.classList.add('active');
-      document.getElementById(tab.getAttribute('data-panel')).classList.add('active');
-      if (tab.getAttribute('data-panel') === 'usersPanel') loadUsers();
+  document.querySelectorAll('#tNavList a').forEach(function (tab) {
+    tab.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.querySelectorAll('#tNavList a').forEach(function (t) { t.classList.remove('on'); });
+      document.querySelectorAll('.tabpanel').forEach(function (p) { p.classList.remove('on'); });
+      tab.classList.add('on');
+      var key = tab.getAttribute('data-tab');
+      document.getElementById(key === 'users' ? 'tabPanelUsers' : 'tabPanelPages').classList.add('on');
+      if (key === 'users') loadUsers();
     });
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', function () {
+  document.getElementById('tCollapseBtn').addEventListener('click', function () {
+    document.body.classList.toggle('sb-open');
+  });
+
+  document.getElementById('tSignOutBtn').addEventListener('click', function (e) {
+    e.preventDefault();
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/auth?action=logout', true);
     xhr.withCredentials = true;
