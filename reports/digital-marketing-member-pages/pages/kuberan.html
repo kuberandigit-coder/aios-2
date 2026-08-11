@@ -79,6 +79,10 @@ body.sb-open .t-main{margin-left:var(--sb-w) !important;}
 .t-topbar h1{font-size:16px;font-weight:800;margin-top:5px;letter-spacing:.2px;line-height:1.2;}
 .t-topbar .datestr{color:#9fb0d1;font-size:11px;margin-top:2px;}
 .t-topcontent{padding:18px 26px 36px;}
+body.tool-open .t-topbar{display:none;}
+body.tool-open .t-topcontent{padding:0;}
+#tToolFrame{position:relative;}
+body.tool-open #tToolFrame{height:100vh !important;border-radius:0 !important;border:none !important;}
 
 @media(max-width:900px){
   .t-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
@@ -246,8 +250,10 @@ function tShowTool(url) {
   var iframe = document.getElementById('tToolFrameIframe');
   if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
   frame.style.display = 'block';
+  document.body.classList.add('tool-open');
 }
 function tShowContent() {
+  document.body.classList.remove('tool-open');
   document.getElementById('tToolFrame').style.display = 'none';
 }
 
