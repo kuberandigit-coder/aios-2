@@ -5043,18 +5043,21 @@ child_to_parent AS (
 ),
 -- Total Sales (Store): gross line-item revenue (item_price x item_quantity),
 -- status='Completed' (excludes Refunded/Cancelled/Inprogress/New), Shopify
--- DE only (sub_source_id=108). All-time, matching this tab's "gather all"
--- scope (no date picker yet — same limitation as the Item ID list itself).
--- Parent rollup = SUM of every order line sharing that Parent Product ID
--- (order_item_info.product_id is shared across all its variants, so this
--- already IS the full rollup — proven, not re-summed from child rows).
--- Documented as GROSS, not net-of-tax — see evidence/jefri/T-04-data-discovery.md
--- for the unresolved gross-vs-net decision.
+-- DE only (sub_source_id=108). Date-filtered via $2 (start) / $3 (end,
+-- inclusive) — both NULL by default = all-time, added 2026-08-11 per
+-- explicit "real date filter" instruction. Parent rollup = SUM of every
+-- order line sharing that Parent Product ID (order_item_info.product_id is
+-- shared across all its variants, so this already IS the full rollup —
+-- proven, not re-summed from child rows). Documented as GROSS, not
+-- net-of-tax — see evidence/jefri/T-04-data-discovery.md for the
+-- unresolved gross-vs-net decision.
 parent_sales AS (
   SELECT oii.product_id, SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS total_sales
   FROM order_management.orders o
   JOIN order_management.order_item_info oii ON oii.order_id = o.id
   WHERE o.sub_source_id = 108 AND o.status = 'Completed'
+    AND ($2::date IS NULL OR o.order_date >= $2::date)
+    AND ($3::date IS NULL OR o.order_date < ($3::date + INTERVAL '1 day'))
   GROUP BY oii.product_id
 ),
 variant_sales AS (
@@ -5062,6 +5065,8 @@ variant_sales AS (
   FROM order_management.orders o
   JOIN order_management.order_item_info oii ON oii.order_id = o.id
   WHERE o.sub_source_id = 108 AND o.status = 'Completed'
+    AND ($2::date IS NULL OR o.order_date >= $2::date)
+    AND ($3::date IS NULL OR o.order_date < ($3::date + INTERVAL '1 day'))
   GROUP BY oii.variant_id
 ),
 -- Ads columns: Parent rows show a TRUE ROLLUP (SUM of the parent's own
@@ -5081,6 +5086,8 @@ ads_by_item AS (
     SUM(cost)::numeric AS cost, SUM(conversion_value)::numeric AS conv_value
   FROM google_ads.product_performance
   WHERE campaign_id = ANY($1::bigint[])
+    AND ($2::date IS NULL OR date >= $2::date)
+    AND ($3::date IS NULL OR date <= $3::date)
   GROUP BY product_item_id
 ),
 rollup_by_parent AS (
@@ -5126,11 +5133,19 @@ ORDER BY
   const CACHE_TTL_MS = 5 * 60 * 1000;
   const CACHE_KEY = 'jefri-req4-mapping';
 
+  function isValidDateR4(s) {
+    return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  }
+
   async function handleJefriReq4Mapping(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     const forceRefresh = req.query && req.query.refresh === '1';
+    const startDate = isValidDateR4(req.query && req.query.startDate) ? req.query.startDate : null;
+    const endDate = isValidDateR4(req.query && req.query.endDate) ? req.query.endDate : null;
+    const isDefaultView = !startDate && !endDate;
+    const cacheKey = CACHE_KEY + '|' + (startDate || '') + '|' + (endDate || '');
     if (!forceRefresh) {
-      const cached = CACHE.get(CACHE_KEY);
+      const cached = CACHE.get(cacheKey);
       if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
         res.status(200).json(cached.data);
         return;
@@ -5139,16 +5154,20 @@ ORDER BY
       // jefri-search-terms (see api/scripts/generate-snapshots.js "postgres"
       // mode, hourly cron). This query is a full-table 8,073-row scan with
       // two nested Postgres aggregations, too slow to run on every cold
-      // start; the snapshot survives cold starts, unlike CACHE above.
-      const fs = require('fs');
-      const path = require('path');
-      const staticPath = path.join(__dirname, 'data', 'jefri-req4-mapping-snapshot.json');
-      if (fs.existsSync(staticPath)) {
-        const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
-        const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
-        CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
-        res.status(200).json(payload);
-        return;
+      // start; the snapshot survives cold starts, unlike CACHE above. Only
+      // covers the default all-time view — a custom date range always
+      // queries live (added 2026-08-11, real date filter).
+      if (isDefaultView) {
+        const fs = require('fs');
+        const path = require('path');
+        const staticPath = path.join(__dirname, 'data', 'jefri-req4-mapping-snapshot.json');
+        if (fs.existsSync(staticPath)) {
+          const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+          const payload = { ...staticData, meta: { ...staticData.meta, cacheStatus: 'static-snapshot' } };
+          CACHE.set(cacheKey, { data: payload, at: Date.now() });
+          res.status(200).json(payload);
+          return;
+        }
       }
     }
     const client = await getPool().connect().catch((err) => {
@@ -5158,7 +5177,7 @@ ORDER BY
     });
     if (!client) return;
     try {
-      const result = await client.query(MAPPING_QUERY, [JEFRI_CAMPAIGN_IDS_R4]);
+      const result = await client.query(MAPPING_QUERY, [JEFRI_CAMPAIGN_IDS_R4, startDate, endDate]);
       const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
       const rows = result.rows.map((r) => {
         const level = r.level;
@@ -5193,9 +5212,11 @@ ORDER BY
           levelParent: rows.filter((r) => r.level === 'Parent').length,
           levelVariant: rows.filter((r) => r.level === 'Variant').length,
           unmatched: rows.filter((r) => r.level === 'Unmatched').length,
+          startDate: startDate || null,
+          endDate: endDate || null,
         },
       };
-      CACHE.set(CACHE_KEY, { data: payload, at: Date.now() });
+      CACHE.set(cacheKey, { data: payload, at: Date.now() });
       res.status(200).json(payload);
     } catch (err) {
       console.error('[jefri/req4-mapping] error:', err && err.message);
