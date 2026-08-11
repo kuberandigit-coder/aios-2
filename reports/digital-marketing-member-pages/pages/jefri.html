@@ -476,7 +476,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <input type="text" id="r4q" placeholder="Search Item ID or Parent Product ID…">
     <label>Level <select id="r4f_level">
       <option value="">All levels</option>
-      <option value="Parent">Parent</option>
+      <option value="Parent">Parent (Rollup)</option>
       <option value="Variant">Variant</option>
       <option value="Unmatched">Unmatched</option>
     </select></label>
@@ -486,10 +486,11 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <div class="scroll" style="max-height:640px;overflow-y:auto;">
     <table>
       <thead style="position:sticky;top:0;z-index:5;"><tr>
+        <th>Level</th>
         <th data-k="parentProductId">Parent Product ID</th>
         <th data-k="itemId">Item ID</th>
       </tr></thead>
-      <tbody id="r4tbody"><tr><td colspan="2" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
+      <tbody id="r4tbody"><tr><td colspan="3" class="loading">Loading live data from PostgreSQL&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r4empty" style="display:none;">No items match the current filters.</div>
@@ -511,6 +512,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.product_performance</code>, <code>listings.shopify_listings</code>, <code>listings.shopify_listings_parent_child_mapping</code>) &middot; fetched via <code>/api/requirement?fn=jefri-req4-mapping</code>.<br>
   <strong>Scope:</strong> every distinct Item ID Jefri's 5 campaigns have EVER had (no date window &mdash; "gather all") &mdash; not just currently-active products.<br>
   <strong>Parent Product ID resolution:</strong> if the Item ID itself resolves to a Shopify PARENT listing, Parent Product ID = that same Item ID. If it resolves to a Shopify VARIANT (child) listing, Parent Product ID is looked up via <code>listings.shopify_listings_parent_child_mapping</code>. Confirmed live: 100% of matched variants (4,543/4,543) resolve to exactly one parent &mdash; no many-to-one conflicts for Jefri's items.<br>
+  <strong>Default row order:</strong> grouped by parent &mdash; each Parent (Rollup) row is followed immediately by its own Variant rows, then the next parent group. Unmatched rows (no parent to group under) are sorted last. Clicking a column header to sort overrides this grouping.<br>
   <strong>Unmatched rows (Parent Product ID blank):</strong> the Item ID does not correspond to any Shopify product/variant ID in this database at all &mdash; confirmed to be 17&ndash;20 digit IDs (real Shopify IDs are 13&ndash;14 digits), concentrated in one campaign ("Shoparize ALL | All Products"). This is a genuine data gap, not a query failure &mdash; these rows are shown, not hidden, so the gap stays visible.
 </div>
 </div>
@@ -1248,7 +1250,9 @@ function r4Render(){
   const pageRows = psVal === 'All' ? rows : rows.slice(start, start + ps);
 
   tbody.innerHTML = pageRows.map(function(r){
+    const levelLabel = r.level === 'Parent' ? 'Parent (Rollup)' : (r.level === 'Variant' ? 'Variant' : 'Unmatched');
     return '<tr>' +
+      '<td>' + esc(levelLabel) + '</td>' +
       '<td>' + (r.parentProductId ? esc(r.parentProductId) : '<span style="color:var(--na);">N/A &mdash; no Shopify match</span>') + '</td>' +
       '<td>' + esc(r.itemId) + '</td>' +
       '</tr>';

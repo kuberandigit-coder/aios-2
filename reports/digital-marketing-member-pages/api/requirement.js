@@ -5052,7 +5052,10 @@ SELECT
   m.sku
 FROM matched m
 LEFT JOIN child_to_parent ctp ON ctp.listing_pk = m.listing_pk
-ORDER BY level, item_id;
+ORDER BY
+  COALESCE(CASE WHEN m.is_parent = 1 THEN m.matched_shopify_id WHEN m.is_child = 1 THEN ctp.parent_product_id ELSE NULL END, '~unmatched') ASC,
+  CASE WHEN m.is_parent = 1 THEN 0 WHEN m.is_child = 1 THEN 1 ELSE 2 END ASC,
+  m.product_item_id ASC;
 `;
 
   const CACHE = new Map();
