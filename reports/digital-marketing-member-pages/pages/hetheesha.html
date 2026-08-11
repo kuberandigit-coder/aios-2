@@ -209,7 +209,7 @@
       background:#0a7d4f;color:#fff;font-size:14px;font-weight:700;
       cursor:pointer;transition:opacity .15s;
     " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-      Sign In
+      Log In
     </button>
   </div>
 </div>
@@ -224,7 +224,7 @@
   function setLoading(on){
     const btn = document.getElementById('auth-btn');
     btn.disabled = on;
-    btn.textContent = on ? 'Signing in…' : 'Sign In';
+    btn.textContent = on ? 'Logging in…' : 'Log In';
     btn.style.opacity = on ? '.6' : '1';
   }
 
@@ -266,9 +266,16 @@
 </script>
 
 <!-- Logout Button -->
-<div id="logout-btn" style="display:none;position:fixed;top:14px;right:18px;z-index:9998;align-items:center;gap:7px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.09);font-family:'Segoe UI',system-ui,sans-serif;transition:all .15s;" onmouseover="this.style.background='#fef2f2';this.style.color='#b91c1c';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fff';this.style.color='#64748b';this.style.borderColor='#e2e8f0';" onclick="sessionStorage.removeItem('auth_hetheesha');location.reload();">
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout
+<div id="logout-btn" style="display:none;position:fixed;top:14px;right:18px;z-index:9998;align-items:center;gap:7px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.09);font-family:'Segoe UI',system-ui,sans-serif;transition:all .15s;" onmouseover="this.style.background='#fef2f2';this.style.color='#b91c1c';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fff';this.style.color='#64748b';this.style.borderColor='#e2e8f0';" onclick="doRealLogout(this)">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> <span id="logoutBtnLbl">Log Out</span>
 </div>
+<script>
+function doRealLogout(el){
+  document.getElementById('logoutBtnLbl').textContent = 'Logging out…';
+  fetch('/api/auth?action=logout', { method: 'POST', credentials: 'same-origin' })
+    .finally(function () { window.location.href = '../login.html'; });
+}
+</script>
 <script>
 (function(){
   if(sessionStorage.getItem('auth_hetheesha')==='1') document.getElementById('logout-btn').style.display='flex';

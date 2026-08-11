@@ -191,7 +191,7 @@ body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
   <div class="ms-sidebar-spacer"></div>
   <a class="ms-signout" href="#" id="msSignOutBtn">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-    <span class="lbl">Sign Out</span>
+    <span class="lbl" id="msSignOutLbl">Log Out</span>
   </a>
   <div class="ms-devbadge">
     <div class="av">K</div>
@@ -2326,6 +2326,8 @@ document.querySelectorAll("#msSidebar a[data-tool]").forEach(function (a) {
 });
 document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
   e.preventDefault();
+  var lbl = document.getElementById('msSignOutLbl');
+  if (lbl) lbl.textContent = 'Logging out…';
   fetch('/api/auth?action=logout', { method: 'POST', credentials: 'same-origin' })
     .finally(function () { window.location.href = '../login.html'; });
 });

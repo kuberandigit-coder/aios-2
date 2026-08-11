@@ -320,7 +320,7 @@ body.sb-open .t-main{margin-left:var(--sb-w) !important;}
 
   <a class="t-back" href="#" id="tSignOutBtn">
     <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
-    <span class="lbl">Sign Out</span>
+    <span class="lbl" id="tSignOutLbl">Log Out</span>
   </a>
   <div class="t-devbadge">
     <div class="av">K</div>
@@ -2922,6 +2922,8 @@ renderR5();
 <script>
 document.getElementById("tSignOutBtn").addEventListener("click", function (e) {
   e.preventDefault();
+  var lbl = document.getElementById("tSignOutLbl");
+  if (lbl) lbl.textContent = "Logging out…";
   fetch("/api/auth?action=logout", { method: "POST", credentials: "same-origin" })
     .finally(function () { window.location.href = "../login.html"; });
 });

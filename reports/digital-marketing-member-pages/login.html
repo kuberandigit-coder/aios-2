@@ -42,7 +42,6 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-tran
 .btn svg{width:16px;height:16px;}
 .spinner{width:15px;height:15px;border-radius:999px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite;display:none;}
 .btn.loading .spinner{display:inline-block;}
-.btn.loading .btn-label{display:none;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 .error{display:none;align-items:flex-start;gap:9px;margin-top:16px;padding:11px 13px;border-radius:9px;background:var(--bad-soft);color:var(--bad);font-size:12.5px;font-weight:600;border:1px solid rgba(198,40,40,.2);line-height:1.4;}
@@ -85,7 +84,7 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-tran
         </div>
         <button class="btn" id="submitBtn" type="submit">
           <span class="spinner"></span>
-          <span class="btn-label">Sign In</span>
+          <span class="btn-label" id="submitBtnLabel">Log In</span>
         </button>
         <div class="error" id="errorBox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -119,6 +118,7 @@ form.addEventListener('submit', async (e) => {
   errorBox.classList.remove('show');
   submitBtn.disabled = true;
   submitBtn.classList.add('loading');
+  document.getElementById('submitBtnLabel').textContent = 'Logging in…';
 
   const username = document.getElementById('username').value.trim();
   const password = passInput.value;
@@ -140,6 +140,7 @@ form.addEventListener('submit', async (e) => {
     errorBox.classList.add('show');
     submitBtn.disabled = false;
     submitBtn.classList.remove('loading');
+    document.getElementById('submitBtnLabel').textContent = 'Log In';
   }
 });
 </script>
