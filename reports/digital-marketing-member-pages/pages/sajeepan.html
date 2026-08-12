@@ -832,16 +832,24 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
   <!-- A1: Best-selling OOS -->
   <div style="margin-bottom:20px;">
-    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       📦 Best-Selling Products — Out of Stock <span class="cnt" id="r3OosCnt">—</span>
       <button onclick="r3ExportCSV('oos')" style="border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);margin-left:auto;">⬇ CSV</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <input id="r3OosItemFilter" type="text" placeholder="Filter by Item ID…" oninput="r3OosPage=0;r3RenderOos()" style="border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:12px;width:200px;outline:none;">
+      <span id="r3OosFilterInfo" style="font-size:12px;color:var(--muted);"></span>
     </div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Products that generated revenue in this period but are currently out of stock in Merchant feed. Pause ads or restock urgently.</p>
     <div class="scroll" style="overflow-x:auto;">
       <table class="waste-table" id="r3OosTable">
-        <thead><tr><th>#</th><th>Product</th><th>Campaign</th><th class="num">Revenue £</th><th class="num">Conv.</th><th class="num">Cost £</th><th class="num">Imps</th><th>Feed Status</th><th>Action</th></tr></thead>
-        <tbody id="r3OosTbody"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted);">Load data to see OOS best-sellers.</td></tr></tbody>
+        <thead><tr><th>#</th><th>Item ID</th><th>Product</th><th>Campaign</th><th class="num">Revenue £</th><th class="num">Conv.</th><th class="num">Cost £</th><th class="num">Imps</th><th>Feed Status</th><th>Action</th></tr></thead>
+        <tbody id="r3OosTbody"><tr><td colspan="10" style="text-align:center;padding:20px;color:var(--muted);">Load data to see OOS best-sellers.</td></tr></tbody>
       </table>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;flex-wrap:wrap;gap:6px;">
+      <span id="r3OosInfo" style="font-size:12px;color:var(--muted);">—</span>
+      <div style="display:flex;gap:4px;" id="r3OosPager"></div>
     </div>
   </div>
 
@@ -912,12 +920,12 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <div class="scroll" style="overflow-x:auto;">
     <table class="waste-table" id="r3PpcTable" style="min-width:1100px;">
       <thead><tr>
-        <th>#</th><th>Image</th><th>Product</th><th>Campaign</th>
+        <th>#</th><th>Image</th><th>Product</th><th>Item ID</th><th>Campaign</th>
         <th class="num">Cost £</th><th class="num">Revenue £</th>
         <th class="num">ROAS %</th><th class="num">Conv.</th>
         <th class="num">Imps</th><th>Feed</th><th>PPC Action</th>
       </tr></thead>
-      <tbody id="r3PpcTbody"><tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted);">Load data to see PPC actions.</td></tr></tbody>
+      <tbody id="r3PpcTbody"><tr><td colspan="12" style="text-align:center;padding:20px;color:var(--muted);">Load data to see PPC actions.</td></tr></tbody>
     </table>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;flex-wrap:wrap;gap:6px;">
@@ -935,7 +943,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Same product_item_id appearing across more than one Sajeepan campaign — may split budget and signal confusion.</p>
     <div class="scroll" style="overflow-x:auto;">
       <table class="waste-table" id="r3DupCampTable">
-        <thead><tr><th>#</th><th>Product ID</th><th>Title / SKU</th><th>Campaigns</th><th class="num">Campaign Count</th></tr></thead>
+        <thead><tr><th>#</th><th>Item ID</th><th>Title / SKU</th><th>Campaigns</th><th class="num">Campaign Count</th></tr></thead>
         <tbody id="r3DupCampTbody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">Load data.</td></tr></tbody>
       </table>
     </div>
@@ -946,7 +954,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Same title submitted under multiple product IDs in Merchant feed — possible duplicate listings.</p>
     <div class="scroll" style="overflow-x:auto;">
       <table class="waste-table" id="r3DupTitleTable">
-        <thead><tr><th>#</th><th>Title</th><th class="num">ID Count</th><th>Product IDs</th></tr></thead>
+        <thead><tr><th>#</th><th>Title</th><th class="num">ID Count</th><th>Item IDs</th></tr></thead>
         <tbody id="r3DupTitleTbody"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">Load data.</td></tr></tbody>
       </table>
     </div>
@@ -957,7 +965,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Same product_id submitted across multiple feed rows — check for feed conflicts.</p>
     <div class="scroll" style="overflow-x:auto;">
       <table class="waste-table" id="r3DupMerchTable">
-        <thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Feed Labels</th><th>Availability</th><th class="num">Row Count</th></tr></thead>
+        <thead><tr><th>#</th><th>Item ID</th><th>Title</th><th>Feed Labels</th><th>Availability</th><th class="num">Row Count</th></tr></thead>
         <tbody id="r3DupMerchTbody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Load data.</td></tr></tbody>
       </table>
     </div>
@@ -2120,7 +2128,9 @@ var R3 = { morning_risk:{oos_bestsellers:[],limited_campaigns:[],drops:[],missin
 var r3Loaded = false;
 var r3BandFilter = 'all';
 var r3PpcPage = 0;
+var r3OosPage = 0;
 const R3_PG = 25;
+const R3_OOS_PG = 50;
 
 const SJ_CAMP_SHORT = {
   '21069663519':'SJ_PENDANT_KLARNA','23110323532':'HIGH REVENUE PH',
@@ -2175,16 +2185,37 @@ function r3Render(){
 }
 
 function r3RenderOos(){
-  const list = R3.morning_risk.oos_bestsellers||[];
-  const cnt = document.getElementById('r3OosCnt'); if(cnt) cnt.textContent=list.length;
-  const tbody = document.getElementById('r3OosTbody');
+  const all = R3.morning_risk.oos_bestsellers||[];
+  const cnt = document.getElementById('r3OosCnt'); if(cnt) cnt.textContent=all.length;
+  const tbody  = document.getElementById('r3OosTbody');
+  const info   = document.getElementById('r3OosInfo');
+  const pager  = document.getElementById('r3OosPager');
+  const fInfo  = document.getElementById('r3OosFilterInfo');
+
+  /* Filter by item ID */
+  const q = (document.getElementById('r3OosItemFilter')||{}).value||'';
+  const list = q ? all.filter(p=>(p.product_item_id||'').toLowerCase().includes(q.toLowerCase())) : all;
+  if(fInfo) fInfo.textContent = q ? `Showing ${list.length} of ${all.length} items` : '';
+
   if(!list.length){
-    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:16px;color:var(--green-tx);font-weight:600;">✅ No best-sellers currently out of stock.</td></tr>';
+    tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--green-tx);font-weight:600;">${q?'No items match that Item ID.':'✅ No best-sellers currently out of stock.'}</td></tr>`;
+    if(info) info.textContent='—';
+    if(pager) pager.innerHTML='';
     return;
   }
-  tbody.innerHTML=list.map((p,i)=>`<tr>
-    <td>${i+1}</td>
-    <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.title||''}">${p.title||p.product_item_id||'—'}</td>
+
+  /* Pagination */
+  const total = list.length;
+  const pages = Math.ceil(total / R3_OOS_PG);
+  if(r3OosPage >= pages) r3OosPage = pages - 1;
+  const start = r3OosPage * R3_OOS_PG;
+  const end   = Math.min(start + R3_OOS_PG, total);
+  const page  = list.slice(start, end);
+
+  tbody.innerHTML = page.map((p, i) => `<tr>
+    <td>${start + i + 1}</td>
+    <td style="font-size:11.5px;color:var(--muted);">${p.product_item_id||'—'}</td>
+    <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.title||''}">${p.title||p.product_item_id||'—'}</td>
     <td style="font-size:11.5px;">${r3CampShort(p.campaign_id)}</td>
     <td class="num" style="font-weight:700;color:var(--accent2);">£${Number(p.cv||0).toFixed(2)}</td>
     <td class="num">${Number(p.conv||0).toFixed(2)}</td>
@@ -2193,6 +2224,24 @@ function r3RenderOos(){
     <td><span class="badge b-outstock">Out of Stock</span></td>
     <td><span style="font-size:11px;font-weight:700;color:var(--accent3);">⛔ Pause / Restock</span></td>
   </tr>`).join('');
+
+  if(info) info.textContent = `Showing ${start+1}–${end} of ${total} products`;
+
+  /* Page buttons */
+  if(pager){
+    let ph = '';
+    ph += `<button onclick="r3OosPage=Math.max(0,r3OosPage-1);r3RenderOos()" ${r3OosPage===0?'disabled':''} style="border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;background:#fff;">‹ Prev</button>`;
+    const maxBtns = 7;
+    let startP = Math.max(0, r3OosPage - 3);
+    let endP   = Math.min(pages, startP + maxBtns);
+    if(endP - startP < maxBtns) startP = Math.max(0, endP - maxBtns);
+    for(let p2 = startP; p2 < endP; p2++){
+      const active = p2 === r3OosPage;
+      ph += `<button onclick="r3OosPage=${p2};r3RenderOos()" style="border:1px solid ${active?'var(--accent)':'var(--line)'};border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;background:${active?'var(--accent)':'#fff'};color:${active?'#fff':'inherit'};font-weight:${active?'700':'400'};">${p2+1}</button>`;
+    }
+    ph += `<button onclick="r3OosPage=Math.min(${pages-1},r3OosPage+1);r3RenderOos()" ${r3OosPage===pages-1?'disabled':''} style="border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;background:#fff;">Next ›</button>`;
+    pager.innerHTML = ph;
+  }
 }
 
 function r3RenderLimited(){
@@ -2317,7 +2366,7 @@ function r3RenderPpcTable(){
   const slice = filtered.slice(r3PpcPage*R3_PG, (r3PpcPage+1)*R3_PG);
   const tbody = document.getElementById('r3PpcTbody');
   if(!filtered.length){
-    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted);">No products match this filter.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--muted);">No products match this filter.</td></tr>';
   } else {
     tbody.innerHTML=slice.map((p,i)=>{
       const m=BAND_META[p.band]||{label:p.band,color:'#5b6577',bg:'#f1f3f4',action:'—'};
@@ -2327,6 +2376,7 @@ function r3RenderPpcTable(){
         <td class="num">${r3PpcPage*R3_PG+i+1}</td>
         <td>${imgHtml}</td>
         <td style="max-width:200px;"><span style="font-size:12px;font-weight:600;color:var(--ink);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.title}">${p.title}</span><span style="font-size:10.5px;color:var(--muted);">${p.sku||''}</span></td>
+        <td style="font-family:monospace;font-size:11px;color:var(--muted);white-space:nowrap;">${p.item_id||p.product_item_id||p.sku||'—'}</td>
         <td style="font-size:11.5px;">${r3CampShort(p.cid)}</td>
         <td class="num" style="color:var(--accent3);">£${p.cost.toFixed(2)}</td>
         <td class="num" style="color:var(--accent2);font-weight:700;">£${p.cv.toFixed(2)}</td>
