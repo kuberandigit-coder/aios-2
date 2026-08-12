@@ -978,6 +978,15 @@ document.querySelectorAll('#msSidebar a[data-tab]').forEach(function (a) {
     if (n === 5 && typeof r5Render === 'function') setTimeout(r5Render, 50);
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN). Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([0-9]+)$/);
+  if (m && m[1] !== '1') {
+    var link = document.querySelector('a[data-tab="' + m[1] + '"]');
+    if (link) link.click();
+  }
+})();
 document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
   e.preventDefault();
   var lbl = document.getElementById('msSignOutLbl');
@@ -1018,6 +1027,7 @@ function showTab(n){
   if (panel) { panel.classList.add('active'); }
   const btn=document.getElementById('tab-btn-'+n);
   if (btn) { btn.classList.add('active');btn.setAttribute('aria-selected','true'); }
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
 function toggleTrk1(){

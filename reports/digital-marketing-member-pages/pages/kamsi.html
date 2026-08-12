@@ -1172,6 +1172,7 @@ function showTab(n){
   document.querySelectorAll('.tab-nav .tab-btn').forEach((el,idx)=>{
     if(el.tagName==='BUTTON') el.classList.toggle('active', idx===n-1);
   });
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 (function(){
 
@@ -2159,6 +2160,19 @@ document.querySelectorAll('#msNavList a[data-tab]').forEach(function (a) {
     showTab(parseInt(a.getAttribute('data-tab'), 10));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN, N=1..6) — tab 1 is already the default in the HTML.
+// Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([1-6])$/);
+  if (m) {
+    var n = parseInt(m[1], 10);
+    if (n !== 1) {
+      var link = document.querySelector('#msNavList a[data-tab="' + n + '"]');
+      if (link) link.click();
+    }
+  }
+})();
 </script>
 </body>
 </html>

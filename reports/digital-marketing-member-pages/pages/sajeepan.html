@@ -1814,6 +1814,7 @@ function switchReqTab(n){
   var t3 = document.getElementById('tab-req3'); if (t3) { t3.classList.toggle('on', n===3); }
   if(n===2 && !r2Loaded) r2SetPreset(30);
   if(n===3 && !r3Loaded) r3SetPreset(30);
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
 /* ============================================================
@@ -2445,6 +2446,15 @@ document.querySelectorAll('#msSidebar a[data-tab]').forEach(function (a) {
     switchReqTab(Number(a.getAttribute('data-tab')));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN). Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([0-9]+)$/);
+  if (m && m[1] !== '1') {
+    var link = document.querySelector('a[data-tab="' + m[1] + '"]');
+    if (link) link.click();
+  }
+})();
 document.querySelectorAll('#msSidebar a[data-tool]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;

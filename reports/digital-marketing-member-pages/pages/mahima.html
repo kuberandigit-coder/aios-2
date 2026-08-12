@@ -718,6 +718,7 @@ function showTab(n){
   document.getElementById('tabBtn2').classList.toggle('on', n===2);
   document.getElementById('tabBtn3').classList.toggle('on', n===3);
   document.getElementById('tabBtn5').classList.toggle('on', n===5);
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 window.showTab=showTab;
 
@@ -1661,6 +1662,15 @@ document.querySelectorAll('#msNavList a[data-tab]').forEach(function (a) {
     showTab(parseInt(a.getAttribute('data-tab'), 10));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN). Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([0-9]+)$/);
+  if (m && m[1] !== '1') {
+    var link = document.querySelector('a[data-tab="' + m[1] + '"]');
+    if (link) link.click();
+  }
+})();
 </script>
 </body>
 </html>

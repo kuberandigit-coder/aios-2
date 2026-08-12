@@ -1110,6 +1110,7 @@ function showTab(n){
     renderR4Table();
     renderR4Kpis();
   }
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
 // TAB SCROLL — mouse wheel on nav or page scrolls between tabs
@@ -2424,6 +2425,15 @@ document.querySelectorAll('#msSidebar a[data-tab]').forEach(function (a) {
     showTab(Number(a.getAttribute('data-tab')));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN). Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([0-9]+)$/);
+  if (m && m[1] !== '1') {
+    var link = document.querySelector('a[data-tab="' + m[1] + '"]');
+    if (link) link.click();
+  }
+})();
 document.querySelectorAll('#msSidebar a[data-tool]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;

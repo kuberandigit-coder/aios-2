@@ -1068,6 +1068,7 @@ function showReqTab(n){
   if (n === 4 && !r4Loaded) { r4Loaded = true; r4loadCachedOrFetch(); }
   if (n === 5 && !r5Loaded) { r5Loaded = true; r5loadCachedOrFetch(); }
   if (n === 6 && !r6Loaded) { r6Loaded = true; r6Load(); }
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
 function eur(v){ return v === null || v === undefined ? '—' : '€' + Number(v).toFixed(2); }
@@ -2350,6 +2351,12 @@ document.querySelectorAll('#msNavList a[data-tab]').forEach(function (a) {
     showReqTab(parseInt(a.getAttribute('data-tab'), 10));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN, N=1..6). Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([1-6])$/);
+  if (m && m[1] !== '1') showReqTab(parseInt(m[1], 10));
+})();
 </script>
 </body>
 </html>

@@ -1136,6 +1136,7 @@ function showTab(n) {
   const btn = document.getElementById('nav-' + n);
   if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected','true'); }
   if (n === 6) { doLoadR6(); }
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
 /* ---- Global Refresh ---- */
@@ -13140,6 +13141,15 @@ document.querySelectorAll('#msSidebar a[data-tab]').forEach(function (a) {
     showTab(Number(a.getAttribute('data-tab')));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN). Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([0-9]+)$/);
+  if (m && m[1] !== '1') {
+    var link = document.querySelector('a[data-tab="' + m[1] + '"]');
+    if (link) link.click();
+  }
+})();
 function msShowTool(url, fullTool){
   document.getElementById('msContentArea').style.display = 'none';
   var frame = document.getElementById('msToolFrame');

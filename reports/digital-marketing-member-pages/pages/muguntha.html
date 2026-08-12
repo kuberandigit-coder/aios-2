@@ -884,6 +884,7 @@ function selectMember(key){
     csAvatar.textContent = name.charAt(0);
     csName.textContent = name;
   }
+  try { history.replaceState(null, '', location.pathname + '#' + key); } catch (e) {}
 }
 
 (function populateMemberSelect(){
@@ -902,6 +903,13 @@ document.getElementById('perfAnalysisLink').addEventListener('click', (e) => {
   e.preventDefault();
   selectMember(document.getElementById('memberSelect').value || 'sonya');
 });
+// Restore the member panel the user was on before a browser refresh (URL
+// hash) — Sonya is already the default in the HTML, so only switch if the
+// hash names a different known member. Added 2026-08-12.
+(function(){
+  var fromHash = (location.hash || '').replace('#', '');
+  if (fromHash && MEMBER_NAMES[fromHash] && fromHash !== 'sonya') selectMember(fromHash);
+})();
 
 function mgShowView(view){
   document.body.classList.remove('tool-open');

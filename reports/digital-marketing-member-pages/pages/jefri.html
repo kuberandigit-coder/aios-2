@@ -671,8 +671,15 @@ function showReqTab(which){
       r3Load();
     })();
   }
+  try { history.replaceState(null, '', location.pathname + '#' + which); } catch (e) {}
 }
-showReqTab('req1');
+// Restore the tab the user was on before a browser refresh (URL hash) —
+// falls back to req1 if the hash is missing/invalid. Added 2026-08-12.
+(function(){
+  var validTabs = ['req1','req2','req3','req4','req5'];
+  var fromHash = (location.hash || '').replace('#', '');
+  showReqTab(validTabs.indexOf(fromHash) !== -1 ? fromHash : 'req1');
+})();
 </script>
 
 <script>

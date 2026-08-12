@@ -2163,6 +2163,7 @@ function switchTab(which){
   document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
     a.classList.toggle('on', a.dataset.tab === which);
   });
+  try { history.replaceState(null, '', location.pathname + '#' + which); } catch (e) {}
 }
 document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
   a.addEventListener('click', function(e){
@@ -2170,6 +2171,14 @@ document.querySelectorAll('#tNavList a[data-tab]').forEach(function(a){
     switchTab(a.dataset.tab);
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash) —
+// R1 is already the default in the HTML, so only switch if the hash names
+// a different valid tab. Added 2026-08-12.
+(function(){
+  var validTabs = ['R1','R2','R3','R4','R5','R6','R7'];
+  var fromHash = (location.hash || '').replace('#', '');
+  if (validTabs.indexOf(fromHash) !== -1 && fromHash !== 'R1') switchTab(fromHash);
+})();
 
 function tShowTool(url, fullTool){
   document.getElementById('tContentArea').style.display = 'none';

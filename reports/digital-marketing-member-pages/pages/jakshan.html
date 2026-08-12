@@ -640,6 +640,7 @@ function showTab(n){
     if (btn) { btn.classList.toggle('active',i===n); btn.setAttribute('aria-selected',i===n); }
   });
   if(n===2){r2Page=1;r2Render();}
+  try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 function switchTab(n){showTab(n);}
 
@@ -948,6 +949,15 @@ document.querySelectorAll('#msSidebar a[data-tab]').forEach(function (a) {
     showTab(Number(a.getAttribute('data-tab')));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash of
+// the form #tN). Added 2026-08-12.
+(function(){
+  var m = (location.hash || '').match(/^#t([0-9]+)$/);
+  if (m && m[1] !== '1') {
+    var link = document.querySelector('a[data-tab="' + m[1] + '"]');
+    if (link) link.click();
+  }
+})();
 document.querySelectorAll('#msSidebar a[data-tool]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;
