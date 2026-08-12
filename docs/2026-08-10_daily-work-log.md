@@ -21,6 +21,40 @@ Redefined `muguntha.html`'s Target Achievement metric twice based on user clarif
 - `reports/digital-marketing-member-pages/pages/muguntha.html`
 - `reports/digital-marketing-member-pages/pages/thasitha.html`
 
+## Tasks Completed (continued — afternoon/evening session, added 2026-08-12 as part of AIOS backfill)
+This log originally covered only the morning session (through `b4a4856`). The rest of 2026-08-10's work was never documented — backfilled below from git history.
+
+7. **`thasitha.html` sidebar polish** (`0e5b9f8`, `45e86e3`, `336eb26`): vertically centered the collapse-toggle handle against the brand "T" mark; fixed the toggle arrow to flip direction depending on open/closed state; removed the redundant "All Systems Live" status chip from the topbar.
+
+8. **`thasitha.html` Requirement 6 — Search Terms Labels** (`73ea3b6`, `ab6ab77`, `da9604b`, `454d3bb`): built as a Google Ads/Amazon-keyword-to-Shopify-SEO gap report, then rebuilt to match Jefri's Requirement 2 format exactly; fixed to show all 3 of Thasitha's DE campaigns (including ones with 0 terms yet); stopped showing a false "€0.00 / 0.00% ROAS / Villain" tag on terms where cost was simply never tracked (vs. genuinely zero).
+
+9. **`thasitha.html` Requirement 7 — Product Catalog / Amazon DE search terms** (`c39e249`, `6230951`, `bab274e`, `d9e8504`): initially built as a Shopify SEO + Amazon Keywords product catalog, then replaced with Amazon DE campaign-wise search terms (matching the Req6 format); campaign summary converted to a collapsible dropdown; added Match Type/Min Clicks/Min ROAS filters; scoped to Manual-targeting campaigns only (Auto excluded).
+
+10. **Static homepage preview** (`76878b5`): added `ledsonede.html` as a static homepage preview snapshot, linked from `home.html` (since removed — see item 14).
+
+11. **Role-based login rollout to all 6 staff** (`98b2fe2`): Jefri/Dilaksi/Kamsi/Mahima/Thasitha/Sukirtha all switched to individual role-based logins; `home.html`/`index.html` locked to admin-only access as an interim step (both files were fully removed later, `e4c5cb9`/`e7a11f6` on 2026-08-11).
+
+12. **Login page + Muguntha sidebar redesign** (`9695d98`): `login.html` redesigned (icon-based, official look, no left text panel, password show/hide toggle); `muguntha.html` sidebar converted to the same collapsible icon-rail pattern as `thasitha.html`; SVG icons replaced letter/emoji icons throughout.
+
+13. **All 6 staff pages redesigned with collapsible sidebar** (`c00a189`, `7d71c50`, `33145d4`): Jefri/Dilaksi/Kamsi/Mahima/Sukirtha given the same collapsible icon-rail sidebar as Muguntha/Thasitha; "Back to all members" link removed, Sign Out moved into the sidebar footer (icon-only when collapsed); Thasitha's redundant navy topbar strip removed (duplicated info already in each tab's header card).
+
+14. **EOD Tool / Blog Tool integration** (`35d90a3`, `b710426`, `7bf44ec`, `225c05d`, `53e3345`, `2e9a4c9`, `e5f55ab`): added EOD Tool + Blog Tool sidebar links to all 7 member pages; made them open inline via iframe swap instead of a new tab; fixed iframe rendering being hidden behind the fixed sidebar; removed a leftover logo image inside the embedded tools' own sidebars that broke alignment; tried and then reverted a "fully hide sidebar when tool is open" behavior — final state keeps the sidebar always visible with no overlay, per decision made same day.
+
+15. **Hetheesha account — added then reverted** (`4dbeca0`, `3135f9e`): added as a new staff user (Blog Tool only), then removed same day on discovering she already has a real account in Piranav's separate `Staff-requirements-02` project.
+
+16. **Locked per-staff "Sales 2026" tab** (`6e994ed`): each of the 7 staff pages gets a "Sales 2026" tab locked to their own data only, reusing the existing `salesuk.html`/`sales2.html` attribution logic (no new attribution code written).
+
+17. **Merge Piranav's 6 staff dashboards** (`4f81f2c`): Sonya, Sajeepan, Theekshy, Thivajini, Hetheesha, Jakshan merged into this login system (initial merge; full sidebar redesign for these 6 followed the next day, 2026-08-11 — see that log).
+
+## Files Touched (afternoon/evening session)
+- `reports/digital-marketing-member-pages/pages/thasitha.html`
+- `reports/digital-marketing-member-pages/pages/muguntha.html`
+- `reports/digital-marketing-member-pages/pages/login.html`
+- `reports/digital-marketing-member-pages/pages/{jefri,dilaksi,kamsi,mahima,sukirtha}.html`
+- `reports/digital-marketing-member-pages/pages/{sonya,sajeepan,theekshy,thivajini,hetheesha,jakshan}.html` (initial merge)
+- `reports/digital-marketing-member-pages/pages/ledsonede.html` (new)
+- `reports/digital-marketing-member-pages/home.html` (login lockdown; file removed next day)
+
 ## Status
 All changes deployed to production and verified live, consistent with this project's deploy-then-verify workflow.
 
