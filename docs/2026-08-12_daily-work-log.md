@@ -43,19 +43,34 @@ Resolved a Google Safe Browsing "Dangerous site" flag on the primary `.vercel.ap
 
 14. **`sales2.html` locked-view sidebar hidden entirely** (`e7a6e45`): follow-up to item 8 — user reported the navy sidebar still showed full Members/Other Reports navigation when a staff member opened their own "Sales 2026" tab (embedded `sales2.html?staff=<name>`), creating confusing duplicate navigation since they already have their own dashboard's sidebar. Reworked the locked-view logic to hide the entire sidebar (`#tSidebar`, `#tCollapseBtn`) and force-expand the content to full width, rather than selectively hiding individual nav items as before. Standalone (non-embedded) access to `sales2.html` is unaffected. Dedicated evidence file: `evidence/digital-marketing-member-pages/2026-08-12_sales2-locked-view-sidebar-hidden.md`.
 
+15. **`jefri.html` Requirement 5 — Cross-Campaign Attribution / ROI Analyzer** (`bba5444`, `eb77d78`, `686973a`, `b6a1681`) — earlier the same day, before the items above: new R5 tab built; Source Campaign dropdown/date filters styled (were unstyled, showing default browser select/focus outline); "Run Analysis" button styled (was unstyled — `.primary` class was referenced but never defined anywhere in the CSS) and renamed to "Refresh (live)"; tab converted to auto-load on open like R1–R4, matching the established pattern instead of requiring a manual "Run Analysis" click first. Dedicated evidence file: `evidence/jefri/2026-08-12_requirement-5-cross-campaign-attribution-roi-analyzer.md`.
+
+16. **URL hash sync — browser refresh stays on the same tab, all 13 dashboard pages** (`0d32b19`): fixed a long-standing annoyance where pressing browser refresh (not the page's own in-app Refresh button) always reset to the default tab (usually Req1/Tab 1), losing the user's place — e.g. refreshing while on Jefri's Req5 would silently drop back to Req1. Every tab-switch function on all 13 pages (`jefri.html` `showReqTab`, `thasitha.html` `switchTab`, `muguntha.html` `selectMember`, `kamsi/dilaksi/theekshy/thivajini/hetheesha/jakshan/sonya.html` `showTab`, `mahima.html` `showTab` — non-contiguous tab numbers handled explicitly, `sukirtha.html` `showReqTab`, `sajeepan.html` `switchReqTab`) now writes the active tab to the URL as a hash on switch, and reads that hash on page load to restore the correct tab — including non-default tabs, which now correctly trigger their normal click-handler/loader instead of being skipped. Verified live byte-identical to local on all 13 pages after deploy. Dedicated evidence file: `evidence/digital-marketing-member-pages/2026-08-12_url-hash-tab-restore-13-pages.md`.
+
+17. **Sidebar highlight follow-up fix** (`6815488`): on `jefri.html`/`sukirtha.html`, the restored tab (via item 16's hash-read-on-load) wasn't getting its sidebar nav item visually highlighted as active — content restored correctly but the sidebar still showed the default tab as selected. Fixed same day.
+
+18. **Self-clobbering hash bug fix** (`a1095d1`): root cause of a subtler tab-restore failure specific to `jefri.html` — its unconditional default-tab call (`showReqTab('req1')`, fired on every page load regardless of the URL hash) itself writes `#req1` to the URL as a side effect, which ran AFTER the real hash (e.g. `#req5`) had already been captured from a browser refresh but BEFORE the restore logic further down the page read it — so the real hash got silently overwritten with `#req1` before it could ever be used. Fixed by capturing `location.hash` into `JEFRI_INITIAL_HASH` at the very top of the script, before the default-tab call runs. `jefri.html` was the only page affected — the only one with both an unconditional default-tab call AND hash-writing inside that same function.
+
+19. **`salesuk.html` locked-view sidebar hidden entirely** (`31686e7`): same fix as item 14, applied to `salesuk.html`'s `?group=<name>` locked view (used by Sonya/Sajeepan/Kamsi/Dilaksi's "Sales 2026" links) — the navy sidebar is now hidden and content expands full-width when a valid `group` param locks the view to one member, matching how Jefri's DE Sales page (embedded without any sidebar) already looked. User specifically flagged the visual mismatch between UK members' Sales tab (showed the navy sidebar) and Jefri's DE Sales tab (no sidebar) via side-by-side screenshots.
+
+20. **Sales 2026 added to all 3 admin pages' Team Tools** (`d9ecb77`): Kuberan/Piranav/Muguntha's sidebars now include a "Sales 2026" link (pointing to unlocked, full `sales2.html`, no `?staff=` param) alongside EOD Reports/Organic Revenue Intelligence/SEO Intelligence/Germany Sales Decline — admins previously had no direct sidebar link to the multi-member sales view.
+
 ## Files Touched
 - `reports/digital-marketing-member-pages/pages/{sonya,sajeepan,theekshy,thivajini,hetheesha,jakshan}.html`
 - `reports/digital-marketing-member-pages/pages/eod.html`
 - `reports/digital-marketing-member-pages/pages/login.html`
 - `reports/digital-marketing-member-pages/pages/{sales2,salesuk,sales25,2025DE}.html`
-- `reports/digital-marketing-member-pages/pages/muguntha.html` (net no-op — reverted to pre-existing state)
+- `reports/digital-marketing-member-pages/pages/jefri.html`
+- `reports/digital-marketing-member-pages/pages/{thasitha,kamsi,dilaksi,theekshy,thivajini,hetheesha,jakshan,sonya,mahima,sukirtha,sajeepan}.html` (hash-sync only)
+- `reports/digital-marketing-member-pages/pages/{kuberan,piranav}.html`
+- `reports/digital-marketing-member-pages/pages/muguntha.html` (net no-op on the reverted Performance-tab attempt; real changes from items 15/16/20)
 - `reports/digital-marketing-member-pages/pages/blog-tool/index.html`
 - `reports/digital-marketing-member-pages/googlebb3d8c1bfef3e723.html` (new)
 - `C:\Users\PC\OneDrive\Desktop\eod-public\` (standalone, untracked temporary project)
 - Vercel project domain configuration (`digital-marketing-member-pages`): added `dm-dashboard.vintageinterior.co.uk`, removed `digital-marketing-member-pages.vercel.app` alias — not file changes, no git history
 
 ## Status
-Items 1–10, 13, and 14 deployed to production and verified live. Item 12's fix is code-verified and deployed but not yet user-confirmed live. Item 11 (Performance tab speed) is a confirmed regression-free revert — the tab works exactly as it did before today's attempt, but the original slowness complaint is still unresolved.
+Items 1–10, 13, 14, and 15–20 deployed to production and verified live (item 16's hash-sync verified byte-identical live vs. local on all 13 pages). Item 12's fix is code-verified and deployed but not yet user-confirmed live. Item 11 (Performance tab speed) is a confirmed regression-free revert — the tab works exactly as it did before today's attempt, but the original slowness complaint is still unresolved.
 
 ## Outstanding
 - **Blog Tool "+" button flicker fix awaiting user confirmation** — the debounce guard is deployed and code-verified, but the original symptom wasn't reproducible live in this session, so real-world resolution isn't confirmed yet.
