@@ -864,7 +864,7 @@ const BUILT_MEMBERS = {
   dilaksi: { idSuffix: '-dilaksi', panelId: 'panel-dilaksi', filtersId: 'dilaksiFilters' },
 };
 
-document.getElementById('refreshBtn').addEventListener('click', () => loadSonyaBatched(true));
+document.getElementById('refreshBtn').addEventListener('click', () => loadAll('sonya', '', true));
 document.getElementById('refreshBtn-sajeepan').addEventListener('click', () => loadAll('sajeepan', '-sajeepan', true));
 document.getElementById('refreshBtn-kamsi').addEventListener('click', () => loadAll('kamsi', '-kamsi', true));
 document.getElementById('refreshBtn-jefri').addEventListener('click', () => loadAll('jefri', '-jefri', true));
@@ -879,7 +879,7 @@ document.getElementById('refreshBtn-thasitha').addEventListener('click', () => l
 // active tab) up front, and load Sajeepan/Kamsi the first time their tab
 // is opened (loadedMembers guards against re-fetching on every click).
 const loadedMembers = new Set(['sonya']);
-loadSonyaBatched(false);
+loadAll('sonya', '', false);
 
 const panelPlaceholder = document.getElementById('panel-placeholder');
 const pageTitle = document.getElementById('pageTitle');
@@ -926,7 +926,7 @@ function selectMember(key){
     document.getElementById(built.panelId).style.display = '';
     if (!loadedMembers.has(key)) {
       loadedMembers.add(key);
-      if (key === 'sonya') loadSonyaBatched(false); else loadAll(key, built.idSuffix, false);
+      loadAll(key, built.idSuffix, false);
     }
   } else {
     pageTitle.textContent = 'Employee Performance — ' + name;
