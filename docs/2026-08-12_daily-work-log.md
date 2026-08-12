@@ -37,20 +37,24 @@ Resolved a Google Safe Browsing "Dangerous site" flag on the primary `.vercel.ap
     - Per explicit instruction ("undo all that is not useful... we will do later"), `muguntha.html` was restored via `git checkout` to its exact pre-optimization state (commit `bce5bc2`) and the new endpoint file deleted. **The Performance tab's slowness is a confirmed, still-open problem** — no working fix was shipped this date. See Outstanding below.
     - A leftover background shell (a stale `curl`-polling loop from an earlier, unrelated deploy check) was also found still running in this session and stopped — not a code issue, just session housekeeping.
 
+12. **Blog Tool — insert-menu "+" button flicker bug** (`6a170b0`): user reported that for some users, clicking the "+" button between blog sections shows the block-type picker menu and then immediately closes it. Root cause: `showInsertMenu()` calls `closeInsertMenu()` as its first line (by design, to close any other open menu) — the most plausible explanation for a same-click open→close flicker is a near-duplicate `click` event firing twice for one physical click (known behaviour on some trackpads/mouse drivers/remote-desktop sessions), where the second call re-enters the function and its first line closes what the first call just opened. Fixed with a 300ms debounce guard. Dedicated evidence file: `evidence/digital-marketing-member-pages/2026-08-12_blog-tool-insert-menu-double-click-flicker-fix.md`. **Manual Verification Required:** root cause could not be reproduced live in this session (static analysis only) — awaiting confirmation from an affected user that the fix resolves it.
+
 ## Files Touched
 - `reports/digital-marketing-member-pages/pages/{sonya,sajeepan,theekshy,thivajini,hetheesha,jakshan}.html`
 - `reports/digital-marketing-member-pages/pages/eod.html`
 - `reports/digital-marketing-member-pages/pages/login.html`
 - `reports/digital-marketing-member-pages/pages/{sales2,salesuk,sales25,2025DE}.html`
 - `reports/digital-marketing-member-pages/pages/muguntha.html` (net no-op — reverted to pre-existing state)
+- `reports/digital-marketing-member-pages/pages/blog-tool/index.html`
 - `reports/digital-marketing-member-pages/googlebb3d8c1bfef3e723.html` (new)
 - `C:\Users\PC\OneDrive\Desktop\eod-public\` (standalone, untracked temporary project)
 - Vercel project domain configuration (`digital-marketing-member-pages`): added `dm-dashboard.vintageinterior.co.uk`, removed `digital-marketing-member-pages.vercel.app` alias — not file changes, no git history
 
 ## Status
-Items 1–10 deployed to production and verified live. Item 11 (Performance tab speed) is a confirmed regression-free revert — the tab works exactly as it did before today's attempt, but the original slowness complaint is still unresolved.
+Items 1–10 and 12 deployed to production and verified live (item 12's fix is code-verified but not yet user-confirmed live). Item 11 (Performance tab speed) is a confirmed regression-free revert — the tab works exactly as it did before today's attempt, but the original slowness complaint is still unresolved.
 
 ## Outstanding
+- **Blog Tool "+" button flicker fix awaiting user confirmation** — the debounce guard is deployed and code-verified, but the original symptom wasn't reproducible live in this session, so real-world resolution isn't confirmed yet.
 - **`muguntha.html` Performance tab is still slow** for Sonya (and by extension the other built members) — the concurrency-raise and batched-endpoint approaches both failed in production; needs a different fix (e.g., proper connection pooling via a pgBouncer-style proxy, or a batched endpoint that's actually debugged for why it hung). Explicitly deferred by the user ("we will do later").
 - **jeffri-meta July backfill still not run** (carried over from 2026-08-11, confirmed via direct file check — see `evidence/sales/2026-08-11_hourly-snapshot-cron-stale-month-bug.md`).
 - **Login page logo still hotlinked**, not self-hosted (carried over from item 7).
