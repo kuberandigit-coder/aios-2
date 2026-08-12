@@ -152,6 +152,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
   <ul class="navlist" id="mgOverviewNav">
     <li><a href="#" data-tab="pages" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span class="lbl">Requirement Pages</span></a></li>
     <li><a href="#" data-tab="users"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="lbl">Users</span></a></li>
+    <li><a href="#" data-tab="listing"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.6a2 2 0 0 1 0-2.83l7.17-7.17a2 2 0 0 1 2.83 0l7.17 7.17a2 2 0 0 1 0 2.83z"></path><line x1="7" y1="7.01" x2="7.01" y2="7"></line></svg></span><span class="lbl">2026 New Listings</span></a></li>
   </ul>
 
   <div class="navlabel">Performance Analysis</div>
@@ -450,6 +451,36 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
         <tbody id="mgUsersBody"></tbody>
       </table>
       <div id="mgUsersMsg" style="font-size:12.5px;margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div class="content" id="tabPanelListing" style="display:none;">
+    <div class="tablebox" style="padding:22px 24px;">
+      <h2 style="font-size:15px;margin-bottom:4px;">2026 New Listings — ledsone.co.uk</h2>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">Every product tagged <code>2026New</code> in Shopify UK, with price, title, and inventory. Source: Shopify Admin GraphQL API (read-only).</div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="mg-price-filter active" data-filter="all" type="button" style="padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:#fff;border-color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;">All Prices</button>
+        <button class="mg-price-filter" data-filter="under25" type="button" style="padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;">Under £25</button>
+        <button class="mg-price-filter" data-filter="over25" type="button" style="padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;">£25 and Above</button>
+        <button id="mgListingRefreshBtn" type="button" style="margin-left:auto;padding:8px 16px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;">Refresh</button>
+      </div>
+      <div id="mgListingStatus" style="font-size:12.5px;color:var(--muted);margin-bottom:10px;"></div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:800px;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Image</th>
+              <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Title</th>
+              <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">SKU</th>
+              <th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--line);">Price</th>
+              <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Status</th>
+              <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Vendor</th>
+              <th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--line);">Inventory</th>
+            </tr>
+          </thead>
+          <tbody id="mgListingBody"><tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -919,8 +950,87 @@ function mgShowView(view){
   document.getElementById('mgContentArea').style.display = (view === 'performance') ? '' : 'none';
   document.getElementById('tabPanelPages').style.display = (view === 'pages') ? '' : 'none';
   document.getElementById('tabPanelUsers').style.display = (view === 'users') ? '' : 'none';
+  document.getElementById('tabPanelListing').style.display = (view === 'listing') ? '' : 'none';
   document.getElementById('mgToolFrame').style.display = 'none';
+  if (view === 'listing' && !MG_LISTING_LOADED) { MG_LISTING_LOADED = true; mgLoadListing(); }
 }
+
+// ===== 2026 New Listings (muguntha.html only) — added 2026-08-12 =====
+// Shopify UK products tagged "2026New", read-only via api/tag-listing.js.
+var MG_LISTING_LOADED = false;
+var MG_LISTING_DATA = [];
+var MG_LISTING_FILTER = 'all';
+
+function esc(s) { if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+function mgFmtMoney(v, ccy) {
+  if (v == null) return 'N/A';
+  const sym = ccy === 'GBP' ? '£' : (ccy ? ccy + ' ' : '£');
+  return sym + Number(v).toFixed(2);
+}
+
+function mgRenderListing() {
+  const tbody = document.getElementById('mgListingBody');
+  let rows = MG_LISTING_DATA;
+  if (MG_LISTING_FILTER === 'under25') rows = rows.filter((p) => p.priceMin != null && p.priceMin < 25);
+  else if (MG_LISTING_FILTER === 'over25') rows = rows.filter((p) => p.priceMin != null && p.priceMin >= 25);
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--muted);">No products match this filter.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((p) => {
+    const priceLabel = (p.priceMin != null && p.priceMax != null && p.priceMin !== p.priceMax)
+      ? mgFmtMoney(p.priceMin, p.currency) + ' – ' + mgFmtMoney(p.priceMax, p.currency)
+      : mgFmtMoney(p.priceMin, p.currency);
+    const img = p.image ? '<img src="' + p.image + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--line);">' : '<div style="width:44px;height:44px;border-radius:6px;background:#f0f3f8;"></div>';
+    return '<tr>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + img + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.title) + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.sku || 'N/A') + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;font-weight:700;">' + priceLabel + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-transform:capitalize;">' + esc((p.status || '').toLowerCase()) + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.vendor || 'N/A') + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;">' + (p.totalInventory != null ? p.totalInventory : 'N/A') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function mgLoadListing() {
+  const status = document.getElementById('mgListingStatus');
+  const tbody = document.getElementById('mgListingBody');
+  const btn = document.getElementById('mgListingRefreshBtn');
+  btn.disabled = true;
+  status.textContent = 'Loading…';
+  tbody.innerHTML = '<tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr>';
+  try {
+    const res = await fetch('/api/muguntha?action=tag-listing&tag=2026New');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to load listings');
+    MG_LISTING_DATA = data.products;
+    status.textContent = data.count + ' products tagged 2026New · updated ' + new Date(data.generatedAt).toLocaleString();
+    mgRenderListing();
+  } catch (err) {
+    status.textContent = 'Error: ' + (err.message || err);
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--bad);">Error loading listings.</td></tr>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('mgListingRefreshBtn').addEventListener('click', () => { MG_LISTING_LOADED = true; mgLoadListing(); });
+document.querySelectorAll('.mg-price-filter').forEach((b) => {
+  b.addEventListener('click', () => {
+    MG_LISTING_FILTER = b.getAttribute('data-filter');
+    document.querySelectorAll('.mg-price-filter').forEach((x) => {
+      const on = x === b;
+      x.classList.toggle('active', on);
+      x.style.background = on ? 'var(--accent)' : '#fff';
+      x.style.color = on ? '#fff' : 'var(--muted)';
+      x.style.borderColor = on ? 'var(--accent)' : 'var(--line)';
+    });
+    mgRenderListing();
+  });
+});
 
 function mgShowTool(url){
   mgShowView('tool');
@@ -999,7 +1109,7 @@ document.querySelectorAll('#mgOverviewNav a[data-tab]').forEach(function (a) {
     document.querySelectorAll('.sidebar .navlist a').forEach(function (x) { x.classList.remove('active'); });
     a.classList.add('active');
     var key = a.getAttribute('data-tab');
-    mgShowView(key === 'users' ? 'users' : 'pages');
+    mgShowView(key);
     if (key === 'users' && !mgUsersLoaded) { mgUsersLoaded = true; loadMgUsers(); }
   });
 });

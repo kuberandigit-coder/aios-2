@@ -25,6 +25,125 @@ const path = require('path');
 const { Pool } = require('pg');
 const { SONYA_PRODUCT_IDS_UK, SAJEEPAN_PRODUCT_IDS_UK } = require('./salesuk.js');
 
+// ===== Tag Listing (muguntha.html "2026 New Listings" tab, added 2026-08-12)
+// ===== Shopify UK product listing by tag — read-only, no mutations. Folded
+// into this file (instead of a new api/tag-listing.js) to stay under
+// Vercel's 12-serverless-function cap. Routed via ?action=tag-listing.
+const TAG_STORE_DOMAIN_UK = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
+const TAG_API_VERSION_UK = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
+const TAG_TOKEN_UK = process.env.SHOPIFY_UK_ADMIN_TOKEN;
+const tagSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function tagShopifyGraphQL(query, variables) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    let res;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      res = await fetch(`https://${TAG_STORE_DOMAIN_UK}/admin/api/${TAG_API_VERSION_UK}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': TAG_TOKEN_UK },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+    } catch (e) {
+      await tagSleep(500 * Math.pow(2, attempt) + Math.random() * 250);
+      continue;
+    }
+    if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
+      await tagSleep(500 * Math.pow(2, attempt) + Math.random() * 250);
+      continue;
+    }
+    if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+    const json = await res.json();
+    const throttled = json.errors && Array.isArray(json.errors) && json.errors.some((e) => e.extensions && e.extensions.code === 'THROTTLED');
+    if (throttled) { await tagSleep(1000 * Math.pow(2, attempt)); continue; }
+    if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+    return json.data;
+  }
+  throw new Error('Shopify API: exceeded retries');
+}
+
+const TAG_PRODUCTS_QUERY = `
+query($after: String, $q: String) {
+  products(first: 100, after: $after, query: $q) {
+    edges {
+      node {
+        id
+        title
+        handle
+        status
+        vendor
+        productType
+        tags
+        totalInventory
+        featuredImage { url altText }
+        priceRangeV2 {
+          minVariantPrice { amount currencyCode }
+          maxVariantPrice { amount currencyCode }
+        }
+        variants(first: 1) { edges { node { sku } } }
+      }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}`;
+
+async function tagFetchAllProductsByTag(tag) {
+  const rows = [];
+  let after = null;
+  let hasNext = true;
+  const q = `tag:'${tag.replace(/'/g, "\\'")}'`;
+  while (hasNext) {
+    const data = await tagShopifyGraphQL(TAG_PRODUCTS_QUERY, { after, q });
+    for (const edge of data.products.edges) {
+      const p = edge.node;
+      const min = p.priceRangeV2 && p.priceRangeV2.minVariantPrice;
+      const max = p.priceRangeV2 && p.priceRangeV2.maxVariantPrice;
+      rows.push({
+        id: p.id,
+        title: p.title,
+        handle: p.handle,
+        status: p.status,
+        vendor: p.vendor,
+        productType: p.productType,
+        tags: p.tags,
+        totalInventory: p.totalInventory,
+        image: p.featuredImage ? p.featuredImage.url : null,
+        sku: (p.variants.edges[0] && p.variants.edges[0].node.sku) || null,
+        priceMin: min ? Number(min.amount) : null,
+        priceMax: max ? Number(max.amount) : null,
+        currency: min ? min.currencyCode : 'GBP',
+      });
+    }
+    hasNext = data.products.pageInfo.hasNextPage;
+    after = data.products.pageInfo.endCursor;
+  }
+  return rows;
+}
+
+async function handleTagListing(req, res) {
+  if (!TAG_TOKEN_UK) {
+    res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing' });
+    return;
+  }
+  const tag = (req.query && req.query.tag) ? String(req.query.tag) : '2026New';
+  try {
+    const products = await tagFetchAllProductsByTag(tag);
+    res.status(200).json({
+      success: true,
+      tag,
+      store: 'ledsone.co.uk',
+      count: products.length,
+      products,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+  }
+}
+
 let pool;
 function getPool() {
   if (!pool) {
@@ -305,6 +424,10 @@ async function queryDmCostsForMonth(productIds, month) {
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.query && req.query.action === 'tag-listing') {
+    await handleTagListing(req, res);
+    return;
+  }
   const month = req.query && req.query.month ? String(req.query.month) : '';
   const forceRefresh = req.query && req.query.refresh === '1';
   const employeeKey = req.query && req.query.employee ? String(req.query.employee).toLowerCase() : 'sonya';
