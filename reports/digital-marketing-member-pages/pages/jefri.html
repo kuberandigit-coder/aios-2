@@ -557,7 +557,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <label>Source Campaign <select id="r5f_campaign"></select></label>
     <label>Start Date <input type="date" id="r5f_startDate"></label>
     <label>End Date <input type="date" id="r5f_endDate"></label>
-    <button class="primary" id="r5RunBtn" type="button" style="align-self:flex-end;">Run Analysis</button>
+    <button class="primary" id="r5RunBtn" type="button" style="align-self:flex-end;">Refresh (live)</button>
     <span class="chip live" id="r5LiveChip" style="display:none;align-self:flex-end;">Loading&hellip;</span>
   </div>
 </header>
@@ -609,7 +609,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
           <th>Verdict</th>
         </tr>
       </thead>
-      <tbody id="r5tbody"><tr><td colspan="11" class="empty">Choose a Source Campaign and date range, then click Run Analysis.</td></tr></tbody>
+      <tbody id="r5tbody"><tr><td colspan="11" class="loading">Loading Requirement 5 analysis&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r5empty" style="display:none;"></div>
@@ -1456,9 +1456,12 @@ function r5Init(){
   const start = new Date(today.getTime() - 90*24*60*60*1000);
   document.getElementById('r5f_endDate').value = today.toISOString().slice(0,10);
   document.getElementById('r5f_startDate').value = start.toISOString().slice(0,10);
+  // Auto-load with the first campaign + default date range, same as R1-R4 —
+  // no manual "Run Analysis" click needed to see initial results.
+  r5Load(false);
 }
 
-async function r5Load(){
+async function r5Load(force){
   const campaign = document.getElementById('r5f_campaign').value;
   const startDate = document.getElementById('r5f_startDate').value;
   const endDate = document.getElementById('r5f_endDate').value;
@@ -1476,7 +1479,7 @@ async function r5Load(){
   document.getElementById('r5Cards').style.display = 'none';
   try {
     const url = '/api/requirement?fn=jefri-req5&sourceCampaign=' + encodeURIComponent(campaign)
-      + '&startDate=' + encodeURIComponent(startDate) + '&endDate=' + encodeURIComponent(endDate) + '&refresh=1';
+      + '&startDate=' + encodeURIComponent(startDate) + '&endDate=' + encodeURIComponent(endDate) + (force ? '&refresh=1' : '');
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
@@ -1588,7 +1591,13 @@ function r5ExportCsv(){
   a.click();
 }
 
-document.getElementById('r5RunBtn').addEventListener('click', r5Load);
+document.getElementById('r5RunBtn').addEventListener('click', () => r5Load(true));
+// Changing the Source Campaign or date range auto-reloads (a new combo
+// naturally misses the server-side cache anyway) — only the Refresh (live)
+// button forces bypassing the 5-minute cache for the SAME combo.
+document.getElementById('r5f_campaign').addEventListener('change', () => r5Load(false));
+document.getElementById('r5f_startDate').addEventListener('change', () => r5Load(false));
+document.getElementById('r5f_endDate').addEventListener('change', () => r5Load(false));
 document.getElementById('r5q').addEventListener('input', r5Render);
 document.getElementById('r5f_verdict').addEventListener('change', r5Render);
 document.getElementById('r5ExportCsv').addEventListener('click', r5ExportCsv);
