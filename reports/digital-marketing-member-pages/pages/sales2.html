@@ -71,21 +71,71 @@ tbody tr:hover{background:var(--accent-soft);}
 .classpill.REFERRAL{background:#0f766e;}
 .classpill.OTHER,.classpill.UNKNOWN{background:#9aa3b2;}
 @media(max-width:700px){h1{font-size:18px;}.card .value{font-size:18px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+
+/* ---------- Collapsible member sidebar (same pattern as thasitha.html) ---------- */
+:root{--sb-navy:#0c1a30;--sb-navy2:#0e2143;--sb-gold:#c9a227;--sb-text:#aab4c8;--sb-w:270px;--sb-w-collapsed:72px;}
+html,body{margin:0;padding:0;}
+body{overflow-x:hidden;padding:0;}
+.t-sidebar{width:var(--sb-w-collapsed);background:var(--sb-navy);color:var(--sb-text);display:flex;flex-direction:column;padding:16px 10px;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;transition:width .18s ease,padding .18s ease;z-index:40;}
+.t-sidebar .t-brand-txt,.t-sidebar .t-navlabel,.t-sidebar .t-navitem span.lbl{display:none;}
+.t-sidebar .t-navitem{justify-content:center;}
+.t-sidebar .t-brand{justify-content:center;}
+body.sb-open .t-sidebar{width:var(--sb-w);padding:16px 14px;}
+body.sb-open .t-sidebar .t-brand-txt,body.sb-open .t-sidebar .t-navlabel,body.sb-open .t-sidebar .t-navitem span.lbl{display:block;}
+body.sb-open .t-sidebar .t-navitem{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-brand{justify-content:flex-start;}
+.t-collapse-btn{position:fixed;top:28px;left:var(--sb-w-collapsed);transform:translateX(-50%);width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:var(--sb-navy2);color:#c3cce3;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:left .18s ease;z-index:41;}
+.t-collapse-btn:hover{background:rgba(255,255,255,.12);}
+.t-collapse-btn svg{width:14px;height:14px;transition:transform .18s ease;}
+body.sb-open .t-collapse-btn{left:var(--sb-w);}
+body.sb-open .t-collapse-btn svg{transform:rotate(180deg);}
+.t-brand{display:flex;align-items:center;gap:10px;padding:6px 6px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;}
+.t-brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
+.t-brand-txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
+.t-brand-txt span{display:block;font-size:10px;color:#7f8bab;letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;}
+.t-navlabel{font-size:10px;color:#5e6b8a;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:14px 10px 8px;white-space:nowrap;}
+.t-navitem{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;color:var(--sb-text);text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease;border:1px solid transparent;margin-bottom:3px;}
+.t-navitem:hover{background:rgba(255,255,255,.06);color:#fff;transform:translateX(2px);}
+.t-navitem.active{background:rgba(31,94,255,.16);color:#fff;border-color:rgba(31,94,255,.35);box-shadow:inset 3px 0 0 var(--accent);}
+.t-navitem span.lbl{white-space:normal;line-height:1.25;}
+.t-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;transition:margin-left .18s ease;position:relative;z-index:1;}
+body.sb-open .t-main{margin-left:var(--sb-w) !important;}
+.t-topcontent{padding:28px 24px 40px;}
+@media(max-width:900px){
+  .t-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
+  body.sb-open .t-sidebar{width:var(--sb-w);}
+  body.sb-open .t-main{margin-left:var(--sb-w-collapsed) !important;}
+}
 </style>
 </head>
 <body>
+<button class="t-collapse-btn" id="tCollapseBtn" type="button" title="Toggle sidebar" aria-label="Toggle sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+<aside class="t-sidebar" id="tSidebar">
+  <div class="t-brand">
+    <div class="mark">S</div>
+    <div class="t-brand-txt"><b>Sales</b><span>LEDSone Staff</span></div>
+  </div>
+  <div class="t-navlabel">Members</div>
+  <div id="staffTabs">
+    <a class="t-navitem active" id="tabBtnMahima" data-staff="mahima" onclick="showStaffTab('mahima')"><span class="ic">💰</span><span class="lbl">Mahima</span></a>
+    <a class="t-navitem" id="tabBtnSukirtha" data-staff="sukirtha" onclick="showStaffTab('sukirtha')"><span class="ic">✉️</span><span class="lbl">Sukirtha &middot; Email</span></a>
+    <a class="t-navitem" id="tabBtnJeffri" data-staff="jeffri" onclick="showStaffTab('jeffri')"><span class="ic">📢</span><span class="lbl">Jeffri</span></a>
+    <a class="t-navitem" id="tabBtnHetheesha" data-staff="hetheesha" onclick="showStaffTab('hetheesha')"><span class="ic">🇫🇷</span><span class="lbl">Hetheesha &middot; FR</span></a>
+    <a class="t-navitem" id="tabBtnThivagini" data-staff="thivagini" onclick="showStaffTab('thivagini')"><span class="ic">🇫🇷</span><span class="lbl">Thivagini &middot; FR</span></a>
+    <a class="t-navitem" id="tabBtnThasitha" data-staff="thasitha" onclick="showStaffTab('thasitha')"><span class="ic">📊</span><span class="lbl">Thasitha</span></a>
+  </div>
+  <div class="t-navlabel">Other Reports</div>
+  <div id="otherReportsLinks">
+    <a class="t-navitem" id="tabBtnUkLink" onclick="window.location.href='salesuk.html'"><span class="ic">🇬🇧</span><span class="lbl">UK Sales</span></a>
+    <a class="t-navitem" id="tabBtn2025Link" onclick="window.location.href='sales25.html'"><span class="ic">🗓️</span><span class="lbl">2025 UK</span></a>
+    <a class="t-navitem" onclick="window.location.href='2025DE.html'"><span class="ic">🗓️</span><span class="lbl">2025 DE</span></a>
+  </div>
+</aside>
+<div class="t-main">
+<div class="t-topcontent">
 <div class="wrap">
-<div class="reqtabs" id="staffTabs">
-  <div class="reqtab active" id="tabBtnMahima" data-staff="mahima" onclick="showStaffTab('mahima')">Mahima</div>
-  <div class="reqtab" id="tabBtnSukirtha" data-staff="sukirtha" onclick="showStaffTab('sukirtha')">Sukirtha &middot; Email</div>
-  <div class="reqtab" id="tabBtnJeffri" data-staff="jeffri" onclick="showStaffTab('jeffri')">Jeffri</div>
-  <div class="reqtab" id="tabBtnHetheesha" data-staff="hetheesha" onclick="showStaffTab('hetheesha')">Hetheesha &middot; FR</div>
-  <div class="reqtab" id="tabBtnThivagini" data-staff="thivagini" onclick="showStaffTab('thivagini')">Thivagini &middot; FR</div>
-  <div class="reqtab" id="tabBtnThasitha" data-staff="thasitha" onclick="showStaffTab('thasitha')">Thasitha</div>
-  <div class="reqtab" id="tabBtnUkLink" onclick="window.location.href='salesuk.html'">UK Sales</div>
-  <div class="reqtab" id="tabBtn2025Link" onclick="window.location.href='sales25.html'">2025 UK</div>
-  <div class="reqtab" onclick="window.location.href='2025DE.html'">2025 DE</div>
-</div>
 
 <div id="tabSukirtha" style="display:none;">
 <header>
@@ -824,8 +874,13 @@ tbody tr:hover{background:var(--accent-soft);}
   <strong>Last refresh timestamp:</strong> <span id="thFootRefresh">&ndash;</span>
 </div>
 </div>
+</div>
+</div>
 
 <script>
+document.getElementById('tCollapseBtn').addEventListener('click', function(){
+  document.body.classList.toggle('sb-open');
+});
 // IndexedDB cache for the live-month (July) tabs (added 2026-07-24, same
 // pattern already proven on Kamsi/Dilaksi/Sukirtha/Jefri/Mahima's own pages)
 // so a live/incremental fetch survives navigating away and back instead of
@@ -2839,9 +2894,11 @@ sdeLoad(false);
   if (lockedStaff) {
     const validTab = document.querySelector('#staffTabs [data-staff="' + lockedStaff + '"]');
     if (validTab) {
-      document.querySelectorAll('#staffTabs .reqtab').forEach(function(el){
+      document.querySelectorAll('#staffTabs .t-navitem').forEach(function(el){
         if (el.id !== validTab.id) el.style.display = 'none';
       });
+      document.querySelectorAll('.t-navlabel').forEach(function(el){ el.style.display = 'none'; });
+      document.getElementById('otherReportsLinks').style.display = 'none';
       showStaffTab(lockedStaff);
     }
   }
