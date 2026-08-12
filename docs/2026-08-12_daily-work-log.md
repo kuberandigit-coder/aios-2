@@ -39,6 +39,10 @@ Resolved a Google Safe Browsing "Dangerous site" flag on the primary `.vercel.ap
 
 12. **Blog Tool — insert-menu "+" button flicker bug** (`6a170b0`): user reported that for some users, clicking the "+" button between blog sections shows the block-type picker menu and then immediately closes it. Root cause: `showInsertMenu()` calls `closeInsertMenu()` as its first line (by design, to close any other open menu) — the most plausible explanation for a same-click open→close flicker is a near-duplicate `click` event firing twice for one physical click (known behaviour on some trackpads/mouse drivers/remote-desktop sessions), where the second call re-enters the function and its first line closes what the first call just opened. Fixed with a 300ms debounce guard. Dedicated evidence file: `evidence/digital-marketing-member-pages/2026-08-12_blog-tool-insert-menu-double-click-flicker-fix.md`. **Manual Verification Required:** root cause could not be reproduced live in this session (static analysis only) — awaiting confirmation from an affected user that the fix resolves it.
 
+13. **Favicon missing on all pages except login.html** (`a2752ff`): user reported the LEDSone logo favicon (added earlier same day, `9075c53`) disappeared after navigating past the login page. Root cause: the `<link rel="icon">` tag had only ever been added to `login.html`, never to any of the other 29 pages. Fixed by adding the identical tag to all 29. Dedicated evidence file: `evidence/digital-marketing-member-pages/2026-08-12_favicon-missing-on-all-pages-fix.md`.
+
+14. **`sales2.html` locked-view sidebar hidden entirely** (`e7a6e45`): follow-up to item 8 — user reported the navy sidebar still showed full Members/Other Reports navigation when a staff member opened their own "Sales 2026" tab (embedded `sales2.html?staff=<name>`), creating confusing duplicate navigation since they already have their own dashboard's sidebar. Reworked the locked-view logic to hide the entire sidebar (`#tSidebar`, `#tCollapseBtn`) and force-expand the content to full width, rather than selectively hiding individual nav items as before. Standalone (non-embedded) access to `sales2.html` is unaffected. Dedicated evidence file: `evidence/digital-marketing-member-pages/2026-08-12_sales2-locked-view-sidebar-hidden.md`.
+
 ## Files Touched
 - `reports/digital-marketing-member-pages/pages/{sonya,sajeepan,theekshy,thivajini,hetheesha,jakshan}.html`
 - `reports/digital-marketing-member-pages/pages/eod.html`
@@ -51,7 +55,7 @@ Resolved a Google Safe Browsing "Dangerous site" flag on the primary `.vercel.ap
 - Vercel project domain configuration (`digital-marketing-member-pages`): added `dm-dashboard.vintageinterior.co.uk`, removed `digital-marketing-member-pages.vercel.app` alias — not file changes, no git history
 
 ## Status
-Items 1–10 and 12 deployed to production and verified live (item 12's fix is code-verified but not yet user-confirmed live). Item 11 (Performance tab speed) is a confirmed regression-free revert — the tab works exactly as it did before today's attempt, but the original slowness complaint is still unresolved.
+Items 1–10, 13, and 14 deployed to production and verified live. Item 12's fix is code-verified and deployed but not yet user-confirmed live. Item 11 (Performance tab speed) is a confirmed regression-free revert — the tab works exactly as it did before today's attempt, but the original slowness complaint is still unresolved.
 
 ## Outstanding
 - **Blog Tool "+" button flicker fix awaiting user confirmation** — the debounce guard is deployed and code-verified, but the original symptom wasn't reproducible live in this session, so real-world resolution isn't confirmed yet.
