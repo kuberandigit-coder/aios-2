@@ -98,6 +98,10 @@ body.sb-open .t-collapse-btn svg{transform:rotate(180deg);}
 .t-navitem:hover{background:rgba(255,255,255,.06);color:#fff;transform:translateX(2px);}
 .t-navitem.active{background:rgba(31,94,255,.16);color:#fff;border-color:rgba(31,94,255,.35);box-shadow:inset 3px 0 0 var(--accent);}
 .t-navitem span.lbl{white-space:normal;line-height:1.25;}
+.t-navitem .ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:.85;}
+.t-navitem .ic svg{width:18px;height:18px;}
+.t-navitem.active .ic{opacity:1;color:#8fb2ff;}
+.t-navitem:hover .ic{opacity:1;}
 .t-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;transition:margin-left .18s ease;position:relative;z-index:1;}
 body.sb-open .t-main{margin-left:var(--sb-w) !important;}
 .t-topcontent{padding:28px 24px 40px;}
@@ -119,18 +123,18 @@ body.sb-open .t-main{margin-left:var(--sb-w) !important;}
   </div>
   <div class="t-navlabel">Members</div>
   <div id="staffTabs">
-    <a class="t-navitem active" id="tabBtnMahima" data-staff="mahima" onclick="showStaffTab('mahima')"><span class="ic">💰</span><span class="lbl">Mahima</span></a>
-    <a class="t-navitem" id="tabBtnSukirtha" data-staff="sukirtha" onclick="showStaffTab('sukirtha')"><span class="ic">✉️</span><span class="lbl">Sukirtha &middot; Email</span></a>
-    <a class="t-navitem" id="tabBtnJeffri" data-staff="jeffri" onclick="showStaffTab('jeffri')"><span class="ic">📢</span><span class="lbl">Jeffri</span></a>
-    <a class="t-navitem" id="tabBtnHetheesha" data-staff="hetheesha" onclick="showStaffTab('hetheesha')"><span class="ic">🇫🇷</span><span class="lbl">Hetheesha &middot; FR</span></a>
-    <a class="t-navitem" id="tabBtnThivagini" data-staff="thivagini" onclick="showStaffTab('thivagini')"><span class="ic">🇫🇷</span><span class="lbl">Thivagini &middot; FR</span></a>
-    <a class="t-navitem" id="tabBtnThasitha" data-staff="thasitha" onclick="showStaffTab('thasitha')"><span class="ic">📊</span><span class="lbl">Thasitha</span></a>
+    <a class="t-navitem active" id="tabBtnMahima" data-staff="mahima" onclick="showStaffTab('mahima')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span><span class="lbl">Mahima</span></a>
+    <a class="t-navitem" id="tabBtnSukirtha" data-staff="sukirtha" onclick="showStaffTab('sukirtha')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"></path><path d="M22 6l-10 7L2 6"></path></svg></span><span class="lbl">Sukirtha &middot; Email</span></a>
+    <a class="t-navitem" id="tabBtnJeffri" data-staff="jeffri" onclick="showStaffTab('jeffri')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><span class="lbl">Jeffri</span></a>
+    <a class="t-navitem" id="tabBtnHetheesha" data-staff="hetheesha" onclick="showStaffTab('hetheesha')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span><span class="lbl">Hetheesha &middot; FR</span></a>
+    <a class="t-navitem" id="tabBtnThivagini" data-staff="thivagini" onclick="showStaffTab('thivagini')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span><span class="lbl">Thivagini &middot; FR</span></a>
+    <a class="t-navitem" id="tabBtnThasitha" data-staff="thasitha" onclick="showStaffTab('thasitha')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg></span><span class="lbl">Thasitha</span></a>
   </div>
   <div class="t-navlabel">Other Reports</div>
   <div id="otherReportsLinks">
-    <a class="t-navitem" id="tabBtnUkLink" onclick="window.location.href='salesuk.html'"><span class="ic">🇬🇧</span><span class="lbl">UK Sales</span></a>
-    <a class="t-navitem" id="tabBtn2025Link" onclick="window.location.href='sales25.html'"><span class="ic">🗓️</span><span class="lbl">2025 UK</span></a>
-    <a class="t-navitem" onclick="window.location.href='2025DE.html'"><span class="ic">🗓️</span><span class="lbl">2025 DE</span></a>
+    <a class="t-navitem" id="tabBtnUkLink" onclick="window.location.href='salesuk.html'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span><span class="lbl">UK Sales</span></a>
+    <a class="t-navitem" id="tabBtn2025Link" onclick="window.location.href='sales25.html'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span><span class="lbl">2025 UK</span></a>
+    <a class="t-navitem" onclick="window.location.href='2025DE.html'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span><span class="lbl">2025 DE</span></a>
   </div>
 </aside>
 <div class="t-main">
