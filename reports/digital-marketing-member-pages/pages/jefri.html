@@ -539,12 +539,26 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 5 (Live)</div>
   <h1>Cross-Campaign Attribution / ROI Analyzer</h1>
   <div class="sub">A product spent money in a source campaign but generated &euro;0 conversion value there &mdash; did it convert elsewhere (another campaign, or Direct/Organic/Other Shopify sales), or did it produce nothing anywhere? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads)</div>
+  <style>
+    #req5Tab .filters{display:flex;flex-wrap:wrap;align-items:center;gap:14px;}
+    #req5Tab .filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);}
+    #req5Tab .filters select,
+    #req5Tab .filters input[type="date"]{
+      padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);
+      font-size:13px;font-weight:600;text-transform:none;letter-spacing:normal;cursor:pointer;min-height:38px;
+    }
+    #req5Tab .filters select{max-width:340px;}
+    #req5Tab .filters select:focus,
+    #req5Tab .filters input[type="date"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,94,255,.15);}
+    #req5Tab .filters select:hover,
+    #req5Tab .filters input[type="date"]:hover{border-color:#b9c2d4;}
+  </style>
   <div class="filters" style="margin-top:10px;">
-    <label>Source Campaign <select id="r5f_campaign" style="padding:8px 14px;border-radius:8px;border:1px solid var(--line);"></select></label>
+    <label>Source Campaign <select id="r5f_campaign"></select></label>
     <label>Start Date <input type="date" id="r5f_startDate"></label>
     <label>End Date <input type="date" id="r5f_endDate"></label>
-    <button class="primary" id="r5RunBtn" type="button">Run Analysis</button>
-    <span class="chip live" id="r5LiveChip" style="display:none;">Loading&hellip;</span>
+    <button class="primary" id="r5RunBtn" type="button" style="align-self:flex-end;">Run Analysis</button>
+    <span class="chip live" id="r5LiveChip" style="display:none;align-self:flex-end;">Loading&hellip;</span>
   </div>
 </header>
 
