@@ -55,6 +55,10 @@ Resolved a Google Safe Browsing "Dangerous site" flag on the primary `.vercel.ap
 
 20. **Sales 2026 added to all 3 admin pages' Team Tools** (`d9ecb77`): Kuberan/Piranav/Muguntha's sidebars now include a "Sales 2026" link (pointing to unlocked, full `sales2.html`, no `?staff=` param) alongside EOD Reports/Organic Revenue Intelligence/SEO Intelligence/Germany Sales Decline — admins previously had no direct sidebar link to the multi-member sales view.
 
+21. **Req5 "0 qualifying products" — real stale-deploy incident, not a data bug** (redeployed, no code change): user reported Req5 showing "No products matched" for campaign `23141810147`, 2026-05-14 to 2026-08-12. Direct Postgres check confirmed 317 real qualifying rows exist for that exact campaign/date range — the API was silently falling through to an unrelated default handler (same symptom class as items 16–18 and the 2026-08-11 cross-repo sync bug), caused by the recurring concurrent-deploy race described in item 16's evidence file. Fixed by `git fetch` + confirm local matches `origin/main`, then `vercel --prod --yes --force`; live API then returned 316 qualifying products (1-row difference is a timing artifact between the two checks, not a logic error).
+
+22. **Multi-ID search added to Req4 and Req5** (`cf84508`, `ebe559d`, `b1305bb`): search boxes previously only matched a single pasted value as one literal string — pasting multiple IDs (e.g. `44804658594057, 8421816205577`) matched nothing. Both `r4FilteredRows`/`r5FilteredRows` now split the search input on commas and match a row if ANY token is found in its Item ID or Parent Product ID (covers Variant ID too, since a Variant-level row's Item ID is its variant ID). Req4's search box was also widened (`min-width:420px`) and moved to appear before the date-range filter in the tbar, per explicit request. Dedicated evidence file: `evidence/jefri/2026-08-12_req4-req5-post-launch-fixes.md`.
+
 ## Files Touched
 - `reports/digital-marketing-member-pages/pages/{sonya,sajeepan,theekshy,thivajini,hetheesha,jakshan}.html`
 - `reports/digital-marketing-member-pages/pages/eod.html`
