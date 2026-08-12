@@ -582,7 +582,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
 <div class="tablebox">
   <div class="tbar">
-    <input type="text" id="r5q" placeholder="Search Item ID or Parent Product ID…">
+    <input type="text" id="r5q" placeholder="Search Item ID(s) or Parent Product ID(s) — comma-separated for multiple, e.g. 44804658594057, 8421816205577">
     <label>Verdict <select id="r5f_verdict">
       <option value="">All verdicts</option>
       <option value="Mixed attribution">Mixed attribution</option>
@@ -1527,10 +1527,19 @@ function r5VerdictBadge(v){
 }
 
 function r5FilteredRows(){
-  const q = document.getElementById('r5q').value.trim().toLowerCase();
+  // Multi-ID search (added 2026-08-12): comma-separated list of Item IDs
+  // and/or Parent Product IDs (variant IDs are Item IDs at Variant level,
+  // so this covers all three per explicit instruction). A row matches if
+  // ANY pasted value is found in its Item ID or Parent Product ID.
+  // Single-value search still works exactly as before (a 1-item list).
+  const qTerms = document.getElementById('r5q').value.split(',')
+    .map(function(s){ return s.trim().toLowerCase(); })
+    .filter(function(s){ return s.length > 0; });
   const verdictFilter = document.getElementById('r5f_verdict').value;
   return R5_ALL.filter(function(r){
-    const qHit = !q || (r.itemId||'').toLowerCase().includes(q) || (r.parentProductId||'').toLowerCase().includes(q);
+    const itemId = (r.itemId||'').toLowerCase();
+    const parentId = (r.parentProductId||'').toLowerCase();
+    const qHit = !qTerms.length || qTerms.some(function(t){ return itemId.includes(t) || parentId.includes(t); });
     const vHit = !verdictFilter || r.verdict === verdictFilter;
     return qHit && vHit;
   });
