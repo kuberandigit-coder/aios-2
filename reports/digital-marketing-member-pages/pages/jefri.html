@@ -630,6 +630,14 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 
 <script>
+// Captured BEFORE the unconditional showReqTab('req1') default call below
+// runs — that call itself now writes '#req1' to the URL (see showReqTab),
+// which would otherwise clobber the real #req5 (etc.) hash from a browser
+// refresh before the restore logic further down the page ever reads it.
+// Bug found + fixed 2026-08-12 (jefri.html was the only page affected —
+// it's the only one with both an unconditional default-tab call AND hash
+// writing inside that same function).
+var JEFRI_INITIAL_HASH = location.hash;
 let R2_LOADED = false;
 let R3_LOADED = false;
 let R4_LOADED = false;
@@ -1656,10 +1664,15 @@ document.querySelectorAll('#msNavList a[data-req]').forEach(function (a) {
 // clicks the matching sidebar link so both the content AND the sidebar
 // highlight update correctly (showReqTab alone doesn't touch the sidebar).
 // req1 is already the default, so only act on a different valid hash.
-// Added 2026-08-12, fixed same day (sidebar highlight wasn't updating).
+// Uses JEFRI_INITIAL_HASH (captured at the very top of the page, before
+// showReqTab('req1') below overwrote location.hash) — NOT location.hash
+// directly, which by this point already reads back '#req1'.
+// Added 2026-08-12, fixed same day twice (sidebar highlight, then this
+// hash-clobbering bug — jefri.html's unconditional default-tab call was
+// silently destroying the real hash before this code ever ran).
 (function(){
   var validTabs = ['req1','req2','req3','req4','req5'];
-  var fromHash = (location.hash || '').replace('#', '');
+  var fromHash = (JEFRI_INITIAL_HASH || '').replace('#', '');
   if (validTabs.indexOf(fromHash) !== -1 && fromHash !== 'req1') {
     var link = document.querySelector('#msNavList a[data-req="' + fromHash + '"]');
     if (link) link.click();
