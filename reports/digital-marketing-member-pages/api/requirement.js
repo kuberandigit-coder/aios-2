@@ -5229,8 +5229,313 @@ ORDER BY
   return handleJefriReq4Mapping;
 })();
 
+// ==================== Jefri Requirement 5 — Cross-Campaign Attribution / ROI Analyzer ====================
+// Added 2026-08-12. Business question: a product spent money in a selected
+// Source Campaign but generated €0 conversion value there — did it actually
+// convert through another Google Ads campaign, through Direct/Organic/Other
+// Shopify sales, or nothing at all? See evidence/jefri/2026-08-12_req5-cross-campaign-attribution-evidence.md
+// for full discovery, design decisions, and real-data validation.
+//
+// Design decision (documented, not invented): Source Campaign is restricted
+// to Jefri's 5 named campaigns (consistent with every other tab on this
+// page — the dropdown only lets him investigate his own campaigns). Cross-
+// campaign search is ACCOUNT-WIDE (account_id=9031058245, all campaigns,
+// not just Jefri's other 4) — confirmed necessary via real data: items
+// frequently convert in campaigns outside Jefri's 5 (e.g. item
+// 42864380805350 converts in campaign 23340277562, one of Jefri's, while
+// also having activity in a dozen+ campaigns belonging to other Google Ads
+// PMax/Shopping structures in the same account).
+const jefriReq5HandlerModule = (function() {
+  const { Pool } = require('pg');
+
+  let pool;
+  function getPool() {
+    if (!pool) {
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString && !process.env.PGHOST) {
+        throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+      }
+      pool = new Pool({
+        connectionString: connectionString || undefined,
+        host: connectionString ? undefined : process.env.PGHOST,
+        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+        database: connectionString ? undefined : process.env.PGDATABASE,
+        user: connectionString ? undefined : process.env.PGUSER,
+        password: connectionString ? undefined : process.env.PGPASSWORD,
+        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+        connectionTimeoutMillis: 8000,
+        statement_timeout: 30000,
+        max: 3,
+      });
+    }
+    return pool;
+  }
+
+  const JEFRI_ACCOUNT_ID = 9031058245;
+  const JEFRI_CAMPAIGNS_R5 = [
+    { id: '23141810147', name: 'Pmax | Jeff | Klarna | NEWALL | All Products | MCV | DE -16/10' },
+    { id: '23411228109', name: 'Pmax | Jeff | Shoparize | ALL | All Products | MCV | DE-01/01/26' },
+    { id: '22539594891', name: 'Shopping | Jeff | Shoptimised | AOVU15 | TROAS | DE -12/05' },
+    { id: '23473840779', name: 'Pmax | Jeff | Shoparize | FTJ | FinetunedProducts | TROAS | DE-20.01' },
+    { id: '23340277562', name: 'Pmax | Jeff | Shoparize | IT | Italy | TROAS | IT-08/12' },
+  ];
+  const JEFRI_CAMPAIGN_ID_SET = new Set(JEFRI_CAMPAIGNS_R5.map((c) => c.id));
+
+  function isValidDateR5(s) {
+    return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  }
+
+  // Entry filter (mandatory, Phase 4): Source Campaign Cost > 0 AND Source
+  // Campaign Conv. Value = 0, for the selected campaign + date range only.
+  const QUALIFYING_QUERY = `
+    SELECT product_item_id,
+      SUM(cost)::numeric AS source_cost,
+      SUM(clicks)::bigint AS source_clicks,
+      SUM(conversion_value)::numeric AS source_conv
+    FROM google_ads.product_performance
+    WHERE campaign_id = $1 AND date >= $2::date AND date <= $3::date
+      AND product_item_id IS NOT NULL AND product_item_id <> ''
+    GROUP BY product_item_id
+    HAVING SUM(cost) > 0 AND SUM(conversion_value) = 0
+  `;
+
+  // Same identifier-resolution CTE proven in Req1/T-04/Req4 (raw ID or
+  // Merchant Center shopify_de_<parent>_<variant> format), resolving to
+  // Parent Product ID via listings.shopify_listings + parent_child_mapping.
+  function resolutionCte(itemIdsParamIndex) {
+    return `
+resolved AS (
+  SELECT product_item_id,
+    CASE WHEN product_item_id LIKE 'shopify\\_%'
+         THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
+         ELSE product_item_id END AS shopify_id
+  FROM (SELECT unnest($${itemIdsParamIndex}::text[]) AS product_item_id) t
+),
+matched AS (
+  SELECT r.product_item_id, sl.id AS listing_pk, sl.is_parent, sl.is_child, sl.item_id AS matched_shopify_id, sl.sku
+  FROM resolved r
+  LEFT JOIN listings.shopify_listings sl ON sl.item_id = r.shopify_id AND sl.channel = 'LEDSone DE'
+),
+child_to_parent AS (
+  SELECT m.child_id AS listing_pk, p.item_id AS parent_product_id
+  FROM listings.shopify_listings_parent_child_mapping m
+  JOIN listings.shopify_listings p ON p.id = m.parent_id
+),
+resolved_full AS (
+  SELECT m.product_item_id,
+    CASE WHEN m.is_parent = 1 THEN m.matched_shopify_id WHEN m.is_child = 1 THEN ctp.parent_product_id ELSE NULL END AS parent_product_id,
+    CASE WHEN m.is_parent = 1 THEN 'Parent' WHEN m.is_child = 1 THEN 'Variant' ELSE 'Unmatched' END AS level,
+    m.sku, m.matched_shopify_id, m.is_parent, m.is_child
+  FROM matched m
+  LEFT JOIN child_to_parent ctp ON ctp.listing_pk = m.listing_pk
+)`;
+  }
+
+  // Phase 6 — cross-campaign attribution: same item_id, ALL other campaigns
+  // in the account (excluding the source campaign), same date range.
+  const OTHER_CAMPAIGNS_QUERY = `
+    SELECT pp.product_item_id, pp.campaign_id, c.campaign_name,
+      SUM(pp.conversion_value)::numeric AS conv_value
+    FROM google_ads.product_performance pp
+    JOIN google_ads.campaigns c ON c.campaign_id = pp.campaign_id
+    WHERE pp.product_item_id = ANY($1::text[]) AND c.account_id = ${JEFRI_ACCOUNT_ID}
+      AND pp.campaign_id <> $2 AND pp.date >= $3::date AND pp.date <= $4::date
+    GROUP BY pp.product_item_id, pp.campaign_id, c.campaign_name
+    HAVING SUM(pp.conversion_value) > 0
+  `;
+
+  // Phase 8 — total Ads conv. value across ALL campaigns (source + others).
+  const TOTAL_ADS_CONV_QUERY = `
+    SELECT pp.product_item_id, SUM(pp.conversion_value)::numeric AS total_ads_conv
+    FROM google_ads.product_performance pp
+    JOIN google_ads.campaigns c ON c.campaign_id = pp.campaign_id
+    WHERE pp.product_item_id = ANY($1::text[]) AND c.account_id = ${JEFRI_ACCOUNT_ID}
+      AND pp.date >= $2::date AND pp.date <= $3::date
+    GROUP BY pp.product_item_id
+  `;
+
+  // Phase 7 — Total Shopify Sales, all channels, same date range. Parent
+  // rollup = every order line sharing that Parent Product ID (already
+  // includes all variants — same mechanism proven in T-04/Req4).
+  const SHOPIFY_SALES_QUERY = `
+    SELECT oii.product_id AS parent_id, oii.variant_id,
+      SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS sales
+    FROM order_management.orders o
+    JOIN order_management.order_item_info oii ON oii.order_id = o.id
+    WHERE o.sub_source_id = 108 AND o.status = 'Completed'
+      AND o.order_date >= $1::date AND o.order_date < $2::date + INTERVAL '1 day'
+      AND (oii.product_id = ANY($3::text[]) OR oii.variant_id = ANY($4::text[]))
+    GROUP BY oii.product_id, oii.variant_id
+  `;
+
+  const CACHE = new Map();
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+
+  function classifyVerdict(otherConv, nonAdsSales) {
+    if (otherConv > 0 && nonAdsSales > 0) return 'Mixed attribution';
+    if (otherConv > 0) return 'Converts elsewhere';
+    if (nonAdsSales > 0) return 'Direct/Organic only';
+    return 'True zero-converter';
+  }
+
+  async function handleJefriReq5(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const sourceCampaign = req.query && req.query.sourceCampaign;
+    const startDate = isValidDateR5(req.query && req.query.startDate) ? req.query.startDate : null;
+    const endDate = isValidDateR5(req.query && req.query.endDate) ? req.query.endDate : null;
+    const forceRefresh = req.query && req.query.refresh === '1';
+
+    if (!sourceCampaign || !JEFRI_CAMPAIGN_ID_SET.has(String(sourceCampaign))) {
+      res.status(400).json({ error: 'Provide ?sourceCampaign=<one of Jefri\'s 5 campaign IDs>' });
+      return;
+    }
+    if (!startDate || !endDate) {
+      res.status(400).json({ error: 'Provide ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD' });
+      return;
+    }
+
+    const cacheKey = `${sourceCampaign}|${startDate}|${endDate}`;
+    if (!forceRefresh) {
+      const cached = CACHE.get(cacheKey);
+      if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+        res.status(200).json(cached.data);
+        return;
+      }
+    }
+
+    const client = await getPool().connect().catch((err) => {
+      console.error('[jefri/req5] DB connect failed:', err && err.message);
+      res.status(500).json({ error: 'Server not configured or database unreachable.' });
+      return null;
+    });
+    if (!client) return;
+
+    try {
+      const qualifyingResult = await client.query(QUALIFYING_QUERY, [sourceCampaign, startDate, endDate]);
+      const itemIds = qualifyingResult.rows.map((r) => r.product_item_id);
+
+      const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+      if (!itemIds.length) {
+        const payload = {
+          generatedAt: new Date().toISOString(),
+          sourceCampaign: { id: sourceCampaign, name: (JEFRI_CAMPAIGNS_R5.find((c) => c.id === sourceCampaign) || {}).name || sourceCampaign },
+          dateRange: { startDate, endDate },
+          rows: [],
+          meta: { qualifyingProducts: 0, noQualifyingReason: 'No products matched the mandatory filter: Source Campaign Cost > 0 and Source Campaign Conv. Value = 0.' },
+        };
+        CACHE.set(cacheKey, { data: payload, at: Date.now() });
+        res.status(200).json(payload);
+        return;
+      }
+
+      const resolutionQuery = `WITH ${resolutionCte(1)} SELECT product_item_id, parent_product_id, level, sku, matched_shopify_id, is_parent, is_child FROM resolved_full`;
+      const [resolvedResult, otherCampaignsResult, totalAdsResult] = await Promise.all([
+        client.query(resolutionQuery, [itemIds]),
+        client.query(OTHER_CAMPAIGNS_QUERY, [itemIds, sourceCampaign, startDate, endDate]),
+        client.query(TOTAL_ADS_CONV_QUERY, [itemIds, startDate, endDate]),
+      ]);
+
+      const resolvedByItem = new Map(resolvedResult.rows.map((r) => [r.product_item_id, r]));
+
+      const parentIds = [];
+      const variantIds = [];
+      for (const r of resolvedResult.rows) {
+        if (r.is_parent === 1 && r.matched_shopify_id) parentIds.push(r.matched_shopify_id);
+        if (r.is_child === 1 && r.matched_shopify_id) variantIds.push(r.matched_shopify_id);
+      }
+      const shopifyResult = parentIds.length || variantIds.length
+        ? await client.query(SHOPIFY_SALES_QUERY, [startDate, endDate, parentIds.length ? parentIds : [''], variantIds.length ? variantIds : ['']])
+        : { rows: [] };
+      const salesByParent = new Map();
+      const salesByVariant = new Map();
+      for (const r of shopifyResult.rows) {
+        if (r.parent_id) salesByParent.set(r.parent_id, (salesByParent.get(r.parent_id) || 0) + Number(r.sales));
+        if (r.variant_id) salesByVariant.set(r.variant_id, (salesByVariant.get(r.variant_id) || 0) + Number(r.sales));
+      }
+
+      const otherCampaignsByItem = new Map();
+      for (const r of otherCampaignsResult.rows) {
+        if (!otherCampaignsByItem.has(r.product_item_id)) otherCampaignsByItem.set(r.product_item_id, []);
+        otherCampaignsByItem.get(r.product_item_id).push({ campaignId: r.campaign_id, campaignName: r.campaign_name, convValue: round2(r.conv_value) });
+      }
+      const totalAdsByItem = new Map(totalAdsResult.rows.map((r) => [r.product_item_id, Number(r.total_ads_conv)]));
+
+      const rows = qualifyingResult.rows.map((q) => {
+        const itemId = q.product_item_id;
+        const resolved = resolvedByItem.get(itemId) || {};
+        const level = resolved.level || 'Unmatched';
+        const parentProductId = resolved.parent_product_id || null;
+
+        const sourceCost = round2(q.source_cost);
+        const sourceClicks = Number(q.source_clicks) || 0;
+        const sourceConv = round2(q.source_conv); // always 0 by the entry filter
+
+        const otherCampaigns = otherCampaignsByItem.get(itemId) || [];
+        const otherConvValue = round2(otherCampaigns.reduce((s, c) => s + c.convValue, 0));
+
+        let totalShopifySales;
+        if (level === 'Parent') totalShopifySales = salesByParent.get(resolved.matched_shopify_id) || 0;
+        else if (level === 'Variant') totalShopifySales = salesByVariant.get(resolved.matched_shopify_id) || 0;
+        else totalShopifySales = null; // Unmatched — genuinely cannot be computed, not invented as 0
+
+        const totalAdsConvValue = round2(totalAdsByItem.get(itemId) || 0);
+        // Phase 9 — exact formula, negative results NOT clamped to zero.
+        const nonAdsAttributedSales = totalShopifySales != null ? round2(totalShopifySales - totalAdsConvValue) : null;
+
+        const whatHappened = `Spent €${sourceCost.toFixed(2)} and received ${sourceClicks} click${sourceClicks === 1 ? '' : 's'} but generated €0 conversion value in the source campaign.`;
+
+        const verdict = totalShopifySales != null
+          ? classifyVerdict(otherConvValue, nonAdsAttributedSales)
+          : 'Unmatched — Shopify sales cannot be computed';
+
+        return {
+          itemId, parentProductId, level, sku: resolved.sku || null,
+          sourceCampaignSpend: sourceCost, sourceCampaignClicks: sourceClicks, sourceCampaignConvValue: sourceConv,
+          whatHappenedInSource: whatHappened,
+          convertsInOtherCampaigns: otherConvValue > 0,
+          otherCampaigns, otherCampaignConvValue: otherConvValue,
+          totalShopifySales, totalAdsConvValue, nonAdsAttributedSales,
+          nonAdsIsNegative: nonAdsAttributedSales != null && nonAdsAttributedSales < 0,
+          verdict,
+        };
+      });
+
+      const payload = {
+        generatedAt: new Date().toISOString(),
+        sourceCampaign: { id: sourceCampaign, name: (JEFRI_CAMPAIGNS_R5.find((c) => c.id === sourceCampaign) || {}).name || sourceCampaign },
+        dateRange: { startDate, endDate },
+        campaignList: JEFRI_CAMPAIGNS_R5,
+        rows,
+        meta: {
+          qualifyingProducts: rows.length,
+          sourceCampaignSpend: round2(rows.reduce((s, r) => s + r.sourceCampaignSpend, 0)),
+          sourceCampaignClicks: rows.reduce((s, r) => s + r.sourceCampaignClicks, 0),
+          totalShopifySales: round2(rows.reduce((s, r) => s + (r.totalShopifySales || 0), 0)),
+          totalAdsConvValue: round2(rows.reduce((s, r) => s + r.totalAdsConvValue, 0)),
+          nonAdsAttributedSales: round2(rows.reduce((s, r) => s + (r.nonAdsAttributedSales || 0), 0)),
+          convertsElsewhere: rows.filter((r) => r.verdict === 'Converts elsewhere').length,
+          mixedAttribution: rows.filter((r) => r.verdict === 'Mixed attribution').length,
+          directOrganicOnly: rows.filter((r) => r.verdict === 'Direct/Organic only').length,
+          trueZeroConverters: rows.filter((r) => r.verdict === 'True zero-converter').length,
+        },
+      };
+      CACHE.set(cacheKey, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[jefri/req5] error:', err && err.message);
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    } finally {
+      client.release();
+    }
+  }
+
+  return handleJefriReq5;
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
+  if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
   if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);

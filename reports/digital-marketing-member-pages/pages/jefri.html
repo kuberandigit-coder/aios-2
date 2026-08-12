@@ -160,6 +160,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-req="req2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="13" y2="17"></line></svg></span><span class="lbl">Requirement 2</span></a></li>
     <li><a href="#" data-req="req3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Requirement 3</span></a></li>
     <li><a href="#" data-req="req4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span class="lbl">Requirement 4</span></a></li>
+    <li><a href="#" data-req="req5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"></path></svg></span><span class="lbl">Requirement 5</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -533,15 +534,97 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 </div>
 
+<div id="req5Tab" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 5 (Live)</div>
+  <h1>Cross-Campaign Attribution / ROI Analyzer</h1>
+  <div class="sub">A product spent money in a source campaign but generated &euro;0 conversion value there &mdash; did it convert elsewhere (another campaign, or Direct/Organic/Other Shopify sales), or did it produce nothing anywhere? &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads)</div>
+  <div class="filters" style="margin-top:10px;">
+    <label>Source Campaign <select id="r5f_campaign" style="padding:8px 14px;border-radius:8px;border:1px solid var(--line);"></select></label>
+    <label>Start Date <input type="date" id="r5f_startDate"></label>
+    <label>End Date <input type="date" id="r5f_endDate"></label>
+    <button class="primary" id="r5RunBtn" type="button">Run Analysis</button>
+    <span class="chip live" id="r5LiveChip" style="display:none;">Loading&hellip;</span>
+  </div>
+</header>
+
+<div style="background:#eef3ff;border:1px solid #c7d7ff;border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:12.5px;color:#1a2233;line-height:1.7;">
+  <strong>SOURCE CAMPAIGN</strong> &rarr; <strong>&euro;0 CONVERSION VALUE</strong> &rarr; <strong>CHECK OTHER CAMPAIGNS</strong> &rarr; <strong>CHECK SHOPIFY SALES</strong> &rarr; <strong>VERDICT</strong>
+</div>
+
+<div class="cards" id="r5Cards" style="display:none;">
+  <div class="card"><div class="label">Qualifying Products</div><div class="value" id="r5cQualifying">&ndash;</div></div>
+  <div class="card"><div class="label">Source Campaign Spend</div><div class="value" id="r5cSpend">&ndash;</div></div>
+  <div class="card"><div class="label">Source Campaign Clicks</div><div class="value" id="r5cClicks">&ndash;</div></div>
+  <div class="card"><div class="label">Total Shopify Sales</div><div class="value" id="r5cShopifySales">&ndash;</div></div>
+  <div class="card"><div class="label">Total Ads Conv. Value</div><div class="value" id="r5cAdsConv">&ndash;</div></div>
+  <div class="card"><div class="label">Non-Ads Attributed Sales</div><div class="value" id="r5cNonAds">&ndash;</div></div>
+  <div class="card"><div class="label">Converts Elsewhere</div><div class="value" id="r5cConvertsElsewhere">&ndash;</div></div>
+  <div class="card"><div class="label">Mixed Attribution</div><div class="value" id="r5cMixed">&ndash;</div></div>
+  <div class="card"><div class="label">Direct/Organic Only</div><div class="value" id="r5cDirect">&ndash;</div></div>
+  <div class="card villain"><div class="label">True Zero-Converters</div><div class="value" id="r5cTrueZero">&ndash;</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="r5q" placeholder="Search Item ID or Parent Product ID…">
+    <label>Verdict <select id="r5f_verdict">
+      <option value="">All verdicts</option>
+      <option value="Mixed attribution">Mixed attribution</option>
+      <option value="Converts elsewhere">Converts elsewhere</option>
+      <option value="Direct/Organic only">Direct/Organic only</option>
+      <option value="True zero-converter">True zero-converter</option>
+    </select></label>
+    <button id="r5ExportCsv" type="button">Export CSV</button>
+    <span id="r5cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table>
+      <thead style="position:sticky;top:0;z-index:5;">
+        <tr>
+          <th>Parent Product ID</th>
+          <th>Item ID</th>
+          <th class="num">Source Campaign Spend</th>
+          <th class="num">Source Campaign Clicks</th>
+          <th class="num">Source Campaign Conv. Value</th>
+          <th>Converts in Other Campaign(s)?</th>
+          <th>Other Campaign Name(s) + Conv. Value</th>
+          <th class="num">Total Shopify Sales &ndash; All Channels</th>
+          <th class="num">Total Ads Conv. Value (All Campaigns)</th>
+          <th class="num">Non-Ads Attributed Sales</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody id="r5tbody"><tr><td colspan="11" class="empty">Choose a Source Campaign and date range, then click Run Analysis.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r5empty" style="display:none;"></div>
+</div>
+
+<div class="footnotes">
+  <strong>Entry filter (mandatory):</strong> a row only appears here when, for the selected Source Campaign and date range, <code>SUM(cost) &gt; 0 AND SUM(conversion_value) = 0</code> for that Item ID &mdash; real spend that generated zero recorded conversion value in that specific campaign.<br>
+  <strong>Source Campaign:</strong> restricted to Jefri's 5 named campaigns (same list as Requirements 1&ndash;4) &mdash; the campaign being investigated.<br>
+  <strong>Converts in Other Campaign(s)?</strong> searches the SAME Item ID across every OTHER campaign in the whole ledsone.de Google Ads account (<code>account_id=9031058245</code>, not just Jefri's other 4) for the same date range &mdash; confirmed necessary via real data: items frequently run in campaigns outside Jefri's named 5 within the same account, and that's sometimes exactly where the real conversion happened.<br>
+  <strong>Total Shopify Sales &ndash; All Channels:</strong> gross revenue (<code>item_price &times; item_quantity</code>, <code>status='Completed'</code>, Shopify ledsone-de) for the Item ID's Parent Product ID (or Variant, if the item resolves to a Shopify variant) &mdash; regardless of what drove the sale (Google Ads, Direct, Organic, Email, Social, Other). Same resolution mechanism as Requirement 4.<br>
+  <strong>Total Ads Conv. Value (All Campaigns):</strong> <code>SUM(conversion_value)</code> for the Item ID across every campaign in the account (source + all others), same date range.<br>
+  <strong>Non-Ads Attributed Sales</strong> = Total Shopify Sales &minus; Total Ads Conv. Value (All Campaigns). <strong>Not clamped at zero</strong> &mdash; a negative value is shown as-is (highlighted) when Google's own Ads-attributed conversion value exceeds what this exact Postgres order-date window can match; this is a genuine cross-source attribution difference (see Requirement 4's footnote for the same phenomenon), not a bug.<br>
+  <strong>Verdict priority</strong> (checked in this exact order): <strong>1. Mixed attribution</strong> (Other Campaign Conv. Value &gt; 0 AND Non-Ads Attributed Sales &gt; 0) &middot; <strong>2. Converts elsewhere</strong> (Other Campaign Conv. Value &gt; 0, mixed condition not met) &middot; <strong>3. Direct/Organic only</strong> (Other Campaign Conv. Value = 0 AND Non-Ads Attributed Sales &gt; 0) &middot; <strong>4. True zero-converter</strong> (Other Campaign Conv. Value = 0 AND Non-Ads Attributed Sales = 0).<br>
+  <strong>Unmatched items:</strong> if the Item ID has no Shopify listing match at all (same ~24.7% gap documented on Requirement 4), Total Shopify Sales/Non-Ads Sales cannot be computed &mdash; shown as N/A with verdict "Unmatched", not guessed.<br>
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.product_performance</code>, <code>google_ads.campaigns</code>, <code>listings.shopify_listings</code>, <code>listings.shopify_listings_parent_child_mapping</code>, <code>order_management.orders</code>, <code>order_management.order_item_info</code>) &middot; fetched via <code>/api/requirement?fn=jefri-req5</code>. Full discovery/validation: <code>evidence/jefri/2026-08-12_req5-cross-campaign-attribution-evidence.md</code>.
+</div>
+</div>
+
 <script>
 let R2_LOADED = false;
 let R3_LOADED = false;
 let R4_LOADED = false;
+let R5_INIT = false;
 function showReqTab(which){
   document.getElementById('req1Tab').style.display = which === 'req1' ? '' : 'none';
   document.getElementById('req2Tab').style.display = which === 'req2' ? '' : 'none';
   document.getElementById('req3Tab').style.display = which === 'req3' ? '' : 'none';
   document.getElementById('req4Tab').style.display = which === 'req4' ? '' : 'none';
+  document.getElementById('req5Tab').style.display = which === 'req5' ? '' : 'none';
   var tb1=document.getElementById('tabBtnReq1'), tb2=document.getElementById('tabBtnReq2'), tb3=document.getElementById('tabBtnReq3');
   if (tb1) tb1.classList.toggle('active', which === 'req1');
   if (tb2) tb2.classList.toggle('active', which === 'req2');
@@ -549,6 +632,10 @@ function showReqTab(which){
   if (which === 'req4' && !R4_LOADED) {
     R4_LOADED = true;
     r4Load();
+  }
+  if (which === 'req5' && !R5_INIT) {
+    R5_INIT = true;
+    r5Init();
   }
   if (which === 'req2' && !R2_LOADED) {
     R2_LOADED = true;
@@ -1333,6 +1420,164 @@ document.querySelectorAll('#req4Tab thead th[data-k]').forEach(th => {
     r4Render();
   });
 });
+
+// ===== Requirement 5: Cross-Campaign Attribution / ROI Analyzer (added 2026-08-12) =====
+let R5_ALL = [];
+let R5_CAMPAIGNS = [];
+
+function r5Init(){
+  const sel = document.getElementById('r5f_campaign');
+  const JEFRI_CAMPAIGNS_R5 = [
+    { id: '23141810147', name: 'Pmax | Jeff | Klarna | NEWALL | All Products | MCV | DE -16/10' },
+    { id: '23411228109', name: 'Pmax | Jeff | Shoparize | ALL | All Products | MCV | DE-01/01/26' },
+    { id: '22539594891', name: 'Shopping | Jeff | Shoptimised | AOVU15 | TROAS | DE -12/05' },
+    { id: '23473840779', name: 'Pmax | Jeff | Shoparize | FTJ | FinetunedProducts | TROAS | DE-20.01' },
+    { id: '23340277562', name: 'Pmax | Jeff | Shoparize | IT | Italy | TROAS | IT-08/12' },
+  ];
+  JEFRI_CAMPAIGNS_R5.forEach(function(c){
+    const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt);
+  });
+  // Default date range: last 90 days through today, matching the rest of this page's convention.
+  const today = new Date();
+  const start = new Date(today.getTime() - 90*24*60*60*1000);
+  document.getElementById('r5f_endDate').value = today.toISOString().slice(0,10);
+  document.getElementById('r5f_startDate').value = start.toISOString().slice(0,10);
+}
+
+async function r5Load(){
+  const campaign = document.getElementById('r5f_campaign').value;
+  const startDate = document.getElementById('r5f_startDate').value;
+  const endDate = document.getElementById('r5f_endDate').value;
+  if (!campaign || !startDate || !endDate) {
+    alert('Choose a Source Campaign, Start Date, and End Date first.');
+    return;
+  }
+  const btn = document.getElementById('r5RunBtn');
+  const chip = document.getElementById('r5LiveChip');
+  btn.disabled = true;
+  chip.style.display = '';
+  chip.textContent = 'Loading live data from PostgreSQL…';
+  chip.className = 'chip live';
+  document.getElementById('r5tbody').innerHTML = '<tr><td colspan="11" class="loading">Loading Requirement 5 analysis…</td></tr>';
+  document.getElementById('r5Cards').style.display = 'none';
+  try {
+    const url = '/api/requirement?fn=jefri-req5&sourceCampaign=' + encodeURIComponent(campaign)
+      + '&startDate=' + encodeURIComponent(startDate) + '&endDate=' + encodeURIComponent(endDate) + '&refresh=1';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+    R5_ALL = data.rows || [];
+    chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString();
+    document.getElementById('r5Cards').style.display = '';
+    if (data.meta) {
+      document.getElementById('r5cQualifying').textContent = num(data.meta.qualifyingProducts);
+      document.getElementById('r5cSpend').textContent = eur(data.meta.sourceCampaignSpend);
+      document.getElementById('r5cClicks').textContent = num(data.meta.sourceCampaignClicks);
+      document.getElementById('r5cShopifySales').textContent = eur(data.meta.totalShopifySales);
+      document.getElementById('r5cAdsConv').textContent = eur(data.meta.totalAdsConvValue);
+      document.getElementById('r5cNonAds').textContent = eur(data.meta.nonAdsAttributedSales);
+      document.getElementById('r5cConvertsElsewhere').textContent = num(data.meta.convertsElsewhere);
+      document.getElementById('r5cMixed').textContent = num(data.meta.mixedAttribution);
+      document.getElementById('r5cDirect').textContent = num(data.meta.directOrganicOnly);
+      document.getElementById('r5cTrueZero').textContent = num(data.meta.trueZeroConverters);
+    }
+    r5Render();
+  } catch (e) {
+    document.getElementById('r5tbody').innerHTML = '<tr><td colspan="11" class="empty">Error: ' + esc(e.message) + '</td></tr>';
+    chip.textContent = 'Unable to load — ' + e.message;
+    chip.className = 'chip stale';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function r5VerdictBadge(v){
+  if (v === 'Mixed attribution') return '<span class="tag-badge" style="color:#1f5eff;">&#9679; Mixed attribution</span>';
+  if (v === 'Converts elsewhere') return '<span class="tag-badge" style="color:#0a7d4f;">&#9679; Converts elsewhere</span>';
+  if (v === 'Direct/Organic only') return '<span class="tag-badge" style="color:#b98b1e;">&#9679; Direct/Organic only</span>';
+  if (v === 'True zero-converter') return '<span class="tag-badge" style="color:#c62828;">&#9679; True zero-converter</span>';
+  return '<span class="tag-badge" style="color:#9aa3b2;">&#9679; ' + esc(v) + '</span>';
+}
+
+function r5FilteredRows(){
+  const q = document.getElementById('r5q').value.trim().toLowerCase();
+  const verdictFilter = document.getElementById('r5f_verdict').value;
+  return R5_ALL.filter(function(r){
+    const qHit = !q || (r.itemId||'').toLowerCase().includes(q) || (r.parentProductId||'').toLowerCase().includes(q);
+    const vHit = !verdictFilter || r.verdict === verdictFilter;
+    return qHit && vHit;
+  });
+}
+
+function r5Render(){
+  const rows = r5FilteredRows();
+  const tbody = document.getElementById('r5tbody');
+  const emptyEl = document.getElementById('r5empty');
+  if (!R5_ALL.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = 'No products matched the mandatory filter: Source Campaign Cost > 0 and Source Campaign Conv. Value = 0.';
+    document.getElementById('r5cnt').textContent = '0 of 0';
+    return;
+  }
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = 'No rows match the current search/verdict filter.';
+    document.getElementById('r5cnt').textContent = '0 of ' + R5_ALL.length;
+    return;
+  }
+  emptyEl.style.display = 'none';
+  tbody.innerHTML = rows.map(function(r){
+    const otherCampaignsCell = (r.otherCampaigns && r.otherCampaigns.length)
+      ? r.otherCampaigns.map(function(c){ return esc(c.campaignName) + ' (' + eur(c.convValue) + ')'; }).join('<br>')
+      : '<span class="t1-na">none</span>';
+    const nonAdsCell = r.nonAdsAttributedSales == null
+      ? '<span class="t1-na">N/A</span>'
+      : (r.nonAdsIsNegative
+          ? '<span style="color:#c62828;font-weight:700;">' + eur(r.nonAdsAttributedSales) + ' (negative)</span>'
+          : eur(r.nonAdsAttributedSales));
+    return '<tr>' +
+      '<td>' + (r.parentProductId ? esc(r.parentProductId) : '<span class="t1-na">N/A</span>') + '</td>' +
+      '<td>' + esc(r.itemId) + '</td>' +
+      '<td class="num">' + eur(r.sourceCampaignSpend) + '</td>' +
+      '<td class="num">' + num(r.sourceCampaignClicks) + '</td>' +
+      '<td class="num">' + eur(r.sourceCampaignConvValue) + '</td>' +
+      '<td>' + (r.convertsInOtherCampaigns ? 'Yes' : 'No') + '</td>' +
+      '<td>' + otherCampaignsCell + '</td>' +
+      '<td class="num">' + (r.totalShopifySales != null ? eur(r.totalShopifySales) : '<span class="t1-na">N/A</span>') + '</td>' +
+      '<td class="num">' + eur(r.totalAdsConvValue) + '</td>' +
+      '<td class="num">' + nonAdsCell + '</td>' +
+      '<td>' + r5VerdictBadge(r.verdict) + '</td>' +
+      '</tr>';
+  }).join('');
+  document.getElementById('r5cnt').textContent = rows.length.toLocaleString() + ' of ' + R5_ALL.length.toLocaleString();
+}
+
+function r5ExportCsv(){
+  const rows = r5FilteredRows();
+  const header = ['Parent Product ID','Item ID','Source Campaign Spend','Source Campaign Clicks','Source Campaign Conv. Value','Converts in Other Campaign(s)?','Other Campaign Name(s) + Conv. Value','Total Shopify Sales - All Channels','Total Ads Conv. Value (All Campaigns)','Non-Ads Attributed Sales','Verdict'];
+  const lines = [header.join(',')];
+  rows.forEach(function(r){
+    const otherCampaigns = (r.otherCampaigns||[]).map(function(c){ return c.campaignName + ' (' + c.convValue + ')'; }).join('; ');
+    lines.push([
+      r.parentProductId || '', r.itemId, r.sourceCampaignSpend, r.sourceCampaignClicks, r.sourceCampaignConvValue,
+      r.convertsInOtherCampaigns ? 'Yes' : 'No', otherCampaigns,
+      r.totalShopifySales != null ? r.totalShopifySales : '', r.totalAdsConvValue,
+      r.nonAdsAttributedSales != null ? r.nonAdsAttributedSales : '', r.verdict
+    ].map(function(v){ return '"' + String(v==null?'':v).replace(/"/g,'""') + '"'; }).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jefri-req5-cross-campaign-attribution-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('r5RunBtn').addEventListener('click', r5Load);
+document.getElementById('r5q').addEventListener('input', r5Render);
+document.getElementById('r5f_verdict').addEventListener('change', r5Render);
+document.getElementById('r5ExportCsv').addEventListener('click', r5ExportCsv);
 </script>
 </div>
 </div>
