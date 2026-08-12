@@ -4499,7 +4499,17 @@ renderBlocks();
 }
 
 var _insertMenuOpen = -1;
+var _lastInsertMenuClickAt = 0;
 function showInsertMenu(idx, btn) {
+  /* Guard against a duplicate click event firing for the same physical
+     click (seen on some trackpads/mouse drivers/remote-desktop sessions):
+     without this, a near-instant second "click" re-enters this function,
+     whose first line closes whatever was just opened — the menu flashes
+     open then immediately closes. A second call within 300ms is treated
+     as the duplicate and ignored rather than re-triggering open→close. */
+  var now = Date.now();
+  if (now - _lastInsertMenuClickAt < 300) return;
+  _lastInsertMenuClickAt = now;
   closeInsertMenu();
 _insertMenuOpen = idx;
   document.getElementById('blist').classList.add('menu-open');
