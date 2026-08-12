@@ -477,7 +477,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <label>End Date <input type="date" id="r4f_endDate"></label>
     <button id="r4ApplyDates" type="button">Apply</button>
     <button id="r4ClearDates" type="button">All-Time</button>
-    <input type="text" id="r4q" placeholder="Search Item ID or Parent Product ID…">
+    <input type="text" id="r4q" style="min-width:420px;" placeholder="Search Item ID(s) or Parent Product ID(s) — comma-separated for multiple, e.g. 44804658594057, 8421816205577">
     <label>Level <select id="r4f_level">
       <option value="">All levels</option>
       <option value="Parent">Parent (Rollup)</option>
@@ -1355,10 +1355,17 @@ async function r4Load(force){
 }
 
 function r4FilteredRows(){
-  const q = document.getElementById('r4q').value.trim().toLowerCase();
+  // Multi-ID search (added 2026-08-12, same as Req5): comma-separated list
+  // of Item IDs and/or Parent Product IDs — a row matches if ANY pasted
+  // value is found in its Item ID or Parent Product ID.
+  const qTerms = document.getElementById('r4q').value.split(',')
+    .map(function(s){ return s.trim().toLowerCase(); })
+    .filter(function(s){ return s.length > 0; });
   const levelFilter = document.getElementById('r4f_level').value;
   let rows = R4_ALL.filter(function(r){
-    const qHit = !q || (r.itemId||'').toLowerCase().includes(q) || (r.parentProductId||'').toLowerCase().includes(q);
+    const itemId = (r.itemId||'').toLowerCase();
+    const parentId = (r.parentProductId||'').toLowerCase();
+    const qHit = !qTerms.length || qTerms.some(function(t){ return itemId.includes(t) || parentId.includes(t); });
     const levelHit = !levelFilter || r.level === levelFilter;
     return qHit && levelHit;
   });
