@@ -2877,22 +2877,24 @@ sdoLoad(false);
 sdeLoad(false);
 
 // Locked single-member view: ?staff=mahima (or jeffri/thasitha/sukirtha) in
-// the URL both deep-links straight to that member's tab AND hides every
-// other tab so a staff member embedding this page (e.g. via their own
-// sidebar iframe) only ever sees their own numbers, matching the same
-// "each account only sees its own data" rule the rest of this login
-// system follows.
+// the URL both deep-links straight to that member's tab AND hides the
+// entire navy sidebar (not just the other members' nav items) so a staff
+// member embedding this page inside their own dashboard's sidebar/iframe
+// sees only their own sales data, full-width — no duplicate navigation,
+// since they already have their own page's sidebar for that. Reversed
+// 2026-08-12 from the earlier "full sidebar everywhere, including inside
+// iframes" behaviour, per explicit follow-up request.
 (function(){
   const params = new URLSearchParams(window.location.search);
   const lockedStaff = params.get('staff');
   if (lockedStaff) {
     const validTab = document.querySelector('#staffTabs [data-staff="' + lockedStaff + '"]');
     if (validTab) {
-      document.querySelectorAll('#staffTabs .t-navitem').forEach(function(el){
-        if (el.id !== validTab.id) el.style.display = 'none';
-      });
-      document.querySelectorAll('.t-navlabel').forEach(function(el){ el.style.display = 'none'; });
-      document.getElementById('otherReportsLinks').style.display = 'none';
+      const sidebar = document.getElementById('tSidebar');
+      if (sidebar) sidebar.style.display = 'none';
+      const collapseBtn = document.getElementById('tCollapseBtn');
+      if (collapseBtn) collapseBtn.style.display = 'none';
+      document.querySelectorAll('.t-main').forEach(function(el){ el.style.setProperty('margin-left', '0', 'important'); });
       showStaffTab(lockedStaff);
     }
   }
