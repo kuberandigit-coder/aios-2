@@ -527,17 +527,40 @@ async function mapLimit(items, limit, fn) {
   return results;
 }
 
-// Shared row-builder — takes plain {month: value} maps (sales figures and
-// cost objects) and produces the same row shape loadAll() used to build
-// inline, so both the per-month-request path (loadAll) and the batched
-// single-request path (loadSonyaBatched) render identically. Extracted
-// 2026-08-12.
-function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26) {
-  // Jan-Jun and 2026 runs Jun-Aug, so a positional zip would pair e.g.
-  // 2025-01 with 2026-06 under a single mislabeled "June" row.
-  const allMonthNums = [...new Set([...MONTHS_2025, ...MONTHS_2026].map((m) => m.slice(5)))].sort();
-  const rows = [];
-  for (const mm of allMonthNums) {
+async function loadAll(member, idSuffix, force){
+  const statusChip = document.getElementById('statusChip' + idSuffix);
+  const refreshBtn = document.getElementById('refreshBtn' + idSuffix);
+  const tbody = document.getElementById('tblBody' + idSuffix);
+  const memberLabel = MEMBER_NAMES[member] || member;
+  refreshBtn.disabled = true;
+  statusChip.textContent = 'Loading…';
+  tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
+
+  try {
+    // Only the live/current month (2026-08) is ever force-refreshed. Closed
+    // historical months already have a static snapshot that never changes —
+    // forcing refresh=1 on all 20 months at once (previous behaviour) fired
+    // ~80 concurrent live requests at Shopify + Postgres on every "Refresh
+    // (live)" click, which is what caused the Shopify throttling
+    // ("exceeded retries") and Postgres connection-pool timeouts. Fixed
+    // 2026-08-05.
+    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
+      mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
+      mapLimit(MONTHS_2026, 5, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),
+      mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
+      mapLimit(MONTHS_2026, 5, (m) => fetchCost(member, m, force && LIVE_2026.includes(m))),
+    ]);
+
+    const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
+    MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; cost25[m] = cost25Arr[i]; });
+    MONTHS_2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; cost26[m] = cost26Arr[i]; });
+
+    // Align by calendar month number (MM), not by array position — 2025 runs
+    // Jan-Jun and 2026 runs Jun-Aug, so a positional zip would pair e.g.
+    // 2025-01 with 2026-06 under a single mislabeled "June" row.
+    const allMonthNums = [...new Set([...MONTHS_2025, ...MONTHS_2026].map((m) => m.slice(5)))].sort();
+    const rows = [];
+    for (const mm of allMonthNums) {
       const m25 = MONTHS_2025.find((m) => m.slice(5) === mm) || null;
       const m26 = MONTHS_2026.find((m) => m.slice(5) === mm) || null;
       const sales2025 = m25 ? sales25ByMonth[m25] : null;
@@ -578,92 +601,16 @@ function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26) {
         ? (net2026 - net2025) / net2025
         : null;
       const isLive = m26 && LIVE_2026.includes(m26);
-    rows.push({
-      monthLabel, m25, m26,
-      sales2025, costVal2025, ownCost2025, dmSonya2025, net2025, roas2025,
-      sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
-      targetAch, yoyGrowth, isLive,
-    });
-  }
-  return rows;
-}
+      rows.push({
+        monthLabel, m25, m26,
+        sales2025, costVal2025, ownCost2025, dmSonya2025, net2025, roas2025,
+        sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
+        targetAch, yoyGrowth, isLive,
+      });
+    }
 
-async function loadAll(member, idSuffix, force){
-  const statusChip = document.getElementById('statusChip' + idSuffix);
-  const refreshBtn = document.getElementById('refreshBtn' + idSuffix);
-  const tbody = document.getElementById('tblBody' + idSuffix);
-  const memberLabel = MEMBER_NAMES[member] || member;
-  refreshBtn.disabled = true;
-  statusChip.textContent = 'Loading…';
-  tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
-
-  try {
-    // Only the live/current month (2026-08) is ever force-refreshed. Closed
-    // historical months already have a static snapshot that never changes —
-    // forcing refresh=1 on all 20 months at once (previous behaviour) fired
-    // ~80 concurrent live requests at Shopify + Postgres on every "Refresh
-    // (live)" click, which is what caused the Shopify throttling
-    // ("exceeded retries") and Postgres connection-pool timeouts. Fixed
-    // 2026-08-05.
-    // Concurrency 20 was tried 2026-08-12 to cut load time, on the theory
-    // that closed months are cheap static-snapshot file reads — but
-    // sales25.js/salesuk.js/muguntha.js ALL open their own Postgres pool
-    // (for override lookups etc.), even on the snapshot fast path, and 20
-    // concurrent invocations across 4 mapLimit calls exhausted the DB's
-    // connection limit ("sorry, too many clients already"). Reverted to 5
-    // same day.
-    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
-      mapLimit(MONTHS_2026, 5, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),
-      mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
-      mapLimit(MONTHS_2026, 5, (m) => fetchCost(member, m, force && LIVE_2026.includes(m))),
-    ]);
-
-    const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
-    MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; cost25[m] = cost25Arr[i]; });
-    MONTHS_2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; cost26[m] = cost26Arr[i]; });
-
-    const rows = buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26);
     renderTable(rows, memberLabel, idSuffix, member);
     renderCards(rows, idSuffix);
-    statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
-  } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="13" class="empty">Error: ' + (err.message || err) + '</td></tr>';
-    statusChip.textContent = 'Error';
-  } finally {
-    refreshBtn.disabled = false;
-  }
-}
-
-// Pilot batched loader for Sonya only (2026-08-12): replaces the ~40
-// separate per-month requests loadAll() would fire with a single call to
-// /api/muguntha-perf-sonya, which does the same 40 lookups server-side
-// in-process (no network round trips between them) and returns one
-// payload. Same buildPerfRows()/renderTable()/renderCards() rendering
-// path as loadAll(), so the table looks identical — only the fetch
-// strategy differs. If this proves reliable, the same pattern will be
-// rolled out to Sajeepan/Kamsi/Jefri/Dilaksi one at a time.
-async function loadSonyaBatched(force){
-  const statusChip = document.getElementById('statusChip');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const tbody = document.getElementById('tblBody');
-  refreshBtn.disabled = true;
-  statusChip.textContent = 'Loading…';
-  tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading Sonya\'s 2025 vs 2026 performance…</td></tr>';
-
-  try {
-    const url = '/api/muguntha-perf-sonya' + (force ? '?refresh=1' : '');
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'batched fetch failed');
-
-    const cost25 = {}, cost26 = {};
-    MONTHS_2025.forEach((m) => { cost25[m] = data.cost25ByMonth[m]; });
-    MONTHS_2026.forEach((m) => { cost26[m] = data.cost26ByMonth[m]; });
-
-    const rows = buildPerfRows(data.sales25ByMonth, data.sales26ByMonth, cost25, cost26);
-    renderTable(rows, 'Sonya', '', 'sonya');
-    renderCards(rows, '');
     statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="13" class="empty">Error: ' + (err.message || err) + '</td></tr>';
