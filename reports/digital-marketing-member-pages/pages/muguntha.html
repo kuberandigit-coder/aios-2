@@ -985,7 +985,7 @@ function mgRenderListing() {
     const img = p.image ? '<img src="' + p.image + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--line);">' : '<div style="width:44px;height:44px;border-radius:6px;background:#f0f3f8;"></div>';
     return '<tr>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + img + '</td>' +
-      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.title) + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);"><a href="https://www.ledsone.co.uk/products/' + esc(p.handle) + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;font-weight:600;">' + esc(p.title) + '</a></td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.sku || 'N/A') + '</td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;font-weight:700;">' + priceLabel + '</td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-transform:capitalize;">' + esc((p.status || '').toLowerCase()) + '</td>' +
