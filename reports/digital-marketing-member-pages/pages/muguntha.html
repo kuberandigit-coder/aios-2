@@ -458,13 +458,40 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
     <div class="tablebox" style="padding:22px 24px;">
       <h2 style="font-size:15px;margin-bottom:4px;">2026 New Listings — ledsone.co.uk</h2>
       <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">Every product tagged <code>2026New</code> in Shopify UK, with price, title, and inventory. Source: Shopify Admin GraphQL API (read-only).</div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+        <input id="mgListingSearch" type="text" placeholder="Search title or SKU…" style="flex:1;min-width:200px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;">
+        <select id="mgFilterType" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Product Types</option></select>
+        <select id="mgFilterVendor" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Vendors</option></select>
+        <select id="mgFilterStatus" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;">
+          <option value="">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="DRAFT">Draft</option>
+          <option value="ARCHIVED">Archived</option>
+        </select>
+        <select id="mgFilterStock" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;">
+          <option value="">All Stock</option>
+          <option value="in">In Stock</option>
+          <option value="out">Out of Stock</option>
+        </select>
+        <select id="mgFilterSort" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;">
+          <option value="title-asc">Title A–Z</option>
+          <option value="title-desc">Title Z–A</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="stock-desc">Inventory: High to Low</option>
+          <option value="stock-asc">Inventory: Low to High</option>
+        </select>
+      </div>
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;">Price:</span>
         <button class="mg-price-filter active" data-filter="all" type="button" style="padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:#fff;border-color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;">All Prices</button>
         <button class="mg-price-filter" data-filter="under25" type="button" style="padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;">Under £25</button>
         <button class="mg-price-filter" data-filter="over25" type="button" style="padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;">£25 and Above</button>
+        <button id="mgListingClearBtn" type="button" style="padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;">Clear Filters</button>
         <button id="mgListingRefreshBtn" type="button" style="margin-left:auto;padding:8px 16px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;">Refresh</button>
       </div>
-      <div id="mgListingStatus" style="font-size:12.5px;color:var(--muted);margin-bottom:10px;"></div>
+      <div id="mgListingStatus" style="font-size:12.5px;color:var(--muted);margin-bottom:4px;"></div>
+      <div id="mgListingCount" style="font-size:12.5px;color:var(--muted);margin-bottom:10px;font-weight:600;"></div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:800px;">
           <thead>
@@ -475,10 +502,11 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
               <th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--line);">Price</th>
               <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Status</th>
               <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Vendor</th>
+              <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Type</th>
               <th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--line);">Inventory</th>
             </tr>
           </thead>
-          <tbody id="mgListingBody"><tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr></tbody>
+          <tbody id="mgListingBody"><tr><td colspan="8" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -968,14 +996,51 @@ function mgFmtMoney(v, ccy) {
   return sym + Number(v).toFixed(2);
 }
 
+// Populates the Product Type / Vendor dropdowns from whatever values are
+// actually present in the loaded data, so the filters never show options
+// that would return zero results.
+function mgPopulateListingDropdowns() {
+  const types = [...new Set(MG_LISTING_DATA.map((p) => p.productType).filter(Boolean))].sort();
+  const vendors = [...new Set(MG_LISTING_DATA.map((p) => p.vendor).filter(Boolean))].sort();
+  const typeSel = document.getElementById('mgFilterType');
+  const vendorSel = document.getElementById('mgFilterVendor');
+  typeSel.innerHTML = '<option value="">All Product Types</option>' + types.map((t) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
+  vendorSel.innerHTML = '<option value="">All Vendors</option>' + vendors.map((v) => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join('');
+}
+
 function mgRenderListing() {
   const tbody = document.getElementById('mgListingBody');
+  const search = document.getElementById('mgListingSearch').value.trim().toLowerCase();
+  const typeFilter = document.getElementById('mgFilterType').value;
+  const vendorFilter = document.getElementById('mgFilterVendor').value;
+  const statusFilter = document.getElementById('mgFilterStatus').value;
+  const stockFilter = document.getElementById('mgFilterStock').value;
+  const sort = document.getElementById('mgFilterSort').value;
+
   let rows = MG_LISTING_DATA;
   if (MG_LISTING_FILTER === 'under25') rows = rows.filter((p) => p.priceMin != null && p.priceMin < 25);
   else if (MG_LISTING_FILTER === 'over25') rows = rows.filter((p) => p.priceMin != null && p.priceMin >= 25);
+  if (search) rows = rows.filter((p) => (p.title || '').toLowerCase().includes(search) || (p.sku || '').toLowerCase().includes(search));
+  if (typeFilter) rows = rows.filter((p) => p.productType === typeFilter);
+  if (vendorFilter) rows = rows.filter((p) => p.vendor === vendorFilter);
+  if (statusFilter) rows = rows.filter((p) => p.status === statusFilter);
+  if (stockFilter === 'in') rows = rows.filter((p) => p.totalInventory != null && p.totalInventory > 0);
+  else if (stockFilter === 'out') rows = rows.filter((p) => p.totalInventory == null || p.totalInventory <= 0);
+
+  rows = rows.slice().sort((a, b) => {
+    if (sort === 'title-asc') return (a.title || '').localeCompare(b.title || '');
+    if (sort === 'title-desc') return (b.title || '').localeCompare(a.title || '');
+    if (sort === 'price-asc') return (a.priceMin ?? Infinity) - (b.priceMin ?? Infinity);
+    if (sort === 'price-desc') return (b.priceMin ?? -Infinity) - (a.priceMin ?? -Infinity);
+    if (sort === 'stock-desc') return (b.totalInventory ?? -Infinity) - (a.totalInventory ?? -Infinity);
+    if (sort === 'stock-asc') return (a.totalInventory ?? Infinity) - (b.totalInventory ?? Infinity);
+    return 0;
+  });
+
+  document.getElementById('mgListingCount').textContent = rows.length + ' of ' + MG_LISTING_DATA.length + ' products shown';
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--muted);">No products match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:40px 20px;text-align:center;color:var(--muted);">No products match these filters.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((p) => {
@@ -983,6 +1048,7 @@ function mgRenderListing() {
       ? mgFmtMoney(p.priceMin, p.currency) + ' – ' + mgFmtMoney(p.priceMax, p.currency)
       : mgFmtMoney(p.priceMin, p.currency);
     const img = p.image ? '<img src="' + p.image + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--line);">' : '<div style="width:44px;height:44px;border-radius:6px;background:#f0f3f8;"></div>';
+    const stockColor = (p.totalInventory != null && p.totalInventory > 0) ? 'var(--good)' : 'var(--bad)';
     return '<tr>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + img + '</td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);"><a href="https://www.ledsone.co.uk/products/' + esc(p.handle) + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;font-weight:600;">' + esc(p.title) + '</a></td>' +
@@ -990,7 +1056,8 @@ function mgRenderListing() {
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;font-weight:700;">' + priceLabel + '</td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-transform:capitalize;">' + esc((p.status || '').toLowerCase()) + '</td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.vendor || 'N/A') + '</td>' +
-      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;">' + (p.totalInventory != null ? p.totalInventory : 'N/A') + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.productType || 'N/A') + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;color:' + stockColor + ';font-weight:600;">' + (p.totalInventory != null ? p.totalInventory : 'N/A') + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -1008,6 +1075,7 @@ async function mgLoadListing() {
     if (!data.success) throw new Error(data.error || 'Failed to load listings');
     MG_LISTING_DATA = data.products;
     status.textContent = data.count + ' products tagged 2026New · updated ' + new Date(data.generatedAt).toLocaleString();
+    mgPopulateListingDropdowns();
     mgRenderListing();
   } catch (err) {
     status.textContent = 'Error: ' + (err.message || err);
@@ -1030,6 +1098,31 @@ document.querySelectorAll('.mg-price-filter').forEach((b) => {
     });
     mgRenderListing();
   });
+});
+let mgSearchDebounce;
+document.getElementById('mgListingSearch').addEventListener('input', () => {
+  clearTimeout(mgSearchDebounce);
+  mgSearchDebounce = setTimeout(mgRenderListing, 200);
+});
+['mgFilterType', 'mgFilterVendor', 'mgFilterStatus', 'mgFilterStock', 'mgFilterSort'].forEach((id) => {
+  document.getElementById(id).addEventListener('change', mgRenderListing);
+});
+document.getElementById('mgListingClearBtn').addEventListener('click', () => {
+  document.getElementById('mgListingSearch').value = '';
+  document.getElementById('mgFilterType').value = '';
+  document.getElementById('mgFilterVendor').value = '';
+  document.getElementById('mgFilterStatus').value = '';
+  document.getElementById('mgFilterStock').value = '';
+  document.getElementById('mgFilterSort').value = 'title-asc';
+  MG_LISTING_FILTER = 'all';
+  document.querySelectorAll('.mg-price-filter').forEach((x) => {
+    const on = x.getAttribute('data-filter') === 'all';
+    x.classList.toggle('active', on);
+    x.style.background = on ? 'var(--accent)' : '#fff';
+    x.style.color = on ? '#fff' : 'var(--muted)';
+    x.style.borderColor = on ? 'var(--accent)' : 'var(--line)';
+  });
+  mgRenderListing();
 });
 
 function mgShowTool(url){
