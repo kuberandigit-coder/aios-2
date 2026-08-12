@@ -70,11 +70,71 @@ tbody tr:hover{background:var(--accent-soft);}
 .classpill.REFERRAL{background:#0f766e;}
 .classpill.OTHER,.classpill.UNKNOWN{background:#9aa3b2;}
 @media(max-width:700px){h1{font-size:18px;}.card .value{font-size:18px;}body{padding:16px 8px;}header{padding:18px 16px;}}
+
+/* ---------- Collapsible sidebar (same pattern as sales2.html/thasitha.html) ---------- */
+:root{--sb-navy:#0c1a30;--sb-navy2:#0e2143;--sb-gold:#c9a227;--sb-text:#aab4c8;--sb-w:270px;--sb-w-collapsed:72px;}
+html,body{margin:0;}
+body{overflow-x:hidden;padding:0;}
+.t-sidebar{width:var(--sb-w-collapsed);background:var(--sb-navy);color:var(--sb-text);display:flex;flex-direction:column;padding:16px 10px;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;transition:width .18s ease,padding .18s ease;z-index:40;}
+.t-sidebar .t-brand-txt,.t-sidebar .t-navlabel,.t-sidebar .t-navitem span.lbl{display:none;}
+.t-sidebar .t-navitem{justify-content:center;}
+.t-sidebar .t-brand{justify-content:center;}
+body.sb-open .t-sidebar{width:var(--sb-w);padding:16px 14px;}
+body.sb-open .t-sidebar .t-brand-txt,body.sb-open .t-sidebar .t-navlabel,body.sb-open .t-sidebar .t-navitem span.lbl{display:block;}
+body.sb-open .t-sidebar .t-navitem{justify-content:flex-start;}
+body.sb-open .t-sidebar .t-brand{justify-content:flex-start;}
+.t-collapse-btn{position:fixed;top:28px;left:var(--sb-w-collapsed);transform:translateX(-50%);width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:var(--sb-navy2);color:#c3cce3;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:left .18s ease;z-index:41;}
+.t-collapse-btn:hover{background:rgba(255,255,255,.12);}
+.t-collapse-btn svg{width:14px;height:14px;transition:transform .18s ease;}
+body.sb-open .t-collapse-btn{left:var(--sb-w);}
+body.sb-open .t-collapse-btn svg{transform:rotate(180deg);}
+.t-brand{display:flex;align-items:center;gap:10px;padding:6px 6px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;}
+.t-brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1f5eff,#3ddc97);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
+.t-brand-txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
+.t-brand-txt span{display:block;font-size:10px;color:#7f8bab;letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;}
+.t-navlabel{font-size:10px;color:#5e6b8a;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:14px 10px 8px;white-space:nowrap;}
+.t-navitem{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;color:var(--sb-text);text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease;border:1px solid transparent;margin-bottom:3px;}
+.t-navitem:hover{background:rgba(255,255,255,.06);color:#fff;transform:translateX(2px);}
+.t-navitem.active{background:rgba(31,94,255,.16);color:#fff;border-color:rgba(31,94,255,.35);box-shadow:inset 3px 0 0 var(--accent);}
+.t-navitem span.lbl{white-space:normal;line-height:1.25;}
+.t-navitem .ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:.85;}
+.t-navitem .ic svg{width:18px;height:18px;}
+.t-navitem.active .ic{opacity:1;color:#8fb2ff;}
+.t-navitem:hover .ic{opacity:1;}
+.t-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;transition:margin-left .18s ease;position:relative;z-index:1;}
+body.sb-open .t-main{margin-left:var(--sb-w) !important;}
+.t-topcontent{padding:28px 24px 40px;}
+@media(max-width:900px){
+  .t-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.3);}
+  body.sb-open .t-sidebar{width:var(--sb-w);}
+  body.sb-open .t-main{margin-left:var(--sb-w-collapsed) !important;}
+}
 </style>
 </head>
 <body>
+<button class="t-collapse-btn" id="tCollapseBtn" type="button" title="Toggle sidebar" aria-label="Toggle sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+<aside class="t-sidebar" id="tSidebar">
+  <div class="t-brand">
+    <div class="mark">S</div>
+    <div class="t-brand-txt"><b>Sales</b><span>LEDSone Staff</span></div>
+  </div>
+  <div class="t-navlabel">Reports</div>
+  <div>
+    <a class="t-navitem" onclick="window.location.href='sales2.html'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span><span class="lbl">Sales 2026</span></a>
+    <a class="t-navitem active" onclick="window.location.href='salesuk.html'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span><span class="lbl">UK Sales</span></a>
+    <a class="t-navitem" onclick="window.location.href='sales25.html'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span><span class="lbl">2025 UK</span></a>
+    <a class="t-navitem" onclick="window.location.href='2025DE.html'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span><span class="lbl">2025 DE</span></a>
+  </div>
+  <div class="t-navlabel">Navigation</div>
+  <div>
+    <a class="t-navitem" href="javascript:void(0)" onclick="history.back()"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></span><span class="lbl">Back</span></a>
+  </div>
+</aside>
+<div class="t-main">
+<div class="t-topcontent">
 <div class="wrap">
-<a class="back" href="javascript:void(0)" onclick="history.back()">&larr; Back</a>
   <div class="reqtabs" id="groupTabs">
     <div class="reqtab active" data-group="dm-ad" onclick="selectGroup('dm-ad')">DM-Ad</div>
     <div class="reqtab" data-group="meta" onclick="selectGroup('meta')">Meta</div>
@@ -204,8 +264,13 @@ tbody tr:hover{background:var(--accent-soft);}
     </div>
   </div>
 </div>
+</div>
+</div>
 
 <script>
+document.getElementById('tCollapseBtn').addEventListener('click', function(){
+  document.body.classList.toggle('sb-open');
+});
 function esc(s){ return (s===null||s===undefined) ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function num(n){ return (n===null||n===undefined) ? '0' : Number(n).toLocaleString(); }
 function money(n, ccy){ return (n===null||n===undefined) ? '-' : (ccy==='GBP'?'£':(ccy||'')+' ') + Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
