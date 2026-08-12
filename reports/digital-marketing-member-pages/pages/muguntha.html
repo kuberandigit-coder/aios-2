@@ -605,16 +605,18 @@ async function loadAll(member, idSuffix, force){
     // (live)" click, which is what caused the Shopify throttling
     // ("exceeded retries") and Postgres connection-pool timeouts. Fixed
     // 2026-08-05.
-    // Concurrency 20 (was 5): closed months are cheap static-snapshot file
-    // reads on the server, not live Shopify/Postgres queries, so there's no
-    // throttling risk here — only the single live 2026-08 force-refresh call
-    // ever hits live data, and that's just 1 request either way. Raised
-    // 2026-08-12 to cut Performance-tab first-load time.
+    // Concurrency 20 was tried 2026-08-12 to cut load time, on the theory
+    // that closed months are cheap static-snapshot file reads — but
+    // sales25.js/salesuk.js/muguntha.js ALL open their own Postgres pool
+    // (for override lookups etc.), even on the snapshot fast path, and 20
+    // concurrent invocations across 4 mapLimit calls exhausted the DB's
+    // connection limit ("sorry, too many clients already"). Reverted to 5
+    // same day.
     const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      mapLimit(MONTHS_2025, 20, (m) => fetchGroupSales('2025', member, m, false)),
-      mapLimit(MONTHS_2026, 20, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),
-      mapLimit(MONTHS_2025, 20, (m) => fetchCost(member, m, false)),
-      mapLimit(MONTHS_2026, 20, (m) => fetchCost(member, m, force && LIVE_2026.includes(m))),
+      mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
+      mapLimit(MONTHS_2026, 5, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),
+      mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
+      mapLimit(MONTHS_2026, 5, (m) => fetchCost(member, m, force && LIVE_2026.includes(m))),
     ]);
 
     const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
@@ -782,8 +784,8 @@ async function loadThasitha(force){
     // force-refreshed on "Refresh (live)" — closed months already have a
     // static snapshot (Sales side) / are cheap live queries (Cost side).
     const [salesArr, costArr] = await Promise.all([
-      mapLimit(months, 20, (m) => fetchThasithaSales(m, force && LIVE_2026.includes(m))),
-      mapLimit(months, 20, (m) => fetchCost('thasitha', m, force && LIVE_2026.includes(m))),
+      mapLimit(months, 5, (m) => fetchThasithaSales(m, force && LIVE_2026.includes(m))),
+      mapLimit(months, 5, (m) => fetchCost('thasitha', m, force && LIVE_2026.includes(m))),
     ]);
 
     const rows = months.map((m, i) => {
