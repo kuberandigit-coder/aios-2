@@ -2352,10 +2352,15 @@ document.querySelectorAll('#msNavList a[data-tab]').forEach(function (a) {
   });
 });
 // Restore the tab the user was on before a browser refresh (URL hash of
-// the form #tN, N=1..6). Added 2026-08-12.
+// the form #tN, N=1..6) — clicks the matching sidebar link so both the
+// content AND the sidebar highlight update (showReqTab alone doesn't touch
+// the #msNavList sidebar). Added 2026-08-12, fixed same day (highlight bug).
 (function(){
   var m = (location.hash || '').match(/^#t([1-6])$/);
-  if (m && m[1] !== '1') showReqTab(parseInt(m[1], 10));
+  if (m && m[1] !== '1') {
+    var link = document.querySelector('#msNavList a[data-tab="' + m[1] + '"]');
+    if (link) link.click();
+  }
 })();
 </script>
 </body>

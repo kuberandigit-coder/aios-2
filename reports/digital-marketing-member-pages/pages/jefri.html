@@ -673,13 +673,7 @@ function showReqTab(which){
   }
   try { history.replaceState(null, '', location.pathname + '#' + which); } catch (e) {}
 }
-// Restore the tab the user was on before a browser refresh (URL hash) —
-// falls back to req1 if the hash is missing/invalid. Added 2026-08-12.
-(function(){
-  var validTabs = ['req1','req2','req3','req4','req5'];
-  var fromHash = (location.hash || '').replace('#', '');
-  showReqTab(validTabs.indexOf(fromHash) !== -1 ? fromHash : 'req1');
-})();
+showReqTab('req1');
 </script>
 
 <script>
@@ -1657,6 +1651,19 @@ document.querySelectorAll('#msNavList a[data-req]').forEach(function (a) {
     showReqTab(a.getAttribute('data-req'));
   });
 });
+// Restore the tab the user was on before a browser refresh (URL hash) —
+// clicks the matching sidebar link so both the content AND the sidebar
+// highlight update correctly (showReqTab alone doesn't touch the sidebar).
+// req1 is already the default, so only act on a different valid hash.
+// Added 2026-08-12, fixed same day (sidebar highlight wasn't updating).
+(function(){
+  var validTabs = ['req1','req2','req3','req4','req5'];
+  var fromHash = (location.hash || '').replace('#', '');
+  if (validTabs.indexOf(fromHash) !== -1 && fromHash !== 'req1') {
+    var link = document.querySelector('#msNavList a[data-req="' + fromHash + '"]');
+    if (link) link.click();
+  }
+})();
 </script>
 </body>
 </html>
