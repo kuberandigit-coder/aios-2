@@ -721,6 +721,16 @@ document.getElementById('exportCsv').addEventListener('click', exportCsv);
       document.querySelectorAll('#groupTabs .reqtab').forEach(el => el.classList.toggle('active', el.getAttribute('data-group') === lockedGroup));
       const back = document.querySelector('.back');
       if (back) back.style.display = 'none';
+      // Hide the outer navy sidebar too — a staff member opening this from
+      // their own dashboard's "Sales 2026" link already has their own
+      // sidebar for navigation; they just need to see their own UK sales
+      // data, full-width, matching sales2.html's locked-view behaviour
+      // (2026-08-12).
+      const sidebar = document.getElementById('tSidebar');
+      if (sidebar) sidebar.style.display = 'none';
+      const collapseBtn = document.getElementById('tCollapseBtn');
+      if (collapseBtn) collapseBtn.style.display = 'none';
+      document.querySelectorAll('.t-main').forEach(function(el){ el.style.setProperty('margin-left', '0', 'important'); });
     }
   }
 })();
