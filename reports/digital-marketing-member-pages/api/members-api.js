@@ -1276,7 +1276,7 @@ async function handleSajeepanReq4(client, fromDate, toDate) {
   // Load tracker entries from write Neon DB
   let trackerMap = {};
   try {
-    const authConnStr = process.env.AUTH_DATABASE_URL;
+    const authConnStr = process.env.NEON_DATABASE_URL || process.env.AUTH_DATABASE_URL;
     if (authConnStr) {
       const { Pool } = require('pg');
       const authPool = new Pool({ connectionString: authConnStr, max: 2, connectionTimeoutMillis: 6000 });
@@ -1333,8 +1333,8 @@ async function handleSajeepanReq4(client, fromDate, toDate) {
 }
 
 async function handleSajeepanTrackerSave(req, res, _unusedClient) {
-  const authConnStr = process.env.AUTH_DATABASE_URL;
-  if (!authConnStr) return res.status(500).json({ ok:false, error:'AUTH_DATABASE_URL not configured' });
+  const authConnStr = process.env.NEON_DATABASE_URL || process.env.AUTH_DATABASE_URL;
+  if (!authConnStr) return res.status(500).json({ ok:false, error:'NEON_DATABASE_URL not configured' });
 
   let body = req.body || {};
   const { product_item_id, campaign_id, level, optimization_started, start_date, notes, sale_received } = body;
@@ -1370,7 +1370,7 @@ async function handleSajeepanTrackerSave(req, res, _unusedClient) {
 
 async function handleSajeepanTrackerDetail(client, item, campaign, extraQuery) {
   // Before/After comparison: supports days=7|14|30 or custom_from/custom_to
-  const authConnStr = process.env.AUTH_DATABASE_URL;
+  const authConnStr = process.env.NEON_DATABASE_URL || process.env.AUTH_DATABASE_URL;
   let tracker = null;
   if (authConnStr) {
     try {
