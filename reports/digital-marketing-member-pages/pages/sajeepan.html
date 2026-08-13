@@ -400,6 +400,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-tab="1" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg></span><span class="lbl">Campaign &amp; Product Intelligence</span></a></li>
     <li><a href="#" data-tab="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Stop Waste &amp; Intel</span></a></li>
     <li><a href="#" data-tab="3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span class="lbl">Revenue Protection &amp; PPC Actions</span></a></li>
+    <li><a href="#" data-tab="4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Feed Optimization</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -943,6 +944,423 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 
 </div><!-- /req3Panel -->
+
+<!-- ══ REQ 4 PANEL ══════════════════════════════════════════════════════════ -->
+<div id="req4Panel" style="display:none">
+
+<!-- ── How It Works Panel ─────────────────────────────────────────────────── -->
+<div style="background:#fff;border:1px solid #e3e7ee;border-radius:14px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow:hidden;">
+
+  <!-- Collapsed header -->
+  <div onclick="r4ToggleHelp()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;cursor:pointer;user-select:none;background:linear-gradient(90deg,#e8f0fe 0%,#fff 100%);border-bottom:1px solid transparent;" id="r4HelpHeader">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">📖</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1a2233;">How This Works — Feed Optimization (Requirement 4)</div>
+        <div style="font-size:11px;color:#5b6577;margin-top:1px;">Click to expand · User guide + Developer guide</div>
+      </div>
+    </div>
+    <span id="r4HelpChevron" style="font-size:16px;color:#5b6577;transition:transform .2s;">▼</span>
+  </div>
+
+  <!-- Expandable body -->
+  <div id="r4HelpBody" style="display:none;padding:20px 24px;">
+
+    <!-- Tab switcher -->
+    <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #e3e7ee;padding-bottom:0;">
+      <button id="r4htab-user" onclick="r4SwitchHelpTab('user')" style="border:none;border-bottom:2px solid #1a73e8;margin-bottom:-2px;background:none;padding:8px 18px;font-size:13px;font-weight:700;color:#1a73e8;cursor:pointer;">👤 User Guide</button>
+      <button id="r4htab-dev"  onclick="r4SwitchHelpTab('dev')"  style="border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;padding:8px 18px;font-size:13px;font-weight:700;color:#5b6577;cursor:pointer;">⚙️ Developer Guide</button>
+    </div>
+
+    <!-- USER GUIDE -->
+    <div id="r4help-user">
+
+      <!-- Workflow steps -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px;">
+        <div style="background:#fce8e6;border-radius:12px;padding:14px 16px;border-left:4px solid #ea4335;">
+          <div style="font-size:15px;margin-bottom:4px;">🔴 Step 1</div>
+          <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:4px;">Find Problem Products</div>
+          <div style="font-size:12px;color:#5b6577;">Set date range → click Refresh. The dashboard shows all products wasting budget or showing poor engagement.</div>
+        </div>
+        <div style="background:#fef3e2;border-radius:12px;padding:14px 16px;border-left:4px solid #fbbc04;">
+          <div style="font-size:15px;margin-bottom:4px;">🟠 Step 2</div>
+          <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:4px;">Pick a Priority Level</div>
+          <div style="font-size:12px;color:#5b6577;"><b>Level 1</b> first — zero sales, spending money. Then Level 2 (sales but poor ROAS). Then Level 3 (low engagement).</div>
+        </div>
+        <div style="background:#e8f0fe;border-radius:12px;padding:14px 16px;border-left:4px solid #1a73e8;">
+          <div style="font-size:15px;margin-bottom:4px;">✏️ Step 3</div>
+          <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:4px;">Click Optimize</div>
+          <div style="font-size:12px;color:#5b6577;">Opens the drawer. See the product's metrics, what to fix, and the optimization checklist.</div>
+        </div>
+        <div style="background:#e6f4ea;border-radius:12px;padding:14px 16px;border-left:4px solid #34a853;">
+          <div style="font-size:15px;margin-bottom:4px;">💾 Step 4</div>
+          <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:4px;">Record It</div>
+          <div style="font-size:12px;color:#5b6577;">After fixing the product in Merchant Center / Shopify — come back, tick <b>Optimization Started</b>, set today's date, add a note, Save.</div>
+        </div>
+        <div style="background:#f3e8ff;border-radius:12px;padding:14px 16px;border-left:4px solid #9c27b0;">
+          <div style="font-size:15px;margin-bottom:4px;">📅 Step 5</div>
+          <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:4px;">14-Day Review</div>
+          <div style="font-size:12px;color:#5b6577;">Come back after 14 days. Open the same product. The <b>Before vs After</b> section loads automatically — compare all 7 metrics.</div>
+        </div>
+        <div style="background:#e6f4ea;border-radius:12px;padding:14px 16px;border-left:4px solid #34a853;">
+          <div style="font-size:15px;margin-bottom:4px;">🟢🔴 Step 6</div>
+          <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:4px;">Mark the Result</div>
+          <div style="font-size:12px;color:#5b6577;">Did it work? Select <b>🟢 Sale received</b> or <b>🔴 No sale yet</b>. Save. The badge shows on the product row instantly.</div>
+        </div>
+      </div>
+
+      <!-- 3 Levels explained -->
+      <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:10px;">The 3 Priority Levels</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;background:#fce8e6;border-radius:10px;padding:12px 16px;">
+          <span style="font-size:20px;flex-shrink:0;">🔴</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#b31412;">Level 1 — Critical Waste</div>
+            <div style="font-size:12px;color:#5b6577;margin-top:2px;"><b>Condition:</b> Conversions = 0 AND Cost ≥ £2 in the selected period.</div>
+            <div style="font-size:12px;color:#5b6577;margin-top:2px;"><b>Action:</b> Fix the feed immediately — title, image, attributes, search relevance. Sort by Cost highest → lowest to tackle biggest waste first.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;background:#fef3e2;border-radius:10px;padding:12px 16px;">
+          <span style="font-size:20px;flex-shrink:0;">🟠</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#7d4e00;">Level 2 — Inefficient / Low ROAS</div>
+            <div style="font-size:12px;color:#5b6577;margin-top:2px;"><b>Condition:</b> Conv. Value > 0 AND ROAS &lt; 20% (getting less than £0.20 back per £1 spent).</div>
+            <div style="font-size:12px;color:#5b6577;margin-top:2px;"><b>Action:</b> Optimize using converting search terms, improve title and positioning. Sort by ROAS lowest first.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;background:#f1f3f4;border-radius:10px;padding:12px 16px;">
+          <span style="font-size:20px;flex-shrink:0;">⚪</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#3c4043;">Level 3 — Low Engagement Watch List</div>
+            <div style="font-size:12px;color:#5b6577;margin-top:2px;"><b>Condition:</b> Conv. Value = 0, Impressions ≥ 500 AND CTR ≤ 0.5%.</div>
+            <div style="font-size:12px;color:#5b6577;margin-top:2px;"><b>Action:</b> Review title and image before it becomes Level 1 waste. Early action — monitor first.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drawer explanation -->
+      <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:10px;">What's Inside the Drawer (when you click Optimize)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:20px;">
+        <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;">
+          <div style="font-size:12px;font-weight:700;color:#1a2233;margin-bottom:6px;">📊 Current Metrics</div>
+          <div style="font-size:11.5px;color:#5b6577;">Cost, Revenue, ROAS, Conversions, Impressions, Clicks, CTR — for the selected date range.</div>
+        </div>
+        <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;">
+          <div style="font-size:12px;font-weight:700;color:#1a2233;margin-bottom:6px;">✅ Optimization Tracker</div>
+          <div style="font-size:11.5px;color:#5b6577;">Tick <b>Started</b> → set the start date → write what you changed → Save. Stored permanently in the database.</div>
+        </div>
+        <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;">
+          <div style="font-size:12px;font-weight:700;color:#1a2233;margin-bottom:6px;">📅 Before vs After</div>
+          <div style="font-size:11.5px;color:#5b6577;">Appears after you save a start date. Choose 7d / 14d / 30d or custom. Compares same window before vs after the start date.</div>
+        </div>
+        <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;">
+          <div style="font-size:12px;font-weight:700;color:#1a2233;margin-bottom:6px;">🔧 What to Optimize</div>
+          <div style="font-size:11.5px;color:#5b6577;">Checklist of feed fixes: title keywords, image quality, category, attributes (brand, MPN, GTIN), description, price.</div>
+        </div>
+      </div>
+
+      <!-- Tips -->
+      <div style="background:#e8f0fe;border-radius:10px;padding:14px 16px;border-left:4px solid #1a73e8;">
+        <div style="font-size:12px;font-weight:700;color:#1967d2;margin-bottom:6px;">💡 Tips</div>
+        <div style="font-size:12px;color:#1a2233;display:flex;flex-direction:column;gap:4px;">
+          <div>• Always fix in Merchant Center / Shopify <b>before</b> recording the start date — the start date is your measurement baseline.</div>
+          <div>• Use the <b>Notes</b> field to record exactly what you changed — you'll forget after 14 days.</div>
+          <div>• Filter by <b>Started / Not Started</b> to focus only on products you haven't touched yet.</div>
+          <div>• Filter by <b>🔴 No Sale</b> to find products that need a second round of optimization.</div>
+          <div>• The KPI cards at the top show your progress — aim to grow the 🟢 Sale count over time.</div>
+        </div>
+      </div>
+
+    </div><!-- /user guide -->
+
+    <!-- DEVELOPER GUIDE -->
+    <div id="r4help-dev" style="display:none;">
+
+      <!-- Architecture -->
+      <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:10px;">Architecture Overview</div>
+      <div style="background:#0f172a;border-radius:10px;padding:16px 18px;font-family:monospace;font-size:12px;color:#e2e8f0;margin-bottom:16px;overflow-x:auto;">
+        <div style="color:#7dd3fc;margin-bottom:6px;">// Data flow</div>
+        <div>READ  ledsone DB (read-only)  →  google_ads.product_performance</div>
+        <div>READ  ledsone DB (read-only)  →  google_ads.merchant_products</div>
+        <div>WRITE Neon DB  (AUTH_DATABASE_URL) →  public.feed_optimization_tracker</div>
+        <div style="margin-top:8px;color:#7dd3fc;">// API routes  (members-api.js)</div>
+        <div>GET  ?member=sajeepan&amp;type=req4&amp;from=&amp;to=          → load all 3 levels + tracker status</div>
+        <div>POST ?member=sajeepan&amp;type=req4-tracker-save      → save/upsert tracker row</div>
+        <div>GET  ?member=sajeepan&amp;type=req4-tracker-detail     → before/after comparison</div>
+      </div>
+
+      <!-- DB Table -->
+      <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:10px;">DB Table — <code style="background:#f1f3f4;padding:2px 6px;border-radius:4px;">public.feed_optimization_tracker</code> (Neon write DB)</div>
+      <div style="overflow-x:auto;margin-bottom:16px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:#f8f9fb;">
+            <th style="text-align:left;padding:7px 10px;border-bottom:2px solid #e3e7ee;color:#42506a;">Column</th>
+            <th style="text-align:left;padding:7px 10px;border-bottom:2px solid #e3e7ee;color:#42506a;">Type</th>
+            <th style="text-align:left;padding:7px 10px;border-bottom:2px solid #e3e7ee;color:#42506a;">Purpose</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;font-family:monospace;">product_item_id</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">text</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">Google product item ID (e.g. shopify_gb_...)</td></tr>
+            <tr><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;font-family:monospace;">campaign_id</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">bigint</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">Sajeepan campaign ID — unique key with product_item_id</td></tr>
+            <tr><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;font-family:monospace;">level</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">smallint</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">1 = Critical Waste, 2 = Low ROAS, 3 = Watch List</td></tr>
+            <tr><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;font-family:monospace;">optimization_started</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">boolean</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">Has Sajeepan marked this as started?</td></tr>
+            <tr><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;font-family:monospace;">start_date</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">date</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">Optimization start date — baseline for before/after</td></tr>
+            <tr><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;font-family:monospace;">notes</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">text</td><td style="padding:6px 10px;border-bottom:1px solid #e3e7ee;color:#5b6577;">Free-text notes on what was changed</td></tr>
+            <tr><td style="padding:6px 10px;font-family:monospace;">sale_received</td><td style="padding:6px 10px;color:#5b6577;">boolean</td><td style="padding:6px 10px;color:#5b6577;">true = sale confirmed, false = no sale, null = not checked</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Level logic -->
+      <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:10px;">Level Classification Logic (API)</div>
+      <div style="background:#0f172a;border-radius:10px;padding:16px 18px;font-family:monospace;font-size:12px;color:#e2e8f0;margin-bottom:16px;overflow-x:auto;white-space:pre;">
+<span style="color:#7dd3fc;">// Level 1</span>
+conv === 0 &amp;&amp; cost &gt;= 2  →  Critical Waste
+
+<span style="color:#7dd3fc;">// Level 2</span>
+cv &gt; 0 &amp;&amp; roas &lt; 20      →  Low ROAS  (roas = cv/cost * 100)
+
+<span style="color:#7dd3fc;">// Level 3</span>
+cv === 0 &amp;&amp; imp &gt;= 500 &amp;&amp; ctr &lt;= 0.5  →  Watch List
+
+<span style="color:#7dd3fc;">// A product can only be in ONE level (Level 1 check runs first)</span></div>
+
+      <!-- Before/After logic -->
+      <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:10px;">Before vs After Calculation</div>
+      <div style="background:#0f172a;border-radius:10px;padding:16px 18px;font-family:monospace;font-size:12px;color:#e2e8f0;margin-bottom:16px;overflow-x:auto;white-space:pre;">
+<span style="color:#7dd3fc;">// For N days (default 14):</span>
+beforeFrom  =  start_date - N days
+beforeTo    =  start_date - 1 day
+afterFrom   =  start_date
+afterTo     =  start_date + N days
+
+<span style="color:#7dd3fc;">// Custom range: after window = custom_from → custom_to</span>
+<span style="color:#7dd3fc;">// Before window = same span ending day before start_date</span></div>
+
+      <!-- Env vars -->
+      <div style="font-size:13px;font-weight:700;color:#1a2233;margin-bottom:10px;">Environment Variables</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;gap:10px;background:#f8f9fa;border-radius:8px;padding:10px 14px;align-items:flex-start;">
+          <code style="font-size:12px;background:#e8f0fe;color:#1967d2;padding:2px 8px;border-radius:4px;flex-shrink:0;">DATABASE_URL</code>
+          <div style="font-size:12px;color:#5b6577;">Read-only ledsone DB — product performance + merchant products (all reads)</div>
+        </div>
+        <div style="display:flex;gap:10px;background:#f8f9fa;border-radius:8px;padding:10px 14px;align-items:flex-start;">
+          <code style="font-size:12px;background:#e6f4ea;color:#137333;padding:2px 8px;border-radius:4px;flex-shrink:0;">AUTH_DATABASE_URL</code>
+          <div style="font-size:12px;color:#5b6577;">Neon write DB — tracker table reads + writes (optimization_started, start_date, notes, sale_received)</div>
+        </div>
+      </div>
+
+    </div><!-- /dev guide -->
+
+  </div><!-- /r4HelpBody -->
+</div><!-- /help panel -->
+
+<!-- Date + Refresh bar -->
+<div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+  <span style="font-size:12px;font-weight:700;color:#5b6577;text-transform:uppercase;letter-spacing:.5px;">Date Range</span>
+  <button class="fbtn on" id="r4-preset-30" onclick="r4SetPreset(30)">Last 30d</button>
+  <button class="fbtn"    id="r4-preset-60" onclick="r4SetPreset(60)">Last 60d</button>
+  <button class="fbtn"    id="r4-preset-90" onclick="r4SetPreset(90)">Last 90d</button>
+  <span style="font-size:12px;color:#5b6577;">or custom:</span>
+  <input type="date" id="r4DateFrom" style="border:1px solid #e3e7ee;border-radius:7px;padding:6px 10px;font-size:12px;">
+  <span style="font-size:12px;color:#5b6577;">→</span>
+  <input type="date" id="r4DateTo"   style="border:1px solid #e3e7ee;border-radius:7px;padding:6px 10px;font-size:12px;">
+  <button onclick="r4ApplyCustom()" style="border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;background:#1a73e8;color:#fff;">Apply</button>
+  <span id="r4LastUpd" style="margin-left:auto;font-size:12px;color:#5b6577;font-weight:600;">—</span>
+  <button onclick="r4Refresh()" style="border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;background:#0f172a;color:#fff;">&#8635; Refresh</button>
+</div>
+<div id="r4Loading" style="text-align:center;padding:40px;color:#5b6577;display:none;">&#8987; Loading Feed Optimization data…</div>
+<div id="r4Error"   style="display:none;background:#fce8e6;border:1px solid #f28b82;border-radius:10px;padding:12px 16px;font-size:13px;color:#b31412;margin-bottom:12px;"></div>
+
+<!-- Summary KPIs -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;" id="r4KpiGrid">
+  <div class="kpi k-red"><div class="lbl">🔴 Level 1 — Critical</div><div class="val" id="r4k1">—</div><div class="note">Conv=0, Cost ≥ £2</div></div>
+  <div class="kpi k-amber"><div class="lbl">🟠 Level 2 — Low ROAS</div><div class="val" id="r4k2">—</div><div class="note">ROAS &lt; 20%</div></div>
+  <div class="kpi" style="border-left:3px solid #9e9e9e;"><div class="lbl">⚪ Level 3 — Watch List</div><div class="val" id="r4k3">—</div><div class="note">Imps ≥ 500, Clicks ≤ 3</div></div>
+  <div class="kpi k-green"><div class="lbl">✅ Optimization Started</div><div class="val" id="r4kStarted">—</div><div class="note">Across all levels</div></div>
+  <div class="kpi k-green"><div class="lbl">🟢 Sale After Opt.</div><div class="val" id="r4kSale">—</div><div class="note">Confirmed conversions</div></div>
+</div>
+
+<!-- Level 1: Critical Waste -->
+<div class="r2-section">
+  <div class="r2-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>🔴 Level 1 — Critical Waste <span class="cnt" id="r4L1Cnt">—</span></span>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:11px;color:var(--muted);">Min Cost £<input id="r4L1MinCost" type="number" value="2" min="0" step="0.5" style="width:52px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;"></label>
+      <select id="r4L1StatusFilter" class="fsel" style="font-size:11px;padding:4px 8px;" onchange="r4RenderLevel(1)">
+        <option value="all">All</option>
+        <option value="started">Optimization Started</option>
+        <option value="not_started">Not Started</option>
+        <option value="sale">🟢 Sale Received</option>
+        <option value="no_sale">🔴 No Sale Yet</option>
+      </select>
+      <button onclick="r4RenderLevel(1)" style="border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">Apply</button>
+      <button onclick="r4ExportCSV(1)" style="border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);">⬇ CSV</button>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Products spending money with zero conversions. Highest priority for feed optimization — review title, image, attributes and search relevance. Sort by Cost ↓.</p>
+  <div class="scroll" style="overflow-x:auto;">
+    <table class="waste-table" style="min-width:900px;" id="r4L1Table">
+      <thead><tr>
+        <th>#</th><th>Image</th><th>Product</th><th>Item ID</th><th>Campaign</th>
+        <th class="num">Cost £</th><th class="num">Imps</th><th class="num">Clicks</th><th class="num">CTR %</th>
+        <th>Stock</th><th>Opt. Status</th><th>Action</th>
+      </tr></thead>
+      <tbody id="r4L1Tbody"><tr><td colspan="12" style="text-align:center;padding:20px;color:var(--muted);">Load data to see Level 1 products.</td></tr></tbody>
+    </table>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;flex-wrap:wrap;gap:6px;">
+    <span id="r4L1Info" style="font-size:12px;color:var(--muted);">—</span>
+    <div style="display:flex;gap:4px;" id="r4L1Pager"></div>
+  </div>
+</div>
+
+<!-- Level 2: Low ROAS -->
+<div class="r2-section">
+  <div class="r2-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>🟠 Level 2 — Inefficient / Low ROAS <span class="cnt" id="r4L2Cnt">—</span></span>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:11px;color:var(--muted);">Max ROAS %<input id="r4L2MaxRoas" type="number" value="20" min="0" style="width:52px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;"></label>
+      <select id="r4L2StatusFilter" class="fsel" style="font-size:11px;padding:4px 8px;" onchange="r4RenderLevel(2)">
+        <option value="all">All</option>
+        <option value="started">Optimization Started</option>
+        <option value="not_started">Not Started</option>
+        <option value="sale">🟢 Sale Received</option>
+        <option value="no_sale">🔴 No Sale Yet</option>
+      </select>
+      <button onclick="r4RenderLevel(2)" style="border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">Apply</button>
+      <button onclick="r4ExportCSV(2)" style="border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);">⬇ CSV</button>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Products with conversions but poor PPC efficiency. Optimize feed using converting search terms, title, attributes and product positioning. Sort by ROAS ↑.</p>
+  <div class="scroll" style="overflow-x:auto;">
+    <table class="waste-table" style="min-width:1000px;" id="r4L2Table">
+      <thead><tr>
+        <th>#</th><th>Image</th><th>Product</th><th>Item ID</th><th>Campaign</th>
+        <th class="num">Cost £</th><th class="num">Revenue £</th><th class="num">ROAS %</th><th class="num">Conv.</th>
+        <th>Stock</th><th>Opt. Status</th><th>Action</th>
+      </tr></thead>
+      <tbody id="r4L2Tbody"><tr><td colspan="12" style="text-align:center;padding:20px;color:var(--muted);">Load data to see Level 2 products.</td></tr></tbody>
+    </table>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;flex-wrap:wrap;gap:6px;">
+    <span id="r4L2Info" style="font-size:12px;color:var(--muted);">—</span>
+    <div style="display:flex;gap:4px;" id="r4L2Pager"></div>
+  </div>
+</div>
+
+<!-- Level 3: Watch List -->
+<div class="r2-section">
+  <div class="r2-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>⚪ Level 3 — Low Engagement Watch List <span class="cnt" id="r4L3Cnt">—</span></span>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:11px;color:var(--muted);">Min Imps<input id="r4L3MinImps" type="number" value="500" min="0" style="width:60px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;"></label>
+      <label style="font-size:11px;color:var(--muted);">Max CTR %<input id="r4L3MaxCtr" type="number" value="0.5" min="0" step="0.1" style="width:56px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:11px;margin-left:3px;"></label>
+      <select id="r4L3StatusFilter" class="fsel" style="font-size:11px;padding:4px 8px;" onchange="r4RenderLevel(3)">
+        <option value="all">All</option>
+        <option value="started">Optimization Started</option>
+        <option value="not_started">Not Started</option>
+      </select>
+      <button onclick="r4RenderLevel(3)" style="border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">Apply</button>
+      <button onclick="r4ExportCSV(3)" style="border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);">⬇ CSV</button>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Products gaining impressions but very low CTR — poor engagement before waste escalates. Filter by Min Impressions + Max CTR %. Review title, image, product type and category. Sort by CTR ↑.</p>
+  <div class="scroll" style="overflow-x:auto;">
+    <table class="waste-table" style="min-width:900px;" id="r4L3Table">
+      <thead><tr>
+        <th>#</th><th>Image</th><th>Product</th><th>Item ID</th><th>Campaign</th>
+        <th class="num">Imps</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">Cost £</th>
+        <th>Stock</th><th>Opt. Status</th><th>Action</th>
+      </tr></thead>
+      <tbody id="r4L3Tbody"><tr><td colspan="12" style="text-align:center;padding:20px;color:var(--muted);">Load data to see Level 3 products.</td></tr></tbody>
+    </table>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;flex-wrap:wrap;gap:6px;">
+    <span id="r4L3Info" style="font-size:12px;color:var(--muted);">—</span>
+    <div style="display:flex;gap:4px;" id="r4L3Pager"></div>
+  </div>
+</div>
+
+</div><!-- /req4Panel -->
+
+<!-- Feed Optimization Tracker Drawer -->
+<div class="drawer-overlay" id="r4DrawerOverlay" onclick="r4CloseDrawer()"></div>
+<div class="drawer" id="r4Drawer">
+  <div class="drawer-head">
+    <div style="flex:1">
+      <div id="r4DrTitle" style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.3;"></div>
+      <div id="r4DrSub"   style="font-size:12px;color:var(--muted);margin-top:4px;"></div>
+    </div>
+    <button class="drawer-close" onclick="r4CloseDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <img id="r4DrImg" class="dr-img" src="" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%23e8eaf0%22 width=%22100%22 height=%22100%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%2212%22 fill=%22%23aaa%22 text-anchor=%22middle%22 dy=%22.3em%22>No Image</text></svg>'">
+
+    <!-- Optimization Status -->
+    <div class="dr-section">
+      <div class="dr-label">Feed Optimization Tracker</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="r4DrStarted" style="width:16px;height:16px;cursor:pointer;" onchange="r4DrawerToggleStarted()">
+          Optimization Started
+        </label>
+        <span id="r4DrSaleStatus" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;display:none;"></span>
+      </div>
+      <div id="r4DrStartedFields" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;">Start Date</div>
+            <input type="date" id="r4DrStartDate" style="width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:13px;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;">Sale Received?</div>
+            <select id="r4DrSaleReceived" style="width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:13px;outline:none;">
+              <option value="">Not checked yet</option>
+              <option value="true">🟢 Yes — Sale received</option>
+              <option value="false">🔴 No — No sale yet</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;">Notes</div>
+          <textarea id="r4DrNotes" rows="3" style="width:100%;border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:12px;resize:vertical;outline:none;" placeholder="What did you change? (title, image, attributes…)"></textarea>
+        </div>
+        <button onclick="r4SaveTracker()" style="width:100%;border:none;border-radius:9px;padding:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Save Tracker</button>
+        <div id="r4DrSaveMsg" style="display:none;margin-top:8px;font-size:12px;font-weight:600;text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- Before vs After -->
+    <div class="dr-section" id="r4DrBeforeAfterSection" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div class="dr-label" style="margin:0;">Before vs After Optimization</div>
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+          <button class="fbtn on"  id="r4ba-7"      onclick="r4LoadBeforeAfter(7)"  style="font-size:11px;padding:4px 9px;">7d</button>
+          <button class="fbtn"     id="r4ba-14"     onclick="r4LoadBeforeAfter(14)" style="font-size:11px;padding:4px 9px;">14d</button>
+          <button class="fbtn"     id="r4ba-30"     onclick="r4LoadBeforeAfter(30)" style="font-size:11px;padding:4px 9px;">30d</button>
+          <input type="date" id="r4baCustomFrom" style="border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px;">
+          <span style="font-size:11px;color:var(--muted);">→</span>
+          <input type="date" id="r4baCustomTo"   style="border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px;">
+          <button onclick="r4LoadBeforeAfterCustom()" style="border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">Apply</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="r4baPeriodLabel"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="r4DrBeforeAfterGrid"></div>
+    </div>
+
+    <!-- Current Period Metrics -->
+    <div class="dr-section">
+      <div class="dr-label">Current Period Metrics</div>
+      <div class="dr-grid" id="r4DrMetrics"></div>
+    </div>
+
+    <!-- What to optimize -->
+    <div class="dr-section">
+      <div class="dr-label">What to Optimize</div>
+      <div id="r4DrChecklist" class="rec-list"></div>
+    </div>
+  </div>
+</div>
 
 <!-- Product Detail Drawer -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
@@ -1810,11 +2228,13 @@ function switchReqTab(n){
   document.getElementById('req1Panel').style.display = n===1?'':'none';
   document.getElementById('req2Panel').style.display = n===2?'':'none';
   var r3 = document.getElementById('req3Panel'); if(r3) r3.style.display = n===3?'':'none';
+  var r4 = document.getElementById('req4Panel'); if(r4) r4.style.display = n===4?'':'none';
   var t1 = document.getElementById('tab-req1'); if (t1) { t1.classList.toggle('on', n===1); }
   var t2 = document.getElementById('tab-req2'); if (t2) { t2.classList.toggle('on', n===2); }
   var t3 = document.getElementById('tab-req3'); if (t3) { t3.classList.toggle('on', n===3); }
   if(n===2 && !r2Loaded) r2SetPreset(30);
   if(n===3 && !r3Loaded) r3SetPreset(30);
+  if(n===4 && !r4Loaded) r4SetPreset(30);
   try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
@@ -2465,6 +2885,434 @@ document.querySelectorAll('#msSidebar a[data-tool]').forEach(function (a) {
     msShowTool(a.getAttribute('data-tool'), a.hasAttribute('data-fulltool'));
   });
 });
+/* ============================================================
+   REQUIREMENT 4 — FEED OPTIMIZATION OPPORTUNITY
+   ============================================================ */
+var R4 = { level1:[], level2:[], level3:[] };
+var r4Loaded = false;
+
+function r4ToggleHelp(){
+  var body    = document.getElementById('r4HelpBody');
+  var chevron = document.getElementById('r4HelpChevron');
+  var header  = document.getElementById('r4HelpHeader');
+  var open    = body.style.display === 'none';
+  body.style.display    = open ? '' : 'none';
+  chevron.style.transform = open ? 'rotate(180deg)' : '';
+  header.style.borderBottom = open ? '1px solid #e3e7ee' : '1px solid transparent';
+}
+
+function r4SwitchHelpTab(tab){
+  document.getElementById('r4help-user').style.display = tab==='user' ? '' : 'none';
+  document.getElementById('r4help-dev').style.display  = tab==='dev'  ? '' : 'none';
+  var uBtn = document.getElementById('r4htab-user');
+  var dBtn = document.getElementById('r4htab-dev');
+  uBtn.style.color        = tab==='user' ? '#1a73e8' : '#5b6577';
+  uBtn.style.borderBottom = tab==='user' ? '2px solid #1a73e8' : '2px solid transparent';
+  dBtn.style.color        = tab==='dev'  ? '#1a73e8' : '#5b6577';
+  dBtn.style.borderBottom = tab==='dev'  ? '2px solid #1a73e8' : '2px solid transparent';
+}
+var r4Pages   = { 1:0, 2:0, 3:0 };
+var r4PgSize  = 50;
+var r4PageMap = {}; // level:absIdx → product object (avoids JSON in onclick attrs)
+
+function r4SetPreset(days){
+  ['30','60','90'].forEach(function(d){
+    var el=document.getElementById('r4-preset-'+d);
+    if(el) el.classList.toggle('on', d===String(days));
+  });
+  var to   = isoDate(new Date());
+  var from = daysAgo(days-1);
+  var df=document.getElementById('r4DateFrom'), dt=document.getElementById('r4DateTo');
+  if(df) df.value=from; if(dt) dt.value=to;
+  r4Load(from, to);
+}
+
+function r4ApplyCustom(){
+  var from=(document.getElementById('r4DateFrom')||{}).value;
+  var to  =(document.getElementById('r4DateTo')  ||{}).value;
+  if(!from||!to) return alert('Please select both dates.');
+  if(from>to)    return alert('From must be before To.');
+  ['30','60','90'].forEach(function(d){ var el=document.getElementById('r4-preset-'+d); if(el) el.classList.remove('on'); });
+  r4Load(from, to);
+}
+
+function r4Refresh(){
+  var from=(document.getElementById('r4DateFrom')||{}).value;
+  var to  =(document.getElementById('r4DateTo')  ||{}).value;
+  if(from && to) r4Load(from, to);
+}
+
+async function r4Load(from, to){
+  var loading=document.getElementById('r4Loading');
+  var errBox =document.getElementById('r4Error');
+  if(loading) loading.style.display='block';
+  if(errBox)  errBox.style.display='none';
+  try {
+    var res  = await fetch('/api/members-api?member=sajeepan&type=req4&from='+from+'&to='+to);
+    var json = await res.json();
+    if(!json.ok) throw new Error(json.error||'API error');
+    R4.level1 = json.level1 || [];
+    R4.level2 = json.level2 || [];
+    R4.level3 = json.level3 || [];
+    r4Loaded  = true;
+    r4Pages   = { 1:0, 2:0, 3:0 };
+    var upd=document.getElementById('r4LastUpd');
+    if(upd) upd.textContent = 'Last loaded: '+to;
+    r4UpdateKpis();
+    r4RenderLevel(1);
+    r4RenderLevel(2);
+    r4RenderLevel(3);
+  } catch(err){
+    if(errBox){ errBox.style.display='block'; errBox.textContent='Could not load data: '+err.message; }
+  } finally {
+    if(loading) loading.style.display='none';
+  }
+}
+
+function r4UpdateKpis(){
+  var started = [...R4.level1,...R4.level2,...R4.level3].filter(function(p){ return p.tracker && p.tracker.started; }).length;
+  var sale    = [...R4.level1,...R4.level2,...R4.level3].filter(function(p){ return p.tracker && p.tracker.sale_received===true; }).length;
+  var el;
+  el=document.getElementById('r4k1');      if(el) el.textContent=R4.level1.length;
+  el=document.getElementById('r4k2');      if(el) el.textContent=R4.level2.length;
+  el=document.getElementById('r4k3');      if(el) el.textContent=R4.level3.length;
+  el=document.getElementById('r4kStarted');if(el) el.textContent=started;
+  el=document.getElementById('r4kSale');   if(el) el.textContent=sale;
+}
+
+function r4FilteredList(level){
+  var list = level===1?R4.level1:(level===2?R4.level2:R4.level3);
+  var out  = list.slice();
+
+  if(level===1){
+    var minCost = parseFloat(document.getElementById('r4L1MinCost').value)||2;
+    var sf      = (document.getElementById('r4L1StatusFilter')||{}).value||'all';
+    out = out.filter(function(p){ return p.cost>=minCost; });
+    out = r4ApplyStatusFilter(out, sf);
+  }
+  if(level===2){
+    var maxRoas = parseFloat(document.getElementById('r4L2MaxRoas').value)||20;
+    var sf      = (document.getElementById('r4L2StatusFilter')||{}).value||'all';
+    out = out.filter(function(p){ return p.roas<=maxRoas; });
+    out = r4ApplyStatusFilter(out, sf);
+  }
+  if(level===3){
+    var minImps = parseInt(document.getElementById('r4L3MinImps').value)||500;
+    var maxCtr  = parseFloat(document.getElementById('r4L3MaxCtr').value)||0.5;
+    var sf      = (document.getElementById('r4L3StatusFilter')||{}).value||'all';
+    out = out.filter(function(p){ return p.imp>=minImps && p.ctr<=maxCtr; });
+    out = r4ApplyStatusFilter(out, sf);
+  }
+  return out;
+}
+
+function r4ApplyStatusFilter(list, sf){
+  if(sf==='started')    return list.filter(function(p){ return p.tracker && p.tracker.started; });
+  if(sf==='not_started')return list.filter(function(p){ return !p.tracker || !p.tracker.started; });
+  if(sf==='sale')       return list.filter(function(p){ return p.tracker && p.tracker.sale_received===true; });
+  if(sf==='no_sale')    return list.filter(function(p){ return p.tracker && p.tracker.started && p.tracker.sale_received!==true; });
+  return list;
+}
+
+function r4OptBadge(tracker){
+  if(!tracker || !tracker.started) return '<span style="font-size:10.5px;color:var(--muted);font-weight:600;">Not Started</span>';
+  var saleHtml = '';
+  if(tracker.sale_received===true)       saleHtml='<span style="font-size:10px;font-weight:700;background:var(--green-bg);color:var(--green-tx);border-radius:5px;padding:1px 6px;margin-left:4px;">🟢 Sale</span>';
+  else if(tracker.sale_received===false) saleHtml='<span style="font-size:10px;font-weight:700;background:var(--red-bg);color:var(--red-tx);border-radius:5px;padding:1px 6px;margin-left:4px;">🔴 No Sale</span>';
+  var dateStr = tracker.start_date ? ' · '+tracker.start_date : '';
+  return '<span style="font-size:10.5px;font-weight:700;background:var(--blue-bg);color:var(--blue-tx);border-radius:5px;padding:2px 8px;">✏️ Started'+dateStr+'</span>'+saleHtml;
+}
+
+function r4RenderLevel(level){
+  var list   = r4FilteredList(level);
+  var pg     = r4Pages[level] || 0;
+  var start  = pg * r4PgSize;
+  var page   = list.slice(start, start + r4PgSize);
+  var tbody  = document.getElementById('r4L'+level+'Tbody');
+  var info   = document.getElementById('r4L'+level+'Info');
+  var cnt    = document.getElementById('r4L'+level+'Cnt');
+  if(cnt) cnt.textContent = list.length;
+
+  if(!tbody) return;
+  if(!page.length){ tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--muted);">No products match the current filters.</td></tr>'; return; }
+
+  var html = '';
+  page.forEach(function(p, i){
+    var num  = start+i+1;
+    var avBadge = p.avail==='out of stock'
+      ? '<span class="badge b-outstock">OOS</span>'
+      : '<span class="badge b-active">In Stock</span>';
+    var img  = p.img ? '<img src="'+p.img+'" style="width:34px;height:34px;border-radius:6px;object-fit:cover;background:#e8eaf0;" onerror="this.style.display=\'none\'">' : '<div style="width:34px;height:34px;border-radius:6px;background:#e8eaf0;"></div>';
+    var optBadge = r4OptBadge(p.tracker);
+    // Store product in lookup map so onclick only needs level + absolute index (safe, no JSON in HTML attr)
+    var absIdx = start + i;
+    r4PageMap[level+':'+absIdx] = p;
+    var onclk = 'r4OpenDrawer('+level+','+absIdx+')';
+
+    if(level===1){
+      html += '<tr>'
+        +'<td>'+num+'</td><td>'+img+'</td>'
+        +'<td><span class="prod-name" title="'+p.title+'">'+p.title+'</span></td>'
+        +'<td><span style="font-size:10px;font-family:monospace;color:var(--muted);">'+p.item+'</span></td>'
+        +'<td><span style="font-size:11px;color:var(--muted);">'+p.camp_name+'</span></td>'
+        +'<td class="num" style="color:var(--accent3);font-weight:700;">£'+p.cost.toFixed(2)+'</td>'
+        +'<td class="num">'+p.imp.toLocaleString()+'</td>'
+        +'<td class="num">'+p.clk+'</td>'
+        +'<td class="num">'+p.ctr.toFixed(2)+'%</td>'
+        +'<td>'+avBadge+'</td>'
+        +'<td>'+optBadge+'</td>'
+        +'<td><button class="act-btn" onclick="'+onclk+'">Optimize</button></td>'
+        +'</tr>';
+    } else if(level===2){
+      var roasClass = p.roas<10?'roas-bad':(p.roas<20?'roas-warn':'roas-ok');
+      html += '<tr>'
+        +'<td>'+num+'</td><td>'+img+'</td>'
+        +'<td><span class="prod-name" title="'+p.title+'">'+p.title+'</span></td>'
+        +'<td><span style="font-size:10px;font-family:monospace;color:var(--muted);">'+p.item+'</span></td>'
+        +'<td><span style="font-size:11px;color:var(--muted);">'+p.camp_name+'</span></td>'
+        +'<td class="num">£'+p.cost.toFixed(2)+'</td>'
+        +'<td class="num">£'+p.cv.toFixed(2)+'</td>'
+        +'<td class="num"><span class="roas-pill '+roasClass+'">'+p.roas.toFixed(1)+'%</span></td>'
+        +'<td class="num">'+p.conv.toFixed(2)+'</td>'
+        +'<td>'+avBadge+'</td>'
+        +'<td>'+optBadge+'</td>'
+        +'<td><button class="act-btn" onclick="'+onclk+'">Optimize</button></td>'
+        +'</tr>';
+    } else {
+      html += '<tr>'
+        +'<td>'+num+'</td><td>'+img+'</td>'
+        +'<td><span class="prod-name" title="'+p.title+'">'+p.title+'</span></td>'
+        +'<td><span style="font-size:10px;font-family:monospace;color:var(--muted);">'+p.item+'</span></td>'
+        +'<td><span style="font-size:11px;color:var(--muted);">'+p.camp_name+'</span></td>'
+        +'<td class="num">'+p.imp.toLocaleString()+'</td>'
+        +'<td class="num">'+p.clk+'</td>'
+        +'<td class="num">'+p.ctr.toFixed(2)+'%</td>'
+        +'<td class="num">£'+p.cost.toFixed(2)+'</td>'
+        +'<td>'+avBadge+'</td>'
+        +'<td>'+optBadge+'</td>'
+        +'<td><button class="act-btn" onclick="'+onclk+'">Optimize</button></td>'
+        +'</tr>';
+    }
+  });
+  tbody.innerHTML = html;
+  if(info) info.textContent = 'Showing '+(start+1)+'–'+(start+page.length)+' of '+list.length+' products';
+  r4BuildPager(level, list.length, pg);
+}
+
+function r4BuildPager(level, total, current){
+  var pager = document.getElementById('r4L'+level+'Pager');
+  if(!pager) return;
+  var pages = Math.ceil(total/r4PgSize);
+  if(pages<=1){ pager.innerHTML=''; return; }
+  var html = '<button class="pg-btn" '+(current===0?'disabled':'')+' onclick="r4GoPg('+level+','+(current-1)+')">← Prev</button>';
+  for(var i=0;i<Math.min(pages,8);i++){
+    html += '<button class="pg-btn'+(i===current?' on':'')+'" onclick="r4GoPg('+level+','+i+')">'+(i+1)+'</button>';
+  }
+  html += '<button class="pg-btn" '+(current>=pages-1?'disabled':'')+' onclick="r4GoPg('+level+','+(current+1)+')">Next →</button>';
+  pager.innerHTML = html;
+}
+
+function r4GoPg(level, pg){ r4Pages[level]=pg; r4RenderLevel(level); }
+
+function r4ExportCSV(level){
+  var list = r4FilteredList(level);
+  if(!list.length) return alert('No data to export.');
+  var headers, rows;
+  if(level===1){
+    headers = ['#','Item ID','Product','Campaign','Cost £','Imps','Clicks','CTR %','Stock','Opt Started','Start Date'];
+    rows = list.map(function(p,i){ return [i+1,p.item,'"'+p.title.replace(/"/g,'""')+'"',p.camp_name,p.cost.toFixed(2),p.imp,p.clk,p.ctr.toFixed(2),p.avail,p.tracker&&p.tracker.started?'Yes':'No',p.tracker&&p.tracker.start_date||'']; });
+  } else if(level===2){
+    headers = ['#','Item ID','Product','Campaign','Cost £','Revenue £','ROAS %','Conv.','Stock','Opt Started','Start Date'];
+    rows = list.map(function(p,i){ return [i+1,p.item,'"'+p.title.replace(/"/g,'""')+'"',p.camp_name,p.cost.toFixed(2),p.cv.toFixed(2),p.roas.toFixed(1),p.conv.toFixed(2),p.avail,p.tracker&&p.tracker.started?'Yes':'No',p.tracker&&p.tracker.start_date||'']; });
+  } else {
+    headers = ['#','Item ID','Product','Campaign','Imps','Clicks','CTR %','Cost £','Stock','Opt Started'];
+    rows = list.map(function(p,i){ return [i+1,p.item,'"'+p.title.replace(/"/g,'""')+'"',p.camp_name,p.imp,p.clk,p.ctr.toFixed(2),p.cost.toFixed(2),p.avail,p.tracker&&p.tracker.started?'Yes':'No']; });
+  }
+  var csv = [headers.join(',')].concat(rows.map(function(r){ return r.join(','); })).join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'sajeepan-r4-level'+level+'.csv';
+  a.click();
+}
+
+// ── Drawer ────────────────────────────────────────────────────────────────────
+var r4DrawerProd = null;
+
+function r4OpenDrawer(level, idx){
+  var p = r4PageMap[level+':'+idx];
+  if(!p) return;
+  r4DrawerProd = p;
+  document.getElementById('r4DrTitle').textContent = p.title;
+  document.getElementById('r4DrSub').textContent   = 'Level '+p.level+' · '+p.camp_name+' · '+p.item;
+  var img = document.getElementById('r4DrImg');
+  img.src = p.img || '';
+  img.style.display = p.img ? '' : 'none';
+
+  // Tracker fields
+  var t = p.tracker || {};
+  var started = document.getElementById('r4DrStarted');
+  started.checked = !!t.started;
+  var sf = document.getElementById('r4DrStartedFields');
+  sf.style.display = t.started ? '' : 'none';
+  if(t.start_date) document.getElementById('r4DrStartDate').value = t.start_date;
+  else document.getElementById('r4DrStartDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('r4DrSaleReceived').value = t.sale_received===true?'true':(t.sale_received===false?'false':'');
+  document.getElementById('r4DrNotes').value = t.notes || '';
+  document.getElementById('r4DrSaveMsg').style.display = 'none';
+
+  // Sale status badge
+  var ss = document.getElementById('r4DrSaleStatus');
+  if(t.started && t.sale_received===true){
+    ss.style.display=''; ss.textContent='🟢 Sale Received';
+    ss.style.background='var(--green-bg)'; ss.style.color='var(--green-tx)';
+  } else if(t.started && t.sale_received===false){
+    ss.style.display=''; ss.textContent='🔴 No Sale Yet';
+    ss.style.background='var(--red-bg)'; ss.style.color='var(--red-tx)';
+  } else { ss.style.display='none'; }
+
+  // Current period metrics
+  var mg = document.getElementById('r4DrMetrics');
+  mg.innerHTML = [
+    ['Cost','£'+p.cost.toFixed(2)],
+    ['Revenue','£'+p.cv.toFixed(2)],
+    ['ROAS',p.roas.toFixed(1)+'%'],
+    ['Conversions',p.conv.toFixed(2)],
+    ['Impressions',p.imp.toLocaleString()],
+    ['Clicks',p.clk],
+    ['CTR',p.ctr.toFixed(2)+'%'],
+  ].map(function(m){ return '<div class="dr-metric"><div class="dv">'+m[1]+'</div><div class="dl">'+m[0]+'</div></div>'; }).join('');
+
+  // Checklist
+  var cl = document.getElementById('r4DrChecklist');
+  var checks = [
+    ['rec-high','Review product title — include main keywords from converting search terms'],
+    ['rec-high','Check primary image — clear, white background, product fills frame'],
+    ['rec-med', 'Verify product category matches what customers search for'],
+    ['rec-med', 'Check all required feed attributes: brand, MPN, GTIN, condition'],
+    ['rec-low', 'Review product description for completeness and keyword relevance'],
+    ['rec-low', 'Check price competitiveness vs similar products in feed'],
+  ];
+  cl.innerHTML = checks.map(function(c){ return '<div class="rec-item '+c[0]+'"><div class="rec-title">'+c[1]+'</div></div>'; }).join('');
+
+  // Before/After section — load if tracker has start_date
+  var bas = document.getElementById('r4DrBeforeAfterSection');
+  bas.style.display = 'none';
+  if(t.started && t.start_date){
+    bas.style.display = '';
+    // Reset day selector buttons to 14d default
+    [7,14,30].forEach(function(d){ var el=document.getElementById('r4ba-'+d); if(el) el.classList.toggle('on', d===14); });
+    r4LoadBeforeAfter(14);
+  }
+
+  document.getElementById('r4DrawerOverlay').classList.add('open');
+  document.getElementById('r4Drawer').classList.add('open');
+}
+
+function r4LoadBeforeAfter(days){
+  [7,14,30].forEach(function(d){ var el=document.getElementById('r4ba-'+d); if(el) el.classList.toggle('on', d===days); });
+  var p = r4DrawerProd;
+  if(!p || !p.tracker || !p.tracker.start_date) return;
+  var bag   = document.getElementById('r4DrBeforeAfterGrid');
+  var label = document.getElementById('r4baPeriodLabel');
+  bag.innerHTML = '<div style="font-size:12px;color:var(--muted);grid-column:1/-1;text-align:center;padding:12px;">Loading…</div>';
+  fetch('/api/members-api?member=sajeepan&type=req4-tracker-detail&item='+encodeURIComponent(p.item)+'&campaign='+encodeURIComponent(p.cid)+'&days='+days)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.ok || !d.before){ bag.innerHTML='<div style="font-size:12px;color:var(--muted);grid-column:1/-1;">Not enough data yet for comparison.</div>'; return; }
+      if(label) label.textContent = 'Before: '+d.before_period+' · After: '+d.after_period;
+      bag.innerHTML = r4MkBeforeAfterCard('Before ('+days+'d prior)', d.before) + r4MkBeforeAfterCard('After ('+days+'d after)', d.after);
+    })
+    .catch(function(){ bag.innerHTML='<div style="font-size:12px;color:var(--muted);grid-column:1/-1;">Could not load comparison data.</div>'; });
+}
+
+function r4LoadBeforeAfterCustom(){
+  var from = (document.getElementById('r4baCustomFrom')||{}).value;
+  var to   = (document.getElementById('r4baCustomTo')  ||{}).value;
+  if(!from||!to) return alert('Select both custom dates.');
+  [7,14,30].forEach(function(d){ var el=document.getElementById('r4ba-'+d); if(el) el.classList.remove('on'); });
+  var p = r4DrawerProd;
+  if(!p) return;
+  var bag   = document.getElementById('r4DrBeforeAfterGrid');
+  var label = document.getElementById('r4baPeriodLabel');
+  bag.innerHTML = '<div style="font-size:12px;color:var(--muted);grid-column:1/-1;text-align:center;padding:12px;">Loading…</div>';
+  fetch('/api/members-api?member=sajeepan&type=req4-tracker-detail&item='+encodeURIComponent(p.item)+'&campaign='+encodeURIComponent(p.cid)+'&custom_from='+from+'&custom_to='+to)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.ok || !d.before){ bag.innerHTML='<div style="font-size:12px;color:var(--muted);grid-column:1/-1;">Not enough data yet for comparison.</div>'; return; }
+      if(label) label.textContent = 'Before: '+d.before_period+' · After: '+d.after_period;
+      bag.innerHTML = r4MkBeforeAfterCard('Before (custom)', d.before) + r4MkBeforeAfterCard('After (custom)', d.after);
+    })
+    .catch(function(){ bag.innerHTML='<div style="font-size:12px;color:var(--muted);grid-column:1/-1;">Could not load comparison data.</div>'; });
+}
+
+function r4MkBeforeAfterCard(title, m){
+  return '<div style="background:var(--bg);border-radius:10px;padding:12px 14px;">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;">'+title+'</div>'
+    +'<div class="dr-row"><span class="dk">Cost</span><span class="dv2">£'+m.cost.toFixed(2)+'</span></div>'
+    +'<div class="dr-row"><span class="dk">Revenue</span><span class="dv2">£'+m.cv.toFixed(2)+'</span></div>'
+    +'<div class="dr-row"><span class="dk">ROAS</span><span class="dv2">'+m.roas.toFixed(1)+'%</span></div>'
+    +'<div class="dr-row"><span class="dk">Conv.</span><span class="dv2">'+m.conv.toFixed(2)+'</span></div>'
+    +'<div class="dr-row"><span class="dk">Imps</span><span class="dv2">'+m.imp.toLocaleString()+'</span></div>'
+    +'<div class="dr-row"><span class="dk">Clicks</span><span class="dv2">'+m.clk+'</span></div>'
+    +'<div class="dr-row"><span class="dk">CTR</span><span class="dv2">'+m.ctr.toFixed(2)+'%</span></div>'
+    +'</div>';
+}
+
+function r4CloseDrawer(){
+  document.getElementById('r4DrawerOverlay').classList.remove('open');
+  document.getElementById('r4Drawer').classList.remove('open');
+  r4DrawerProd = null;
+}
+
+function r4DrawerToggleStarted(){
+  var sf = document.getElementById('r4DrStartedFields');
+  sf.style.display = document.getElementById('r4DrStarted').checked ? '' : 'none';
+}
+
+async function r4SaveTracker(){
+  var p = r4DrawerProd;
+  if(!p) return;
+  var started   = document.getElementById('r4DrStarted').checked;
+  var startDate = document.getElementById('r4DrStartDate').value || null;
+  var saleVal   = document.getElementById('r4DrSaleReceived').value;
+  var notes     = document.getElementById('r4DrNotes').value || null;
+  var saleReceived = saleVal===''?null:(saleVal==='true'?true:false);
+
+  var msg = document.getElementById('r4DrSaveMsg');
+  msg.style.display=''; msg.style.color='var(--muted)'; msg.textContent='Saving…';
+
+  try {
+    var res = await fetch('/api/members-api?member=sajeepan&type=req4-tracker-save', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        product_item_id: p.item,
+        campaign_id: p.cid || null,
+        level: p.level,
+        optimization_started: started,
+        start_date: startDate,
+        notes, sale_received: saleReceived,
+      }),
+      credentials:'same-origin',
+    });
+    var d = await res.json();
+    if(!d.ok) throw new Error(d.error||'Save failed');
+    msg.style.color='var(--green-tx)'; msg.textContent='✅ Saved successfully';
+    // Update local R4 data
+    p.tracker = { started, start_date:startDate, notes, sale_received:saleReceived, level:p.level };
+    r4DrawerProd = p;
+    r4UpdateKpis();
+    r4RenderLevel(p.level);
+    // Refresh sale status badge
+    var ss = document.getElementById('r4DrSaleStatus');
+    if(started && saleReceived===true){ ss.style.display=''; ss.textContent='🟢 Sale Received'; ss.style.background='var(--green-bg)'; ss.style.color='var(--green-tx)'; }
+    else if(started && saleReceived===false){ ss.style.display=''; ss.textContent='🔴 No Sale Yet'; ss.style.background='var(--red-bg)'; ss.style.color='var(--red-tx)'; }
+    else { ss.style.display='none'; }
+  } catch(e){
+    msg.style.color='var(--red-tx)'; msg.textContent='❌ '+e.message;
+  }
+}
+
 document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
   e.preventDefault();
   var lbl = document.getElementById('msSignOutLbl');

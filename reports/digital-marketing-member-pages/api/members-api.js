@@ -1235,6 +1235,205 @@ async function handleSajeepanReq3(client, fromDate, toDate, prevFrom, prevTo) {
   };
 }
 
+// ─── SAJEEPAN REQ4 — Feed Optimization Opportunity ───────────────────────────
+
+const SJ_CAMP_NAMES = {
+  '21069663519': 'SJ_PENDANT_KLARNA',
+  '23110323532': 'HIGH REVENUE PH',
+  '23516313256': 'SJ_TOP_20',
+  '23590572906': 'zero conv2',
+  '22079334413': 'SJALL HERO',
+  '21242723265': 'ALLACRSJ2 Access.',
+};
+
+async function handleSajeepanReq4(client, fromDate, toDate) {
+  // All products for Sajeepan campaigns in the period
+  const { rows: perfRows } = await client.query(`
+    SELECT pp.product_item_id, pp.campaign_id::text AS campaign_id,
+      SUM(pp.impressions) AS imp, SUM(pp.clicks) AS clk,
+      ROUND(SUM(pp.cost)::numeric,2) AS cost,
+      ROUND(SUM(pp.conversions)::numeric,4) AS conv,
+      ROUND(SUM(pp.conversion_value)::numeric,2) AS cv
+    FROM google_ads.product_performance pp
+    WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3
+      AND pp.product_item_id != ''
+    GROUP BY pp.product_item_id, pp.campaign_id
+    ORDER BY cost DESC
+  `, [SJ_CAMPAIGN_IDS, fromDate, toDate]);
+
+  // Merchant meta
+  const ids = [...new Set(perfRows.map(r => r.product_item_id.toLowerCase()))];
+  let metaMap = {};
+  if (ids.length > 0) {
+    const { rows: mRows } = await client.query(`
+      SELECT DISTINCT ON (LOWER(product_id)) product_id, title, image_link, availability, price, brand, mpn AS sku
+      FROM google_ads.merchant_products WHERE LOWER(product_id)=ANY($1::text[])
+      ORDER BY LOWER(product_id)
+    `, [ids]);
+    mRows.forEach(m => { metaMap[m.product_id.toLowerCase()] = m; });
+  }
+
+  // Load tracker entries from write Neon DB
+  let trackerMap = {};
+  try {
+    const authConnStr = process.env.AUTH_DATABASE_URL;
+    if (authConnStr) {
+      const { Pool } = require('pg');
+      const authPool = new Pool({ connectionString: authConnStr, max: 2, connectionTimeoutMillis: 6000 });
+      const { rows: tRows } = await authPool.query(
+        `SELECT product_item_id, campaign_id::text, level, optimization_started, start_date, notes, sale_received
+         FROM public.feed_optimization_tracker`
+      );
+      tRows.forEach(t => { trackerMap[`${t.product_item_id}::${t.campaign_id||''}` ] = t; });
+      await authPool.end();
+    }
+  } catch(e) { /* tracker load failure is non-fatal */ }
+
+  const n = v => Number(v) || 0;
+  const level1 = [], level2 = [], level3 = [];
+
+  perfRows.forEach(r => {
+    const cost = n(r.cost), cv = n(r.cv), conv = n(r.conv), imp = n(r.imp), clk = n(r.clk);
+    const roas = cost > 0 ? Math.round(cv / cost * 10000) / 100 : 0;
+    const ctr  = imp  > 0 ? Math.round(clk / imp * 10000) / 100 : 0;
+    const meta = metaMap[r.product_item_id.toLowerCase()] || {};
+    const tracker = trackerMap[`${r.product_item_id}::${r.campaign_id}`] || trackerMap[`${r.product_item_id}::`] || null;
+
+    const base = {
+      item: r.product_item_id, cid: r.campaign_id,
+      camp_name: SJ_CAMP_NAMES[r.campaign_id] || r.campaign_id,
+      cost, cv, conv, imp, clk, roas, ctr,
+      title: meta.title || `Product #${r.product_item_id.split('_').pop()}`,
+      img: meta.image_link || '', avail: meta.availability || 'unknown',
+      price: meta.price ? Number(meta.price) : null, brand: meta.brand || 'LEDSone',
+      sku: meta.sku || null,
+      tracker: tracker ? {
+        started: tracker.optimization_started,
+        start_date: tracker.start_date,
+        notes: tracker.notes,
+        sale_received: tracker.sale_received,
+        level: tracker.level,
+      } : null,
+    };
+
+    // Level 1: conv = 0 AND cost >= 2
+    if (conv === 0 && cost >= 2) { level1.push({ ...base, level: 1 }); return; }
+    // Level 2: conv_value > 0 AND ROAS ratio < 0.20 (roas% < 20)
+    if (cv > 0 && roas < 20) { level2.push({ ...base, level: 2 }); return; }
+    // Level 3: conv_value = 0, imp >= 500, clk <= 3
+    if (cv === 0 && imp >= 500 && clk <= 3) { level3.push({ ...base, level: 3 }); }
+  });
+
+  // Sort each level by cost desc (Level 1), roas asc (Level 2), ctr asc (Level 3)
+  level1.sort((a,b) => b.cost - a.cost);
+  level2.sort((a,b) => a.roas - b.roas);
+  level3.sort((a,b) => a.ctr  - b.ctr);
+
+  return { level1, level2, level3 };
+}
+
+async function handleSajeepanTrackerSave(req, res, _unusedClient) {
+  const authConnStr = process.env.AUTH_DATABASE_URL;
+  if (!authConnStr) return res.status(500).json({ ok:false, error:'AUTH_DATABASE_URL not configured' });
+
+  let body = req.body || {};
+  const { product_item_id, campaign_id, level, optimization_started, start_date, notes, sale_received } = body;
+  if (!product_item_id || !level) return res.status(400).json({ ok:false, error:'product_item_id and level required' });
+
+  const { Pool } = require('pg');
+  const authPool = new Pool({ connectionString: authConnStr, max: 2, connectionTimeoutMillis: 6000 });
+  try {
+    await authPool.query(`
+      INSERT INTO public.feed_optimization_tracker
+        (product_item_id, campaign_id, level, optimization_started, start_date, notes, sale_received, updated_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+      ON CONFLICT (product_item_id, campaign_id) DO UPDATE SET
+        level=EXCLUDED.level, optimization_started=EXCLUDED.optimization_started,
+        start_date=EXCLUDED.start_date, notes=EXCLUDED.notes,
+        sale_received=EXCLUDED.sale_received, updated_at=NOW()
+    `, [
+      product_item_id,
+      campaign_id || null,
+      level,
+      optimization_started === true || optimization_started === 'true',
+      start_date || null,
+      notes || null,
+      sale_received === null ? null : (sale_received === true || sale_received === 'true'),
+    ]);
+    return res.status(200).json({ ok:true });
+  } catch(e) {
+    return errResponse(res, e);
+  } finally {
+    await authPool.end().catch(() => {});
+  }
+}
+
+async function handleSajeepanTrackerDetail(client, item, campaign, extraQuery) {
+  // Before/After comparison: supports days=7|14|30 or custom_from/custom_to
+  const authConnStr = process.env.AUTH_DATABASE_URL;
+  let tracker = null;
+  if (authConnStr) {
+    try {
+      const { Pool } = require('pg');
+      const authPool = new Pool({ connectionString: authConnStr, max: 2, connectionTimeoutMillis: 6000 });
+      const { rows } = await authPool.query(
+        `SELECT * FROM public.feed_optimization_tracker WHERE product_item_id=$1 AND (campaign_id=$2 OR campaign_id IS NULL) LIMIT 1`,
+        [item, campaign ? BigInt(campaign) : null]
+      );
+      tracker = rows[0] || null;
+      await authPool.end();
+    } catch(e) {}
+  }
+  if (!tracker || !tracker.start_date) return { tracker: null, before: null, after: null };
+
+  const startDate = tracker.start_date.toISOString ? tracker.start_date.toISOString().slice(0,10) : String(tracker.start_date).slice(0,10);
+  const fmt = x => x.toISOString().slice(0,10);
+  const days = parseInt((extraQuery || {}).days) || 14;
+
+  let beforeFrom, beforeTo, afterFrom, afterTo;
+  if (extraQuery && extraQuery.custom_from && extraQuery.custom_to) {
+    afterFrom  = new Date(extraQuery.custom_from);
+    afterTo    = new Date(extraQuery.custom_to);
+    const span = Math.round((afterTo - afterFrom) / 86400000);
+    beforeTo   = new Date(startDate); beforeTo.setDate(beforeTo.getDate() - 1);
+    beforeFrom = new Date(beforeTo);  beforeFrom.setDate(beforeFrom.getDate() - span);
+  } else {
+    const d = new Date(startDate);
+    beforeFrom = new Date(d); beforeFrom.setDate(beforeFrom.getDate() - days);
+    beforeTo   = new Date(d); beforeTo.setDate(beforeTo.getDate() - 1);
+    afterFrom  = new Date(d);
+    afterTo    = new Date(d); afterTo.setDate(afterTo.getDate() + days);
+  }
+  const fmt2 = x => x.toISOString().slice(0,10);
+
+  const q = `
+    SELECT SUM(impressions) AS imp, SUM(clicks) AS clk,
+      ROUND(SUM(cost)::numeric,2) AS cost, ROUND(SUM(conversions)::numeric,4) AS conv,
+      ROUND(SUM(conversion_value)::numeric,2) AS cv
+    FROM google_ads.product_performance
+    WHERE product_item_id=$1 AND ($2::bigint IS NULL OR campaign_id=$2::bigint)
+      AND date BETWEEN $3 AND $4
+  `;
+  const cid = campaign || null;
+  const [bef, aft] = await Promise.all([
+    client.query(q, [item, cid, fmt2(beforeFrom), fmt2(beforeTo)]),
+    client.query(q, [item, cid, fmt2(afterFrom),  fmt2(afterTo)]),
+  ]);
+
+  const mkRow = r => {
+    const cost=Number(r.cost)||0, cv=Number(r.cv)||0, conv=Number(r.conv)||0, imp=Number(r.imp)||0, clk=Number(r.clk)||0;
+    return { cost, cv, conv, imp, clk, roas: cost>0?Math.round(cv/cost*10000)/100:0, ctr: imp>0?Math.round(clk/imp*10000)/100:0 };
+  };
+
+  return {
+    tracker: { ...tracker, start_date: startDate },
+    before: mkRow(bef.rows[0]),
+    after:  mkRow(aft.rows[0]),
+    before_period: `${fmt2(beforeFrom)} → ${fmt2(beforeTo)}`,
+    after_period:  `${fmt2(afterFrom)} → ${fmt2(afterTo)}`,
+  };
+}
+
 async function handleSajeepan(req, res) {
   const connStr = process.env.DATABASE_URL;
   if (!connStr) return res.status(500).json({ ok: false, error: 'DATABASE_URL not configured' });
@@ -1274,6 +1473,23 @@ async function handleSajeepan(req, res) {
     if (type === 'req3') {
       const r3 = await handleSajeepanReq3(client, fromDate, toDate, prevFrom, prevTo);
       return res.status(200).json({ ok:true, meta:{from:fromDate,to:toDate,prev_from:prevFrom,prev_to:prevTo}, ...r3 });
+    }
+
+    if (type === 'req4') {
+      const r4 = await handleSajeepanReq4(client, fromDate, toDate);
+      return res.status(200).json({ ok:true, meta:{from:fromDate,to:toDate}, ...r4 });
+    }
+
+    if (type === 'req4-tracker-save') {
+      return await handleSajeepanTrackerSave(req, res, client);
+    }
+
+    if (type === 'req4-tracker-detail') {
+      const item     = (req.query.item     || '').trim();
+      const campaign = (req.query.campaign || '').trim();
+      if (!item) return res.status(400).json({ ok:false, error:'item param required' });
+      const r = await handleSajeepanTrackerDetail(client, item, campaign, req.query);
+      return res.status(200).json({ ok:true, ...r });
     }
 
     if (type === 'proddetail') {
