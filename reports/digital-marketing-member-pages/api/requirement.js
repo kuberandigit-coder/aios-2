@@ -5851,29 +5851,7 @@ const jefriReq6HandlerModule = (function() {
   // — run once (confirmed dropped), then removed. See
   // evidence/jefri/2026-08-14_req6-image-update-live-sales-tracker.md.
 
-  // TEMPORARY debug — introspects ShopifyqlTableData's real fields so the
-  // shopifyqlQuery response shape can be gotten right in one try instead
-  // of repeated blind guesses. Remove once fetchShopifySalesTotal works.
-  async function handleJefriReq6DebugSchema(req, res) {
-    const token = process.env.SHOPIFY_ADMIN_TOKEN;
-    if (!token) { res.status(500).json({ error: 'SHOPIFY_ADMIN_TOKEN missing' }); return; }
-    const introspect = `{
-      __type(name: "ShopifyqlTableData") { name fields { name type { name kind ofType { name kind ofType { name } } } } }
-    }`;
-    try {
-      const r = await fetch(`https://${R6_SHOPIFY_STORE_DOMAIN}/admin/api/${R6_SHOPIFY_API_VERSION}/graphql.json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
-        body: JSON.stringify({ query: introspect }),
-      });
-      const json = await r.json();
-      res.status(200).json(json);
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  }
-
-  return { handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete, handleJefriReq6DebugSchema };
+  return { handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete };
 })();
 
 module.exports = async (req, res) => {
@@ -5882,7 +5860,6 @@ module.exports = async (req, res) => {
   if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
   if (fn === 'jefri-req6-add') return jefriReq6HandlerModule.handleJefriReq6Add(req, res);
   if (fn === 'jefri-req6-delete') return jefriReq6HandlerModule.handleJefriReq6Delete(req, res);
-  if (fn === 'jefri-req6-debug-schema') return jefriReq6HandlerModule.handleJefriReq6DebugSchema(req, res);
   if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
