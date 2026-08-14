@@ -36,7 +36,12 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const BASE_URL = process.env.SNAPSHOT_BASE_URL || 'https://digital-marketing-member-pages.vercel.app';
+// NOTE: the raw digital-marketing-member-pages.vercel.app domain (used as
+// the default elsewhere in this repo's other snapshot scripts) currently
+// returns DEPLOYMENT_NOT_FOUND — confirmed live 2026-08-14. Defaulting to
+// the working custom domain instead; the other hourly snapshot workflows
+// may be silently failing for the same reason and are worth checking.
+const BASE_URL = process.env.SNAPSHOT_BASE_URL || 'https://dm-dashboard.vintageinterior.co.uk';
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const OUT_PATH = path.join(DATA_DIR, 'jefri-req6-snapshot.json');
 const BATCH_LIMIT = 80; // parent products per call — see handleJefriReq6SnapshotBatch's own comment for the 300s budget reasoning

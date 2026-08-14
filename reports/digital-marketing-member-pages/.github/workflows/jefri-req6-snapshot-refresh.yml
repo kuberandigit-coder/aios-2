@@ -29,7 +29,10 @@ jobs:
 
       - name: Generate Jefri Req6 snapshot
         env:
-          SNAPSHOT_BASE_URL: https://digital-marketing-member-pages.vercel.app
+          # digital-marketing-member-pages.vercel.app (the default used by
+          # this repo's other snapshot workflows) returns DEPLOYMENT_NOT_FOUND
+          # as of 2026-08-14 — using the working custom domain instead.
+          SNAPSHOT_BASE_URL: https://dm-dashboard.vintageinterior.co.uk
         run: node api/scripts/generate-jefri-req6-snapshot.js
 
       - name: Commit refreshed snapshot
