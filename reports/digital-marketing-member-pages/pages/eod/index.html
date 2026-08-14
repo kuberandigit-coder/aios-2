@@ -253,9 +253,12 @@
       .form-row { grid-template-columns: 1fr; }
     }
     @media (max-width:480px) { .stats { grid-template-columns: 1fr; } .success-grid { grid-template-columns: 1fr 1fr; } }
+    body.eod-embed .sidebar { display: none; }
+    body.eod-embed .main { margin-left: 0; }
   </style>
 </head>
 <body>
+<script>if (location.search.indexOf('embed=1') !== -1) document.body.classList.add('eod-embed');</script>
 
 <!-- SETUP OVERLAY -->
 <div class="setup-overlay" id="setupOverlay">
