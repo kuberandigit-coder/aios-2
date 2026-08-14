@@ -5533,9 +5533,25 @@ resolved_full AS (
   return handleJefriReq5;
 })();
 
-// ===== Jefri Requirement 6: Image Update Live Sales Tracker (added 2026-08-14) =====
-// Two manual inputs only: Listing ID + Image Update Date. Everything else
-// (SKU, days live, sales, baseline, % change, trend) is computed live.
+// ===== Jefri Requirement 6: Image Update Live Sales Tracker (added 2026-08-14,
+// reworked twice same day: first to an always-visible table of all Jefri
+// listings, then — per Kuberan's explicit correction — to drop the manual
+// Image Update Date input entirely in favour of fetching each listing's
+// real last-image-update timestamp live from the Shopify Admin API) =====
+// Only input: Listing ID (or none — the table shows every Jefri listing by
+// default). SKU, Image Update Date, days live, sales, baseline, % change,
+// and trend are all computed live, with no manual date entry.
+//
+// Image Update Date source: Shopify Admin REST API,
+// GET /admin/api/{version}/products/{productId}/images.json, MAX(updated_at)
+// across that product's images (see fetchShopifyImageUpdateDate below).
+// Images live on the parent PRODUCT, so a variant/child listing is first
+// resolved to its parent's Shopify product ID via
+// listings.shopify_listings_parent_child_mapping (same mechanism Req5 uses
+// for parent-child sales rollup). Uses the existing SHOPIFY_ADMIN_TOKEN /
+// SHOPIFY_STORE_DOMAIN already defined above for live-stock lookups — no
+// new credential. Cached 24h server-side (image edits are infrequent; this
+// avoids hammering Shopify's API across ~8,000 Jefri listings).
 //
 // Listing ID -> SKU: listings.shopify_listings.item_id -> sku, same table/
 // column used everywhere else on this page (Req1/Req4/Req5). Channel scoped
@@ -5588,16 +5604,71 @@ const jefriReq6HandlerModule = (function() {
     return pool;
   }
 
-  function isValidDateR6(s) {
-    return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
-  }
-
   const LISTING_QUERY = `
     SELECT id, item_id, sku, is_parent, is_child
     FROM listings.shopify_listings
     WHERE item_id = $1 AND channel = 'LEDSone DE'
     LIMIT 1
   `;
+
+  // Variant listings don't carry images themselves — images live on the
+  // parent PRODUCT in Shopify. Resolve child -> parent the same way
+  // Req5's child_to_parent CTE does, so we know which Shopify product ID
+  // to ask the Admin API about.
+  const PARENT_PRODUCT_QUERY = `
+    SELECT p.item_id AS parent_item_id
+    FROM listings.shopify_listings_parent_child_mapping m
+    JOIN listings.shopify_listings p ON p.id = m.parent_id
+    WHERE m.child_id = $1
+    LIMIT 1
+  `;
+
+  // Image Update Date is no longer a manual input (2026-08-14 correction —
+  // "no need as input for that listing show when i update the listing ...
+  // available in shopify ... using ledsone de api"). Fetched live from the
+  // Shopify Admin REST API's per-image `updated_at` field (documented,
+  // stable — REST still exposes real per-image timestamps; the GraphQL
+  // Image type used elsewhere in this file for stock does not). Reuses the
+  // same SHOPIFY_STORE_DOMAIN / SHOPIFY_ADMIN_TOKEN already defined above
+  // for the live-stock GraphQL calls — no new credential.
+  const IMAGE_DATE_CACHE = new Map(); // productId -> { date, at }
+  const IMAGE_DATE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // images change rarely — 24h is plenty "live"
+
+  async function fetchShopifyImageUpdateDate(productId) {
+    const cached = IMAGE_DATE_CACHE.get(productId);
+    if (cached && (Date.now() - cached.at) < IMAGE_DATE_CACHE_TTL_MS) return cached.date;
+
+    const token = process.env.SHOPIFY_ADMIN_TOKEN;
+    if (!token) throw new Error('Server not configured: SHOPIFY_ADMIN_TOKEN missing');
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    let res;
+    try {
+      res = await fetch(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/products/${productId}/images.json`, {
+        headers: { 'X-Shopify-Access-Token': token },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (!res.ok) {
+      if (res.status === 404) { IMAGE_DATE_CACHE.set(productId, { date: null, at: Date.now() }); return null; }
+      throw new Error(`Shopify Admin API error ${res.status} fetching images for product ${productId}`);
+    }
+    const json = await res.json();
+    const images = Array.isArray(json.images) ? json.images : [];
+    if (!images.length) { IMAGE_DATE_CACHE.set(productId, { date: null, at: Date.now() }); return null; }
+    // "when the images were updated" = the most recent updated_at across
+    // every image on the product — any single image edit counts.
+    const latest = images.reduce((max, img) => {
+      const t = img.updated_at || img.created_at;
+      return t && (!max || t > max) ? t : max;
+    }, null);
+    const date = latest ? latest.slice(0, 10) : null;
+    IMAGE_DATE_CACHE.set(productId, { date, at: Date.now() });
+    return date;
+  }
 
   // Same 5 campaign IDs as Req5 (JEFRI_CAMPAIGNS_R5) — Jefri's account.
   // Kept as a separate local const rather than importing across module
@@ -5654,27 +5725,16 @@ const jefriReq6HandlerModule = (function() {
   async function handleJefriReq6(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     const listingId = req.query && req.query.listingId ? String(req.query.listingId).trim() : '';
-    const imageUpdateDate = isValidDateR6(req.query && req.query.imageUpdateDate) ? req.query.imageUpdateDate : null;
     const forceRefresh = req.query && req.query.refresh === '1';
 
     if (!listingId) {
       res.status(400).json({ error: 'Provide ?listingId=<Shopify product or variant ID>' });
       return;
     }
-    if (!imageUpdateDate) {
-      res.status(400).json({ error: 'Provide ?imageUpdateDate=YYYY-MM-DD' });
-      return;
-    }
 
-    // Future-date handling — reject rather than silently produce negative
-    // "days live" / an inverted comparison window.
     const todayStr = new Date().toISOString().slice(0, 10);
-    if (imageUpdateDate > todayStr) {
-      res.status(400).json({ error: 'Image Update Date cannot be in the future.' });
-      return;
-    }
 
-    const cacheKey = `${listingId}|${imageUpdateDate}`;
+    const cacheKey = listingId;
     if (!forceRefresh) {
       const cached = CACHE.get(cacheKey);
       if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
@@ -5695,7 +5755,7 @@ const jefriReq6HandlerModule = (function() {
       if (!listingResult.rows.length) {
         res.status(200).json({
           generatedAt: new Date().toISOString(),
-          listingId, imageUpdateDate,
+          listingId,
           found: false,
           error: 'Listing ID not found in listings.shopify_listings (channel: LEDSone DE).',
         });
@@ -5707,12 +5767,53 @@ const jefriReq6HandlerModule = (function() {
       if (!sku) {
         res.status(200).json({
           generatedAt: new Date().toISOString(),
-          listingId, imageUpdateDate,
+          listingId,
           found: true, sku: null,
           error: 'Listing found but has no SKU on record — cannot resolve sales.',
         });
         return;
       }
+
+      // Images live on the parent PRODUCT, not the variant — resolve which
+      // Shopify product ID to ask for. Parent-level listings use their own
+      // item_id directly (it IS the product ID).
+      let shopifyProductId = listing.item_id;
+      if (listing.is_child === 1) {
+        const parentResult = await client.query(PARENT_PRODUCT_QUERY, [listing.id]);
+        shopifyProductId = parentResult.rows.length ? parentResult.rows[0].parent_item_id : null;
+      }
+      if (!shopifyProductId) {
+        res.status(200).json({
+          generatedAt: new Date().toISOString(),
+          listingId, found: true, sku,
+          error: 'Could not resolve this listing to a parent Shopify product — cannot look up image history.',
+        });
+        return;
+      }
+
+      let imageUpdateDate;
+      try {
+        imageUpdateDate = await fetchShopifyImageUpdateDate(shopifyProductId);
+      } catch (shopifyErr) {
+        console.error('[jefri/req6] Shopify image lookup failed:', shopifyErr && shopifyErr.message);
+        res.status(200).json({
+          generatedAt: new Date().toISOString(),
+          listingId, found: true, sku,
+          error: 'Shopify image lookup failed: ' + (shopifyErr && shopifyErr.message || 'unknown error'),
+        });
+        return;
+      }
+      if (!imageUpdateDate) {
+        res.status(200).json({
+          generatedAt: new Date().toISOString(),
+          listingId, found: true, sku,
+          error: 'No images found on this product in Shopify — cannot determine an Image Update Date.',
+        });
+        return;
+      }
+      // Shopify's own clock could in principle be a day ahead of ours at
+      // the UTC boundary — clamp rather than produce a negative Days Live.
+      if (imageUpdateDate > todayStr) imageUpdateDate = todayStr;
 
       // Days Live Since Update: integer days elapsed, computed the same
       // way as CURRENT_DATE - imageUpdateDate::date would in SQL (both
@@ -5748,6 +5849,7 @@ const jefriReq6HandlerModule = (function() {
       const payload = {
         generatedAt: new Date().toISOString(),
         listingId, imageUpdateDate,
+        imageUpdateDateSource: 'shopify-live',
         found: true,
         sku,
         level: listing.is_parent === 1 ? 'Parent' : (listing.is_child === 1 ? 'Variant' : 'Unknown'),
@@ -5775,9 +5877,11 @@ const jefriReq6HandlerModule = (function() {
 
   // Always-visible listing table: every item Jefri's campaigns have ever
   // run, resolved to Shopify item_id/SKU where possible. No search/filter
-  // required up front — Image Update Date + calculated columns are filled
-  // in per-row client-side (dates are user-entered and stored in the
-  // browser, not in Postgres — this endpoint only supplies the row list).
+  // required up front — this endpoint only supplies the row list; each
+  // row's Image Update Date and calculated columns are fetched lazily
+  // per-row (see handleJefriReq6) as rows scroll into view, since Image
+  // Update Date is now resolved live from Shopify per listing, not entered
+  // by hand.
   async function handleJefriReq6List(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     const forceRefresh = req.query && req.query.refresh === '1';
