@@ -3,11 +3,16 @@
 **Purpose:** Let another LLM or team member understand and continue this work without verbal explanation.
 
 ## What Req 6 does
-A new "Requirement 6" tab in `jefri.html`. User enters a Shopify Listing ID (the product/variant's raw Shopify ID, e.g. `44963099312393`) and the date its images went live. The page shows: SKU, Days Live Since Update, Total Sales Since Update, Pre-Update Baseline Sales (same number of days immediately before the update), % Change, and a Trend badge (Improved / Same / Dropped / Insufficient data).
+A new "Requirement 6" tab in `jefri.html`. **Always shows a table of every listing belonging to Jefri** (all ~8,127 distinct product/listing IDs that have ever run in Jefri's 5 Google Ads campaigns) — no search required up front (search box only filters the already-shown table). Each row has an inline Image Update Date input; once set, that row computes SKU, Days Live, Total Sales Since Update, Pre-Update Baseline Sales, % Change, and a Trend badge (Improved / Same / Dropped / Insufficient data) in place.
+
+**Important — this was reworked same-day from an earlier single-search-box-then-one-result version.** Kuberan explicitly rejected that first version ("no need this format ... need like show always but only jeffri"). If you see any reference to a single `Listing ID` text input + `Calculate` button design, that's the OLD version — the current one is the always-visible table described above.
 
 ## Where it's implemented
-- **Backend:** `reports/digital-marketing-member-pages/api/requirement.js` — search for `jefriReq6HandlerModule` (a self-contained IIFE right after `jefriReq5HandlerModule`, before `module.exports`). Routed via `GET /api/requirement?fn=jefri-req6&listingId=<id>&imageUpdateDate=YYYY-MM-DD`.
-- **Frontend:** `reports/digital-marketing-member-pages/pages/jefri.html` — search for `req6Tab` (HTML panel) and `r6Init`/`r6Load`/`r6Render` (JS, appended right after Req5's `r5ExportCsv` wiring inside the same `<script>` block). Nav item: `<li><a data-req="req6">Requirement 6</a></li>`.
+- **Backend:** `reports/digital-marketing-member-pages/api/requirement.js` — search for `jefriReq6HandlerModule` (a self-contained IIFE right after `jefriReq5HandlerModule`, before `module.exports`). It returns `{ handleJefriReq6, handleJefriReq6List }` (an object, not a single function — different from every other handler module on this page, which return a bare function). Two routes:
+  - `GET /api/requirement?fn=jefri-req6-list` — all Jefri listings, no params. This is what the table loads on tab open.
+  - `GET /api/requirement?fn=jefri-req6&listingId=<id>&imageUpdateDate=YYYY-MM-DD` — per-row calculation, called once a date is set on a row.
+- **Frontend:** `reports/digital-marketing-member-pages/pages/jefri.html` — search for `req6Tab` (HTML panel, now just a `tablebox`/search bar, no single-listing form) and `r6Init`/`r6LoadList`/`r6Calc`/`r6OnDateChange`/`r6Render` (JS, appended right after Req5's `r5ExportCsv` wiring inside the same `<script>` block). Nav item: `<li><a data-req="req6">Requirement 6</a></li>`.
+- **Date persistence:** per-row Image Update Dates are stored in the browser via `idbGet`/`idbSet` (IndexedDB, same helper Req2 already uses), key `jefri_r6_dates`, value `{ listingId: 'YYYY-MM-DD', ... }`. **Not stored in Postgres** — Req6's spec was explicit read-only against the DB, so no new table was created. This means dates are per-browser/per-device, not shared across the team. If that turns out to be a real problem, the fix is a small writable Postgres table (would need explicit sign-off, since the original spec forbade schema changes without it).
 
 ## How the data flows
 1. User submits Listing ID + Image Update Date → `r6Load()` fetches `/api/requirement?fn=jefri-req6&...`.
@@ -52,7 +57,7 @@ Always exactly `daysLiveSinceUpdate` calendar days immediately before Image Upda
 PASS — all 10 required tests + 4 edge cases, run against live production data. See `validation/jefri/2026-08-14_req6-image-update-live-sales-tracker.md`.
 
 ## Deployment status
-DEPLOYED — live at `https://dm-dashboard.vintageinterior.co.uk/pages/jefri.html#req6`, confirmed via direct `curl` against both the API and the page markup.
+DEPLOYED — live at `https://dm-dashboard.vintageinterior.co.uk/pages/jefri.html#req6`, confirmed via direct `curl` against `fn=jefri-req6-list` (8,127 rows returned), `fn=jefri-req6` (per-row calc), and the page markup, after the always-visible-table rework.
 
 ## Next action
-None outstanding. If Jefri requests currency in € instead of £ for this tab specifically, that's a one-line change in `r6Money()` in `jefri.html`.
+None outstanding. Two open questions for Jefri, not blockers: (1) currency in € instead of £ — one-line change in `r6Money()`; (2) whether browser-local (not team-shared) date persistence is acceptable, or whether a small writable Postgres table should be added for it (would need explicit sign-off first, per the original read-only-DB constraint).

@@ -42,6 +42,30 @@ See `validation/jefri/2026-08-14_req6-image-update-live-sales-tracker.md` for th
 ## Deployment
 Deployed to production (`vercel --prod --yes`), confirmed live via direct `curl` against `/api/requirement?fn=jefri-req6` and the `jefri.html` tab markup.
 
+**Status:** PASS (initial build — see UI correction below)
+**Reviewer:** Kuberan (pending review)
+
+---
+
+## CORRECTION — 2026-08-14, same day, later in session
+
+Kuberan clarified the UI was wrong: "no need this format ... currently only search and show right no need like this need like show always but only jeffri" — the single search-first-then-show-one-listing form was rejected in favour of an always-visible table of every listing belonging to Jefri, with search only as an optional filter on top.
+
+**Clarified via AskUserQuestion:** "Jefri listings" = every distinct product/listing ID that has ever appeared in Jefri's 5 named Google Ads campaigns (`google_ads.product_performance`, same source as Req1/Req4/Req5) — Kuberan's own recommended option, confirmed.
+
+**Rework:**
+- New backend endpoint `fn=jefri-req6-list` (`handleJefriReq6List`, same `jefriReq6HandlerModule` IIFE) — returns all ~8,127 distinct Jefri listing IDs resolved to Shopify SKU/level, deduped on matched Shopify listing (several raw Ads ID formats can resolve to the same real listing). 5-minute cache, same pattern as everything else on this page.
+- `jefri.html`'s Req6 tab now renders this full list as an always-visible table (same `tablebox`/`tbar`/`scroll` pattern as Req5) on tab open — no search or manual entry required to see it. A search box filters the already-loaded table client-side (Listing ID or SKU).
+- Each row has an inline, per-row `<input type="date">` for Image Update Date. Since Req6 is explicitly read-only against Postgres (no schema/table changes permitted per the original spec), these dates are **not** stored in Postgres — they're persisted in the browser via the existing `idbGet`/`idbSet` IndexedDB helpers (same store Req2 already uses), keyed `jefri_r6_dates`. Documented as browser-local, not shared across devices/users, in the tab's own footnotes so this isn't a hidden surprise.
+- Once a row has a date, the existing single-listing `fn=jefri-req6` endpoint is called for that row (unchanged logic/formula — same Days Live / baseline / % Change / Trend calculation validated earlier the same day) and the row's remaining columns populate in place.
+
+**Verified live post-rework:**
+- `fn=jefri-req6-list` returns 8,127 rows (query cost ~680ms via `EXPLAIN ANALYZE`, well within the function's 300s timeout, cached 5 min after).
+- `fn=jefri-req6` per-row calc endpoint still returns correct results for a listing pulled straight from the new list (`35309184319655` → zero-baseline case, correctly `Insufficient data`).
+- `scripts/check-live-deploy.js` re-run post-deploy — all pre-existing canaries still OK, no regression to any earlier same-day fix.
+
+**Process note:** before pushing this rework, `git fetch` on the Staff-requirements worktree found 13 new commits Piranav had pushed in the meantime (Jackson tab, Staff ID Performance additions). Pulled them in first (fast-forward, no conflicts — different files) rather than overwriting, per the standing "don't touch Piranav's work" rule.
+
 **Status:** PASS
 **Reviewer:** Kuberan (pending review)
-**Next step:** None — feature complete and live. Await Jefri's real-world usage feedback on the €/£ display question.
+**Next step:** None — feature complete and live in the corrected always-visible-table form. Await Jefri's real-world usage feedback on the €/£ display question and on whether per-browser (not shared) date persistence is acceptable long-term.
