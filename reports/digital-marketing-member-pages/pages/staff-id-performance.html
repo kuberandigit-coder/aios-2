@@ -223,7 +223,12 @@ tbody td.r{text-align:right;}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Export CSV
     </button>
+    <button id="refreshAttrBtn" onclick="refreshAttribution()" style="margin-left:6px;padding:6px 14px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh Organic/Ads
+    </button>
   </div>
+  <div id="attrStatusBar" style="display:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:8px;"></div>
   <!-- Sub-filters (shown when Sold or Never Sold is active) -->
   <div class="sub-filter-row" id="subFilterRow">
     <span class="fr-sub-label" id="subFilterLabel">Stock:</span>
@@ -460,7 +465,7 @@ function renderTable() {
   window._orderStore = {};
   const isJackson = currentStaff === 'jackson';
   const urlCol = isJackson ? '<th>URL</th>' : '';
-  let html = `<table><thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Status</th><th class="r">Qty</th><th class="r">Revenue</th><th class="r">Current Stock</th><th>Sold?</th><th>Orders</th>${urlCol}</tr></thead><tbody>`;
+  let html = `<table><thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Status</th><th class="r">Qty</th><th class="r">Revenue</th><th class="r" style="color:#0a7d4f;">Organic Qty</th><th class="r" style="color:#0a7d4f;">Organic Rev</th><th class="r" style="color:#b91c1c;">Ads Qty</th><th class="r" style="color:#b91c1c;">Ads Rev</th><th class="r">Current Stock</th><th>Sold?</th><th>Orders</th>${urlCol}</tr></thead><tbody>`;
   pageRows.forEach((r,i) => {
     const n = start+i+1;
     const sb = r.status ? `<span class="badge ${r.status}">${r.status}</span>` : '—';
@@ -484,6 +489,10 @@ function renderTable() {
       <td>${sb}</td>
       <td class="r">${r.total_qty>0?r.total_qty.toLocaleString():'<span style="color:var(--muted)">0</span>'}</td>
       <td class="r">${r.total_amount>0?'£'+r.total_amount.toFixed(2):'<span style="color:var(--muted)">£0</span>'}</td>
+      <td class="r" style="color:#0a7d4f;">${r.organic_qty===null?'<span style="color:var(--muted);font-size:10px;">—</span>':r.organic_qty>0?r.organic_qty.toLocaleString():'<span style="color:var(--muted)">0</span>'}</td>
+      <td class="r" style="color:#0a7d4f;">${r.organic_rev===null?'<span style="color:var(--muted);font-size:10px;">—</span>':r.organic_rev>0?'£'+r.organic_rev.toFixed(2):'<span style="color:var(--muted)">£0</span>'}</td>
+      <td class="r" style="color:#b91c1c;">${r.ads_qty===null?'<span style="color:var(--muted);font-size:10px;">—</span>':r.ads_qty>0?r.ads_qty.toLocaleString():'<span style="color:var(--muted)">0</span>'}</td>
+      <td class="r" style="color:#b91c1c;">${r.ads_rev===null?'<span style="color:var(--muted);font-size:10px;">—</span>':r.ads_rev>0?'£'+r.ads_rev.toFixed(2):'<span style="color:var(--muted)">£0</span>'}</td>
       <td class="r ${sc}">${r.current_stock.toLocaleString()}</td>
       <td>${sold}</td>
       <td>${orderBadge}</td>
@@ -504,6 +513,38 @@ function changePage(dir) {
   currentPage += dir;
   renderTable();
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function refreshAttribution() {
+  const btn = document.getElementById('refreshAttrBtn');
+  const bar = document.getElementById('attrStatusBar');
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  bar.style.display = 'block';
+  bar.style.background = '#eaf0ff';
+  bar.style.color = 'var(--accent)';
+  bar.style.border = '1px solid #c0d0ff';
+  bar.textContent = 'Classifying orders via Shopify… this can take up to 5 minutes. Stay on this tab.';
+  try {
+    const res = await fetch('/api/generate-staff-attribution?staff=' + currentStaff, {
+      method: 'POST', credentials: 'same-origin'
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || res.statusText);
+    bar.style.background = '#e5f5ee';
+    bar.style.color = '#0a7d4f';
+    bar.style.border = '1px solid #a7d7bc';
+    bar.textContent = `Done! ${data.saved} rows saved, ${data.skipped} already processed, ${data.errors} errors. Reloading data…`;
+    setTimeout(() => { resetUI(); loadData(currentStaff); bar.style.display = 'none'; }, 2000);
+  } catch (err) {
+    bar.style.background = '#fff5f5';
+    bar.style.color = '#b91c1c';
+    bar.style.border = '1px solid #fca5a5';
+    bar.textContent = 'Error: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
 }
 
 loadData('kamsi');

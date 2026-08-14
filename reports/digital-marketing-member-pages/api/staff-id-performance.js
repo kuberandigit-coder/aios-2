@@ -5,7 +5,7 @@ const ALLOWED_STAFF_KEYS = new Set(['muguntha', 'piranav', 'kuberan']);
 
 const { STAFF_IDS } = require('../data/staff-ids');
 
-let pool;
+let pool, neonPool;
 function getPool() {
   if (!pool) {
     pool = new Pool({
@@ -21,6 +21,10 @@ function getPool() {
     });
   }
   return pool;
+}
+function getNeonPool() {
+  if (!neonPool) neonPool = new Pool({ connectionString: process.env.AUTH_DATABASE_URL, max: 3, connectionTimeoutMillis: 10000 });
+  return neonPool;
 }
 
 const COOKIE_NAME = 'dm_session';
@@ -143,19 +147,52 @@ module.exports = async function handler(req, res) {
       if (!handleByItemId[r.item_id] && r.shopify_handle) handleByItemId[r.item_id] = r.shopify_handle;
     }
 
-    // 4. Assemble rows
+    // 4. Attribution from Neon (AUTH_DATABASE_URL) — silent fail if table not yet created
+    const attrMap = {};
+    try {
+      const neon = getNeonPool();
+      const attrDateClause = fromDate || toDate
+        ? ` AND order_date >= $2::date AND order_date <= $3::date` : '';
+      const attrParams = fromDate || toDate
+        ? [ids, fromDate || '2000-01-01', toDate || new Date().toISOString().slice(0,10)] : [ids];
+      const attrRes = await neon.query(`
+        SELECT product_id,
+          SUM(CASE WHEN classification='ORGANIC' THEN qty     ELSE 0 END) AS organic_qty,
+          SUM(CASE WHEN classification='ORGANIC' THEN revenue ELSE 0 END) AS organic_rev,
+          SUM(CASE WHEN classification='ADS'     THEN qty     ELSE 0 END) AS ads_qty,
+          SUM(CASE WHEN classification='ADS'     THEN revenue ELSE 0 END) AS ads_rev
+        FROM public.staff_order_attribution
+        WHERE product_id = ANY($1::text[])${attrDateClause}
+        GROUP BY product_id
+      `, attrParams);
+      for (const r of attrRes.rows) {
+        attrMap[r.product_id] = {
+          organic_qty: parseInt(r.organic_qty)   || 0,
+          organic_rev: parseFloat(r.organic_rev) || 0,
+          ads_qty:     parseInt(r.ads_qty)       || 0,
+          ads_rev:     parseFloat(r.ads_rev)     || 0,
+        };
+      }
+    } catch (_) { /* table not yet created — columns will show null */ }
+
+    // 5. Assemble rows
     const rows = ids.map(id => {
       const sale = salesMap[id];
       const info = titleMap[id];
+      const attr = attrMap[id] || null;
       return {
         product_id: id,
         title: sale?.title || info?.title || null,
         status: info?.status || (sale ? 'active' : null),
         sold: !!sale,
-        total_qty: sale?.total_qty || 0,
-        total_amount: sale?.total_amount || 0,
-        current_stock: stockByItemId[id] || 0,
-        order_ids: sale?.order_ids || [],
+        total_qty:     sale?.total_qty    || 0,
+        total_amount:  sale?.total_amount || 0,
+        organic_qty:   attr?.organic_qty  ?? null,
+        organic_rev:   attr?.organic_rev  ?? null,
+        ads_qty:       attr?.ads_qty      ?? null,
+        ads_rev:       attr?.ads_rev      ?? null,
+        current_stock: stockByItemId[id]  || 0,
+        order_ids:     sale?.order_ids    || [],
         shopify_handle: handleByItemId[id] || null,
       };
     });

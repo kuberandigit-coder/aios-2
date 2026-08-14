@@ -5664,8 +5664,8 @@ const jefriReq6HandlerModule = (function() {
     const shopifyql = `FROM sales SHOW total_sales WHERE product_id = ${productId} SINCE '${startDate}' UNTIL '${untilInclusive}'`;
     const gqlQuery = `query($q: String!) {
       shopifyqlQuery(query: $q) {
-        ... on TableResponse { tableData { rowData columns { name } } }
-        parseErrors { code field message }
+        tableData { rowData columns { name } }
+        parseErrors
       }
     }`;
     const controller = new AbortController();
@@ -5685,8 +5685,8 @@ const jefriReq6HandlerModule = (function() {
     const json = await res.json();
     if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
     const payload = json.data && json.data.shopifyqlQuery;
-    if (payload && payload.parseErrors && payload.parseErrors.length) {
-      throw new Error('ShopifyQL parse error: ' + payload.parseErrors.map((e) => e.message).join('; '));
+    if (payload && payload.parseErrors) {
+      throw new Error('ShopifyQL parse error: ' + payload.parseErrors);
     }
     const rowData = payload && payload.tableData && payload.tableData.rowData;
     if (!rowData || !rowData.length) return 0; // no sales in this window — genuinely zero, not an error
