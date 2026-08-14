@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LEDSone — DM Dashboard: Employee Performance</title>
 <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmLjcY_EQCfTH_PBtRFCfzPx0fXIbAPc2wCN6HqMvV4fHLbhGQR5pW7nSBIBOHLUQG_J8_My-FM-iA9x1SndiEHp8RzNWpR0RggXJqDmel-LkilGycX_hwyji4qnxuC_PgFB1bjzw=s680-w680-h510-rw">
-<style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}</style>
+<style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}
+body.mg-embed .sidebar,body.mg-embed .collapse-btn{display:none !important;}
+</style>
 <script>
 // Auth guard — checked synchronously before paint so an unauthenticated
 // visitor never sees a flash of this page's content. Requires an active
@@ -138,6 +140,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
 </style>
 </head>
 <body>
+<script>if (location.search.indexOf('embed=1') !== -1) document.body.classList.add('mg-embed');</script>
 
 <button class="collapse-btn" id="sbCollapseBtn" type="button" title="Toggle sidebar" aria-label="Toggle sidebar">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
