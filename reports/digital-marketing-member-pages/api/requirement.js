@@ -5684,6 +5684,171 @@ const jefriReq6HandlerModule = (function() {
     return date;
   }
 
+  // ===== Snapshot generation (added 2026-08-14, per Kuberan: "while scroll
+  // loading data why can you made for this as snapshot method?") =====
+  // The scroll-triggered per-row live fetch worked but re-did the Shopify +
+  // Postgres lookup for a listing every time someone happened to scroll
+  // past it. This precomputes every listing's row ONCE, on a schedule (see
+  // api/scripts/generate-jefri-req6-snapshot.js +
+  // .github/workflows/jefri-req6-snapshot-refresh.yml), the same static-
+  // snapshot-file pattern already used for jefri-req4-mapping/mahima-req1/
+  // etc. (see the `staticPath`/`fs.existsSync` checks elsewhere in this
+  // file) — the frontend then just renders the finished file directly, no
+  // per-row requests at all.
+  //
+  // Grouped by parent Shopify PRODUCT (not by listing): every variant of
+  // one product shares the same images, so shares the same Image Update
+  // Date and therefore the same time windows — one Shopify call serves
+  // every child listing under that parent. Confirmed via SQL: ~8,127
+  // Jefri listings resolve to only ~1,220 unique parent products.
+  const GROUPED_LISTINGS_QUERY = `
+    WITH items AS (
+      SELECT DISTINCT product_item_id
+      FROM google_ads.product_performance
+      WHERE campaign_id = ANY($1::bigint[]) AND product_item_id IS NOT NULL AND product_item_id <> ''
+    ),
+    resolved AS (
+      SELECT product_item_id,
+        CASE WHEN product_item_id LIKE 'shopify\\_%'
+             THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
+             ELSE product_item_id END AS shopify_id
+      FROM items
+    ),
+    matched AS (
+      SELECT DISTINCT sl.id, sl.item_id, sl.sku, sl.is_parent, sl.is_child
+      FROM resolved r
+      JOIN listings.shopify_listings sl ON sl.item_id = r.shopify_id AND sl.channel = 'LEDSone DE'
+      WHERE sl.sku IS NOT NULL
+    ),
+    with_parent AS (
+      SELECT m.item_id AS listing_id, m.sku, m.is_parent, m.is_child,
+        CASE WHEN m.is_parent = 1 THEN m.item_id ELSE p.item_id END AS parent_item_id
+      FROM matched m
+      LEFT JOIN listings.shopify_listings_parent_child_mapping pcm ON pcm.child_id = m.id
+      LEFT JOIN listings.shopify_listings p ON p.id = pcm.parent_id
+    )
+    SELECT listing_id, sku, is_parent, is_child, parent_item_id
+    FROM with_parent
+    WHERE parent_item_id IS NOT NULL
+    ORDER BY parent_item_id, listing_id
+  `;
+
+  const GROUPS_CACHE_TTL_MS = 30 * 60 * 1000;
+  let groupsCache = null; // { parents: [{ parentItemId, listings: [...] }], at }
+
+  async function getGroupedListings(client) {
+    if (groupsCache && (Date.now() - groupsCache.at) < GROUPS_CACHE_TTL_MS) return groupsCache.parents;
+    const result = await client.query(GROUPED_LISTINGS_QUERY, [JEFRI_CAMPAIGN_IDS_R6]);
+    const byParent = new Map();
+    for (const r of result.rows) {
+      if (!byParent.has(r.parent_item_id)) byParent.set(r.parent_item_id, []);
+      byParent.get(r.parent_item_id).push({ listingId: r.listing_id, sku: r.sku, level: r.is_parent === 1 ? 'Parent' : 'Variant' });
+    }
+    const parents = [...byParent.entries()].map(([parentItemId, listings]) => ({ parentItemId, listings }));
+    groupsCache = { parents, at: Date.now() };
+    return parents;
+  }
+
+  // Bulk sales lookup for a whole batch in one round trip: each listing
+  // contributes a 'post' window row and (if daysLive > 0) a 'baseline'
+  // window row to a single unnest-based query, instead of 2 separate
+  // queries per listing like the live single-row endpoint does.
+  const BATCH_SALES_QUERY = `
+    SELECT w.match_id, w.win,
+      SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS sales
+    FROM unnest($1::text[], $2::text[], $3::text[], $4::date[], $5::date[]) AS w(match_id, match_field, win, start_d, end_d)
+    JOIN order_management.order_item_info oii
+      ON (w.match_field = 'product_id' AND oii.product_id = w.match_id)
+      OR (w.match_field = 'variant_id' AND oii.variant_id = w.match_id)
+    JOIN order_management.orders o ON o.id = oii.order_id
+    WHERE o.sub_source_id = 108 AND o.status = 'Completed'
+      AND o.order_date >= w.start_d AND o.order_date < w.end_d
+    GROUP BY w.match_id, w.win
+  `;
+
+  async function handleJefriReq6SnapshotBatch(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const cursor = Math.max(0, parseInt((req.query && req.query.cursor) || '0', 10) || 0);
+    const limit = Math.min(200, Math.max(1, parseInt((req.query && req.query.limit) || '80', 10) || 80));
+
+    const client = await getPool().connect().catch((err) => {
+      console.error('[jefri/req6-snapshot-batch] DB connect failed:', err && err.message);
+      res.status(500).json({ error: 'Server not configured or database unreachable.' });
+      return null;
+    });
+    if (!client) return;
+
+    try {
+      const parents = await getGroupedListings(client);
+      const slice = parents.slice(cursor, cursor + limit);
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const rows = [];
+      const matchIds = [], matchFields = [], wins = [], starts = [], ends = [];
+
+      for (const group of slice) {
+        let imageUpdateDate;
+        try {
+          imageUpdateDate = await fetchShopifyImageUpdateDate(group.parentItemId);
+        } catch (e) {
+          console.error('[jefri/req6-snapshot-batch] Shopify lookup failed for', group.parentItemId, e && e.message);
+          for (const l of group.listings) {
+            rows.push({ listingId: l.listingId, sku: l.sku, level: l.level, found: true, error: 'Shopify image lookup failed: ' + (e && e.message || 'unknown error') });
+          }
+          continue;
+        }
+        if (!imageUpdateDate) {
+          for (const l of group.listings) {
+            rows.push({ listingId: l.listingId, sku: l.sku, level: l.level, found: true, error: 'No images found on this product in Shopify.' });
+          }
+          continue;
+        }
+        if (imageUpdateDate > todayStr) imageUpdateDate = todayStr;
+        const daysLive = Math.floor((new Date(todayStr) - new Date(imageUpdateDate)) / 86400000);
+        const tomorrowStr = new Date(new Date(todayStr).getTime() + 86400000).toISOString().slice(0, 10);
+        const baselineStartStr = new Date(new Date(imageUpdateDate).getTime() - daysLive * 86400000).toISOString().slice(0, 10);
+
+        for (const l of group.listings) {
+          const matchField = l.level === 'Parent' ? 'product_id' : 'variant_id';
+          rows.push({ listingId: l.listingId, sku: l.sku, level: l.level, found: true, imageUpdateDate, imageUpdateDateSource: 'shopify-live', daysLiveSinceUpdate: daysLive });
+          matchIds.push(l.listingId); matchFields.push(matchField); wins.push('post'); starts.push(imageUpdateDate); ends.push(tomorrowStr);
+          if (daysLive > 0) {
+            matchIds.push(l.listingId); matchFields.push(matchField); wins.push('baseline'); starts.push(baselineStartStr); ends.push(imageUpdateDate);
+          }
+        }
+      }
+
+      const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+      const salesByKey = new Map(); // `${listingId}|${win}` -> sales
+      if (matchIds.length) {
+        const salesResult = await client.query(BATCH_SALES_QUERY, [matchIds, matchFields, wins, starts, ends]);
+        for (const r of salesResult.rows) salesByKey.set(`${r.match_id}|${r.win}`, round2(r.sales));
+      }
+
+      for (const row of rows) {
+        if (row.error) continue;
+        const post = salesByKey.get(`${row.listingId}|post`) || 0;
+        const baseline = row.daysLiveSinceUpdate > 0 ? (salesByKey.get(`${row.listingId}|baseline`) || 0) : null;
+        let pctChange = null;
+        if (baseline !== null && baseline > 0) pctChange = round2(((post - baseline) / baseline) * 100);
+        row.totalSalesSinceUpdate = post;
+        row.preUpdateBaselineSales = baseline;
+        row.pctChangeVsBaseline = pctChange;
+        row.trend = classifyTrend(pctChange);
+        row.zeroBaseline = row.daysLiveSinceUpdate > 0 && baseline === 0;
+        row.insufficientData = row.daysLiveSinceUpdate === 0;
+      }
+
+      const nextCursor = cursor + limit < parents.length ? cursor + limit : null;
+      res.status(200).json({ generatedAt: new Date().toISOString(), cursor, nextCursor, totalParents: parents.length, rows });
+    } catch (err) {
+      console.error('[jefri/req6-snapshot-batch] error:', err && err.message);
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    } finally {
+      client.release();
+    }
+  }
+
   // Same 5 campaign IDs as Req5 (JEFRI_CAMPAIGNS_R5) — Jefri's account.
   // Kept as a separate local const rather than importing across module
   // IIFEs, same isolation pattern every other handler in this file uses.
@@ -5905,6 +6070,24 @@ const jefriReq6HandlerModule = (function() {
       return;
     }
 
+    // Precomputed snapshot (Image Update Date + sales + trend already
+    // resolved for every listing — see generate-jefri-req6-snapshot.js).
+    // Same static-file-first pattern as jefri-req4-mapping/mahima-req1
+    // elsewhere in this file. Skips the DB/Shopify work entirely when
+    // present — the frontend renders straight from this, no per-row calls.
+    if (!forceRefresh) {
+      const fs = require('fs');
+      const path = require('path');
+      const staticPath = path.join(__dirname, 'data', 'jefri-req6-snapshot.json');
+      if (fs.existsSync(staticPath)) {
+        const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+        const payload = { ...staticData, source: 'static-snapshot' };
+        listCache = { data: payload, at: Date.now() };
+        res.status(200).json(payload);
+        return;
+      }
+    }
+
     const client = await getPool().connect().catch((err) => {
       console.error('[jefri/req6-list] DB connect failed:', err && err.message);
       res.status(500).json({ error: 'Server not configured or database unreachable.' });
@@ -5956,13 +6139,14 @@ const jefriReq6HandlerModule = (function() {
     }
   }
 
-  return { handleJefriReq6, handleJefriReq6List };
+  return { handleJefriReq6, handleJefriReq6List, handleJefriReq6SnapshotBatch };
 })();
 
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
   if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
+  if (fn === 'jefri-req6-snapshot-batch') return jefriReq6HandlerModule.handleJefriReq6SnapshotBatch(req, res);
   if (fn === 'jefri-req6') return jefriReq6HandlerModule.handleJefriReq6(req, res);
   if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);

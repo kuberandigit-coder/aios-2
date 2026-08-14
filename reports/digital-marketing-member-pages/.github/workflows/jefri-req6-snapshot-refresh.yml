@@ -1,0 +1,51 @@
+name: Jefri Req6 snapshot refresh (Image Update Live Sales Tracker)
+# Precomputes every Jefri listing's Image Update Date (Shopify) + sales
+# before/after (Postgres) once on a schedule, instead of doing it live
+# per-row as the table scrolls into view. See
+# api/scripts/generate-jefri-req6-snapshot.js and the "static snapshot"
+# handling in api/requirement.js's jefri-req6-list handler.
+#
+# Runs every 6 hours (not hourly like the sales snapshot job) — image
+# updates are infrequent, and each full run makes ~1,220 Shopify Admin API
+# calls (one per unique parent product), so there's no benefit to running
+# it more often.
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate Jefri Req6 snapshot
+        env:
+          SNAPSHOT_BASE_URL: https://digital-marketing-member-pages.vercel.app
+        run: node api/scripts/generate-jefri-req6-snapshot.js
+
+      - name: Commit refreshed snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add api/data/jefri-req6-snapshot.json
+          git diff --cached --quiet && echo "No changes, skipping commit" || git commit -m "chore: Jefri Req6 snapshot refresh [skip ci]"
+          git push
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          mkdir -p .vercel
+          cat > .vercel/project.json <<'EOF'
+          {"projectId":"prj_ziowoLxTbIReqBYx1zVweZZBaBDg","orgId":"team_3yn5bmAF7peUPYM7LJcj07PF","projectName":"digital-marketing-member-pages"}
+          EOF
+          npx vercel --prod --yes --token "$VERCEL_TOKEN"
