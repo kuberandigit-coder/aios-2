@@ -5835,30 +5835,13 @@ const jefriReq6HandlerModule = (function() {
     }
   }
 
-  // TEMPORARY, one-off — drops jefri_req6_tracker from the OLD
-  // FEED_TRACKER_DB_URL database as part of the 2026-08-14 move to
-  // AUTH_DATABASE_URL. Remove this handler + its dispatcher route once run
-  // (see evidence/jefri/2026-08-14_req6-image-update-live-sales-tracker.md).
-  async function handleJefriReq6CleanupOldDb(req, res) {
-    const connectionString = process.env.FEED_TRACKER_DB_URL;
-    if (!connectionString) { res.status(500).json({ error: 'FEED_TRACKER_DB_URL missing — nothing to clean up.' }); return; }
-    const cleanupPool = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 6000 });
-    try {
-      const client = await cleanupPool.connect();
-      try {
-        await client.query('DROP TABLE IF EXISTS public.jefri_req6_tracker');
-        res.status(200).json({ ok: true, message: 'Dropped public.jefri_req6_tracker from the FEED_TRACKER_DB_URL database.' });
-      } finally {
-        client.release();
-      }
-    } catch (err) {
-      res.status(500).json({ error: err.message || 'Unknown error' });
-    } finally {
-      await cleanupPool.end();
-    }
-  }
+  // Note: a temporary handleJefriReq6CleanupOldDb handler lived here
+  // briefly on 2026-08-14 to drop public.jefri_req6_tracker from the OLD
+  // FEED_TRACKER_DB_URL database when this table moved to AUTH_DATABASE_URL
+  // — run once (confirmed dropped), then removed. See
+  // evidence/jefri/2026-08-14_req6-image-update-live-sales-tracker.md.
 
-  return { handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete, handleJefriReq6CleanupOldDb };
+  return { handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete };
 })();
 
 module.exports = async (req, res) => {
@@ -5867,7 +5850,6 @@ module.exports = async (req, res) => {
   if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
   if (fn === 'jefri-req6-add') return jefriReq6HandlerModule.handleJefriReq6Add(req, res);
   if (fn === 'jefri-req6-delete') return jefriReq6HandlerModule.handleJefriReq6Delete(req, res);
-  if (fn === 'jefri-req6-cleanup-old-db') return jefriReq6HandlerModule.handleJefriReq6CleanupOldDb(req, res);
   if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
