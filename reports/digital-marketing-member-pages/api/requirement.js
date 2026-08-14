@@ -5665,9 +5665,11 @@ const jefriReq6HandlerModule = (function() {
 
   // Bulk sales lookup for every tracked row in one round trip: each row
   // contributes a 'post' window and (if daysLive > 0) a 'baseline' window
-  // to a single unnest-based query. Matches the user-typed Listing ID on
-  // EITHER product_id or variant_id — no dependency on resolving it
-  // against listings.shopify_listings first.
+  // to a single unnest-based query. Matches on Listing ID ONLY — SKU is
+  // display-only (confirmed explicitly by Kuberan, 2026-08-14) and is
+  // never passed into this query or used for matching in any way. Matches
+  // the user-typed Listing ID on EITHER product_id or variant_id — no
+  // dependency on resolving it against listings.shopify_listings first.
   const BULK_SALES_QUERY = `
     SELECT w.match_id, w.win, SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS sales
     FROM unnest($1::text[], $2::text[], $3::date[], $4::date[]) AS w(match_id, win, start_d, end_d)
@@ -5779,6 +5781,11 @@ const jefriReq6HandlerModule = (function() {
     const sku = (body.sku || '').toString().trim();
     const imageUpdateDate = body.imageUpdateDate;
 
+    // SKU is a display-only reference field (confirmed explicitly by
+    // Kuberan, 2026-08-14) — stored so the user can recognize the row at a
+    // glance, but never used to look up or match sales data. Only
+    // Listing ID drives data gathering (see BULK_SALES_QUERY's matchIds,
+    // built purely from listingId — sku never enters that query).
     if (!label) { res.status(400).json({ error: 'Label is required.' }); return; }
     if (!listingId) { res.status(400).json({ error: 'Listing ID is required.' }); return; }
     if (!sku) { res.status(400).json({ error: 'SKU is required.' }); return; }
