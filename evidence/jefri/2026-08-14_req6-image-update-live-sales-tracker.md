@@ -147,6 +147,32 @@ Kuberan redefined the feature entirely: "sorry some mistake, i need first column
 - `scripts/check-live-deploy.js` — all pre-existing canaries OK, no regression to any earlier same-day fix.
 - Re-added a real entry (Ceiling Light 60cm) after delete-testing so the tracker isn't left empty.
 
+**Status:** PASS (final architecture — one critical bug found and fixed post-launch, see below)
+**Reviewer:** Kuberan (pending review)
+
+---
+
+## POST-LAUNCH FIX — 2026-08-14, same day — data loss bug
+
+Kuberan reported: "need live once i add a listing, when refresh for that saved listing live update i mean sales and days counts and all i need." Investigating, confirmed the list endpoint was already fully live/uncached (`Cache-Control: public, max-age=0, must-revalidate`, `X-Vercel-Cache: MISS`, no in-memory `CACHE` object involved) — but a re-test of the add→list flow surfaced a real bug: **an added row (id 2, "Ceiling Light 60cm") had vanished entirely** on a later `fn=jefri-req6-list` call, while the Postgres `SERIAL` id sequence kept advancing (the next insert got id 4, not 3) — proof that reads and writes were landing on two DIFFERENT underlying databases depending on which warm serverless instance handled the request.
+
+**Root cause:** `getTrackerPool()` resolved `process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL` once per warm Lambda instance and cached the choice for that instance's lifetime (copied directly from Sajeepan's existing tracker code pattern in `members-api.js`). `FEED_TRACKER_DB_URL` is confirmed configured for Production (`vercel env ls`), but something about how/when it resolves per-instance meant some requests fell through to `AUTH_DATABASE_URL` — a different, apparently unstable target (name suggests it's Neon's Auth-specific database, not meant for arbitrary app tables).
+
+**Fix:** removed the `|| process.env.AUTH_DATABASE_URL` fallback entirely — `getTrackerPool()` now requires `FEED_TRACKER_DB_URL` explicitly and throws a clear config error if missing, rather than silently writing to the wrong database.
+
+**Verified fixed:** added a fresh probe row, polled `fn=jefri-req6-list` 3 times over ~9 seconds — id stayed consistent every time. Redeployed again (for the UI changes below) and the row from BEFORE that redeploy was still present afterward — confirms persistence now survives both repeated requests and redeploys, not just a lucky single check. Cleaned up all test rows and re-added the one real tracked listing afterward.
+
+**Where the data lives (answering Kuberan's follow-up question directly):** table `public.jefri_req6_tracker`, on the Neon database behind the `FEED_TRACKER_DB_URL` Vercel environment variable (same database Sajeepan's `public.feed_optimization_tracker` already lives on) — this is a separate, writable Neon project from the main read-only analytics database used everywhere else on this page. The exact Neon project/database *name* isn't visible from here (it's an encrypted env var); check the Vercel dashboard's Environment Variables page for `FEED_TRACKER_DB_URL`'s value, or the Neon console, to see which project it points to.
+
+## UI POLISH — same message, same day
+
+Also requested: style the Add button, widen the input fields, add filters to the table.
+- **Add button**: was completely unstyled (`class="primary"` was never defined anywhere in this file or any linked stylesheet — same true of Req5's button, an existing minor issue on the page not previously noticed). Gave it explicit CSS: accent-blue background, white text, rounded corners, hover/active/disabled states.
+- **Input fields**: widened from `min-width:160px` (text only, date field had no explicit width) to a consistent `width:220px` (`200px` for the date field) across all four Add-form inputs.
+- **Filters**: added a **Trend** dropdown (Improved/Same/Dropped/Insufficient data) and a **Sort** dropdown (Newest/Oldest first, Label A–Z, Days Live high/low, Total Sales high/low, % Change high/low) to the table's filter bar, alongside the existing free-text search.
+
+**Verified live:** confirmed `r6f_trend`/`r6f_sort`/`button[type="submit"]` present in the deployed page markup; `check-live-deploy.js` shows no regression to any other feature.
+
 **Status:** PASS
 **Reviewer:** Kuberan (pending review)
-**Next step:** None blocking. This is the final architecture for Req6 — add real tracked listings via the UI going forward. Two carried-over, non-blocking notes from earlier reworks: (1) the pre-existing `hourly-july-snapshot-refresh.yml`/`generate-snapshots.js` still default to a Vercel domain that returns `DEPLOYMENT_NOT_FOUND` — worth Kuberan checking if that job has been silently failing (unrelated to Req6, not touched); (2) no delete-confirmation audit trail exists yet if that's ever needed (currently a hard DELETE, no soft-delete/history).
+**Next step:** None blocking. This is the final architecture for Req6 — add real tracked listings via the UI going forward, now confirmed to persist reliably. Two carried-over, non-blocking notes from earlier reworks: (1) the pre-existing `hourly-july-snapshot-refresh.yml`/`generate-snapshots.js` still default to a Vercel domain that returns `DEPLOYMENT_NOT_FOUND` — worth Kuberan checking if that job has been silently failing (unrelated to Req6, not touched); (2) no delete-confirmation audit trail exists yet if that's ever needed (currently a hard DELETE, no soft-delete/history); (3) worth checking whether `AUTH_DATABASE_URL`'s instability affects Sajeepan's tracker too, since that code still has the same fallback pattern this fix removed here — not touched, since it's Piranav's feature, not this task's scope.
