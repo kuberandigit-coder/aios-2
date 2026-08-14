@@ -5557,10 +5557,12 @@ resolved_full AS (
 // whole file otherwise uses — that connection is intentionally read-only
 // for this project. Uses the SAME writable Neon DB + table-per-feature
 // convention already established by Sajeepan's Req4 feed-optimization
-// tracker (see handleSajeepanTrackerSave/members-api.js):
-// `process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL`,
+// tracker (see handleSajeepanTrackerSave/members-api.js): `FEED_TRACKER_DB_URL`,
 // table `public.jefri_req6_tracker`, self-provisioned via
 // `CREATE TABLE IF NOT EXISTS` on first use (no manual migration step).
+// Deliberately does NOT fall back to AUTH_DATABASE_URL like Sajeepan's
+// code does — that fallback caused confirmed data loss here (see
+// getTrackerPool's own comment below for the full story).
 //
 // Sales calculation still reads from the main read-only Postgres
 // (order_management.orders/order_item_info, sub_source_id=108,
@@ -5605,11 +5607,22 @@ const jefriReq6HandlerModule = (function() {
   }
 
   // Writable tracker DB — Label/Listing ID/SKU/Image Update Date storage.
+  // IMPORTANT (found 2026-08-14): originally fell back to AUTH_DATABASE_URL
+  // when FEED_TRACKER_DB_URL was unset, matching Sajeepan's tracker code.
+  // That fallback caused real, confirmed data loss here — an added row
+  // (id 2) vanished entirely on a later list call while the id SEQUENCE
+  // kept advancing (next insert got id 4, not 3), meaning reads and writes
+  // were landing on two DIFFERENT underlying databases depending on which
+  // warm serverless instance handled the request (each instance resolves
+  // and caches its own connectionString once, at cold start). Since
+  // FEED_TRACKER_DB_URL IS configured for Production (confirmed via
+  // `vercel env ls`), removed the fallback entirely — better to fail
+  // loudly with a clear config error than silently write to the wrong DB.
   let trackerPool;
   function getTrackerPool() {
     if (!trackerPool) {
-      const connectionString = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
-      if (!connectionString) throw new Error('Server not configured: FEED_TRACKER_DB_URL (or AUTH_DATABASE_URL) missing');
+      const connectionString = process.env.FEED_TRACKER_DB_URL;
+      if (!connectionString) throw new Error('Server not configured: FEED_TRACKER_DB_URL missing');
       trackerPool = new Pool({ connectionString, max: 2, connectionTimeoutMillis: 6000 });
     }
     return trackerPool;
