@@ -27,6 +27,22 @@
 // `vercel --prod` from a known-good, up-to-date worktree (see
 // staff-req-sync3) to re-assert the correct content — do not assume a
 // GitHub push alone is enough.
+//
+// IMPORTANT — this cuts both ways (learned the hard way same day, 2026-08-14):
+// "known-good" means "matches git HEAD", NOT "definitely the most complete
+// version". Piranav has deployed features (Staff ID Performance's
+// Jackson/Sajeepan/Sonya tabs) straight to production via `vercel --prod`
+// from his own local files WITHOUT ever committing them to GitHub. My first
+// fix for this exact bug — redeploying from a clean git-tracked worktree —
+// silently reverted his uncommitted feature back down to a 2-tab version,
+// because git had no record of it. Before redeploying "the correct code",
+// diff production's CURRENT content against git HEAD for every canary
+// below, not just the one you're actively fixing — a MISMATCH can mean
+// production has something newer that git is missing, not just something
+// stale. If suspected, recover the live file via `vercel api
+// /v6/deployments/<id>/files` + `/v7/.../files/<uid>` (base64-decode the
+// `data` field) before overwriting it, and commit the recovered version to
+// git so this can't happen again for that feature specifically.
 
 const https = require('https');
 const fs = require('fs');
@@ -43,6 +59,9 @@ const CANARIES = [
   { file: 'pages/kuberan.html', mustContain: 'Performance Analysis' },
   { file: 'pages/piranav.html', mustContain: 'Blog Tool' },
   { file: 'pages/muguntha.html', mustContain: "mg-embed" },
+  { file: 'pages/staff-id-performance.html', mustContain: 'data-staff="sonya"' },
+  { file: 'pages/staff-id-performance.html', mustContain: 'data-staff="sajeepan"' },
+  { file: 'pages/staff-id-performance.html', mustContain: 'data-staff="jackson"' },
 ];
 
 function fetchLive(urlPath) {
