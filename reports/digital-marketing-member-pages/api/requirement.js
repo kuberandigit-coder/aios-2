@@ -5661,7 +5661,7 @@ const jefriReq6HandlerModule = (function() {
     // ShopifyQL's UNTIL is inclusive, so convert our exclusive end-date
     // convention (used everywhere else on this page) to an inclusive one.
     const untilInclusive = new Date(new Date(endDateExclusive).getTime() - 86400000).toISOString().slice(0, 10);
-    const shopifyql = `FROM sales SHOW total_sales WHERE product_id = ${productId} SINCE '${startDate}' UNTIL '${untilInclusive}'`;
+    const shopifyql = `FROM sales SHOW total_sales WHERE product_id = ${productId} SINCE ${startDate} UNTIL ${untilInclusive}`;
     const gqlQuery = `query($q: String!) {
       shopifyqlQuery(query: $q) {
         tableData { rows columns { name } }

@@ -16,9 +16,10 @@ const { Pool } = require('pg');
 const crypto   = require('crypto');
 const { STAFF_IDS } = require('../data/staff-ids');
 
-const COOKIE_NAME   = 'dm_session';
-const STORE_DOMAIN  = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.co.uk';
-const API_VERSION   = process.env.SHOPIFY_UK_API_VERSION  || '2024-01';
+const COOKIE_NAME    = 'dm_session';
+const ALLOWED_KEYS   = new Set(['muguntha', 'piranav', 'kuberan']);
+const STORE_DOMAIN   = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.co.uk';
+const API_VERSION    = process.env.SHOPIFY_UK_API_VERSION  || '2024-01';
 const BATCH_SIZE    = 20;
 const DELAY_MS      = 400;
 const UK_SUB_SOURCE = 104;
@@ -152,7 +153,7 @@ module.exports = async function handler(req, res) {
 
   const session = verifySession(req);
   if (!session) return res.status(401).json({ ok: false, error: 'Unauthorised' });
-  if (session.role !== 'admin') return res.status(403).json({ ok: false, error: 'Admin only' });
+  if (session.role !== 'admin' && !ALLOWED_KEYS.has(session.staff_key)) return res.status(403).json({ ok: false, error: 'Forbidden' });
 
   const staff  = (req.query.staff || '').toLowerCase();
   const full   = req.query.full === '1';
