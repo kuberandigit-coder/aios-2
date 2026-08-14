@@ -92,6 +92,32 @@ Kuberan corrected the design again: "I mean the image update date no need as inp
 - `scripts/check-live-deploy.js` re-run — all pre-existing canaries OK, no regression to any earlier same-day fix.
 - Before pushing, `git fetch` again found new Piranav commits (Jackson product ID additions to Staff ID Performance) — pulled in first, no conflicts (different files), per the standing "don't touch Piranav's work" rule.
 
+**Status:** PASS (Shopify-live rework — superseded by a third, architectural correction below)
+**Reviewer:** Kuberan (pending review)
+
+---
+
+## THIRD CORRECTION — 2026-08-14, same day, later in session
+
+Kuberan questioned the architecture directly: "now the current behavior is while scroll loading data why can you made for this as snapshot method?" — the IntersectionObserver-driven live-on-scroll approach (built moments earlier, working correctly) was still the wrong shape: it redid live Shopify + Postgres work every time a row scrolled into view for anyone. This repo already has an established fix for exactly this class of problem — a scheduled snapshot job that precomputes slow data once, with the live path serving the finished static file (`jefri-req4-mapping`, `mahima-req1`, etc. all already work this way, and there's already an hourly GitHub Action, `hourly-july-snapshot-refresh.yml`, that does the pattern generically). Reused that convention instead of building something new.
+
+**What changed:**
+- New `fn=jefri-req6-snapshot-batch&cursor=N&limit=M` endpoint (`handleJefriReq6SnapshotBatch`) — processes a bounded batch of unique parent Shopify products (grouped, since every variant of one product shares the same images/Image Update Date — confirmed via SQL: ~8,127 Jefri listings resolve to only ~850 computable unique parent products with a SKU), fetching each parent's image date once and computing sales for every listing under it via a single bulk SQL query (`unnest`-based, one round trip per batch instead of 2 queries × every listing). Returns `nextCursor` to continue, `null` when done — designed to comfortably fit inside a single request (measured: 80 parents ≈ 21s).
+- New `api/scripts/generate-jefri-req6-snapshot.js` — loops the batch endpoint via curl (same pattern as the existing `generate-snapshots.js`) until exhausted, writes the complete result to `api/data/jefri-req6-snapshot.json` in one shot (never a partial file).
+- New `.github/workflows/jefri-req6-snapshot-refresh.yml` — runs the generator every 6 hours (image updates are infrequent; no benefit to hourly), commits the refreshed JSON, redeploys. Same commit/deploy steps as the existing hourly workflow.
+- `handleJefriReq6List` now checks for the static snapshot file FIRST (same `fs.existsSync`/`staticPath` pattern as `jefri-req4-mapping`) and serves it directly with every row's data already computed — no per-row calls needed at all when the snapshot is warm.
+- Frontend: `r6LoadList` seeds `R6_CALC` directly from any snapshot rows that already carry calculated fields, and `r6Render` shows real values immediately for those. The `IntersectionObserver`/`r6Calc` live-fetch path from the previous rework is kept, but now only as a **fallback** for rows the snapshot hasn't covered yet (or before the very first snapshot has ever run) — not the primary mechanism.
+
+**Bug found and fixed during first-run testing:** the generator script's default `SNAPSHOT_BASE_URL` (`https://digital-marketing-member-pages.vercel.app` — the same default this repo's OTHER existing snapshot scripts/workflows already use) returned `DEPLOYMENT_NOT_FOUND`. Confirmed via direct curl. Switched the script's default and the new workflow's env var to the working custom domain (`https://dm-dashboard.vintageinterior.co.uk`). **Flagged, not fixed:** the pre-existing `hourly-july-snapshot-refresh.yml` and `generate-snapshots.js` still use the broken raw-Vercel-domain default — worth Kuberan checking whether that job has actually been silently failing. Left untouched since it's outside this task's scope and not something to change unilaterally.
+
+**Verified live:**
+- Batch endpoint: `cursor=0&limit=5` → real grouped data (5 parent products' variants, correct shared `imageUpdateDate` per group). `cursor=0&limit=80` → 21.5s (well inside limits).
+- Full generator run: 11 batches, 4,566 rows across 850 parent products, ~2.5 minutes total, written to `api/data/jefri-req6-snapshot.json`.
+- `fn=jefri-req6-list` post-deploy → `"source":"static-snapshot"`, 4,566 rows, 1.25s response (vs. the old scroll-triggered approach where every row needed its own live round trip).
+- `scripts/check-live-deploy.js` — all pre-existing canaries still OK.
+
+**Disclosed scope trim:** the snapshot only contains listings that resolve to a real Shopify SKU (~4,566 of the ~8,127 Ads-tracked items) — the remainder are Ads items with no Shopify listing match at all, which were never computable anyway (previously shown as informational "Unmatched" rows in the live-list path). The static-snapshot path currently doesn't carry those placeholder rows forward; only the live (non-cached) list path still shows them. Flagged for Kuberan/Jefri to confirm this trade-off is acceptable, or ask for the placeholders to be merged back in.
+
 **Status:** PASS
 **Reviewer:** Kuberan (pending review)
-**Next step:** None — feature complete and live with fully automatic, Shopify-sourced Image Update Date. Only open question for Jefri: currency display (£ vs €).
+**Next step:** None blocking. Two open items for Kuberan: (1) whether the broken `SNAPSHOT_BASE_URL` default might mean the existing hourly sales/Postgres snapshot job has been failing silently — worth a quick check; (2) whether Unmatched/no-SKU listings should be merged back into the snapshot-served table view.
