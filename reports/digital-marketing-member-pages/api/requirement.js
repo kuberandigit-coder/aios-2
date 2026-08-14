@@ -5685,8 +5685,8 @@ const jefriReq6HandlerModule = (function() {
     const json = await res.json();
     if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
     const payload = json.data && json.data.shopifyqlQuery;
-    if (payload && payload.parseErrors) {
-      throw new Error('ShopifyQL parse error: ' + payload.parseErrors);
+    if (payload && payload.parseErrors && payload.parseErrors.length) {
+      throw new Error('ShopifyQL parse error: ' + payload.parseErrors.join('; '));
     }
     const rowData = payload && payload.tableData && payload.tableData.rows; // JSON scalar — array of KEYED objects, e.g. [{"total_sales":"797.08"}], NOT array-of-arrays (confirmed live 2026-08-14 via direct query outside the deploy pipeline)
     if (!rowData || !rowData.length) return 0; // no sales in this window — genuinely zero, not an error
