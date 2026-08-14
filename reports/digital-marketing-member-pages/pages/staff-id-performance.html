@@ -460,7 +460,7 @@ function renderTable() {
   window._orderStore = {};
   const isJackson = currentStaff === 'jackson';
   const urlCol = isJackson ? '<th>URL</th>' : '';
-  let html = `<table><thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Status</th><th class="r">Lifetime Qty</th><th class="r">Lifetime Revenue</th><th class="r">Current Stock</th><th>Sold?</th><th>Orders</th>${urlCol}</tr></thead><tbody>`;
+  let html = `<table><thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Status</th><th class="r">Qty</th><th class="r">Revenue</th><th class="r">Current Stock</th><th>Sold?</th><th>Orders</th>${urlCol}</tr></thead><tbody>`;
   pageRows.forEach((r,i) => {
     const n = start+i+1;
     const sb = r.status ? `<span class="badge ${r.status}">${r.status}</span>` : '—';

@@ -634,64 +634,61 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 <header>
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 6 (Live)</div>
   <h1>T-06 Image Update Live Sales Tracker</h1>
-  <div class="sub">Enter a Listing ID and the date the new images went live — sales after the update are compared against sales for the same number of days immediately before it. &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads)</div>
+  <div class="sub">Every listing Jefri's Google Ads campaigns have ever run &mdash; always shown, no search required. Set an Image Update Date on any row to see whether its sales improved, stayed the same, or dropped vs. the same number of days immediately before. &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads)</div>
   <style>
-    #req6Tab .filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;}
-    #req6Tab .filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);}
-    #req6Tab .filters input[type="text"],
-    #req6Tab .filters input[type="date"]{
-      padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);
-      font-size:13px;font-weight:600;text-transform:none;letter-spacing:normal;min-height:38px;min-width:220px;
-    }
-    #req6Tab .filters input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,94,255,.15);}
-    #req6Tab .filters input:hover{border-color:#b9c2d4;}
-    #req6Tab .r6-result{display:none;}
-    #req6Tab .r6-result table{width:100%;border-collapse:collapse;font-size:13.5px;}
-    #req6Tab .r6-result td{padding:10px 14px;border-bottom:1px solid var(--line);}
-    #req6Tab .r6-result td:first-child{font-weight:700;color:var(--muted);width:260px;}
-    #req6Tab .r6-trend{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:12.5px;}
+    #req6Tab .r6-trend{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:12px;white-space:nowrap;}
     #req6Tab .r6-trend.improved{background:#e6f6ec;color:#0a7d4f;}
     #req6Tab .r6-trend.same{background:#fdf3e0;color:#b7791f;}
     #req6Tab .r6-trend.dropped{background:#fdecea;color:#c62828;}
     #req6Tab .r6-trend.insufficient{background:#eef1f6;color:#5b6577;}
-    #req6Tab .r6-msg{padding:14px 18px;border-radius:12px;font-size:13px;margin-top:10px;}
+    #req6Tab .r6-msg{padding:14px 18px;border-radius:12px;font-size:13px;margin:10px 0;}
     #req6Tab .r6-msg.error{background:#fdecea;color:#c62828;border:1px solid #f5c6c6;}
     #req6Tab .r6-msg.info{background:#eef3ff;color:#1a2233;border:1px solid #c7d7ff;}
+    #req6Tab .r6-date-input{padding:6px 10px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;min-width:150px;}
+    #req6Tab .r6-date-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,94,255,.15);}
+    #req6Tab .r6-unmatched{color:var(--muted);font-style:italic;}
   </style>
-  <div class="filters" style="margin-top:10px;">
-    <label>Listing ID <input type="text" id="r6f_listingId" placeholder="e.g. 57163495964937"></label>
-    <label>Image Update Date <input type="date" id="r6f_date"></label>
-    <button class="primary" id="r6RunBtn" type="button">Calculate</button>
-    <span class="chip live" id="r6LiveChip" style="display:none;">Loading&hellip;</span>
-  </div>
 </header>
 
 <div id="r6Msg"></div>
 
-<div class="tablebox r6-result" id="r6Result">
-  <table>
-    <tbody>
-      <tr><td>Listing ID</td><td id="r6vListingId">&ndash;</td></tr>
-      <tr><td>SKU</td><td id="r6vSku">&ndash;</td></tr>
-      <tr><td>Image Update Date</td><td id="r6vDate">&ndash;</td></tr>
-      <tr><td>Days Live Since Update</td><td id="r6vDaysLive">&ndash;</td></tr>
-      <tr><td>Total Sales Since Update</td><td id="r6vTotalSales">&ndash;</td></tr>
-      <tr><td>Pre-Update Baseline Sales</td><td id="r6vBaseline">&ndash;</td></tr>
-      <tr><td>% Change vs Baseline</td><td id="r6vPctChange">&ndash;</td></tr>
-      <tr><td>Trend</td><td id="r6vTrend">&ndash;</td></tr>
-    </tbody>
-  </table>
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="r6q" placeholder="Search Listing ID or SKU">
+    <button id="r6RefreshBtn" type="button">Refresh (live)</button>
+    <span class="chip live" id="r6LiveChip" style="display:none;margin-left:8px;">Loading&hellip;</span>
+    <span id="r6cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table>
+      <thead style="position:sticky;top:0;z-index:5;">
+        <tr>
+          <th>Listing ID</th>
+          <th>SKU</th>
+          <th>Image Update Date</th>
+          <th class="num">Days Live</th>
+          <th class="num">Total Sales Since Update</th>
+          <th class="num">Pre-Update Baseline Sales</th>
+          <th class="num">% Change</th>
+          <th>Trend</th>
+        </tr>
+      </thead>
+      <tbody id="r6tbody"><tr><td colspan="8" class="loading">Loading Jefri's listings&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r6empty" style="display:none;"></div>
 </div>
 
 <div class="footnotes">
-  <strong>Listing ID &rarr; SKU:</strong> resolved from <code>listings.shopify_listings.item_id/sku</code> (channel: ledsone.de) — the same table/column every other requirement on this page uses. Not guessed, not hard-coded.<br>
-  <strong>Total Sales Since Update:</strong> gross line-item revenue (<code>item_price &times; item_quantity</code>, <code>status='Completed'</code>, Shopify ledsone.de) where Order Date &ge; Image Update Date, matched on the listing's own Parent Product ID or Variant ID (same resolution/columns as Requirement 5). Grows automatically as new orders come in — not a static snapshot.<br>
-  <strong>Days Live Since Update</strong> = Today &minus; Image Update Date, in whole days (0 if updated today).<br>
-  <strong>Pre-Update Baseline Sales:</strong> the SAME NUMBER OF DAYS immediately before the Image Update Date (i.e. exactly <em>Days Live Since Update</em> calendar days) — not a fixed 7/30-day window.<br>
-  <strong>% Change vs Baseline</strong> = <code>((Total Sales Since Update &minus; Pre-Update Baseline Sales) / Pre-Update Baseline Sales) &times; 100</code>.<br>
+  <strong>Listing source:</strong> every distinct product/listing ID that has ever appeared in Jefri's 5 named Google Ads campaigns (<code>google_ads.product_performance</code>, same 5 campaigns as Requirements 1&ndash;5), resolved to a Shopify listing via <code>listings.shopify_listings.item_id/sku</code> (channel: ledsone.de). Items with no Shopify match are shown as <span class="r6-unmatched">Unmatched</span>, not hidden or guessed.<br>
+  <strong>Image Update Date:</strong> entered per-row, saved in this browser (not in Postgres — no schema/table changes were made for this feature) so it's remembered next time you open this tab on this device.<br>
+  <strong>Total Sales Since Update:</strong> gross line-item revenue (<code>item_price &times; item_quantity</code>, <code>status='Completed'</code>, Shopify ledsone.de) where Order Date &ge; Image Update Date, matched on the listing's own Parent Product ID or Variant ID (same resolution/columns as Requirement 5). Grows automatically as new orders come in.<br>
+  <strong>Days Live</strong> = Today &minus; Image Update Date, in whole days (0 if updated today).<br>
+  <strong>Pre-Update Baseline Sales:</strong> the SAME NUMBER OF DAYS immediately before the Image Update Date (i.e. exactly <em>Days Live</em> calendar days) — not a fixed 7/30-day window.<br>
+  <strong>% Change</strong> = <code>((Total Sales Since Update &minus; Pre-Update Baseline Sales) / Pre-Update Baseline Sales) &times; 100</code>.<br>
   <strong>Trend thresholds:</strong> <strong>Improved</strong> &ge; +15% &middot; <strong>Same</strong> &minus;14% through +14% &middot; <strong>Dropped</strong> &le; &minus;15%.<br>
   <strong>Zero-baseline / just-updated handling:</strong> if the baseline window is empty (image updated today, Days Live = 0) or Pre-Update Baseline Sales = &pound;0, % Change and Trend are shown as <strong>N/A / Insufficient data</strong> rather than a fabricated or infinite percentage — same "requires a positive denominator, otherwise N/A" convention already used by muguntha.html's Target Achievement metric.<br>
-  <strong>Data source:</strong> PostgreSQL (read-only: <code>listings.shopify_listings</code>, <code>order_management.orders</code>, <code>order_management.order_item_info</code>) &middot; fetched via <code>/api/requirement?fn=jefri-req6</code>. Full discovery/validation: <code>evidence/jefri/2026-08-14_req6-image-update-live-sales-tracker.md</code>.
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>google_ads.product_performance</code>, <code>listings.shopify_listings</code>, <code>order_management.orders</code>, <code>order_management.order_item_info</code>) &middot; listing table fetched via <code>/api/requirement?fn=jefri-req6-list</code>, per-row calculation via <code>/api/requirement?fn=jefri-req6</code>. Full discovery/validation: <code>evidence/jefri/2026-08-14_req6-image-update-live-sales-tracker.md</code>.
 </div>
 </div>
 
@@ -1700,13 +1697,18 @@ document.getElementById('r5q').addEventListener('input', r5Render);
 document.getElementById('r5f_verdict').addEventListener('change', r5Render);
 document.getElementById('r5ExportCsv').addEventListener('click', r5ExportCsv);
 
-// ===== Requirement 6: T-06 Image Update Live Sales Tracker (added 2026-08-14) =====
+// ===== Requirement 6: T-06 Image Update Live Sales Tracker (added 2026-08-14,
+// reworked to an always-visible table of all Jefri listings same day per
+// explicit correction: "no need like search first, need like show always
+// but only jefri") =====
+let R6_ALL = [];        // list rows from /api/requirement?fn=jefri-req6-list
+let R6_DATES = {};      // { listingId: 'YYYY-MM-DD' }, persisted via IndexedDB (idbGet/idbSet — same store Req2 already uses). No Postgres writes for this — Req6 was scoped read-only.
+let R6_CALC = {};       // { listingId: <calc payload from fn=jefri-req6> }, in-memory only
+
 function r6Init(){
-  // No default values — Listing ID and Image Update Date are both required
-  // manual inputs per spec; nothing to auto-load until the user enters them.
-  document.getElementById('r6RunBtn').addEventListener('click', r6Load);
-  document.getElementById('r6f_listingId').addEventListener('keydown', function(e){ if (e.key === 'Enter') r6Load(); });
-  document.getElementById('r6f_date').addEventListener('keydown', function(e){ if (e.key === 'Enter') r6Load(); });
+  document.getElementById('r6RefreshBtn').addEventListener('click', () => r6LoadList(true));
+  document.getElementById('r6q').addEventListener('input', r6Render);
+  r6LoadList(false);
 }
 
 function r6Money(n){
@@ -1718,74 +1720,113 @@ function r6SetMsg(html, cls){
   el.innerHTML = html ? ('<div class="r6-msg ' + cls + '">' + html + '</div>') : '';
 }
 
-async function r6Load(){
-  const listingId = document.getElementById('r6f_listingId').value.trim();
-  const imageUpdateDate = document.getElementById('r6f_date').value;
-  if (!listingId || !imageUpdateDate) {
-    r6SetMsg('Enter both a Listing ID and an Image Update Date.', 'error');
-    return;
-  }
-  const btn = document.getElementById('r6RunBtn');
+async function r6LoadList(force){
   const chip = document.getElementById('r6LiveChip');
-  btn.disabled = true;
   chip.style.display = '';
-  chip.textContent = 'Loading live data from PostgreSQL…';
-  document.getElementById('r6Result').style.display = 'none';
+  chip.textContent = 'Loading Jefri\'s listings…';
+  document.getElementById('r6tbody').innerHTML = '<tr><td colspan="8" class="loading">Loading Jefri\'s listings…</td></tr>';
   r6SetMsg('', '');
   try {
-    const url = '/api/requirement?fn=jefri-req6&listingId=' + encodeURIComponent(listingId) + '&imageUpdateDate=' + encodeURIComponent(imageUpdateDate);
+    R6_DATES = (await idbGet('jefri_r6_dates')) || {};
+  } catch (e) { R6_DATES = {}; }
+  try {
+    const url = '/api/requirement?fn=jefri-req6-list' + (force ? '&refresh=1' : '');
     const res = await fetch(url, { credentials: 'same-origin' });
     const data = await res.json();
     if (!res.ok) {
       r6SetMsg(data.error || ('Server error (' + res.status + ')'), 'error');
+      document.getElementById('r6tbody').innerHTML = '<tr><td colspan="8" class="loading">Failed to load.</td></tr>';
       return;
     }
-    if (data.found === false) {
-      r6SetMsg(data.error || 'Listing ID not found.', 'error');
-      return;
-    }
-    if (data.sku == null) {
-      r6SetMsg(data.error || 'Listing found but has no SKU on record.', 'error');
-      return;
-    }
-    r6Render(data);
+    R6_ALL = data.rows || [];
+    r6Render();
+    // Kick off calculations for every row that already has a saved date —
+    // sequential-ish via Promise.all but each call is independent/cached
+    // server-side (5 min TTL), so this is cheap on repeat visits.
+    const withDates = R6_ALL.filter((r) => R6_DATES[r.listingId]);
+    await Promise.all(withDates.map((r) => r6Calc(r.listingId, R6_DATES[r.listingId])));
+    r6Render();
   } catch (e) {
     r6SetMsg('Request failed: ' + (e && e.message || e), 'error');
   } finally {
-    btn.disabled = false;
     chip.style.display = 'none';
   }
 }
 
-function r6Render(d){
-  document.getElementById('r6vListingId').textContent = d.listingId;
-  document.getElementById('r6vSku').textContent = d.sku;
-  document.getElementById('r6vDate').textContent = d.imageUpdateDate;
-  document.getElementById('r6vDaysLive').textContent = d.daysLiveSinceUpdate;
-  document.getElementById('r6vTotalSales').innerHTML = r6Money(d.totalSalesSinceUpdate);
-  document.getElementById('r6vBaseline').innerHTML = d.preUpdateBaselineSales == null ? '&ndash; (no baseline window yet)' : r6Money(d.preUpdateBaselineSales);
-
-  const pctEl = document.getElementById('r6vPctChange');
-  const trendEl = document.getElementById('r6vTrend');
-  if (d.pctChangeVsBaseline == null) {
-    pctEl.textContent = 'N/A';
-    const reason = d.insufficientData
-      ? 'Insufficient data'
-      : (d.zeroBaseline ? 'Insufficient data (baseline sales = £0)' : 'Insufficient data');
-    trendEl.innerHTML = '<span class="r6-trend insufficient">' + reason + '</span>';
-  } else {
-    pctEl.textContent = (d.pctChangeVsBaseline >= 0 ? '+' : '') + d.pctChangeVsBaseline.toFixed(2) + '%';
-    const cls = d.trend === 'Improved' ? 'improved' : (d.trend === 'Dropped' ? 'dropped' : 'same');
-    trendEl.innerHTML = '<span class="r6-trend ' + cls + '">' + d.trend + '</span>';
+async function r6Calc(listingId, imageUpdateDate){
+  try {
+    const url = '/api/requirement?fn=jefri-req6&listingId=' + encodeURIComponent(listingId) + '&imageUpdateDate=' + encodeURIComponent(imageUpdateDate);
+    const res = await fetch(url, { credentials: 'same-origin' });
+    const data = await res.json();
+    R6_CALC[listingId] = res.ok ? data : { error: data.error || ('Server error (' + res.status + ')') };
+  } catch (e) {
+    R6_CALC[listingId] = { error: 'Request failed: ' + (e && e.message || e) };
   }
+}
 
-  if (d.insufficientData) {
-    r6SetMsg('Image was updated today (0 days live) — no pre-update baseline window exists yet. Check back tomorrow for a comparison.', 'info');
+async function r6OnDateChange(listingId, value){
+  if (!value) {
+    delete R6_DATES[listingId];
+    delete R6_CALC[listingId];
   } else {
-    r6SetMsg('', '');
+    R6_DATES[listingId] = value;
+    delete R6_CALC[listingId];
   }
+  try { await idbSet('jefri_r6_dates', R6_DATES); } catch (e) { /* best-effort persistence only */ }
+  r6Render();
+  if (value) {
+    await r6Calc(listingId, value);
+    r6Render();
+  }
+}
 
-  document.getElementById('r6Result').style.display = '';
+function r6FilteredRows(){
+  const q = (document.getElementById('r6q').value || '').trim().toLowerCase();
+  if (!q) return R6_ALL;
+  return R6_ALL.filter((r) => (r.listingId && r.listingId.toLowerCase().includes(q)) || (r.sku && r.sku.toLowerCase().includes(q)));
+}
+
+function r6TrendCell(calc){
+  if (!calc) return '<span class="r6-trend insufficient">&ndash;</span>';
+  if (calc.error) return '<span class="r6-trend insufficient" title="' + calc.error.replace(/"/g,'&quot;') + '">Error</span>';
+  if (calc.found === false || calc.sku == null) return '<span class="r6-trend insufficient" title="' + (calc.error||'').replace(/"/g,'&quot;') + '">N/A</span>';
+  if (calc.pctChangeVsBaseline == null) return '<span class="r6-trend insufficient">Insufficient data</span>';
+  const cls = calc.trend === 'Improved' ? 'improved' : (calc.trend === 'Dropped' ? 'dropped' : 'same');
+  return '<span class="r6-trend ' + cls + '">' + calc.trend + '</span>';
+}
+
+function r6Render(){
+  const rows = r6FilteredRows();
+  const tbody = document.getElementById('r6tbody');
+  document.getElementById('r6cnt').textContent = rows.length + ' of ' + R6_ALL.length + ' listings';
+
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    document.getElementById('r6empty').style.display = '';
+    document.getElementById('r6empty').textContent = R6_ALL.length ? 'No listings match your search.' : 'No listings found for Jefri\'s campaigns.';
+    return;
+  }
+  document.getElementById('r6empty').style.display = 'none';
+
+  tbody.innerHTML = rows.map((r) => {
+    const date = R6_DATES[r.listingId] || '';
+    const calc = R6_CALC[r.listingId];
+    const skuCell = r.matched ? esc(r.sku || '') : '<span class="r6-unmatched">Unmatched</span>';
+    return '<tr>'
+      + '<td>' + esc(r.listingId) + '</td>'
+      + '<td>' + skuCell + '</td>'
+      + '<td><input type="date" class="r6-date-input" value="' + date + '" data-listing="' + esc(r.listingId) + '" ' + (r.matched ? '' : 'disabled title="No Shopify SKU match — cannot compute sales"') + '></td>'
+      + '<td class="num">' + (calc && calc.daysLiveSinceUpdate != null ? calc.daysLiveSinceUpdate : '&ndash;') + '</td>'
+      + '<td class="num">' + (calc ? r6Money(calc.totalSalesSinceUpdate) : '&ndash;') + '</td>'
+      + '<td class="num">' + (calc && calc.preUpdateBaselineSales != null ? r6Money(calc.preUpdateBaselineSales) : '&ndash;') + '</td>'
+      + '<td class="num">' + (calc && calc.pctChangeVsBaseline != null ? ((calc.pctChangeVsBaseline >= 0 ? '+' : '') + calc.pctChangeVsBaseline.toFixed(2) + '%') : '&ndash;') + '</td>'
+      + '<td>' + r6TrendCell(calc) + '</td>'
+      + '</tr>';
+  }).join('');
+
+  tbody.querySelectorAll('.r6-date-input').forEach((inp) => {
+    inp.addEventListener('change', function(){ r6OnDateChange(this.getAttribute('data-listing'), this.value); });
+  });
 }
 </script>
 </div>

@@ -5599,6 +5599,36 @@ const jefriReq6HandlerModule = (function() {
     LIMIT 1
   `;
 
+  // Same 5 campaign IDs as Req5 (JEFRI_CAMPAIGNS_R5) — Jefri's account.
+  // Kept as a separate local const rather than importing across module
+  // IIFEs, same isolation pattern every other handler in this file uses.
+  const JEFRI_CAMPAIGN_IDS_R6 = ['23141810147', '23411228109', '22539594891', '23473840779', '23340277562'];
+
+  // All distinct product/listing IDs Jefri's campaigns have EVER run
+  // (all-time, no cost/conversion filter — this is just "what listings does
+  // Jefri manage", not the Req5 qualifying-products filter).
+  const ALL_JEFRI_ITEMS_QUERY = `
+    SELECT DISTINCT product_item_id
+    FROM google_ads.product_performance
+    WHERE campaign_id = ANY($1::bigint[]) AND product_item_id IS NOT NULL AND product_item_id <> ''
+  `;
+
+  // Same raw-ID-or-shopify_de_<parent>_<variant>-format resolution used by
+  // Req1/Req4/Req5's resolutionCte, simplified: Req6's list view only needs
+  // the matched Shopify item_id + SKU + level, no Ads/parent-child rollup.
+  const LIST_RESOLUTION_QUERY = `
+    WITH resolved AS (
+      SELECT product_item_id,
+        CASE WHEN product_item_id LIKE 'shopify\\_%'
+             THEN split_part(product_item_id, '_', array_length(string_to_array(product_item_id, '_'), 1))
+             ELSE product_item_id END AS shopify_id
+      FROM (SELECT unnest($1::text[]) AS product_item_id) t
+    )
+    SELECT r.product_item_id, sl.item_id AS matched_shopify_id, sl.sku, sl.is_parent, sl.is_child
+    FROM resolved r
+    LEFT JOIN listings.shopify_listings sl ON sl.item_id = r.shopify_id AND sl.channel = 'LEDSone DE'
+  `;
+
   const SALES_IN_WINDOW_QUERY = `
     SELECT SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS sales
     FROM order_management.orders o
@@ -5740,13 +5770,82 @@ const jefriReq6HandlerModule = (function() {
     }
   }
 
-  return handleJefriReq6;
+  const LIST_CACHE_TTL_MS = 5 * 60 * 1000;
+  let listCache = null; // { data, at } — single entry, no params to key on
+
+  // Always-visible listing table: every item Jefri's campaigns have ever
+  // run, resolved to Shopify item_id/SKU where possible. No search/filter
+  // required up front — Image Update Date + calculated columns are filled
+  // in per-row client-side (dates are user-entered and stored in the
+  // browser, not in Postgres — this endpoint only supplies the row list).
+  async function handleJefriReq6List(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const forceRefresh = req.query && req.query.refresh === '1';
+
+    if (!forceRefresh && listCache && (Date.now() - listCache.at) < LIST_CACHE_TTL_MS) {
+      res.status(200).json(listCache.data);
+      return;
+    }
+
+    const client = await getPool().connect().catch((err) => {
+      console.error('[jefri/req6-list] DB connect failed:', err && err.message);
+      res.status(500).json({ error: 'Server not configured or database unreachable.' });
+      return null;
+    });
+    if (!client) return;
+
+    try {
+      const itemsResult = await client.query(ALL_JEFRI_ITEMS_QUERY, [JEFRI_CAMPAIGN_IDS_R6]);
+      const itemIds = itemsResult.rows.map((r) => r.product_item_id);
+
+      if (!itemIds.length) {
+        const payload = { generatedAt: new Date().toISOString(), rows: [] };
+        listCache = { data: payload, at: Date.now() };
+        res.status(200).json(payload);
+        return;
+      }
+
+      const resolvedResult = await client.query(LIST_RESOLUTION_QUERY, [itemIds]);
+
+      // Dedupe on matched_shopify_id: several raw Google Ads product_item_id
+      // formats (raw ID vs shopify_de_<parent>_<variant>) can resolve to the
+      // SAME Shopify listing — show each real listing once, not once per
+      // Ads identifier variant.
+      const seen = new Set();
+      const rows = [];
+      for (const r of resolvedResult.rows) {
+        const key = r.matched_shopify_id || ('unmatched:' + r.product_item_id);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push({
+          listingId: r.matched_shopify_id || r.product_item_id,
+          sourceItemId: r.product_item_id,
+          sku: r.sku || null,
+          level: r.is_parent === 1 ? 'Parent' : (r.is_child === 1 ? 'Variant' : 'Unmatched'),
+          matched: !!r.matched_shopify_id,
+        });
+      }
+      rows.sort((a, b) => (a.sku || 'zzz').localeCompare(b.sku || 'zzz'));
+
+      const payload = { generatedAt: new Date().toISOString(), rows, meta: { total: rows.length, matched: rows.filter((r) => r.matched).length } };
+      listCache = { data: payload, at: Date.now() };
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[jefri/req6-list] error:', err && err.message);
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    } finally {
+      client.release();
+    }
+  }
+
+  return { handleJefriReq6, handleJefriReq6List };
 })();
 
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
-  if (fn === 'jefri-req6') return jefriReq6HandlerModule(req, res);
+  if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
+  if (fn === 'jefri-req6') return jefriReq6HandlerModule.handleJefriReq6(req, res);
   if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
