@@ -175,4 +175,27 @@ Also requested: style the Add button, widen the input fields, add filters to the
 
 **Status:** PASS
 **Reviewer:** Kuberan (pending review)
-**Next step:** None blocking. This is the final architecture for Req6 — add real tracked listings via the UI going forward, now confirmed to persist reliably. Two carried-over, non-blocking notes from earlier reworks: (1) the pre-existing `hourly-july-snapshot-refresh.yml`/`generate-snapshots.js` still default to a Vercel domain that returns `DEPLOYMENT_NOT_FOUND` — worth Kuberan checking if that job has been silently failing (unrelated to Req6, not touched); (2) no delete-confirmation audit trail exists yet if that's ever needed (currently a hard DELETE, no soft-delete/history); (3) worth checking whether `AUTH_DATABASE_URL`'s instability affects Sajeepan's tracker too, since that code still has the same fallback pattern this fix removed here — not touched, since it's Piranav's feature, not this task's scope.
+
+---
+
+## DATABASE MOVE — 2026-08-14, same day
+
+Kuberan opened the Neon console to verify where the data was stored, landed on the `AUTH_DATABASE_URL` project (`neon-bisque-battery`, holding this app's `users` table) by following the earlier written guidance, and asked "here where?" — the tracker table wasn't there yet, since it was on `FEED_TRACKER_DB_URL`'s project. Kuberan then explicitly redirected: "no need there that is piranv remove from theri first and add in this neo data base" — move off the database shared with Piranav's Sajeepan feed-optimization tracker entirely, and use the `AUTH_DATABASE_URL` project (the one already open in the console) instead.
+
+**Change:** `getTrackerPool()` now connects via `process.env.AUTH_DATABASE_URL` instead of `FEED_TRACKER_DB_URL`. `public.jefri_req6_tracker` self-provisions on this new database exactly as before (`CREATE TABLE IF NOT EXISTS`).
+
+**Old-database cleanup:** added a temporary `handleJefriReq6CleanupOldDb` handler (`fn=jefri-req6-cleanup-old-db`), connected to `FEED_TRACKER_DB_URL`, ran `DROP TABLE IF EXISTS public.jefri_req6_tracker` — confirmed via its own response (`{"ok":true,"message":"Dropped ..."}`). Removed the handler and its dispatcher route immediately after, in the same session, so no stray cleanup endpoint was left in production longer than needed.
+
+**Verified live, full round trip on the new database:**
+- Fresh `fn=jefri-req6-list` on `AUTH_DATABASE_URL` → `{"rows":[]}` (table auto-created empty, confirming it's a genuinely new table, not somehow reusing old data).
+- `fn=jefri-req6-add` → `{"ok":true,"id":1}` (id sequence restarted, as expected on a new table).
+- `fn=jefri-req6-list` → row present with `totalSalesSinceUpdate:32.56` — same figure validated repeatedly all day for this listing/date.
+- Polled `fn=jefri-req6-list` 3× over ~9 seconds → consistent every time.
+- Post-cleanup-removal redeploy → data still present, cleanup route confirmed gone (falls through to an unrelated default handler now, as expected for an unmatched `fn`).
+- `scripts/check-live-deploy.js` — all canaries OK, no regression.
+
+**Where the data lives now:** table `public.jefri_req6_tracker`, on the Neon project behind `AUTH_DATABASE_URL` — the same project as this app's own `users` table (Neon console project name: `neon-bisque-battery`, per Kuberan's own screenshot). No longer touches `FEED_TRACKER_DB_URL` / Piranav's feed-optimization tracker database at all.
+
+**Status:** PASS
+**Reviewer:** Kuberan (pending review)
+**Next step:** None blocking. This is the final architecture for Req6, on its own dedicated database. Two carried-over, non-blocking notes: (1) the pre-existing `hourly-july-snapshot-refresh.yml`/`generate-snapshots.js` still default to a Vercel domain that returns `DEPLOYMENT_NOT_FOUND` — worth Kuberan checking if that job has been silently failing (unrelated to Req6, not touched); (2) no delete-confirmation audit trail exists yet if that's ever needed (currently a hard DELETE, no soft-delete/history).

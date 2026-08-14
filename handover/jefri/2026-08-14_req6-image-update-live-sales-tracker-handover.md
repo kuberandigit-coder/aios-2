@@ -20,10 +20,12 @@ A small tracker table on the "Requirement 6" tab in `jefri.html`. The user adds 
 
 ## Storage — the important architectural detail
 **Two separate Postgres databases are involved, on purpose:**
-1. **Tracker data** (Label, Listing ID, SKU, Image Update Date) — a NEW table, `public.jefri_req6_tracker`, on the **writable** Neon DB already used by Sajeepan's Req4 feed-optimization tracker (`process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL` — same exact fallback pattern as `handleSajeepanTrackerSave` in `members-api.js`). Self-provisioned via `CREATE TABLE IF NOT EXISTS` the first time any Req6 endpoint runs — no manual migration was needed, confirmed working live.
+1. **Tracker data** (Label, Listing ID, SKU, Image Update Date) — table `public.jefri_req6_tracker`, on the Neon project behind `process.env.AUTH_DATABASE_URL` — the same project that holds this app's own `users`/login table (Neon console project name: `neon-bisque-battery`). Self-provisioned via `CREATE TABLE IF NOT EXISTS` the first time any Req6 endpoint runs — no manual migration needed.
 2. **Sales calculation** — the main **read-only** analytics Postgres (`DATABASE_URL`), `order_management.orders` + `order_item_info`, exactly as every other requirement on this page.
 
-**Do not connect to `DATABASE_URL` expecting to find `jefri_req6_tracker` there — it's on the other database.** This distinction matters if you're debugging or extending this feature.
+**History:** this table originally lived on `FEED_TRACKER_DB_URL` (the same database Sajeepan's Req4 feed-optimization tracker uses), with a fallback to `AUTH_DATABASE_URL` copied from that existing code. That fallback caused confirmed data loss (a row vanished between requests while the id sequence kept advancing — different warm serverless instances were resolving to different databases). Fixed first by removing the fallback (require `FEED_TRACKER_DB_URL` explicitly); then, per Kuberan's explicit instruction ("that is piranv remove from theri first and add in this neo data base"), moved off `FEED_TRACKER_DB_URL` entirely onto `AUTH_DATABASE_URL` — this table no longer shares a database with anything of Piranav's. The table was dropped from the old `FEED_TRACKER_DB_URL` database as part of the move (via a temporary cleanup endpoint, run once, then removed).
+
+**Do not connect to `DATABASE_URL` (or `FEED_TRACKER_DB_URL`) expecting to find `jefri_req6_tracker` — it's on `AUTH_DATABASE_URL`.** This distinction matters if you're debugging or extending this feature.
 
 ## How the data flows
 1. `r6LoadList()` → `GET fn=jefri-req6-list`. Backend reads all rows from `jefri_req6_tracker` (tracker DB), computes `daysLiveSinceUpdate` and both time windows per row in JS, then runs ONE bulk SQL query (`unnest`-based, `BULK_SALES_QUERY`) against the main DB covering every row's post + baseline window in a single round trip, merges the results, returns.
