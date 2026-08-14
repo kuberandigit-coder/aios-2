@@ -66,6 +66,32 @@ Kuberan clarified the UI was wrong: "no need this format ... currently only sear
 
 **Process note:** before pushing this rework, `git fetch` on the Staff-requirements worktree found 13 new commits Piranav had pushed in the meantime (Jackson tab, Staff ID Performance additions). Pulled them in first (fast-forward, no conflicts — different files) rather than overwriting, per the standing "don't touch Piranav's work" rule.
 
+**Status:** PASS (table rework — superseded by a second correction below)
+**Reviewer:** Kuberan (pending review)
+
+---
+
+## SECOND CORRECTION — 2026-08-14, same day, later in session
+
+Kuberan corrected the design again: "I mean the image update date no need as input fir that listing show when i update the listing i think that is available in shopify so using ledsone de api for this data after get that after image date change find the sales that is also in shopify so get that and update before sales also available in shopify gather that from shipfy and update other two with these data" — the manual per-row date `<input>` (and its browser-local IndexedDB persistence) was the wrong design entirely. Image Update Date should be resolved automatically, live, from Shopify itself — not entered by a human at all.
+
+**Rework:**
+- New `fetchShopifyImageUpdateDate(productId)` in `jefriReq6HandlerModule` — calls the Shopify Admin **REST** API (`GET /admin/api/2024-10/products/{productId}/images.json`, ledsone-de.myshopify.com), takes `MAX(updated_at)` across every image on that product as the Image Update Date. REST was used deliberately over GraphQL: Shopify's GraphQL `Image` type (used elsewhere in this file for live stock) does not expose per-image timestamps; REST's image object reliably does.
+- Images live on the parent **product**, not a variant — a child/variant Listing ID is first resolved to its parent's Shopify product ID via `listings.shopify_listings_parent_child_mapping` (same mechanism Req5 already uses for sales rollup) before the Shopify call.
+- `handleJefriReq6` no longer accepts or requires an `imageUpdateDate` query param at all — it's entirely server-resolved. Removed the now-dead `isValidDateR6`/future-date-rejection logic that existed only to validate a manual input.
+- Cached 24h server-side per product ID (`IMAGE_DATE_CACHE`) — image edits are infrequent, and this avoids repeatedly hitting Shopify's API across ~8,000 Jefri listings.
+- Frontend: removed the per-row date `<input>`, the `idbGet`/`idbSet` persistence, and `r6OnDateChange` entirely. Rows now auto-fetch (Shopify image date + sales calc together, one call) via an `IntersectionObserver` as they scroll into view — deliberately lazy, since firing all ~8,000 requests at once on tab open would hammer both Postgres and the Shopify Admin API. A row's cells patch in place (`r6PatchRow`) once its data arrives, rather than re-rendering the whole 8k-row table and losing scroll position.
+
+**Bug found and fixed during this rework:** first live test threw `ReferenceError: SHOPIFY_STORE_DOMAIN is not defined`. Root cause: `SHOPIFY_STORE_DOMAIN`/`SHOPIFY_API_VERSION` (used by the existing live-stock code) are declared *inside* `jefriProductStatusHandlerModule`'s own IIFE (lines 9–1345 of `requirement.js`) — despite zero indentation making them look file-level, they are not reachable from `jefriReq6HandlerModule`, which is a separate IIFE much further down the same file. This exact class of bug already has a precedent/workaround in this codebase (`T2_SHOPIFY_STORE_DOMAIN`, used by another module for the identical reason) — followed the same pattern: duplicated the two constants locally as `R6_SHOPIFY_STORE_DOMAIN`/`R6_SHOPIFY_API_VERSION`. Confirmed fixed via live curl test immediately after.
+
+**Verified live post-rework (after the scope-bug fix):**
+- `fn=jefri-req6&listingId=44963099312393` → real Shopify data: `imageUpdateDate:"2024-02-29"` (897 days live), `totalSalesSinceUpdate:4537.97` — matches this listing's lifetime sales figure observed earlier in the session (consistent: all its recorded sales occurred after this 2024 image update), `preUpdateBaselineSales:0` → correctly `zeroBaseline:true`, `trend:"Insufficient data"`.
+- `fn=jefri-req6&listingId=57163495964937` → `imageUpdateDate:"2026-07-01"`, sales £32.56, zero-baseline case again correctly handled.
+- `fn=jefri-req6&listingId=0000000000000` (not found) → unchanged, correct `found:false`.
+- `fn=jefri-req6-list` → unchanged, still 8,127 rows.
+- `scripts/check-live-deploy.js` re-run — all pre-existing canaries OK, no regression to any earlier same-day fix.
+- Before pushing, `git fetch` again found new Piranav commits (Jackson product ID additions to Staff ID Performance) — pulled in first, no conflicts (different files), per the standing "don't touch Piranav's work" rule.
+
 **Status:** PASS
 **Reviewer:** Kuberan (pending review)
-**Next step:** None — feature complete and live in the corrected always-visible-table form. Await Jefri's real-world usage feedback on the €/£ display question and on whether per-browser (not shared) date persistence is acceptable long-term.
+**Next step:** None — feature complete and live with fully automatic, Shopify-sourced Image Update Date. Only open question for Jefri: currency display (£ vs €).
