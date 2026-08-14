@@ -5548,10 +5548,13 @@ resolved_full AS (
 // Images live on the parent PRODUCT, so a variant/child listing is first
 // resolved to its parent's Shopify product ID via
 // listings.shopify_listings_parent_child_mapping (same mechanism Req5 uses
-// for parent-child sales rollup). Uses the existing SHOPIFY_ADMIN_TOKEN /
-// SHOPIFY_STORE_DOMAIN already defined above for live-stock lookups — no
-// new credential. Cached 24h server-side (image edits are infrequent; this
-// avoids hammering Shopify's API across ~8,000 Jefri listings).
+// for parent-child sales rollup). Uses the existing SHOPIFY_ADMIN_TOKEN env
+// var (same credential every other Shopify Admin call in this file uses —
+// no new credential; the store-domain constant itself is duplicated
+// locally as R6_SHOPIFY_STORE_DOMAIN since the original lives inside a
+// different module's IIFE closure, unreachable from here). Cached 24h
+// server-side (image edits are infrequent; this avoids hammering Shopify's
+// API across ~8,000 Jefri listings).
 //
 // Listing ID -> SKU: listings.shopify_listings.item_id -> sku, same table/
 // column used everywhere else on this page (Req1/Req4/Req5). Channel scoped
@@ -5611,6 +5614,16 @@ const jefriReq6HandlerModule = (function() {
     LIMIT 1
   `;
 
+  // Local duplicate rather than shared — SHOPIFY_STORE_DOMAIN/SHOPIFY_API_VERSION
+  // (used for live stock elsewhere in this file) actually live inside
+  // jefriProductStatusHandlerModule's own IIFE closure (lines 9-1345) and
+  // are NOT reachable from this separate module, despite looking top-level
+  // at a glance — confirmed the hard way (ReferenceError in production).
+  // Same self-containment workaround this file already uses elsewhere
+  // (see T2_SHOPIFY_STORE_DOMAIN near thasithaReq2HandlerModule).
+  const R6_SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
+  const R6_SHOPIFY_API_VERSION = '2024-10';
+
   // Variant listings don't carry images themselves — images live on the
   // parent PRODUCT in Shopify. Resolve child -> parent the same way
   // Req5's child_to_parent CTE does, so we know which Shopify product ID
@@ -5629,8 +5642,9 @@ const jefriReq6HandlerModule = (function() {
   // Shopify Admin REST API's per-image `updated_at` field (documented,
   // stable — REST still exposes real per-image timestamps; the GraphQL
   // Image type used elsewhere in this file for stock does not). Reuses the
-  // same SHOPIFY_STORE_DOMAIN / SHOPIFY_ADMIN_TOKEN already defined above
-  // for the live-stock GraphQL calls — no new credential.
+  // same store domain / SHOPIFY_ADMIN_TOKEN as the rest of this file's
+  // live-stock GraphQL calls (see R6_SHOPIFY_STORE_DOMAIN above — same
+  // value, duplicated across module closures, not a new credential).
   const IMAGE_DATE_CACHE = new Map(); // productId -> { date, at }
   const IMAGE_DATE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // images change rarely — 24h is plenty "live"
 
@@ -5645,7 +5659,7 @@ const jefriReq6HandlerModule = (function() {
     const timeout = setTimeout(() => controller.abort(), 15000);
     let res;
     try {
-      res = await fetch(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/products/${productId}/images.json`, {
+      res = await fetch(`https://${R6_SHOPIFY_STORE_DOMAIN}/admin/api/${R6_SHOPIFY_API_VERSION}/products/${productId}/images.json`, {
         headers: { 'X-Shopify-Access-Token': token },
         signal: controller.signal,
       });
