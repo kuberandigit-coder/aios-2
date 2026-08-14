@@ -5688,10 +5688,9 @@ const jefriReq6HandlerModule = (function() {
     if (payload && payload.parseErrors) {
       throw new Error('ShopifyQL parse error: ' + payload.parseErrors);
     }
-    const rowData = payload && payload.tableData && payload.tableData.rows; // JSON scalar — already an array of arrays
+    const rowData = payload && payload.tableData && payload.tableData.rows; // JSON scalar — array of KEYED objects, e.g. [{"total_sales":"797.08"}], NOT array-of-arrays (confirmed live 2026-08-14 via direct query outside the deploy pipeline)
     if (!rowData || !rowData.length) return 0; // no sales in this window — genuinely zero, not an error
-    // total_sales is the (only) column requested — take the first row's first value.
-    return Number(rowData[0][0]) || 0;
+    return Number(rowData[0].total_sales) || 0;
   }
 
   // GET — list every tracked row with live-computed sales/trend, sales

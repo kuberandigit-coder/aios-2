@@ -18,7 +18,7 @@ const { STAFF_IDS } = require('../data/staff-ids');
 
 const COOKIE_NAME    = 'dm_session';
 const ALLOWED_KEYS   = new Set(['muguntha', 'piranav', 'kuberan']);
-const STORE_DOMAIN   = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.co.uk';
+const STORE_DOMAIN   = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
 const API_VERSION    = process.env.SHOPIFY_UK_API_VERSION  || '2024-01';
 const BATCH_SIZE    = 20;
 const DELAY_MS      = 400;
@@ -48,27 +48,37 @@ function verifySession(req) {
   } catch { return null; }
 }
 
-// ── Classification ────────────────────────────────────────────────────────────
-const PAID_MEDIUMS  = new Set(['cpc','ppc','paid','paid search','paidsearch','google_ads','googleads','cpm','display','paid_social','paid-social','shopping','performance_max','pmax']);
-const PAID_SOURCES  = ['google_ads','googleads','google ads','bing_ads','bingads','facebook_ads','meta_ads'];
-const ORGANIC_ENGINES = ['google','bing','duckduckgo','yahoo','ecosia','yandex','baidu'];
+// ── Classification (mirrors salesuk.js exactly) ───────────────────────────────
+const PAID_UTM_MEDIUMS = ['cpc','ppc','paid','paid_search','paidsearch','display','shopping','paid_social','cpv','cpm','cpa','pmax','performance_max','demandgen','demand_gen','discovery'];
+const PAID_UTM_SOURCES = ['google_ads','googleads','google ads','bing_ads','bingads','facebook_ads','meta_ads'];
+const PAID_CLICK_IDS   = ['gclid','gbraid','wbraid','msclkid','dclid'];
+const SEARCH_ENGINES   = ['google','bing','yahoo','duckduckgo','ecosia','yandex','baidu','aol','ask'];
+
+function lower(s) { return (s || '').toString().toLowerCase(); }
 
 function hasPaid(visit) {
   if (!visit) return false;
   const utm = visit.utmParameters || {};
-  const med = (utm.medium || '').toLowerCase().trim();
-  const src = (utm.source || '').toLowerCase().trim();
-  return PAID_MEDIUMS.has(med) || PAID_SOURCES.some(s => src.includes(s));
+  const med = lower(utm.medium);
+  const src = lower(utm.source);
+  if (PAID_UTM_MEDIUMS.includes(med)) return true;
+  if (PAID_UTM_SOURCES.some(s => src.includes(s))) return true;
+  const urlFields = [visit.referrerUrl, visit.landingPage].filter(Boolean).join(' ').toLowerCase();
+  if (PAID_CLICK_IDS.some(id => urlFields.includes(id + '='))) return true;
+  if (lower(visit.sourceType) === 'ad') return true;
+  return false;
 }
 function isOrganic(visit) {
   if (!visit) return false;
   const utm = visit.utmParameters || {};
-  const med = (utm.medium || '').toLowerCase().trim();
-  const src = (utm.source || '').toLowerCase().trim();
-  const ref = (visit.referrerUrl || '').toLowerCase();
+  const med = lower(utm.medium);
+  const src = lower(utm.source);
+  const ref = lower(visit.referrerUrl || '');
+  const sourceType = lower(visit.sourceType || '');
+  const looksLikeSearch = SEARCH_ENGINES.some(e => src.includes(e) || ref.includes(e));
   if (med === 'organic') return true;
-  if (ORGANIC_ENGINES.some(e => src.includes(e)) && !hasPaid(visit)) return true;
-  if (ORGANIC_ENGINES.some(e => ref.includes(e)) && !med && !hasPaid(visit)) return true;
+  if (sourceType.includes('organic') || sourceType.includes('seo')) return true;
+  if (looksLikeSearch && !hasPaid(visit)) return true;
   return false;
 }
 function classifyOrder(order) {
@@ -78,7 +88,7 @@ function classifyOrder(order) {
   if (hasPaid(first) || hasPaid(last))     return 'ADS';
   if (isOrganic(first) || isOrganic(last)) return 'ORGANIC';
   if (!first && !last) return 'NO_DATA';
-  const med = (first?.utmParameters?.medium || '').toLowerCase();
+  const med = lower(first?.utmParameters?.medium || '');
   if (!med && !first?.utmParameters?.source && !first?.referrerUrl) return 'DIRECT';
   return 'UNKNOWN';
 }
@@ -91,8 +101,8 @@ query OrderAttr($query: String!) {
       id name cancelledAt test
       customerJourneySummary {
         ready
-        firstVisit { utmParameters { source medium campaign term } referrerUrl }
-        lastVisit  { utmParameters { source medium campaign term } referrerUrl }
+        firstVisit { utmParameters { source medium campaign term } referrerUrl landingPage sourceType }
+        lastVisit  { utmParameters { source medium campaign term } referrerUrl landingPage sourceType }
       }
     }}
   }
