@@ -258,7 +258,7 @@ const MEMBERS = [
   { name:'Jakshan',   empId:'DMKS05', dept:'SEO', cssClass:'m5', color:'var(--c5)', kpiId:'kpi5' },
 ];
 
-// Exact file dates verified from GitHub repo — 2026-08-07
+// Exact file dates verified from GitHub repo — 2026-08-13
 const KNOWN_DATES = {
   Kamsi: [
     '2026-03-30','2026-03-31',
@@ -277,6 +277,7 @@ const KNOWN_DATES = {
     '2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-10',
     '2026-07-13','2026-07-14','2026-07-16','2026-07-17','2026-07-22','2026-07-23',
     '2026-08-03','2026-08-05','2026-08-06','2026-08-07',
+    '2026-08-10','2026-08-11','2026-08-12',
   ],
   Dilaksi: [
     '2026-03-30','2026-03-31',
@@ -298,6 +299,7 @@ const KNOWN_DATES = {
     '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
     '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
     '2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07',
+    '2026-08-10','2026-08-11','2026-08-12',
   ],
   Sukirtha: [
     '2026-03-30','2026-03-31',
@@ -319,6 +321,7 @@ const KNOWN_DATES = {
     '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
     '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
     '2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07',
+    '2026-08-10','2026-08-11','2026-08-12',
   ],
   Hetheesha: [
     '2026-03-30','2026-03-31',
@@ -340,6 +343,7 @@ const KNOWN_DATES = {
     '2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24',
     '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
     '2026-08-03','2026-08-05','2026-08-06','2026-08-07',
+    '2026-08-10','2026-08-11','2026-08-12',
   ],
   Jakshan: [
     '2026-04-13','2026-04-14','2026-04-15','2026-04-16','2026-04-17',
@@ -614,13 +618,36 @@ function parseSEO(md, date, member) {
     }
   }
 
-  // Fallback: if no tasks found but file has real content, extract ## headings as tasks
+  // Fallback 1: extract ## headings as tasks
   if (starts.length === 0) {
     lines.forEach((line, i) => {
       const m = line.trim().match(/^#{1,2}\s+(.{6,80})/);
       if (m && !isStopLine(m[1]) && !isSectionHeader(line.trim())) {
         const title = m[1].replace(/\*+/g,'').replace(/[—–].*$/,'').trim();
         if (title.length > 5) starts.push({idx:i, title, section:currentSection});
+      }
+    });
+  }
+
+  // Fallback 2: numbered sections with emoji (e.g. "1. ✅ Work Summary" / "2. 🎯 Sales Check")
+  if (starts.length === 0) {
+    lines.forEach((line, i) => {
+      const raw2 = line.trim();
+      const m = raw2.match(/^\d+\.\s+[\p{Emoji_Presentation}\p{Extended_Pictographic}✅⚠️🎯📈🛍️👥🚀📊🔍]?\s*(.{5,100})/u);
+      if (m) {
+        const title = m[1].replace(/\*+/g,'').replace(/\s*\(.*?\)\s*$/,'').trim();
+        if (title.length > 4 && !isStopLine(title)) starts.push({idx:i, title, section:currentSection});
+      }
+    });
+  }
+
+  // Fallback 3: plain numbered list items with meaningful content (no Status/Evidence required)
+  if (starts.length === 0) {
+    lines.forEach((line, i) => {
+      const m = line.trim().match(/^(\d+)\.\s+(.{10,120})/);
+      if (m && !isFieldLine(m[2]) && !isStopLine(m[2])) {
+        const title = m[2].replace(/\*+/g,'').trim();
+        if (title.length > 9) starts.push({idx:i, title, section:currentSection});
       }
     });
   }

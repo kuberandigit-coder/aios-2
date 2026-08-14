@@ -11,6 +11,7 @@
     "api/salesde25.js": { "maxDuration": 300 },
     "api/muguntha.js": { "maxDuration": 60 },
     "api/auth.js": { "maxDuration": 15 },
-    "api/members-api.js": { "maxDuration": 60 }
+    "api/members-api.js": { "maxDuration": 60 },
+    "api/staff-id-performance.js": { "maxDuration": 60 }
   }
 }

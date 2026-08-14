@@ -1276,7 +1276,7 @@ async function handleSajeepanReq4(client, fromDate, toDate) {
   // Load tracker entries from write Neon DB
   let trackerMap = {};
   try {
-    const authConnStr = process.env.NEON_DATABASE_URL || process.env.AUTH_DATABASE_URL;
+    const authConnStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
     if (authConnStr) {
       const { Pool } = require('pg');
       const authPool = new Pool({ connectionString: authConnStr, max: 2, connectionTimeoutMillis: 6000 });
@@ -1333,8 +1333,8 @@ async function handleSajeepanReq4(client, fromDate, toDate) {
 }
 
 async function handleSajeepanTrackerSave(req, res, _unusedClient) {
-  const authConnStr = process.env.NEON_DATABASE_URL || process.env.AUTH_DATABASE_URL;
-  if (!authConnStr) return res.status(500).json({ ok:false, error:'NEON_DATABASE_URL not configured' });
+  const authConnStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  if (!authConnStr) return res.status(500).json({ ok:false, error:'FEED_TRACKER_DB_URL not configured' });
 
   let body = req.body || {};
   const { product_item_id, campaign_id, level, optimization_started, start_date, notes, sale_received } = body;
@@ -1370,7 +1370,7 @@ async function handleSajeepanTrackerSave(req, res, _unusedClient) {
 
 async function handleSajeepanTrackerDetail(client, item, campaign, extraQuery) {
   // Before/After comparison: supports days=7|14|30 or custom_from/custom_to
-  const authConnStr = process.env.NEON_DATABASE_URL || process.env.AUTH_DATABASE_URL;
+  const authConnStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
   let tracker = null;
   if (authConnStr) {
     try {
@@ -1432,6 +1432,98 @@ async function handleSajeepanTrackerDetail(client, item, campaign, extraQuery) {
     before_period: `${fmt2(beforeFrom)} → ${fmt2(beforeTo)}`,
     after_period:  `${fmt2(afterFrom)} → ${fmt2(afterTo)}`,
   };
+}
+
+// ── Hetheesha Fix Tracker ─────────────────────────────────────────────────
+
+async function handleHetheeshaFixSave(req, res) {
+  const neonStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  if (!neonStr) return res.status(500).json({ ok:false, error:'FEED_TRACKER_DB_URL not configured' });
+  let body = req.body || {};
+  const { product_handle, issue_type, fix_started, fix_date, notes } = body;
+  if (!product_handle || !issue_type) return res.status(400).json({ ok:false, error:'product_handle and issue_type required' });
+  const { Pool } = require('pg');
+  const pool = new Pool({ connectionString: neonStr, max:2, connectionTimeoutMillis:6000 });
+  try {
+    await pool.query(`
+      INSERT INTO public.hetheesha_fix_tracker
+        (product_handle, issue_type, fix_started, fix_date, notes, updated_at)
+      VALUES ($1,$2,$3,$4,$5,NOW())
+      ON CONFLICT (product_handle, issue_type) DO UPDATE SET
+        fix_started=EXCLUDED.fix_started, fix_date=EXCLUDED.fix_date,
+        notes=EXCLUDED.notes, updated_at=NOW()
+    `, [
+      product_handle, issue_type,
+      fix_started === true || fix_started === 'true',
+      fix_date || null,
+      notes || null,
+    ]);
+    return res.status(200).json({ ok:true });
+  } catch(e) {
+    return errResponse(res, e);
+  } finally {
+    await pool.end().catch(()=>{});
+  }
+}
+
+async function handleHetheeshaFixDetail(req, res) {
+  const { handle, issue_type, days: daysQ, custom_from, custom_to } = req.query || {};
+  if (!handle) return res.status(400).json({ ok:false, error:'handle required' });
+
+  // Load tracker entry from Neon
+  const neonStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  let tracker = null;
+  if (neonStr) {
+    try {
+      const { Pool } = require('pg');
+      const pool = new Pool({ connectionString: neonStr, max:2, connectionTimeoutMillis:6000 });
+      const q = issue_type
+        ? `SELECT * FROM public.hetheesha_fix_tracker WHERE product_handle=$1 AND issue_type=$2 LIMIT 1`
+        : `SELECT * FROM public.hetheesha_fix_tracker WHERE product_handle=$1 ORDER BY updated_at DESC LIMIT 1`;
+      const params = issue_type ? [handle, issue_type] : [handle];
+      const { rows } = await pool.query(q, params);
+      tracker = rows[0] || null;
+      await pool.end().catch(()=>{});
+    } catch(e) {}
+  }
+  if (!tracker || !tracker.fix_date) return res.status(200).json({ ok:true, tracker, before:null, after:null });
+
+  const startDate = tracker.fix_date.toISOString ? tracker.fix_date.toISOString().slice(0,10) : String(tracker.fix_date).slice(0,10);
+  const fmt = x => x.toISOString ? x.toISOString().slice(0,10) : String(x).slice(0,10);
+  const days = parseInt(daysQ) || 14;
+
+  let beforeFrom, beforeTo, afterFrom, afterTo;
+  if (custom_from && custom_to) {
+    afterFrom  = new Date(custom_from);
+    afterTo    = new Date(custom_to);
+    const span = Math.round((afterTo - afterFrom) / 86400000);
+    beforeTo   = new Date(startDate); beforeTo.setDate(beforeTo.getDate() - 1);
+    beforeFrom = new Date(beforeTo);  beforeFrom.setDate(beforeFrom.getDate() - span);
+  } else {
+    const d = new Date(startDate);
+    beforeFrom = new Date(d); beforeFrom.setDate(beforeFrom.getDate() - days);
+    beforeTo   = new Date(d); beforeTo.setDate(beforeTo.getDate() - 1);
+    afterFrom  = new Date(d);
+    afterTo    = new Date(d); afterTo.setDate(afterTo.getDate() + days);
+  }
+
+  const db = new Client({ connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false });
+  try {
+    await db.connect();
+    const data = await handleBA(db, handle, fmt(beforeFrom), fmt(beforeTo), fmt(afterFrom), fmt(afterTo));
+    await db.end();
+    return res.status(200).json({
+      ok:true,
+      tracker: { ...tracker, fix_date: startDate },
+      before: data.before,
+      after: data.after,
+      before_period: `${fmt(beforeFrom)} → ${fmt(beforeTo)}`,
+      after_period:  `${fmt(afterFrom)} → ${fmt(afterTo)}`,
+    });
+  } catch(e) {
+    await db.end().catch(()=>{});
+    return errResponse(res, e);
+  }
 }
 
 async function handleSajeepan(req, res) {
@@ -2741,6 +2833,8 @@ module.exports = async function handler(req, res) {
   // ── hetheesha ──────────────────────────────────────────────────────────────
   if (member === 'hetheesha') {
     if (type === 'req2') return handleHetheeshaReq2(req, res);
+    if (type === 'fix-save') return handleHetheeshaFixSave(req, res);
+    if (type === 'fix-detail') return handleHetheeshaFixDetail(req, res);
     return handleHetheeshaReq1(req, res); // req1 + ba handled inside
   }
 

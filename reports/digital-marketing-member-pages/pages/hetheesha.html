@@ -284,8 +284,8 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
       <div class="sub">
         Staff: <strong>Hetheesha</strong> &nbsp;·&nbsp;
         Store: <strong>ledsone.fr</strong> &nbsp;·&nbsp;
-        Refreshed: <strong>2026-07-06</strong> &nbsp;·&nbsp;
-        Period: <strong>Last 30 days</strong> (Jun 06 – Jul 06 2026)
+        Refreshed: <strong id="r1RefreshedAt">loading…</strong> &nbsp;·&nbsp;
+        Period: <strong>Last 30 days</strong> (<span id="r1PeriodText">loading…</span>)
       </div>
       <div class="chips">
         <span class="chip">Top 50 by revenue</span>
@@ -311,7 +311,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
     <!-- Validation Summary -->
     <div class="validation">
-      <h3>Data Sources &amp; Validation — 2026-07-06</h3>
+      <h3>Data Sources &amp; Validation — <span id="r1ValDate">loading…</span></h3>
       <div class="val-grid">
         <div class="val-item"><div class="val-dot pass"></div><strong>Revenue</strong> &nbsp;— Shopify Orders (paid, non-cancelled)</div>
         <div class="val-item"><div class="val-dot pass"></div><strong>Meta Title / Desc</strong> &nbsp;— Shopify Admin GraphQL seo.*</div>
@@ -386,7 +386,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
         <div style="margin-bottom:14px;">
           <div style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:4px;">Product Fix Tracker · Req 1 · ledsone.fr</div>
           <div style="font-size:13px;font-weight:700;color:var(--ink);">Before &amp; After — SEO Fix Progress</div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">Baseline: Jul 06 2026 &nbsp;·&nbsp; Live check: <strong id="trkFetchedAt">loading…</strong> &nbsp;·&nbsp; Fix dates saved in browser</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">Baseline: Jul 06 2026 &nbsp;·&nbsp; Live check: <strong id="trkFetchedAt">loading…</strong> &nbsp;·&nbsp; Fix dates saved in database</div>
         </div>
         <div class="trk-kpis">
           <div class="trk-kpi neutral" style="cursor:pointer" onclick="trk_filter('all')"><div class="label">Total Fields Tracked</div><div class="value" id="trkTotal">—</div></div>
@@ -1307,6 +1307,15 @@ async function r1_loadLive(){
       banner.className='live-banner live';
       banner.innerHTML='🟢 Live · '+at;
     }
+    const now=new Date(data.fetched_at);
+    const fmt=d=>d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+    const from=new Date(now); from.setDate(from.getDate()-30);
+    const r1Ref=document.getElementById('r1RefreshedAt');
+    const r1Per=document.getElementById('r1PeriodText');
+    if(r1Ref) r1Ref.textContent=fmt(now);
+    if(r1Per) r1Per.textContent=fmt(from)+' – '+fmt(now);
+    const r1Val=document.getElementById('r1ValDate');
+    if(r1Val) r1Val.textContent=now.toISOString().slice(0,10);
     r1_computeKPIs();
     r1_render();
     if(data.before_after){
@@ -1331,26 +1340,55 @@ async function r1_loadLive(){
   }
 }
 
-/* ─── Fix Tracker ────────────────────────────────────── */
+/* ─── Fix Tracker (DB-backed) ────────────────────────── */
 let TRK_DATA=[];
 let TRK_FILTER='all';
 let TRK_FIELD_FILTER='all';
-const TRK_STORE_KEY='heth_fix_dates_v1';
+let hFxMap={};        // key: "handle|issue_type" → product item ref
+let hFxDrawerHandle=null, hFxDrawerIssue=null;
 
-function trk_getFixDates(){try{return JSON.parse(localStorage.getItem(TRK_STORE_KEY)||'{}');}catch(e){return{};}}
-function trk_saveFixDate(handle,field_key,date){
-  const fd=trk_getFixDates();
-  const k=handle+'|'+field_key;
-  if(!fd[k]){fd[k]=date;localStorage.setItem(TRK_STORE_KEY,JSON.stringify(fd));}
+async function trk_loadDB(){
+  // Load all fix tracker entries for all product handles at once
+  const handles=P.map(p=>p.h);
+  try {
+    const res=await fetch('/api/members-api?member=hetheesha&type=fix-detail&handle='+encodeURIComponent(handles[0]));
+    // We load per-product on demand in the drawer; here we do a bulk check
+    // by loading all entries via a special query — for now load individually (max 50)
+  } catch(e){}
 }
 
-function trk_init(tracker,fetched_at){
-  const today=fetched_at||new Date().toISOString();
-  tracker.forEach(item=>{if(item.now_fixed) trk_saveFixDate(item.handle,item.field_key,today);});
-  const fd=trk_getFixDates();
-  TRK_DATA=tracker.map(item=>({...item,fix_date:fd[item.handle+'|'+item.field_key]||null}));
+// Merge live tracker DB data into TRK_DATA entries
+var _hFxDBCache={};
+async function trk_fetchAllDB(){
+  // Fetch fix entries for all handles in parallel (batched)
+  const issues=['meta_title','meta_desc','faq','alt'];
+  const toFetch=[];
+  P.forEach(p=>{ issues.forEach(iss=>{ toFetch.push({h:p.h,iss}); }); });
+  // Fetch in small parallel groups
+  const results={};
+  await Promise.all(toFetch.map(async ({h,iss})=>{
+    try {
+      const r=await fetch(`/api/members-api?member=hetheesha&type=fix-detail&handle=${encodeURIComponent(h)}&issue_type=${iss}`);
+      const d=await r.json();
+      if(d.ok && d.tracker && d.tracker.fix_started){
+        results[h+'|'+iss]=d.tracker;
+      }
+    } catch(e){}
+  }));
+  _hFxDBCache=results;
+}
+
+async function trk_init(tracker,fetched_at){
   const el=document.getElementById('trkFetchedAt');
   if(el) el.textContent=new Date(fetched_at).toLocaleString('fr-FR');
+  // Load DB tracker entries
+  await trk_fetchAllDB();
+  TRK_DATA=tracker.map(item=>{
+    const dbEntry=_hFxDBCache[item.handle+'|'+item.field_key]||null;
+    const fix_date=dbEntry&&dbEntry.fix_date?dbEntry.fix_date:null;
+    const fix_started=dbEntry?dbEntry.fix_started:false;
+    return {...item, fix_date, fix_started, db_tracker:dbEntry};
+  });
   trk_render();
 }
 
@@ -1442,19 +1480,25 @@ function trk_render(){
     document.getElementById('trkFixedBody').innerHTML=fixed.map(i=>{
       const shortH=i.handle.length>40?i.handle.slice(0,38)+'…':i.handle;
       const url='https://ledsone.fr/products/'+i.handle;
-      const fixDate=i.fix_date?new Date(i.fix_date).toLocaleDateString('fr-FR'):'This session';
+      const fixDate=i.fix_date?new Date(i.fix_date).toLocaleDateString('fr-FR'):'Not set';
+      const fixDateTag=i.fix_date?`<span class="fix-date">📅 ${r1_esc(fixDate)}</span>`:`<span style="color:var(--err);font-size:11px;font-weight:700;">⚠ Not set</span>`;
       const after=i.live_value!=null?(typeof i.live_value==='string'?i.live_value.slice(0,90):i.live_value):'—';
       const rank=i.rank;
       const rankCls=rank<=10?'rank-badge top10':'rank-badge';
       const rowId='trk-ba-'+i.handle.replace(/[^a-z0-9]/g,'-')+'-'+i.field_key;
+      const fxKey=i.handle+'|'+i.field_key;
+      hFxMap[fxKey]={handle:i.handle,issue_type:i.field_key,field:i.field,rank:i.rank};
       return`<tr style="cursor:pointer;" onclick="trkToggleBa('${r1_esc(rowId)}','${r1_esc(i.handle)}')">
         <td class="num"><span class="${rankCls}">#${rank}</span></td>
         <td><a href="${r1_esc(url)}" target="_blank" rel="noopener" title="${r1_esc(i.handle)}" onclick="event.stopPropagation()">${r1_esc(shortH)}</a></td>
         <td><span class="tag-fixed">${r1_esc(i.field)}</span></td>
         <td class="before-val">Missing</td>
         <td class="after-val" title="${r1_esc(String(after))}">${r1_esc(String(after))}</td>
-        <td><span class="fix-date">📅 ${r1_esc(fixDate)}</span></td>
-        <td><button id="btn-${r1_esc(rowId)}" style="border:1px solid var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);cursor:pointer;" onclick="event.stopPropagation();trkToggleBa('${r1_esc(rowId)}','${r1_esc(i.handle)}')">▶ View</button></td>
+        <td onclick="event.stopPropagation();">${fixDateTag}</td>
+        <td style="white-space:nowrap;" onclick="event.stopPropagation();">
+          <button onclick="hFxOpenDrawer('${r1_esc(i.handle)}','${r1_esc(i.field_key)}')" style="border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;background:${i.fix_date?'var(--good)':'var(--accent)'};color:#fff;margin-right:4px;">${i.fix_date?'✏ Edit':'📅 Set Date'}</button>
+          <button id="btn-${r1_esc(rowId)}" style="border:1px solid var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);cursor:pointer;" onclick="trkToggleBa('${r1_esc(rowId)}','${r1_esc(i.handle)}')">▶ B/A</button>
+        </td>
       </tr>
       <tr id="${r1_esc(rowId)}" style="display:none;background:#f0f8ff;">
         <td colspan="7" style="padding:0;"></td>
@@ -1497,13 +1541,18 @@ function trk_render(){
       const rank=i.rank;
       const rankCls=rank<=10?'rank-badge top10':'rank-badge';
       const pri=rank<=10?'<span class="b b-err">🔥 High</span>':rank<=25?'<span class="b b-warn">Medium</span>':'<span class="b b-na">Low</span>';
+      const fxKey=i.handle+'|'+i.field_key;
+      hFxMap[fxKey]={handle:i.handle,issue_type:i.field_key,field:i.field,rank:i.rank};
       return`<tr>
         <td class="num"><span class="${rankCls}">#${rank}</span></td>
         <td><a href="${r1_esc(url)}" target="_blank" rel="noopener" title="${r1_esc(i.handle)}">${r1_esc(shortH)}</a></td>
         <td><span class="tag-pending">${r1_esc(i.field)}</span></td>
         <td style="color:var(--muted);font-size:11px">${i.in_snapshot===false?'Not in Jul 06 snapshot':'Jul 06 2026'}</td>
         <td>${pri}</td>
-        <td><a class="shopify-fix-btn" href="${r1_esc(adminUrl)}" target="_blank" rel="noopener">Fix on Shopify →</a></td>
+        <td style="white-space:nowrap;">
+          <button onclick="hFxOpenDrawer('${r1_esc(i.handle)}','${r1_esc(i.field_key)}')" style="border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;margin-right:6px;">✏ Mark Fix</button>
+          <a class="shopify-fix-btn" href="${r1_esc(adminUrl)}" target="_blank" rel="noopener">Fix on Shopify →</a>
+        </td>
       </tr>`;
     }).join('');
   }else{pendingSec.style.display='none';}
@@ -1531,6 +1580,106 @@ function trk_exportCSV(){
 
 const trkSrch=document.getElementById('trkSearch');
 if(trkSrch) trkSrch.addEventListener('input',trk_render);
+
+/* ─── Fix Drawer ─────────────────────────────────────── */
+function hFxOpenDrawer(handle, issue_type){
+  hFxDrawerHandle=handle; hFxDrawerIssue=issue_type;
+  const ref=hFxMap[handle+'|'+issue_type]||{};
+  const db=_hFxDBCache[handle+'|'+issue_type]||{};
+  document.getElementById('hFxDTitle').textContent=handle.length>50?handle.slice(0,48)+'…':handle;
+  document.getElementById('hFxDSub').textContent='Issue: '+((ref.field)||issue_type)+' · Rank #'+(ref.rank||'?');
+  document.getElementById('hFxDStarted').checked=!!db.fix_started;
+  document.getElementById('hFxDDate').value=db.fix_date||'';
+  document.getElementById('hFxDNotes').value=db.notes||'';
+  document.getElementById('hFxDMsg').textContent='';
+  // Load before/after if fix_date set
+  if(db.fix_date){ hFxLoadBA(handle, issue_type, db.fix_date); }
+  else { document.getElementById('hFxDBA').innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0;">Set a fix date to see Before / After GSC data.</div>'; }
+  document.getElementById('hFxOverlay').classList.add('open');
+  document.getElementById('hFxDrawer').classList.add('open');
+}
+function hFxCloseDrawer(){
+  document.getElementById('hFxOverlay').classList.remove('open');
+  document.getElementById('hFxDrawer').classList.remove('open');
+  hFxDrawerHandle=null; hFxDrawerIssue=null;
+}
+async function hFxLoadBA(handle, issue_type, fix_date, days){
+  const d=days||14;
+  const el=document.getElementById('hFxDBA');
+  if(el) el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0;">⏳ Loading GSC data…</div>';
+  try {
+    const url=`/api/members-api?member=hetheesha&type=fix-detail&handle=${encodeURIComponent(handle)}&issue_type=${encodeURIComponent(issue_type)}&days=${d}`;
+    const res=await fetch(url); const data=await res.json();
+    if(!data.ok) throw new Error(data.error||'API error');
+    el.innerHTML=hFxBAHTML(data);
+  } catch(e){ if(el) el.innerHTML=`<div style="color:var(--err);font-size:12px;">${e.message}</div>`; }
+}
+function hFxBAHTML(data){
+  const before=data.before, after=data.after;
+  if(!before&&!after) return '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No GSC or sales data found for this period.</div>';
+  function fmt(v,sfx){ if(v===null||v===undefined) return '<span style="color:var(--muted)">—</span>'; return (sfx==='€'?'€':'')+(typeof v==='number'?v.toLocaleString('fr-FR'):v)+(sfx&&sfx!=='€'?sfx:''); }
+  function chg(b,a,lower){
+    if(b===null||a===null||b===undefined||a===undefined) return '<span style="color:var(--muted)">—</span>';
+    const diff=a-b,sign=diff>=0?'+':'';
+    const good=lower?diff<0:diff>=0;
+    const pct=b!==0?` (${sign}${Math.round(diff/Math.abs(b)*100)}%)`:'';
+    return`<span style="color:${good?'var(--good)':'var(--err)'};font-weight:700;">${sign}${parseFloat(diff.toFixed(2)).toLocaleString('fr-FR')}${pct}</span>`;
+  }
+  const rows=[
+    {label:'Impressions',bv:before?.imp,av:after?.imp,sfx:'',lower:false},
+    {label:'Clicks',bv:before?.clicks,av:after?.clicks,sfx:'',lower:false},
+    {label:'CTR (%)',bv:before?.ctr,av:after?.ctr,sfx:'%',lower:false},
+    {label:'Avg. Position',bv:before?.avg_pos,av:after?.avg_pos,sfx:'',lower:true},
+    {label:'Sales (€)',bv:before?.sales,av:after?.sales,sfx:'€',lower:false},
+  ];
+  return`<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${data.before_period||''} vs ${data.after_period||''}</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;">
+    <button onclick="hFxLoadBA(hFxDrawerHandle,hFxDrawerIssue,null,7)" style="padding:4px 12px;font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:var(--card);">7d</button>
+    <button onclick="hFxLoadBA(hFxDrawerHandle,hFxDrawerIssue,null,14)" style="padding:4px 12px;font-size:11px;font-weight:700;border:1px solid var(--accent);border-radius:6px;cursor:pointer;background:var(--accent-soft);color:var(--accent);">14d</button>
+    <button onclick="hFxLoadBA(hFxDrawerHandle,hFxDrawerIssue,null,30)" style="padding:4px 12px;font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:var(--card);">30d</button>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr>
+      <th style="text-align:left;padding:5px 8px;background:#f0f3f8;border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;color:#42506a;">Metric</th>
+      <th style="text-align:right;padding:5px 8px;background:#fff0f0;border-bottom:2px solid var(--line);font-size:10px;color:#b91c1c;">Before Fix</th>
+      <th style="text-align:right;padding:5px 8px;background:#f0fff4;border-bottom:2px solid var(--line);font-size:10px;color:#0a7d4f;">After Fix</th>
+      <th style="text-align:right;padding:5px 8px;background:#f0f3f8;border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;color:#42506a;">Change</th>
+    </tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td style="padding:5px 8px;font-weight:600;border-bottom:1px solid var(--line);">${r.label}</td>
+      <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);color:#b91c1c;">${fmt(r.bv,r.sfx)}</td>
+      <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);color:#0a7d4f;">${fmt(r.av,r.sfx)}</td>
+      <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);">${chg(r.bv,r.av,r.lower)}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+async function hFxSave(){
+  if(!hFxDrawerHandle||!hFxDrawerIssue) return;
+  const fix_started=document.getElementById('hFxDStarted').checked;
+  const fix_date=document.getElementById('hFxDDate').value||null;
+  const notes=document.getElementById('hFxDNotes').value||null;
+  const msgEl=document.getElementById('hFxDMsg');
+  msgEl.textContent='Saving…'; msgEl.style.color='var(--muted)';
+  try {
+    const res=await fetch('/api/members-api?member=hetheesha&type=fix-save',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({product_handle:hFxDrawerHandle,issue_type:hFxDrawerIssue,fix_started,fix_date,notes}),
+      credentials:'same-origin'
+    });
+    const d=await res.json();
+    if(!d.ok) throw new Error(d.error||'Save failed');
+    msgEl.textContent='✅ Saved!'; msgEl.style.color='var(--good)';
+    // Update cache and re-render
+    _hFxDBCache[hFxDrawerHandle+'|'+hFxDrawerIssue]={fix_started,fix_date,notes};
+    TRK_DATA=TRK_DATA.map(item=>{
+      if(item.handle===hFxDrawerHandle&&item.field_key===hFxDrawerIssue)
+        return{...item,fix_date,fix_started,db_tracker:{fix_started,fix_date,notes}};
+      return item;
+    });
+    if(fix_date) hFxLoadBA(hFxDrawerHandle, hFxDrawerIssue, fix_date);
+    setTimeout(()=>{ msgEl.textContent=''; trk_render(); },1200);
+  } catch(e){ msgEl.textContent='❌ '+e.message; msgEl.style.color='var(--err)'; }
+}
 
 r1_loadLive();
 
@@ -4402,5 +4551,61 @@ if(document.getElementById('tab-panel-5').classList.contains('active')){
   r5Render();
 }
 </script>
+
+<!-- Fix Tracker Drawer -->
+<style>
+#hFxOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+#hFxOverlay.open{opacity:1;pointer-events:all;}
+#hFxDrawer{position:fixed;top:0;right:-480px;width:460px;max-width:96vw;height:100vh;background:#fff;z-index:201;box-shadow:-4px 0 32px rgba(0,0,0,.18);display:flex;flex-direction:column;transition:right .22s ease;overflow-y:auto;}
+#hFxDrawer.open{right:0;}
+.hfx-hdr{padding:20px 22px 14px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#1f5eff,#3ddc97);color:#fff;}
+.hfx-hdr h2{font-size:15px;font-weight:700;margin:0 0 4px;}
+.hfx-hdr p{font-size:11.5px;opacity:.85;margin:0;}
+.hfx-body{padding:20px 22px;flex:1;}
+.hfx-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px;}
+.hfx-row{margin-bottom:16px;}
+.hfx-input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--ink);outline:none;}
+.hfx-input:focus{border-color:var(--accent);}
+.hfx-check-row{display:flex;align-items:center;gap:10px;background:var(--accent-soft);border-radius:8px;padding:10px 14px;}
+.hfx-check-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;}
+.hfx-check-row label{font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;}
+.hfx-save-btn{width:100%;padding:11px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.hfx-save-btn:hover{opacity:.88;}
+.hfx-close-btn{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.25);border:none;border-radius:50%;width:28px;height:28px;font-size:16px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.hfx-ba-section{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:6px;}
+.hfx-ba-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:10px;}
+</style>
+
+<div id="hFxOverlay" onclick="hFxCloseDrawer()"></div>
+<div id="hFxDrawer" role="dialog" aria-modal="true">
+  <div class="hfx-hdr">
+    <button class="hfx-close-btn" onclick="hFxCloseDrawer()" title="Close">✕</button>
+    <h2 id="hFxDTitle">Product</h2>
+    <p id="hFxDSub">—</p>
+  </div>
+  <div class="hfx-body">
+    <div class="hfx-row">
+      <div class="hfx-check-row">
+        <input type="checkbox" id="hFxDStarted">
+        <label for="hFxDStarted">Fix Applied on Shopify</label>
+      </div>
+    </div>
+    <div class="hfx-row">
+      <div class="hfx-label">Fix Date (when you applied it on Shopify)</div>
+      <input type="date" id="hFxDDate" class="hfx-input" onchange="if(this.value&&hFxDrawerHandle) hFxLoadBA(hFxDrawerHandle,hFxDrawerIssue,this.value)">
+    </div>
+    <div class="hfx-row">
+      <div class="hfx-label">Notes (optional)</div>
+      <textarea id="hFxDNotes" class="hfx-input" rows="3" placeholder="e.g. Added meta title with 52 chars targeting 'suspension vintage'…" style="resize:vertical;"></textarea>
+    </div>
+    <button class="hfx-save-btn" onclick="hFxSave()">Save Fix Record</button>
+    <div id="hFxDMsg" style="text-align:center;font-size:12.5px;font-weight:700;margin-top:8px;min-height:18px;"></div>
+
+    <div class="hfx-ba-section" style="margin-top:18px;">
+      <div class="hfx-ba-title">Before vs After — GSC Performance</div>
+      <div id="hFxDBA"><div style="color:var(--muted);font-size:12px;">Set a fix date above to load GSC comparison.</div></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

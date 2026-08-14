@@ -173,6 +173,7 @@ tbody tr:hover td:first-child{color:var(--accent);}
     <li><a href="organic-revenue.html" data-tool="organic-revenue.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span class="lbl">Organic Revenue Intelligence</span></a></li>
     <li><a href="seo.html" data-tool="seo.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">SEO Intelligence</span></a></li>
     <li><a href="../germany-sales-decline-dashboard/index.html" data-tool="../germany-sales-decline-dashboard/index.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg></span><span class="lbl">Germany Sales Decline</span></a></li>
+    <li><a href="staff-id-performance.html" data-tool="staff-id-performance.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><span class="lbl">Staff ID Performance</span></a></li>
     <li><a href="sales2.html" data-tool="sales2.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span><span class="lbl">Sales 2026</span></a></li>
   </ul>
 
@@ -969,7 +970,15 @@ document.getElementById('perfAnalysisLink').addEventListener('click', (e) => {
 // hash names a different known member. Added 2026-08-12.
 (function(){
   var fromHash = (location.hash || '').replace('#', '');
-  if (fromHash && MEMBER_NAMES[fromHash] && fromHash !== 'sonya') selectMember(fromHash);
+  if (fromHash === 'listing') {
+    mgShowView('listing');
+    document.querySelectorAll('.sidebar .navlist a').forEach(function (x) { x.classList.remove('active'); });
+    var lt = document.querySelector('#mgOverviewNav a[data-tab="listing"]'); if (lt) lt.classList.add('active');
+  } else if (fromHash === 'performance') {
+    selectMember(document.getElementById('memberSelect').value || 'sonya');
+  } else if (fromHash && MEMBER_NAMES[fromHash] && fromHash !== 'sonya') {
+    selectMember(fromHash);
+  }
 })();
 
 function mgShowView(view){
@@ -1206,7 +1215,7 @@ document.querySelectorAll('#mgOverviewNav a[data-tab]').forEach(function (a) {
     if (key === 'users' && !mgUsersLoaded) { mgUsersLoaded = true; loadMgUsers(); }
   });
 });
-mgShowView('pages');
+if (!location.hash) mgShowView('pages');
 </script>
 </body>
 </html>

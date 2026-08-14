@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff ID Performance — ledsone.co.uk</title>
+<link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmLjcY_EQCfTH_PBtRFCfzPx0fXIbAPc2wCN6HqMvV4fHLbhGQR5pW7nSBIBOHLUQG_J8_My-FM-iA9x1SndiEHp8RzNWpR0RggXJqDmel-LkilGycX_hwyji4qnxuC_PgFB1bjzw=s680-w680-h510-rw">
+<style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}</style>
+<script>
+(function(){
+  const ALLOWED = ['muguntha','piranav','kuberan'];
+  fetch('/api/auth?action=session',{credentials:'same-origin'}).then(r=>{
+    if(r.status!==200){window.location.replace('../login.html');return;}
+    return r.json();
+  }).then(d=>{
+    if(!d)return;
+    if(d.success&&d.user&&(d.user.role==='admin'||ALLOWED.includes(d.user.staff_key))){
+      document.documentElement.style.visibility='visible';
+      requestAnimationFrame(()=>document.documentElement.classList.add('dm-ready'));
+      return;
+    }
+    window.location.replace('../login.html');
+  }).catch(()=>window.location.replace('../login.html'));
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0c1a30;--navy-2:#13284a;--ink:#1a2233;--muted:#5b6577;
+  --line:#e3e7ee;--bg:#f4f6f9;--card:#ffffff;
+  --accent:#1f5eff;--accent-soft:#eaf0ff;
+  --good:#0a7d4f;--good-soft:#e5f5ee;
+  --bad:#b91c1c;--bad-soft:#fff5f5;
+  --warn:#d97706;--warn-soft:#fffbeb;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;}
+
+/* Masthead */
+.topbar{height:5px;background:linear-gradient(90deg,var(--navy) 0%,var(--accent) 50%,var(--good) 100%);}
+.masthead{background:var(--card);padding:20px 32px;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(12,26,48,.05);}
+.masthead .inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:22px;}
+.mark{width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex:none;letter-spacing:.3px;text-align:center;line-height:1.2;}
+.headtxt{flex:1;min-width:220px;}
+.kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:3px;}
+.masthead h1{font-size:19px;font-weight:700;color:var(--navy);}
+.masthead .lede{font-size:12px;color:var(--muted);margin-top:3px;}
+.statrow{display:flex;flex-wrap:wrap;gap:0;border-left:1px solid var(--line);padding-left:26px;}
+.stat{padding:0 18px;border-right:1px solid var(--line);}
+.stat:last-child{border-right:none;padding-right:0;}
+.stat .v{font-size:18px;font-weight:700;color:var(--navy);}
+.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:2px;}
+
+/* Page */
+.page{max-width:1400px;margin:0 auto;padding:22px 32px 48px;}
+
+/* Staff tabs */
+.staff-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;}
+.staff-tab{border:none;background:transparent;border-radius:10px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;}
+.staff-tab:hover{background:var(--accent-soft);color:var(--accent);}
+.staff-tab.active{background:var(--accent);color:#fff;}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 17px;}
+.kpi .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.kpi .val{font-size:22px;font-weight:700;margin-top:5px;line-height:1;color:var(--navy);}
+.kpi .note{font-size:10.5px;color:var(--muted);margin-top:4px;}
+.kpi.good .val{color:var(--good);}
+.kpi.bad .val{color:var(--bad);}
+.kpi.warn .val{color:var(--warn);}
+
+/* Charts */
+.charts-row{display:grid;grid-template-columns:240px 1fr;gap:16px;margin-bottom:20px;}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;}
+.chart-card h3{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.chart-wrap{position:relative;height:190px;}
+
+/* Filter row */
+.filter-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.sub-filter-row{display:none;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;padding:6px 10px;background:#f0f4ff;border-radius:8px;border:1px solid #d0deff;}
+.sub-filter-row.show{display:flex;}
+.fr-label{font-size:11.5px;font-weight:600;color:var(--muted);}
+.fr-sub-label{font-size:11px;font-weight:600;color:var(--accent);}
+.filter-btn{padding:5px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .12s;}
+.filter-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);}
+.sub-btn{padding:4px 12px;border-radius:999px;border:1.5px solid #b0c4ff;background:#fff;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;transition:all .12s;}
+.sub-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.search-box{padding:6px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;width:200px;outline:none;background:var(--card);}
+.search-box:focus{border-color:var(--accent);}
+.export-btn{margin-left:auto;padding:6px 16px;border-radius:8px;border:1.5px solid var(--good);background:var(--good-soft);color:var(--good);font-size:12px;font-weight:700;cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;}
+.export-btn:hover{background:var(--good);color:#fff;}
+
+/* Table */
+.tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;}
+.tbl-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.tbl-head .th-title{font-size:13px;font-weight:700;color:var(--navy);}
+.tbl-head .th-count{font-size:12px;color:var(--muted);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{background:#f8fafc;padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;}
+thead th.r{text-align:right;}
+tbody tr{border-bottom:1px solid var(--line);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#f8faff;}
+tbody td{padding:8px 12px;vertical-align:middle;}
+tbody td.r{text-align:right;}
+.pid{font-family:Consolas,"Courier New",monospace;font-size:11.5px;color:var(--accent);}
+.title-cell{max-width:340px;}
+.title-cell span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;}
+.badge.sold{background:var(--good-soft);color:var(--good);}
+.badge.unsold{background:var(--bad-soft);color:var(--bad);}
+.badge.active{background:#e0f2fe;color:#0369a1;}
+.badge.draft{background:var(--warn-soft);color:var(--warn);}
+.stock-0{color:var(--bad);font-weight:700;}
+
+/* Pagination */
+.pager{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);}
+.pager-btns{display:flex;gap:6px;}
+.pager-btn{padding:4px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--card);font-size:12px;cursor:pointer;font-weight:600;color:var(--muted);transition:all .12s;}
+.pager-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.pager-btn:disabled{opacity:.4;cursor:default;}
+
+/* States */
+.state-box{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px;}
+.spinner{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-box{background:var(--bad-soft);border:1px solid #fca5a5;border-radius:10px;padding:14px 18px;color:var(--bad);font-size:13px;margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+
+<div class="masthead">
+  <div class="inner">
+    <div class="mark">IP</div>
+    <div class="headtxt">
+      <div class="kicker">SEO Team · ledsone.co.uk</div>
+      <h1>Staff ID Performance</h1>
+      <div class="lede">Lifetime sales, current stock &amp; sold/unsold breakdown by assigned product IDs</div>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="v" id="h-total">—</div><div class="l">Total IDs</div></div>
+      <div class="stat"><div class="v" id="h-sold" style="color:var(--good)">—</div><div class="l">Sold</div></div>
+      <div class="stat"><div class="v" id="h-unsold" style="color:var(--bad)">—</div><div class="l">Never Sold</div></div>
+      <div class="stat"><div class="v" id="h-rev">—</div><div class="l">Revenue</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Staff Tabs -->
+  <div class="staff-tabs">
+    <button class="staff-tab active" data-staff="kamsi" onclick="switchStaff('kamsi')">Kamsi</button>
+    <button class="staff-tab" data-staff="dilaksi" onclick="switchStaff('dilaksi')">Dilaksi</button>
+  </div>
+
+  <!-- Error -->
+  <div id="errBox" class="err-box" style="display:none;"></div>
+
+  <!-- KPI cards -->
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Total IDs</div><div class="val" id="c-total">—</div><div class="note">assigned products</div></div>
+    <div class="kpi good"><div class="lbl">Sold IDs</div><div class="val" id="c-sold">—</div><div class="note">have lifetime sales</div></div>
+    <div class="kpi bad"><div class="lbl">Never Sold</div><div class="val" id="c-unsold">—</div><div class="note">zero lifetime orders</div></div>
+    <div class="kpi warn"><div class="lbl">Total Stock</div><div class="val" id="c-stock">—</div><div class="note">units in warehouse</div></div>
+    <div class="kpi"><div class="lbl">Lifetime Revenue</div><div class="val" id="c-rev">—</div><div class="note">from assigned IDs</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>Sold vs Never Sold</h3>
+      <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Top 20 Products by Lifetime Revenue</h3>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Filters + Table -->
+  <div class="filter-row">
+    <span class="fr-label">Filter:</span>
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" data-filter="sold" onclick="setFilter('sold')">Sold</button>
+    <button class="filter-btn" data-filter="unsold" onclick="setFilter('unsold')">Never Sold</button>
+    <input class="search-box" id="searchBox" placeholder="Search product ID or title…" oninput="applyFilters()">
+    <button class="export-btn" onclick="exportCSV()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export CSV
+    </button>
+  </div>
+  <!-- Sub-filters (shown when Sold or Never Sold is active) -->
+  <div class="sub-filter-row" id="subFilterRow">
+    <span class="fr-sub-label" id="subFilterLabel">Stock:</span>
+    <button class="sub-btn active" data-sub="all" onclick="setSubFilter('all')">All</button>
+    <button class="sub-btn" data-sub="instock" onclick="setSubFilter('instock')">In Stock</button>
+    <button class="sub-btn" data-sub="nostock" onclick="setSubFilter('nostock')">Out of Stock</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-head">
+      <span class="th-title" id="tblTitle">Loading…</span>
+      <span class="th-count" id="tblCount"></span>
+    </div>
+    <div id="tblBody">
+      <div class="state-box"><div class="spinner"></div>Loading data…</div>
+    </div>
+    <div class="pager" id="pager" style="display:none;">
+      <span id="pagerInfo"></span>
+      <div class="pager-btns">
+        <button class="pager-btn" id="btnPrev" onclick="changePage(-1)">← Prev</button>
+        <button class="pager-btn" id="btnNext" onclick="changePage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const PAGE_SIZE = 100;
+let allRows = [], filteredRows = [], currentPage = 1, currentFilter = 'all', currentSubFilter = 'all', currentStaff = 'kamsi';
+let donutChart, barChart;
+
+async function switchStaff(staff) {
+  if (staff === currentStaff && allRows.length > 0) return;
+  currentStaff = staff;
+  document.querySelectorAll('.staff-tab').forEach(t => t.classList.toggle('active', t.dataset.staff === staff));
+  resetUI();
+  await loadData(staff);
+}
+
+function resetUI() {
+  allRows = []; filteredRows = []; currentPage = 1;
+  document.getElementById('tblBody').innerHTML = '<div class="state-box"><div class="spinner"></div>Loading data…</div>';
+  document.getElementById('pager').style.display = 'none';
+  document.getElementById('errBox').style.display = 'none';
+  document.getElementById('tblTitle').textContent = 'Loading…';
+  document.getElementById('tblCount').textContent = '';
+  ['c-total','c-sold','c-unsold','c-stock','c-rev','h-total','h-sold','h-unsold','h-rev'].forEach(id => document.getElementById(id).textContent = '—');
+}
+
+async function loadData(staff) {
+  try {
+    const res = await fetch('/api/staff-id-performance?staff=' + staff, { credentials: 'same-origin' });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || res.statusText); }
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    allRows = data.rows;
+    renderSummary(data.summary);
+    renderCharts(data.rows, data.summary);
+    document.getElementById('searchBox').value = '';
+    currentFilter = 'all'; currentSubFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    document.querySelectorAll('.sub-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === 'all'));
+    document.getElementById('subFilterRow').classList.remove('show');
+    applyFilters();
+  } catch (err) {
+    const box = document.getElementById('errBox');
+    box.textContent = 'Error loading data: ' + err.message;
+    box.style.display = 'block';
+    document.getElementById('tblBody').innerHTML = '<div class="state-box">Failed to load.</div>';
+  }
+}
+
+function renderSummary(s) {
+  document.getElementById('c-total').textContent = s.total.toLocaleString();
+  document.getElementById('c-sold').textContent = s.sold.toLocaleString();
+  document.getElementById('c-unsold').textContent = s.never_sold.toLocaleString();
+  document.getElementById('c-stock').textContent = s.total_stock.toLocaleString();
+  document.getElementById('c-rev').textContent = '£' + s.total_revenue.toLocaleString('en-GB',{minimumFractionDigits:2});
+  document.getElementById('h-total').textContent = s.total.toLocaleString();
+  document.getElementById('h-sold').textContent = s.sold.toLocaleString();
+  document.getElementById('h-unsold').textContent = s.never_sold.toLocaleString();
+  document.getElementById('h-rev').textContent = '£' + s.total_revenue.toLocaleString('en-GB',{minimumFractionDigits:2});
+}
+
+function renderCharts(rows, s) {
+  const dCtx = document.getElementById('donutChart').getContext('2d');
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(dCtx, {
+    type: 'doughnut',
+    data: { labels:['Sold','Never Sold'], datasets:[{data:[s.sold,s.never_sold],backgroundColor:['#0a7d4f','#b91c1c'],borderWidth:0,hoverOffset:4}] },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}} }
+  });
+  const top20 = [...rows].filter(r=>r.sold).sort((a,b)=>b.total_amount-a.total_amount).slice(0,20);
+  const bCtx = document.getElementById('barChart').getContext('2d');
+  if (barChart) barChart.destroy();
+  barChart = new Chart(bCtx, {
+    type: 'bar',
+    data: { labels:top20.map(r=>r.product_id), datasets:[{label:'Revenue (£)',data:top20.map(r=>r.total_amount),backgroundColor:'#1f5eff',borderRadius:4}] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'£'+ctx.raw.toFixed(2),afterLabel:ctx=>top20[ctx.dataIndex].title?.slice(0,50)||''}}},
+      scales:{x:{ticks:{font:{size:9},maxRotation:45}},y:{ticks:{callback:v=>'£'+v}}}
+    }
+  });
+}
+
+function setFilter(f) {
+  currentFilter = f; currentPage = 1; currentSubFilter = 'all';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  document.querySelectorAll('.sub-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === 'all'));
+  const subRow = document.getElementById('subFilterRow');
+  const subLabel = document.getElementById('subFilterLabel');
+  if (f === 'sold' || f === 'unsold') {
+    subLabel.textContent = (f === 'sold' ? 'Sold' : 'Never Sold') + ' — Stock:';
+    subRow.classList.add('show');
+  } else {
+    subRow.classList.remove('show');
+  }
+  applyFilters();
+}
+
+function setSubFilter(s) {
+  currentSubFilter = s; currentPage = 1;
+  document.querySelectorAll('.sub-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === s));
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = (document.getElementById('searchBox').value||'').toLowerCase();
+  filteredRows = allRows.filter(r => {
+    if (currentFilter==='sold' && !r.sold) return false;
+    if (currentFilter==='unsold' && r.sold) return false;
+    if (currentSubFilter==='instock' && r.current_stock<=0) return false;
+    if (currentSubFilter==='nostock' && r.current_stock>0) return false;
+    if (q && !r.product_id.includes(q) && !(r.title||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function exportCSV() {
+  if (!filteredRows.length) return;
+  const name = currentStaff.charAt(0).toUpperCase() + currentStaff.slice(1);
+  const headers = ['Product ID','Title','Status','Sold','Lifetime Qty','Lifetime Revenue (£)','Current Stock'];
+  const rows = filteredRows.map(r => [
+    r.product_id,
+    '"' + (r.title||'').replace(/"/g,'""') + '"',
+    r.status||'',
+    r.sold ? 'Yes' : 'No',
+    r.total_qty,
+    r.total_amount.toFixed(2),
+    r.current_stock
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const filterLabel = currentFilter==='all'?'all' : currentFilter + (currentSubFilter!=='all'?'_'+currentSubFilter:'');
+  a.href = url;
+  a.download = `${name.toLowerCase()}-id-performance-${filterLabel}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderTable() {
+  const start = (currentPage-1)*PAGE_SIZE;
+  const pageRows = filteredRows.slice(start, start+PAGE_SIZE);
+  const name = currentStaff.charAt(0).toUpperCase()+currentStaff.slice(1);
+  document.getElementById('tblTitle').textContent = name + ' — Product ID Performance';
+  document.getElementById('tblCount').textContent = filteredRows.length.toLocaleString() + ' products';
+
+  if (!filteredRows.length) {
+    document.getElementById('tblBody').innerHTML = '<div class="state-box">No products match this filter.</div>';
+    document.getElementById('pager').style.display = 'none';
+    return;
+  }
+
+  let html = '<table><thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Status</th><th class="r">Lifetime Qty</th><th class="r">Lifetime Revenue</th><th class="r">Current Stock</th><th>Sold?</th></tr></thead><tbody>';
+  pageRows.forEach((r,i) => {
+    const n = start+i+1;
+    const sb = r.status ? `<span class="badge ${r.status}">${r.status}</span>` : '—';
+    const sold = r.sold ? '<span class="badge sold">Sold</span>' : '<span class="badge unsold">Never Sold</span>';
+    const sc = r.current_stock===0 ? 'stock-0' : '';
+    html += `<tr>
+      <td style="color:var(--muted);font-size:11px;">${n}</td>
+      <td class="pid">${r.product_id}</td>
+      <td class="title-cell"><span title="${(r.title||'').replace(/"/g,'&quot;')}">${r.title||'<span style="color:var(--muted)">—</span>'}</span></td>
+      <td>${sb}</td>
+      <td class="r">${r.total_qty>0?r.total_qty.toLocaleString():'<span style="color:var(--muted)">0</span>'}</td>
+      <td class="r">${r.total_amount>0?'£'+r.total_amount.toFixed(2):'<span style="color:var(--muted)">£0</span>'}</td>
+      <td class="r ${sc}">${r.current_stock.toLocaleString()}</td>
+      <td>${sold}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tblBody').innerHTML = html;
+
+  const totalPages = Math.ceil(filteredRows.length/PAGE_SIZE);
+  document.getElementById('pager').style.display = 'flex';
+  document.getElementById('pagerInfo').textContent = `Page ${currentPage} of ${totalPages} (${filteredRows.length.toLocaleString()} results)`;
+  document.getElementById('btnPrev').disabled = currentPage<=1;
+  document.getElementById('btnNext').disabled = currentPage>=totalPages;
+}
+
+function changePage(dir) {
+  currentPage += dir;
+  renderTable();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+loadData('kamsi');
+</script>
+</body>
+</html>
