@@ -1781,7 +1781,7 @@ function r6PatchRow(listingId){
   const row = document.querySelector('#r6tbody tr[data-listing="' + CSS.escape(listingId) + '"]');
   if (!row) return;
   const calc = R6_CALC[listingId];
-  row.querySelector('.r6-c-date').textContent = calc && calc.imageUpdateDate ? calc.imageUpdateDate : '&ndash;';
+  row.querySelector('.r6-c-date').textContent = calc && calc.imageUpdateDate ? calc.imageUpdateDate : '–';
   row.querySelector('.r6-c-days').textContent = calc && calc.daysLiveSinceUpdate != null ? calc.daysLiveSinceUpdate : '–';
   row.querySelector('.r6-c-sales').innerHTML = calc && !calc.loading ? r6Money(calc.totalSalesSinceUpdate) : '&ndash;';
   row.querySelector('.r6-c-baseline').innerHTML = calc && calc.preUpdateBaselineSales != null ? r6Money(calc.preUpdateBaselineSales) : '&ndash;';
