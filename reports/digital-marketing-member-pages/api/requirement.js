@@ -5533,9 +5533,220 @@ resolved_full AS (
   return handleJefriReq5;
 })();
 
+// ===== Jefri Requirement 6: Image Update Live Sales Tracker (added 2026-08-14) =====
+// Two manual inputs only: Listing ID + Image Update Date. Everything else
+// (SKU, days live, sales, baseline, % change, trend) is computed live.
+//
+// Listing ID -> SKU: listings.shopify_listings.item_id -> sku, same table/
+// column used everywhere else on this page (Req1/Req4/Req5). Channel scoped
+// to 'LEDSone DE', matching every other query in this file — this page has
+// no UK-store variant, so this is the established convention being reused,
+// not a new assumption.
+//
+// Shopify sales: order_management.orders + order_item_info, sub_source_id
+// = 108 (Shopify DE), status = 'Completed', gross line-item revenue
+// (item_price x item_quantity) — identical definition/columns to Req5's
+// SHOPIFY_SALES_QUERY. Parent listings match on oii.product_id, child/
+// variant listings match on oii.variant_id (same as Req5's Parent vs
+// Variant sales resolution).
+//
+// Days Live Since Update = CURRENT_DATE - imageUpdateDate (integer days
+// elapsed; if the update happened today this is 0). Post-update window =
+// order_date >= imageUpdateDate (open-ended, grows daily as instructed).
+// Baseline window = exactly N days immediately before imageUpdateDate,
+// i.e. [imageUpdateDate - N days, imageUpdateDate - 1 day] inclusive — by
+// construction always exactly N calendar days, matching Days Live.
+//
+// Zero-baseline handling: no existing AIOS rule found for this exact
+// scenario, but muguntha.html's "Target Achievement" metric already
+// established the site's approved convention for a zero/undefined
+// denominator — return null/"N/A" rather than Infinity, NaN, or a
+// fabricated percentage. Reused here rather than inventing a new rule.
+const jefriReq6HandlerModule = (function() {
+  const { Pool } = require('pg');
+
+  let pool;
+  function getPool() {
+    if (!pool) {
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString && !process.env.PGHOST) {
+        throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+      }
+      pool = new Pool({
+        connectionString: connectionString || undefined,
+        host: connectionString ? undefined : process.env.PGHOST,
+        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+        database: connectionString ? undefined : process.env.PGDATABASE,
+        user: connectionString ? undefined : process.env.PGUSER,
+        password: connectionString ? undefined : process.env.PGPASSWORD,
+        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+        connectionTimeoutMillis: 8000,
+        statement_timeout: 30000,
+        max: 3,
+      });
+    }
+    return pool;
+  }
+
+  function isValidDateR6(s) {
+    return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  }
+
+  const LISTING_QUERY = `
+    SELECT id, item_id, sku, is_parent, is_child
+    FROM listings.shopify_listings
+    WHERE item_id = $1 AND channel = 'LEDSone DE'
+    LIMIT 1
+  `;
+
+  const SALES_IN_WINDOW_QUERY = `
+    SELECT SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS sales
+    FROM order_management.orders o
+    JOIN order_management.order_item_info oii ON oii.order_id = o.id
+    WHERE o.sub_source_id = 108 AND o.status = 'Completed'
+      AND o.order_date >= $1::date AND o.order_date < $2::date
+      AND ($3::text IS NULL OR oii.product_id = $3::text)
+      AND ($4::text IS NULL OR oii.variant_id = $4::text)
+  `;
+
+  const CACHE = new Map();
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+
+  const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+  function classifyTrend(pctChange) {
+    if (pctChange === null) return 'Insufficient data';
+    if (pctChange >= 15) return 'Improved';
+    if (pctChange <= -15) return 'Dropped';
+    return 'Same';
+  }
+
+  async function handleJefriReq6(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const listingId = req.query && req.query.listingId ? String(req.query.listingId).trim() : '';
+    const imageUpdateDate = isValidDateR6(req.query && req.query.imageUpdateDate) ? req.query.imageUpdateDate : null;
+    const forceRefresh = req.query && req.query.refresh === '1';
+
+    if (!listingId) {
+      res.status(400).json({ error: 'Provide ?listingId=<Shopify product or variant ID>' });
+      return;
+    }
+    if (!imageUpdateDate) {
+      res.status(400).json({ error: 'Provide ?imageUpdateDate=YYYY-MM-DD' });
+      return;
+    }
+
+    // Future-date handling — reject rather than silently produce negative
+    // "days live" / an inverted comparison window.
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (imageUpdateDate > todayStr) {
+      res.status(400).json({ error: 'Image Update Date cannot be in the future.' });
+      return;
+    }
+
+    const cacheKey = `${listingId}|${imageUpdateDate}`;
+    if (!forceRefresh) {
+      const cached = CACHE.get(cacheKey);
+      if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+        res.status(200).json(cached.data);
+        return;
+      }
+    }
+
+    const client = await getPool().connect().catch((err) => {
+      console.error('[jefri/req6] DB connect failed:', err && err.message);
+      res.status(500).json({ error: 'Server not configured or database unreachable.' });
+      return null;
+    });
+    if (!client) return;
+
+    try {
+      const listingResult = await client.query(LISTING_QUERY, [listingId]);
+      if (!listingResult.rows.length) {
+        res.status(200).json({
+          generatedAt: new Date().toISOString(),
+          listingId, imageUpdateDate,
+          found: false,
+          error: 'Listing ID not found in listings.shopify_listings (channel: LEDSone DE).',
+        });
+        return;
+      }
+
+      const listing = listingResult.rows[0];
+      const sku = listing.sku || null;
+      if (!sku) {
+        res.status(200).json({
+          generatedAt: new Date().toISOString(),
+          listingId, imageUpdateDate,
+          found: true, sku: null,
+          error: 'Listing found but has no SKU on record — cannot resolve sales.',
+        });
+        return;
+      }
+
+      // Days Live Since Update: integer days elapsed, computed the same
+      // way as CURRENT_DATE - imageUpdateDate::date would in SQL (both
+      // are calendar dates, so plain JS date-diff is equivalent and avoids
+      // an extra round trip).
+      const daysLive = Math.floor((new Date(todayStr) - new Date(imageUpdateDate)) / 86400000);
+
+      const productId = listing.is_parent === 1 ? listing.item_id : null;
+      const variantId = listing.is_child === 1 ? listing.item_id : null;
+
+      // Post-update window: imageUpdateDate (inclusive) -> today (inclusive,
+      // open-ended — grows automatically as new orders come in).
+      const tomorrowStr = new Date(new Date(todayStr).getTime() + 86400000).toISOString().slice(0, 10);
+      // Baseline window: exactly N days immediately before imageUpdateDate.
+      const baselineStartStr = new Date(new Date(imageUpdateDate).getTime() - daysLive * 86400000).toISOString().slice(0, 10);
+
+      const [postResult, baselineResult] = await Promise.all([
+        client.query(SALES_IN_WINDOW_QUERY, [imageUpdateDate, tomorrowStr, productId, variantId]),
+        daysLive > 0
+          ? client.query(SALES_IN_WINDOW_QUERY, [baselineStartStr, imageUpdateDate, productId, variantId])
+          : Promise.resolve({ rows: [{ sales: null }] }),
+      ]);
+
+      const totalSalesSinceUpdate = round2(postResult.rows[0].sales || 0);
+      const baselineSales = daysLive > 0 ? round2(baselineResult.rows[0].sales || 0) : null;
+
+      let pctChange = null;
+      if (baselineSales !== null && baselineSales > 0) {
+        pctChange = round2(((totalSalesSinceUpdate - baselineSales) / baselineSales) * 100);
+      }
+      const trend = classifyTrend(pctChange);
+
+      const payload = {
+        generatedAt: new Date().toISOString(),
+        listingId, imageUpdateDate,
+        found: true,
+        sku,
+        level: listing.is_parent === 1 ? 'Parent' : (listing.is_child === 1 ? 'Variant' : 'Unknown'),
+        daysLiveSinceUpdate: daysLive,
+        totalSalesSinceUpdate,
+        preUpdateBaselineSales: baselineSales,
+        baselineWindow: daysLive > 0 ? { start: baselineStartStr, end: imageUpdateDate } : null,
+        pctChangeVsBaseline: pctChange,
+        trend,
+        zeroBaseline: daysLive > 0 && baselineSales === 0,
+        insufficientData: daysLive === 0,
+      };
+      CACHE.set(cacheKey, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[jefri/req6] error:', err && err.message);
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    } finally {
+      client.release();
+    }
+  }
+
+  return handleJefriReq6;
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
+  if (fn === 'jefri-req6') return jefriReq6HandlerModule(req, res);
   if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
