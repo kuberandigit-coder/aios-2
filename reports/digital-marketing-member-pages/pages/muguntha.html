@@ -466,7 +466,16 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
         <input id="mgListingSearch" type="text" placeholder="Search title or SKU…" style="flex:1;min-width:200px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;">
         <select id="mgFilterType" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Product Types</option></select>
         <select id="mgFilterVendor" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Vendors</option></select>
-        <select id="mgFilterTag" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Tags</option></select>
+        <div id="mgTagFilterWrap" style="position:relative;">
+          <button id="mgTagFilterBtn" type="button" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:6px;">
+            <span id="mgTagFilterLabel">Exclude Tags</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="mgTagFilterPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;min-width:220px;max-height:280px;overflow-y:auto;">
+            <div style="font-size:11px;color:var(--muted);padding:4px 6px 8px;">Check a tag to hide products that have <strong>all</strong> checked tags together.</div>
+            <div id="mgTagFilterList"></div>
+          </div>
+        </div>
         <select id="mgFilterStatus" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;">
           <option value="">All Statuses</option>
           <option value="ACTIVE">Active</option>
@@ -1002,6 +1011,7 @@ function mgShowView(view){
 var MG_LISTING_LOADED = false;
 var MG_LISTING_DATA = [];
 var MG_LISTING_FILTER = 'all';
+var MG_EXCLUDED_TAGS = new Set(); // checked in the Exclude Tags dropdown — products carrying ALL of these are hidden
 
 function esc(s) { if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function mgFmtMoney(v, ccy) {
@@ -1019,10 +1029,35 @@ function mgPopulateListingDropdowns() {
   const tags = [...new Set(MG_LISTING_DATA.flatMap((p) => p.tags || []).filter(Boolean))].sort();
   const typeSel = document.getElementById('mgFilterType');
   const vendorSel = document.getElementById('mgFilterVendor');
-  const tagSel = document.getElementById('mgFilterTag');
   typeSel.innerHTML = '<option value="">All Product Types</option>' + types.map((t) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
   vendorSel.innerHTML = '<option value="">All Vendors</option>' + vendors.map((v) => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join('');
-  tagSel.innerHTML = '<option value="">All Tags</option>' + tags.map((t) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
+
+  // Keep only still-valid selections (data may have refreshed) then rebuild the checkbox list.
+  MG_EXCLUDED_TAGS = new Set([...MG_EXCLUDED_TAGS].filter((t) => tags.includes(t)));
+  const list = document.getElementById('mgTagFilterList');
+  list.innerHTML = tags.length
+    ? tags.map((t) => {
+        const id = 'mgTagCb_' + t.replace(/[^a-zA-Z0-9]/g, '_');
+        const checked = MG_EXCLUDED_TAGS.has(t) ? ' checked' : '';
+        return '<label for="' + id + '" style="display:flex;align-items:center;gap:8px;padding:5px 6px;font-size:12.5px;cursor:pointer;border-radius:6px;">' +
+          '<input type="checkbox" id="' + id + '" class="mg-tag-cb" data-tag="' + esc(t) + '"' + checked + '> ' + esc(t) +
+        '</label>';
+      }).join('')
+    : '<div style="padding:6px;font-size:12px;color:var(--muted);">No tags found.</div>';
+  list.querySelectorAll('.mg-tag-cb').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      const tag = cb.getAttribute('data-tag');
+      if (cb.checked) MG_EXCLUDED_TAGS.add(tag); else MG_EXCLUDED_TAGS.delete(tag);
+      mgUpdateTagFilterLabel();
+      mgRenderListing();
+    });
+  });
+  mgUpdateTagFilterLabel();
+}
+
+function mgUpdateTagFilterLabel() {
+  const n = MG_EXCLUDED_TAGS.size;
+  document.getElementById('mgTagFilterLabel').textContent = n ? ('Exclude Tags (' + n + ')') : 'Exclude Tags';
 }
 
 function mgRenderListing() {
@@ -1030,7 +1065,6 @@ function mgRenderListing() {
   const search = document.getElementById('mgListingSearch').value.trim().toLowerCase();
   const typeFilter = document.getElementById('mgFilterType').value;
   const vendorFilter = document.getElementById('mgFilterVendor').value;
-  const tagFilter = document.getElementById('mgFilterTag').value;
   const statusFilter = document.getElementById('mgFilterStatus').value;
   const stockFilter = document.getElementById('mgFilterStock').value;
   const sort = document.getElementById('mgFilterSort').value;
@@ -1041,7 +1075,8 @@ function mgRenderListing() {
   if (search) rows = rows.filter((p) => (p.title || '').toLowerCase().includes(search) || (p.sku || '').toLowerCase().includes(search));
   if (typeFilter) rows = rows.filter((p) => p.productType === typeFilter);
   if (vendorFilter) rows = rows.filter((p) => p.vendor === vendorFilter);
-  if (tagFilter) rows = rows.filter((p) => (p.tags || []).includes(tagFilter));
+  // Hide a product only if it carries ALL currently-checked tags together (per explicit instruction, not "any").
+  if (MG_EXCLUDED_TAGS.size) rows = rows.filter((p) => ![...MG_EXCLUDED_TAGS].every((t) => (p.tags || []).includes(t)));
   if (statusFilter) rows = rows.filter((p) => p.status === statusFilter);
   if (stockFilter === 'in') rows = rows.filter((p) => p.totalInventory != null && p.totalInventory > 0);
   else if (stockFilter === 'out') rows = rows.filter((p) => p.totalInventory == null || p.totalInventory <= 0);
@@ -1124,14 +1159,23 @@ document.getElementById('mgListingSearch').addEventListener('input', () => {
   clearTimeout(mgSearchDebounce);
   mgSearchDebounce = setTimeout(mgRenderListing, 200);
 });
-['mgFilterType', 'mgFilterVendor', 'mgFilterTag', 'mgFilterStatus', 'mgFilterStock', 'mgFilterSort'].forEach((id) => {
+['mgFilterType', 'mgFilterVendor', 'mgFilterStatus', 'mgFilterStock', 'mgFilterSort'].forEach((id) => {
   document.getElementById(id).addEventListener('change', mgRenderListing);
 });
+document.getElementById('mgTagFilterBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const panel = document.getElementById('mgTagFilterPanel');
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+});
+document.getElementById('mgTagFilterPanel').addEventListener('click', (e) => e.stopPropagation());
+document.addEventListener('click', () => { document.getElementById('mgTagFilterPanel').style.display = 'none'; });
 document.getElementById('mgListingClearBtn').addEventListener('click', () => {
   document.getElementById('mgListingSearch').value = '';
   document.getElementById('mgFilterType').value = '';
   document.getElementById('mgFilterVendor').value = '';
-  document.getElementById('mgFilterTag').value = '';
+  MG_EXCLUDED_TAGS = new Set();
+  document.querySelectorAll('.mg-tag-cb').forEach((cb) => { cb.checked = false; });
+  mgUpdateTagFilterLabel();
   document.getElementById('mgFilterStatus').value = '';
   document.getElementById('mgFilterStock').value = '';
   document.getElementById('mgFilterSort').value = 'title-asc';
