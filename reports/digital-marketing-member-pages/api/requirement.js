@@ -5582,31 +5582,10 @@ resolved_full AS (
 const jefriReq6HandlerModule = (function() {
   const { Pool } = require('pg');
 
-  // Main read-only analytics DB — sales calculation only.
-  let pool;
-  function getPool() {
-    if (!pool) {
-      const connectionString = process.env.DATABASE_URL;
-      if (!connectionString && !process.env.PGHOST) {
-        throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
-      }
-      pool = new Pool({
-        connectionString: connectionString || undefined,
-        host: connectionString ? undefined : process.env.PGHOST,
-        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
-        database: connectionString ? undefined : process.env.PGDATABASE,
-        user: connectionString ? undefined : process.env.PGUSER,
-        password: connectionString ? undefined : process.env.PGPASSWORD,
-        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
-        connectionTimeoutMillis: 8000,
-        statement_timeout: 30000,
-        max: 3,
-      });
-    }
-    return pool;
-  }
-
   // Writable tracker DB — Label/Listing ID/SKU/Image Update Date storage.
+  // (Sales no longer come from Postgres at all — see fetchShopifySalesTotal
+  // below, added 2026-08-14 — so there is no separate read-only DB pool in
+  // this module anymore, unlike every earlier version of this feature.)
   // History (2026-08-14): originally fell back to AUTH_DATABASE_URL when
   // FEED_TRACKER_DB_URL was unset (matching Sajeepan's tracker code in
   // members-api.js) — that fallback caused real, confirmed data loss (an
@@ -5663,24 +5642,60 @@ const jefriReq6HandlerModule = (function() {
     return 'Same';
   }
 
-  // Bulk sales lookup for every tracked row in one round trip: each row
-  // contributes a 'post' window and (if daysLive > 0) a 'baseline' window
-  // to a single unnest-based query. Matches on Listing ID ONLY — SKU is
-  // display-only (confirmed explicitly by Kuberan, 2026-08-14) and is
-  // never passed into this query or used for matching in any way. Matches
-  // the user-typed Listing ID on EITHER product_id or variant_id — no
-  // dependency on resolving it against listings.shopify_listings first.
-  const BULK_SALES_QUERY = `
-    SELECT w.match_id, w.win, SUM(oii.item_price::numeric * oii.item_quantity::numeric) AS sales
-    FROM unnest($1::text[], $2::text[], $3::date[], $4::date[]) AS w(match_id, win, start_d, end_d)
-    JOIN order_management.order_item_info oii ON (oii.product_id = w.match_id OR oii.variant_id = w.match_id)
-    JOIN order_management.orders o ON o.id = oii.order_id
-    WHERE o.sub_source_id = 108 AND o.status = 'Completed'
-      AND o.order_date >= w.start_d AND o.order_date < w.end_d
-    GROUP BY w.match_id, w.win
-  `;
+  // Sales now come DIRECTLY from Shopify's own ShopifyQL Analytics API
+  // (2026-08-14, per Kuberan: "no need to gather the sales in postgres use
+  // direct api of ledsone.de and gather from their") — not Postgres. This
+  // is the same source/numbers a merchant sees in Shopify's own reporting
+  // (as demonstrated: "FROM sales SHOW total_sales WHERE product_id...",
+  // confirmed €797.08 all-time for a real listing vs Postgres's
+  // Completed-orders-only €768.54 — different definitions of "sales",
+  // Shopify's is now the one used here). Local duplicate of the store
+  // domain/API version constants rather than reusing another module's (see
+  // R6_SHOPIFY_STORE_DOMAIN's own history elsewhere in this file for why).
+  const R6_SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
+  const R6_SHOPIFY_API_VERSION = '2024-10';
 
-  // GET — list every tracked row with live-computed sales/trend.
+  async function fetchShopifySalesTotal(productId, startDate, endDateExclusive) {
+    const token = process.env.SHOPIFY_ADMIN_TOKEN;
+    if (!token) throw new Error('Server not configured: SHOPIFY_ADMIN_TOKEN missing');
+    // ShopifyQL's UNTIL is inclusive, so convert our exclusive end-date
+    // convention (used everywhere else on this page) to an inclusive one.
+    const untilInclusive = new Date(new Date(endDateExclusive).getTime() - 86400000).toISOString().slice(0, 10);
+    const shopifyql = `FROM sales SHOW total_sales WHERE product_id = ${productId} SINCE '${startDate}' UNTIL '${untilInclusive}'`;
+    const gqlQuery = `query($q: String!) {
+      shopifyqlQuery(query: $q) {
+        ... on TableResponse { tableData { rowData columns { name } } }
+        parseErrors { code field message }
+      }
+    }`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    let res;
+    try {
+      res = await fetch(`https://${R6_SHOPIFY_STORE_DOMAIN}/admin/api/${R6_SHOPIFY_API_VERSION}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
+        body: JSON.stringify({ query: gqlQuery, variables: { q: shopifyql } }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (!res.ok) throw new Error(`Shopify Admin API error ${res.status}`);
+    const json = await res.json();
+    if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+    const payload = json.data && json.data.shopifyqlQuery;
+    if (payload && payload.parseErrors && payload.parseErrors.length) {
+      throw new Error('ShopifyQL parse error: ' + payload.parseErrors.map((e) => e.message).join('; '));
+    }
+    const rowData = payload && payload.tableData && payload.tableData.rowData;
+    if (!rowData || !rowData.length) return 0; // no sales in this window — genuinely zero, not an error
+    // total_sales is the (only) column requested — take the first row's first value.
+    return Number(rowData[0][0]) || 0;
+  }
+
+  // GET — list every tracked row with live-computed sales/trend, sales
+  // fetched directly from Shopify (see fetchShopifySalesTotal above).
   async function handleJefriReq6List(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     const trackerClient = await getTrackerPool().connect().catch((err) => {
@@ -5723,49 +5738,37 @@ const jefriReq6HandlerModule = (function() {
       return;
     }
 
-    const matchIds = [], wins = [], starts = [], ends = [];
-    for (const r of rows) {
-      matchIds.push(r.listingId); wins.push('post'); starts.push(r.postWindow.start); ends.push(r.postWindow.end);
-      if (r.baselineWindow) {
-        matchIds.push(r.listingId); wins.push('baseline'); starts.push(r.baselineWindow.start); ends.push(r.baselineWindow.end);
-      }
-    }
-
-    const client = await getPool().connect().catch((err) => {
-      console.error('[jefri/req6-list] DB connect failed:', err && err.message);
-      res.status(500).json({ error: 'Server not configured or database unreachable.' });
-      return null;
-    });
-    if (!client) return;
-
     try {
-      const salesByKey = new Map();
-      const salesResult = await client.query(BULK_SALES_QUERY, [matchIds, wins, starts, ends]);
-      for (const r of salesResult.rows) salesByKey.set(`${r.match_id}|${r.win}`, round2(r.sales));
-
-      const finalRows = rows.map((r) => {
-        const post = salesByKey.get(`${r.listingId}|post`) || 0;
-        const baseline = r.baselineWindow ? (salesByKey.get(`${r.listingId}|baseline`) || 0) : null;
+      const finalRows = await Promise.all(rows.map(async (r) => {
+        let post = 0, baseline = null, err = null;
+        try {
+          post = round2(await fetchShopifySalesTotal(r.listingId, r.postWindow.start, r.postWindow.end));
+          if (r.baselineWindow) {
+            baseline = round2(await fetchShopifySalesTotal(r.listingId, r.baselineWindow.start, r.baselineWindow.end));
+          }
+        } catch (e) {
+          console.error('[jefri/req6-list] Shopify sales lookup failed for', r.listingId, e && e.message);
+          err = 'Shopify sales lookup failed: ' + (e && e.message || 'unknown error');
+        }
         let pctChange = null;
-        if (baseline !== null && baseline > 0) pctChange = round2(((post - baseline) / baseline) * 100);
+        if (!err && baseline !== null && baseline > 0) pctChange = round2(((post - baseline) / baseline) * 100);
         return {
           id: r.id, label: r.label, listingId: r.listingId, sku: r.sku, imageUpdateDate: r.imageUpdateDate,
           daysLiveSinceUpdate: r.daysLiveSinceUpdate,
           totalSalesSinceUpdate: post,
           preUpdateBaselineSales: baseline,
           pctChangeVsBaseline: pctChange,
-          trend: classifyTrend(pctChange),
+          trend: err ? 'Insufficient data' : classifyTrend(pctChange),
           zeroBaseline: baseline === 0,
           insufficientData: r.daysLiveSinceUpdate === 0,
+          error: err,
         };
-      });
+      }));
 
       res.status(200).json({ generatedAt: new Date().toISOString(), rows: finalRows });
     } catch (err) {
-      console.error('[jefri/req6-list] sales query error:', err && err.message);
+      console.error('[jefri/req6-list] error:', err && err.message);
       res.status(500).json({ error: err.message || 'Unknown error' });
-    } finally {
-      client.release();
     }
   }
 
