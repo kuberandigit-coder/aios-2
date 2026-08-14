@@ -2,72 +2,59 @@
 
 **Purpose:** Let another LLM or team member understand and continue this work without verbal explanation.
 
-**This feature went through 3 iterations same day, each following an explicit correction from Kuberan.** If you find any reference to a single search-box-then-one-result form, or to a per-row manual date `<input>`, that's an OLD version — ignore it. This document describes the FINAL, current architecture only.
+**This feature went through 4 iterations same day, each following an explicit correction from Kuberan.** This document describes the FINAL, current architecture only:
+1. ~~Single search-box, manual Listing ID + Image Update Date → one result~~
+2. ~~Always-visible table of every listing in Jefri's Google Ads campaigns~~
+3. ~~Image Update Date auto-fetched live from Shopify per listing~~
+4. **CURRENT: fully manual, permanently stored, user-curated tracker.**
 
 ## What Req 6 does
-A "Requirement 6" tab in `jefri.html`. **Always shows a table of every listing belonging to Jefri** (all ~8,127 distinct product/listing IDs that have ever run in Jefri's 5 Google Ads campaigns) — no search or manual input required to see it; a search box only filters the already-loaded table. As each row scrolls into view, it automatically fetches (no user action) its real Image Update Date live from Shopify, then computes and displays SKU, Days Live, Total Sales Since Update, Pre-Update Baseline Sales, % Change, and a Trend badge (Improved / Same / Dropped / Insufficient data).
-
-**There is no manual date input anywhere in this feature.** Image Update Date is 100% derived from Shopify's own image metadata.
+A small tracker table on the "Requirement 6" tab in `jefri.html`. The user adds a row by typing four things — **Label, Listing ID, SKU, Image Update Date** — nothing auto-filled or auto-discovered. Once added, the row's Days Live, Total Sales Since Update, Pre-Update Baseline Sales, % Change, and Trend are calculated automatically from real Shopify sales data and shown immediately, and stay live (recalculated fresh) every time the tab loads. Rows can be deleted. The list is **not** tied to Jefri's Google Ads campaigns at all anymore — it's whatever the user has chosen to add.
 
 ## Where it's implemented
-- **Backend:** `reports/digital-marketing-member-pages/api/requirement.js` — search for `jefriReq6HandlerModule` (a self-contained IIFE right after `jefriReq5HandlerModule`, before `module.exports`). It returns `{ handleJefriReq6, handleJefriReq6List }` (an object, not a bare function — different from most other handler modules on this page). Two routes:
-  - `GET /api/requirement?fn=jefri-req6-list` — all Jefri listings (`listingId`, `sku`, `level`, `matched`), no params. This is what the table loads on tab open.
-  - `GET /api/requirement?fn=jefri-req6&listingId=<id>` — per-row calculation, including the live Shopify image-date lookup. No other params.
-- **Frontend:** `reports/digital-marketing-member-pages/pages/jefri.html` — search for `req6Tab` (HTML panel: search bar + table, no form) and `r6Init`/`r6LoadList`/`r6Calc`/`r6PatchRow`/`r6Render` (JS, appended after Req5's `r5ExportCsv` wiring inside the same `<script>` block). Nav item: `<li><a data-req="req6">Requirement 6</a></li>`.
+- **Backend:** `reports/digital-marketing-member-pages/api/requirement.js` — search for `jefriReq6HandlerModule`. Returns `{ handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete }`. Three routes:
+  - `GET /api/requirement?fn=jefri-req6-list` — every tracked row + live-computed sales/trend.
+  - `POST /api/requirement?fn=jefri-req6-add` — body `{label, listingId, sku, imageUpdateDate}`, all required.
+  - `POST /api/requirement?fn=jefri-req6-delete` — body `{id}`.
+- **Frontend:** `reports/digital-marketing-member-pages/pages/jefri.html` — search for `req6Tab` (Add form + table, no search-then-calculate flow) and `r6Init`/`r6LoadList`/`r6AddSubmit`/`r6DeleteRow`/`r6Render`.
+
+## Storage — the important architectural detail
+**Two separate Postgres databases are involved, on purpose:**
+1. **Tracker data** (Label, Listing ID, SKU, Image Update Date) — a NEW table, `public.jefri_req6_tracker`, on the **writable** Neon DB already used by Sajeepan's Req4 feed-optimization tracker (`process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL` — same exact fallback pattern as `handleSajeepanTrackerSave` in `members-api.js`). Self-provisioned via `CREATE TABLE IF NOT EXISTS` the first time any Req6 endpoint runs — no manual migration was needed, confirmed working live.
+2. **Sales calculation** — the main **read-only** analytics Postgres (`DATABASE_URL`), `order_management.orders` + `order_item_info`, exactly as every other requirement on this page.
+
+**Do not connect to `DATABASE_URL` expecting to find `jefri_req6_tracker` there — it's on the other database.** This distinction matters if you're debugging or extending this feature.
 
 ## How the data flows
-1. Tab opens → `r6LoadList()` fetches `fn=jefri-req6-list`, renders all matching rows immediately with `–` placeholders in every calculated column.
-2. An `IntersectionObserver` (recreated on every `r6Render()`, rooted on the table's own `.scroll` container) watches every rendered row. As a row scrolls into the visible area (plus a 200px margin), `r6Calc(listingId)` fires exactly once for that row (guarded by `R6_CALC[listingId]` already being set) and the observer stops watching it.
-3. `r6Calc` calls `fn=jefri-req6&listingId=<id>`. Backend:
-   a. Resolves `listingId` → `listings.shopify_listings` row (`item_id`, `sku`, `is_parent`, `is_child`), channel `'LEDSone DE'`.
-   b. If the listing is a child/variant, resolves its parent Shopify **product** ID via `listings.shopify_listings_parent_child_mapping` (images live on the product, not the variant).
-   c. Calls `fetchShopifyImageUpdateDate(productId)` — Shopify Admin **REST** API, `GET /admin/api/2024-10/products/{productId}/images.json`, takes `MAX(updated_at)` across all images on that product. Cached 24h server-side per product ID.
-   d. Computes `daysLiveSinceUpdate = today - imageUpdateDate` (whole days).
-   e. Runs two identical-shaped Postgres sales queries against `order_management.orders` + `order_item_info` (`sub_source_id=108`, `status='Completed'`, matched on `product_id` if Parent, `variant_id` if Variant/child):
-      - Post window: `order_date >= imageUpdateDate` (open-ended)
-      - Baseline window: `[imageUpdateDate - daysLiveSinceUpdate days, imageUpdateDate)` — always exactly `daysLiveSinceUpdate` days long, by construction
-   f. `pctChangeVsBaseline = ((post - baseline) / baseline) × 100`, or `null` if baseline is `0`/the window is empty.
-   g. `trend`: `Improved` if `≥ +15`, `Dropped` if `≤ -15`, `Same` otherwise, `Insufficient data` if `pctChangeVsBaseline` is `null`.
-4. `r6PatchRow(listingId)` updates just that row's cells in place (not a full table re-render — with 8,127 rows, re-rendering the whole table on every background fetch completion would be janky and would reset scroll position).
+1. `r6LoadList()` → `GET fn=jefri-req6-list`. Backend reads all rows from `jefri_req6_tracker` (tracker DB), computes `daysLiveSinceUpdate` and both time windows per row in JS, then runs ONE bulk SQL query (`unnest`-based, `BULK_SALES_QUERY`) against the main DB covering every row's post + baseline window in a single round trip, merges the results, returns.
+2. Add: `r6AddSubmit()` → `POST fn=jefri-req6-add` with all 4 fields → `INSERT INTO jefri_req6_tracker` → frontend reloads the list.
+3. Delete: `r6DeleteRow(id)` → confirm() → `POST fn=jefri-req6-delete` → `DELETE FROM jefri_req6_tracker WHERE id=$1` → frontend reloads the list.
 
-## Listing source ("what does 'Jefri listings' mean")
-Every distinct `product_item_id` that has ever appeared in `google_ads.product_performance` for Jefri's 5 named campaigns (same 5 campaigns as Req1/Req4/Req5) — confirmed with Kuberan via an explicit clarifying question before building, not assumed. Resolved to a Shopify listing the same way Req1/Req4/Req5 do (raw ID or `shopify_de_<parent>_<variant>` format → `listings.shopify_listings.item_id`). Deduped on the resolved Shopify listing, since multiple raw Ads ID formats can point at the same real listing.
+## Sales matching (simplified from every prior version)
+The user-typed Listing ID is matched directly against `order_item_info.product_id` **OR** `.variant_id` in one condition — `(oii.product_id = w.match_id OR oii.variant_id = w.match_id)`. There is **no** lookup against `listings.shopify_listings` anymore to determine "is this a Parent or Variant" — the user provides the identifier by hand, so there's nothing to resolve. Verified this produces identical sales figures to the old resolved-lookup version for the same listing/date (£32.56 for `57163495964937` / `2026-07-01`, matching every earlier version's independently-validated result for that exact case).
 
-## Listing ID → SKU mapping
-`listings.shopify_listings.item_id` (text, the raw Shopify product/variant ID) → `.sku`. In this store, **every** `is_parent=1` row has `sku IS NULL` (2,704 variation-template rows, `all_list=0` — not real sellable listings); all 11,722 `is_child=1` rows have a real SKU. So in practice every valid Listing ID resolves as `level: "Variant"`. Verified with a `GROUP BY is_parent, is_child` count query, not assumed.
-
-## Image Update Date source (the part that changed twice)
-Shopify Admin **REST** API — `GET /admin/api/2024-10/products/{productId}/images.json`, `MAX(updated_at)` across the product's images. REST was chosen deliberately over GraphQL: the `Image` type used elsewhere in this file (for live stock lookups) does not expose per-image timestamps in GraphQL; REST's image object does, reliably.
-
-**Known scope gotcha (already hit once, fixed):** `SHOPIFY_STORE_DOMAIN`/`SHOPIFY_API_VERSION`, used for live-stock GraphQL calls elsewhere in `requirement.js`, are declared with zero indentation and LOOK like file-level constants — they are actually inside `jefriProductStatusHandlerModule`'s own IIFE (lines 9–1345) and are NOT reachable from other modules further down the file. `jefriReq6HandlerModule` hit a `ReferenceError` on first deploy because of this. Fixed by duplicating the two constants locally as `R6_SHOPIFY_STORE_DOMAIN`/`R6_SHOPIFY_API_VERSION` — this file already has a precedent for the same workaround (`T2_SHOPIFY_STORE_DOMAIN`). **If you add another Shopify Admin API call anywhere in this file, check which IIFE the constants you want actually live in before assuming they're reachable.**
-
-## PostgreSQL source
-Read-only. Tables: `listings.shopify_listings`, `listings.shopify_listings_parent_child_mapping`, `order_management.orders`, `order_management.order_item_info`. Same DB pool/connection pattern as every other handler in `requirement.js`.
-
-## Sales source
-Gross line-item revenue: `item_price × item_quantity`, `status = 'Completed'`, `sub_source_id = 108` (Shopify DE / ledsone.de). Identical definition to Req5's `SHOPIFY_SALES_QUERY` — deliberately reused, not reinvented.
-
-## Baseline logic
-Always exactly `daysLiveSinceUpdate` calendar days immediately before Image Update Date. Not a fixed 7/30-day window — enforced structurally (the baseline start date is derived FROM `daysLiveSinceUpdate`, so it cannot drift out of sync).
-
-## Trend logic
-`Improved ≥ +15%`, `Same` from `-14%` through `+14%`, `Dropped ≤ -15%`. Boundaries inclusive on both sides.
+## Days Live / Baseline / % Change / Trend (unchanged formulas across all 4 versions)
+- `daysLiveSinceUpdate` = today − Image Update Date, whole days.
+- Post window: `order_date >= imageUpdateDate` (open-ended).
+- Baseline window: exactly `daysLiveSinceUpdate` calendar days immediately before Image Update Date — always equal-length by construction.
+- `pctChangeVsBaseline` = `((post − baseline) / baseline) × 100`, or `null` if baseline is `0`/undefined.
+- `trend`: `Improved` ≥ +15%, `Dropped` ≤ −15%, `Same` otherwise, `Insufficient data` if `pctChangeVsBaseline` is `null`.
 
 ## Known edge cases
-- **Zero baseline** (baseline sales = £0, `daysLiveSinceUpdate > 0`): `pctChangeVsBaseline: null`, `trend: "Insufficient data"`, `zeroBaseline: true`. Reused muguntha.html's "Target Achievement" N/A convention rather than inventing a new rule. Very common in practice — most listings' images were last updated long before any recent sales window exists, so their "baseline" period (e.g. 2021) legitimately has £0.
-- **No Shopify image match / no images on the product**: `found:true` with an `error` string, no crash.
-- **Listing not found / no SKU**: `found:false` or `sku:null` plus a human-readable `error` string.
-- **Unmatched Ads items** (no Shopify listing at all): shown in the list table as "Unmatched", never sent for per-row calculation (nothing to calculate).
+- Zero/undefined baseline sales → `null`/"Insufficient data", never `Infinity`/`NaN` (same convention as muguntha.html's Target Achievement metric).
+- Missing/invalid required field on add → `400` with a specific field-level error message.
+- Delete has a client-side `confirm()` but no server-side soft-delete/audit trail — it's a hard `DELETE`.
 
-## Files changed
-- `reports/digital-marketing-member-pages/api/requirement.js` (both repos)
-- `reports/digital-marketing-member-pages/pages/jefri.html` (both repos)
+## Files changed (this final version)
+- `reports/digital-marketing-member-pages/api/requirement.js` (both repos) — `jefriReq6HandlerModule` fully rewritten.
+- `reports/digital-marketing-member-pages/pages/jefri.html` (both repos) — Req6 tab HTML + JS fully rewritten.
+- **Deleted** (obsolete, from version 3): `api/scripts/generate-jefri-req6-snapshot.js`, `.github/workflows/jefri-req6-snapshot-refresh.yml`, `api/data/jefri-req6-snapshot.json`.
 
 ## Validation status
-PASS. Original 10-test suite (Improved/Same/Dropped classification, exact thresholds, zero-baseline, equal-length baseline, dynamic days-live, Listing ID→SKU resolution, no regression to existing tabs) all still hold — the formula/threshold logic was never touched across any of the 3 reworks, only how Listing ID and Image Update Date get INTO that logic changed. Re-verified live post-Shopify-integration with real listings (`44963099312393`, `57163495964937`) and confirmed sales totals match figures observed independently earlier in the session. See `validation/jefri/2026-08-14_req6-image-update-live-sales-tracker.md` and the evidence file's two CORRECTION sections for the full live-test trail.
+PASS. Full add → list → verify-sales-match → delete → verify-removed round trip tested live against production, plus the missing-field validation path. Formula/threshold logic itself was validated extensively earlier the same day across the previous 3 versions and is unchanged here — only how Listing ID/SKU/Image Update Date get INTO the system changed (now: typed by hand, not discovered/fetched). See `validation/jefri/2026-08-14_req6-image-update-live-sales-tracker.md` and the evidence file's four CORRECTION sections for the complete trail.
 
 ## Deployment status
-DEPLOYED — live at `https://dm-dashboard.vintageinterior.co.uk/pages/jefri.html#req6`. Confirmed via direct `curl` against `fn=jefri-req6-list` (8,127 rows) and `fn=jefri-req6` (real Shopify-sourced dates + correct sales/trend), and `scripts/check-live-deploy.js` shows no regression to any other feature.
+DEPLOYED — live at `https://dm-dashboard.vintageinterior.co.uk/pages/jefri.html#req6`. A test row was added and deleted during verification; one real row ("Ceiling Light 60cm") was re-added afterward so the tracker isn't left empty.
 
 ## Next action
-None outstanding. One open, non-blocking question for Jefri: currency in € instead of £ — a one-line change in `r6Money()` in `jefri.html`.
+None outstanding for Req6 itself. Two carried-over notes unrelated to this feature, surfaced during earlier reworks: the pre-existing hourly sales/Postgres snapshot GitHub Action may be silently failing (broken default base URL, confirmed via curl, not fixed — outside this task's scope); and it's worth deciding whether tracker deletions should ever need an audit trail.

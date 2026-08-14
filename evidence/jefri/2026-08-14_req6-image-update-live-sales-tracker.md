@@ -118,6 +118,35 @@ Kuberan questioned the architecture directly: "now the current behavior is while
 
 **Disclosed scope trim:** the snapshot only contains listings that resolve to a real Shopify SKU (~4,566 of the ~8,127 Ads-tracked items) — the remainder are Ads items with no Shopify listing match at all, which were never computable anyway (previously shown as informational "Unmatched" rows in the live-list path). The static-snapshot path currently doesn't carry those placeholder rows forward; only the live (non-cached) list path still shows them. Flagged for Kuberan/Jefri to confirm this trade-off is acceptable, or ask for the placeholders to be merged back in.
 
+**Status:** PASS (snapshot method — superseded by a fourth, final correction below)
+**Reviewer:** Kuberan (pending review)
+
+---
+
+## FOURTH CORRECTION (FINAL) — 2026-08-14, same day, later in session
+
+Kuberan redefined the feature entirely: "sorry some mistake, i need first column as label user need to add the label and listing id and sku and image update date also user can add [these all] ... need to store these all and others are same, after add these all by user show all these by calculation from shopify please change all and need to store all user input permanent create table in neon and add all". Clarified via AskUserQuestion that all 4 fields (Label, Listing ID, SKU, Image Update Date) should be **fully manual** — nothing auto-filled — reversing the entire Google-Ads-campaign auto-discovery premise every prior version of this feature was built on.
+
+**What changed (replaces everything above):**
+- The feature is no longer tied to Jefri's Google Ads campaigns at all. It's a small, user-curated tracker: you add a row by typing Label, Listing ID, SKU, and Image Update Date; Days Live / Total Sales Since Update / Pre-Update Baseline Sales / % Change / Trend are still calculated automatically (unchanged formulas, validated multiple times earlier the same day), but from that manually-entered data, not from an auto-discovered listing set.
+- New Postgres table `public.jefri_req6_tracker` (id, label, listing_id, sku, image_update_date, created_at, updated_at) — **on the same writable Neon database Sajeepan's existing feed-optimization tracker uses** (`FEED_TRACKER_DB_URL` / `AUTH_DATABASE_URL` fallback, exact same convention as `handleSajeepanTrackerSave` in `members-api.js`), NOT the main read-only analytics Postgres this whole file otherwise uses for everything else. Self-provisioned via `CREATE TABLE IF NOT EXISTS` on first request — no manual migration step, confirmed working live (first `fn=jefri-req6-list` call created the table with zero rows, no error).
+- Three new/changed endpoints, replacing all of `jefri-req6-list` (rewritten)/`jefri-req6`/`jefri-req6-snapshot-batch`:
+  - `GET fn=jefri-req6-list` — reads all tracked rows from the tracker DB, computes sales live in one bulk query against the main read-only Postgres (`unnest`-based, one round trip for every row's post + baseline window), returns the merged result.
+  - `POST fn=jefri-req6-add` — body `{label, listingId, sku, imageUpdateDate}`, validates all 4 required, inserts, returns the new row's id.
+  - `POST fn=jefri-req6-delete` — body `{id}`, removes a tracked row.
+- Sales matching simplified: since the Listing ID is now user-typed rather than resolved through `listings.shopify_listings`, the sales query matches it directly against EITHER `order_item_info.product_id` OR `.variant_id` — no dependency on Postgres listing resolution at all anymore.
+- Removed entirely as dead code: the Shopify Admin REST image-date lookup (`fetchShopifyImageUpdateDate`, `R6_SHOPIFY_STORE_DOMAIN`, `IMAGE_DATE_CACHE`), the Google Ads campaign discovery queries (`ALL_JEFRI_ITEMS_QUERY`, `GROUPED_LISTINGS_QUERY`, `getGroupedListings`), the batch-snapshot endpoint, and the snapshot generator script + GitHub Action + committed JSON file from the previous architecture.
+- Frontend: replaced the auto-populated 8k-row table with an "Add" form (Label/Listing ID/SKU/Image Update Date inputs + Add button) above a much smaller table (Label, Listing ID, SKU, Image Update Date, plus the 5 calculated columns, plus a delete "×" per row). No more `IntersectionObserver`/lazy-loading — the tracked list is expected to stay small (user-curated), so it's fetched and rendered in full on every load.
+
+**Verified live, full round trip:**
+- `fn=jefri-req6-list` (empty tracker) → `{"rows":[]}`, confirmed the table auto-created with no error.
+- `fn=jefri-req6-add` with a real listing (`57163495964937` / `ENC4361` / `2026-07-01`) → `{"ok":true,"id":1}`.
+- `fn=jefri-req6-list` again → the row appears with `totalSalesSinceUpdate:32.56` — the exact same figure independently validated multiple times earlier in the day for this listing/date via the DB-direct, single-endpoint, and snapshot-batch versions of this feature. Confirms the simplified direct product_id/variant_id-OR match produces identical results to the old listings.shopify_listings-resolved version.
+- `fn=jefri-req6-add` with missing fields → correctly rejected (`"Listing ID is required."`).
+- `fn=jefri-req6-delete` → row removed, confirmed via a follow-up list call.
+- `scripts/check-live-deploy.js` — all pre-existing canaries OK, no regression to any earlier same-day fix.
+- Re-added a real entry (Ceiling Light 60cm) after delete-testing so the tracker isn't left empty.
+
 **Status:** PASS
 **Reviewer:** Kuberan (pending review)
-**Next step:** None blocking. Two open items for Kuberan: (1) whether the broken `SNAPSHOT_BASE_URL` default might mean the existing hourly sales/Postgres snapshot job has been failing silently — worth a quick check; (2) whether Unmatched/no-SKU listings should be merged back into the snapshot-served table view.
+**Next step:** None blocking. This is the final architecture for Req6 — add real tracked listings via the UI going forward. Two carried-over, non-blocking notes from earlier reworks: (1) the pre-existing `hourly-july-snapshot-refresh.yml`/`generate-snapshots.js` still default to a Vercel domain that returns `DEPLOYMENT_NOT_FOUND` — worth Kuberan checking if that job has been silently failing (unrelated to Req6, not touched); (2) no delete-confirmation audit trail exists yet if that's ever needed (currently a hard DELETE, no soft-delete/history).
