@@ -644,11 +644,23 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     #req6Tab .r6-msg{padding:14px 18px;border-radius:12px;font-size:13px;margin:10px 0;}
     #req6Tab .r6-msg.error{background:#fdecea;color:#c62828;border:1px solid #f5c6c6;}
     #req6Tab .r6-msg.info{background:#eef3ff;color:#1a2233;border:1px solid #c7d7ff;}
-    #req6Tab .r6-add-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:18px;}
+    #req6Tab .r6-add-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:18px;}
     #req6Tab .r6-add-form label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);}
-    #req6Tab .r6-add-form input{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:600;text-transform:none;letter-spacing:normal;min-height:38px;}
-    #req6Tab .r6-add-form input[type="text"]{min-width:160px;}
+    #req6Tab .r6-add-form input{padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13.5px;font-weight:600;text-transform:none;letter-spacing:normal;min-height:40px;width:220px;box-sizing:border-box;transition:border-color .15s ease,box-shadow .15s ease;}
+    #req6Tab .r6-add-form input[type="date"]{width:200px;}
     #req6Tab .r6-add-form input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,94,255,.15);}
+    #req6Tab .r6-add-form input:hover{border-color:#b9c2d4;}
+    #req6Tab .r6-add-form button[type="submit"]{
+      appearance:none;border:none;border-radius:8px;background:var(--accent,#1f5eff);color:#fff;
+      font-size:13.5px;font-weight:700;padding:10px 24px;min-height:40px;cursor:pointer;
+      transition:background .15s ease,transform .1s ease;box-shadow:0 1px 2px rgba(31,94,255,.25);
+    }
+    #req6Tab .r6-add-form button[type="submit"]:hover{background:#1750db;}
+    #req6Tab .r6-add-form button[type="submit"]:active{transform:translateY(1px);}
+    #req6Tab .r6-add-form button[type="submit"]:disabled{background:#a9b8d9;cursor:not-allowed;}
+    #req6Tab .tbar select{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;min-height:38px;}
+    #req6Tab .tbar select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,94,255,.15);}
+    #req6Tab .tbar select:hover{border-color:#b9c2d4;}
     #req6Tab .r6-del-btn{border:none;background:none;color:var(--bad,#c62828);cursor:pointer;font-size:16px;line-height:1;padding:4px 8px;}
     #req6Tab .r6-del-btn:hover{opacity:.7;}
   </style>
@@ -657,7 +669,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <label>Listing ID <input type="text" id="r6f_listingId" placeholder="e.g. 57163495964937" required></label>
     <label>SKU <input type="text" id="r6f_sku" placeholder="e.g. ENC4361" required></label>
     <label>Image Update Date <input type="date" id="r6f_date" required></label>
-    <button class="primary" id="r6AddBtn" type="submit">Add</button>
+    <button id="r6AddBtn" type="submit">Add</button>
     <span class="chip live" id="r6LiveChip" style="display:none;">Saving&hellip;</span>
   </form>
 </header>
@@ -667,6 +679,23 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 <div class="tablebox">
   <div class="tbar">
     <input type="text" id="r6q" placeholder="Search Label, Listing ID, or SKU">
+    <select id="r6f_trend">
+      <option value="">All trends</option>
+      <option value="Improved">Improved</option>
+      <option value="Same">Same</option>
+      <option value="Dropped">Dropped</option>
+      <option value="Insufficient data">Insufficient data</option>
+    </select>
+    <select id="r6f_sort">
+      <option value="created_desc">Newest first</option>
+      <option value="created_asc">Oldest first</option>
+      <option value="label_asc">Label A&ndash;Z</option>
+      <option value="days_desc">Days Live (high&ndash;low)</option>
+      <option value="days_asc">Days Live (low&ndash;high)</option>
+      <option value="sales_desc">Total Sales (high&ndash;low)</option>
+      <option value="pct_desc">% Change (high&ndash;low)</option>
+      <option value="pct_asc">% Change (low&ndash;high)</option>
+    </select>
     <button id="r6RefreshBtn" type="button">Refresh (live)</button>
     <span id="r6cnt" style="margin-left:auto;">&ndash;</span>
   </div>
@@ -1723,6 +1752,8 @@ function r6Init(){
   document.getElementById('r6AddForm').addEventListener('submit', r6AddSubmit);
   document.getElementById('r6RefreshBtn').addEventListener('click', () => r6LoadList());
   document.getElementById('r6q').addEventListener('input', r6Render);
+  document.getElementById('r6f_trend').addEventListener('change', r6Render);
+  document.getElementById('r6f_sort').addEventListener('change', r6Render);
   r6LoadList();
 }
 
@@ -1818,12 +1849,33 @@ async function r6DeleteRow(id){
 
 function r6FilteredRows(){
   const q = (document.getElementById('r6q').value || '').trim().toLowerCase();
-  if (!q) return R6_ALL;
-  return R6_ALL.filter((r) =>
-    (r.label && r.label.toLowerCase().includes(q)) ||
-    (r.listingId && r.listingId.toLowerCase().includes(q)) ||
-    (r.sku && r.sku.toLowerCase().includes(q))
-  );
+  const trendFilter = document.getElementById('r6f_trend').value;
+  const sortBy = document.getElementById('r6f_sort').value;
+
+  let rows = R6_ALL;
+  if (q) {
+    rows = rows.filter((r) =>
+      (r.label && r.label.toLowerCase().includes(q)) ||
+      (r.listingId && r.listingId.toLowerCase().includes(q)) ||
+      (r.sku && r.sku.toLowerCase().includes(q))
+    );
+  }
+  if (trendFilter) {
+    rows = rows.filter((r) => (trendFilter === 'Insufficient data' ? r.pctChangeVsBaseline == null : r.trend === trendFilter));
+  }
+
+  rows = rows.slice();
+  const byNum = (a, b, key, dir) => (((a[key] == null ? -Infinity : a[key]) - (b[key] == null ? -Infinity : b[key])) * dir);
+  if (sortBy === 'created_desc') rows.sort((a, b) => b.id - a.id);
+  else if (sortBy === 'created_asc') rows.sort((a, b) => a.id - b.id);
+  else if (sortBy === 'label_asc') rows.sort((a, b) => (a.label || '').localeCompare(b.label || ''));
+  else if (sortBy === 'days_desc') rows.sort((a, b) => byNum(a, b, 'daysLiveSinceUpdate', -1));
+  else if (sortBy === 'days_asc') rows.sort((a, b) => byNum(a, b, 'daysLiveSinceUpdate', 1));
+  else if (sortBy === 'sales_desc') rows.sort((a, b) => byNum(a, b, 'totalSalesSinceUpdate', -1));
+  else if (sortBy === 'pct_desc') rows.sort((a, b) => byNum(a, b, 'pctChangeVsBaseline', -1));
+  else if (sortBy === 'pct_asc') rows.sort((a, b) => byNum(a, b, 'pctChangeVsBaseline', 1));
+
+  return rows;
 }
 
 function r6TrendCell(r){
