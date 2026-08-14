@@ -5555,14 +5555,14 @@ resolved_full AS (
 //
 // Storage: NOT the main read-only analytics Postgres (DATABASE_URL) this
 // whole file otherwise uses — that connection is intentionally read-only
-// for this project. Uses the SAME writable Neon DB + table-per-feature
-// convention already established by Sajeepan's Req4 feed-optimization
-// tracker (see handleSajeepanTrackerSave/members-api.js): `FEED_TRACKER_DB_URL`,
-// table `public.jefri_req6_tracker`, self-provisioned via
-// `CREATE TABLE IF NOT EXISTS` on first use (no manual migration step).
-// Deliberately does NOT fall back to AUTH_DATABASE_URL like Sajeepan's
-// code does — that fallback caused confirmed data loss here (see
-// getTrackerPool's own comment below for the full story).
+// for this project. Writable table `public.jefri_req6_tracker` lives on
+// the `AUTH_DATABASE_URL` Neon project (the same one holding this app's
+// own `users`/login table) — deliberately its OWN database, not the
+// `FEED_TRACKER_DB_URL` one Sajeepan's Req4 feed-optimization tracker uses
+// (moved off that shared database 2026-08-14 per explicit instruction —
+// see getTrackerPool's own comment below for the full history). Self-
+// provisioned via `CREATE TABLE IF NOT EXISTS` on first use (no manual
+// migration step).
 //
 // Sales calculation still reads from the main read-only Postgres
 // (order_management.orders/order_item_info, sub_source_id=108,
@@ -5607,22 +5607,27 @@ const jefriReq6HandlerModule = (function() {
   }
 
   // Writable tracker DB — Label/Listing ID/SKU/Image Update Date storage.
-  // IMPORTANT (found 2026-08-14): originally fell back to AUTH_DATABASE_URL
-  // when FEED_TRACKER_DB_URL was unset, matching Sajeepan's tracker code.
-  // That fallback caused real, confirmed data loss here — an added row
-  // (id 2) vanished entirely on a later list call while the id SEQUENCE
-  // kept advancing (next insert got id 4, not 3), meaning reads and writes
-  // were landing on two DIFFERENT underlying databases depending on which
-  // warm serverless instance handled the request (each instance resolves
-  // and caches its own connectionString once, at cold start). Since
-  // FEED_TRACKER_DB_URL IS configured for Production (confirmed via
-  // `vercel env ls`), removed the fallback entirely — better to fail
-  // loudly with a clear config error than silently write to the wrong DB.
+  // History (2026-08-14): originally fell back to AUTH_DATABASE_URL when
+  // FEED_TRACKER_DB_URL was unset (matching Sajeepan's tracker code in
+  // members-api.js) — that fallback caused real, confirmed data loss (an
+  // added row vanished on a later list call while the id SEQUENCE kept
+  // advancing), so the fallback was removed and FEED_TRACKER_DB_URL made
+  // required. Kuberan then explicitly asked to move off FEED_TRACKER_DB_URL
+  // entirely — "that is piranv remove from theri first and add in this neo
+  // data base" — since that database/table is shared with Piranav's
+  // feed_optimization_tracker feature, not something Req6 should depend on
+  // or write into. Now uses AUTH_DATABASE_URL instead — the Neon project
+  // already holding this app's own `users` table (confirmed via the Neon
+  // console: project "neon-bisque-battery"), fully separate from
+  // FEED_TRACKER_DB_URL's project. The `jefri_req6_tracker` table was
+  // dropped from the old (FEED_TRACKER_DB_URL) database as part of this
+  // move — see evidence/jefri/2026-08-14_req6-image-update-live-sales-
+  // tracker.md for the cleanup record.
   let trackerPool;
   function getTrackerPool() {
     if (!trackerPool) {
-      const connectionString = process.env.FEED_TRACKER_DB_URL;
-      if (!connectionString) throw new Error('Server not configured: FEED_TRACKER_DB_URL missing');
+      const connectionString = process.env.AUTH_DATABASE_URL;
+      if (!connectionString) throw new Error('Server not configured: AUTH_DATABASE_URL missing');
       trackerPool = new Pool({ connectionString, max: 2, connectionTimeoutMillis: 6000 });
     }
     return trackerPool;
@@ -5830,7 +5835,30 @@ const jefriReq6HandlerModule = (function() {
     }
   }
 
-  return { handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete };
+  // TEMPORARY, one-off — drops jefri_req6_tracker from the OLD
+  // FEED_TRACKER_DB_URL database as part of the 2026-08-14 move to
+  // AUTH_DATABASE_URL. Remove this handler + its dispatcher route once run
+  // (see evidence/jefri/2026-08-14_req6-image-update-live-sales-tracker.md).
+  async function handleJefriReq6CleanupOldDb(req, res) {
+    const connectionString = process.env.FEED_TRACKER_DB_URL;
+    if (!connectionString) { res.status(500).json({ error: 'FEED_TRACKER_DB_URL missing — nothing to clean up.' }); return; }
+    const cleanupPool = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 6000 });
+    try {
+      const client = await cleanupPool.connect();
+      try {
+        await client.query('DROP TABLE IF EXISTS public.jefri_req6_tracker');
+        res.status(200).json({ ok: true, message: 'Dropped public.jefri_req6_tracker from the FEED_TRACKER_DB_URL database.' });
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    } finally {
+      await cleanupPool.end();
+    }
+  }
+
+  return { handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete, handleJefriReq6CleanupOldDb };
 })();
 
 module.exports = async (req, res) => {
@@ -5839,6 +5867,7 @@ module.exports = async (req, res) => {
   if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
   if (fn === 'jefri-req6-add') return jefriReq6HandlerModule.handleJefriReq6Add(req, res);
   if (fn === 'jefri-req6-delete') return jefriReq6HandlerModule.handleJefriReq6Delete(req, res);
+  if (fn === 'jefri-req6-cleanup-old-db') return jefriReq6HandlerModule.handleJefriReq6CleanupOldDb(req, res);
   if (fn === 'jefri-req4-mapping') return jefriReq4MappingHandlerModule(req, res);
   if (fn === 'sukirtha-r6') return sukirthaR6HandlerModule(req, res);
   if (fn === 'thasitha-order-lookup') return thasithaOrderLookupModule(req, res);
