@@ -143,41 +143,10 @@ module.exports = async function handler(req, res) {
       if (!handleByItemId[r.item_id] && r.shopify_handle) handleByItemId[r.item_id] = r.shopify_handle;
     }
 
-    // 4. Attribution (organic / ads split) from pre-computed snapshot table
-    const attrMap = {};
-    try {
-      const attrDateClause = fromDate || toDate
-        ? ` AND (order_date >= $2::date AND order_date < ($3::date + INTERVAL '1 day'))`
-        : '';
-      const attrParams = fromDate || toDate ? [ids, fromDate || '2000-01-01', toDate || new Date().toISOString().slice(0,10)] : [ids];
-      const attrRes = await db.query(`
-        SELECT
-          product_id,
-          SUM(CASE WHEN classification = 'ORGANIC' THEN qty     ELSE 0 END) AS organic_qty,
-          SUM(CASE WHEN classification = 'ORGANIC' THEN revenue ELSE 0 END) AS organic_rev,
-          SUM(CASE WHEN classification = 'ADS'     THEN qty     ELSE 0 END) AS ads_qty,
-          SUM(CASE WHEN classification = 'ADS'     THEN revenue ELSE 0 END) AS ads_rev
-        FROM public.staff_order_attribution
-        WHERE product_id = ANY($1::text[])${attrDateClause}
-        GROUP BY product_id
-      `, attrParams);
-      for (const r of attrRes.rows) {
-        attrMap[r.product_id] = {
-          organic_qty: parseInt(r.organic_qty) || 0,
-          organic_rev: parseFloat(r.organic_rev) || 0,
-          ads_qty:     parseInt(r.ads_qty) || 0,
-          ads_rev:     parseFloat(r.ads_rev) || 0,
-        };
-      }
-    } catch (_) {
-      // Table not yet created — attribution columns will show as null
-    }
-
-    // 5. Assemble rows
+    // 4. Assemble rows
     const rows = ids.map(id => {
       const sale = salesMap[id];
       const info = titleMap[id];
-      const attr = attrMap[id] || null;
       return {
         product_id: id,
         title: sale?.title || info?.title || null,
@@ -185,10 +154,6 @@ module.exports = async function handler(req, res) {
         sold: !!sale,
         total_qty: sale?.total_qty || 0,
         total_amount: sale?.total_amount || 0,
-        organic_qty: attr?.organic_qty ?? null,
-        organic_rev: attr?.organic_rev ?? null,
-        ads_qty:     attr?.ads_qty ?? null,
-        ads_rev:     attr?.ads_rev ?? null,
         current_stock: stockByItemId[id] || 0,
         order_ids: sale?.order_ids || [],
         shopify_handle: handleByItemId[id] || null,

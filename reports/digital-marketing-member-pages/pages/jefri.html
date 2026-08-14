@@ -729,7 +729,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <strong>Pre-Update Baseline Sales:</strong> the SAME NUMBER OF DAYS immediately before the Image Update Date &mdash; not a fixed 7/30-day window.<br>
   <strong>% Change</strong> = <code>((Total Sales Since Update &minus; Pre-Update Baseline Sales) / Pre-Update Baseline Sales) &times; 100</code>.<br>
   <strong>Trend thresholds:</strong> <strong>Improved</strong> &ge; +15% &middot; <strong>Same</strong> &minus;14% through +14% &middot; <strong>Dropped</strong> &le; &minus;15%.<br>
-  <strong>Zero-baseline / just-added handling:</strong> if the baseline window is empty (Days Live = 0) or baseline sales = &pound;0, % Change and Trend show as <strong>N/A / Insufficient data</strong> rather than a fabricated or infinite percentage &mdash; same convention already used by muguntha.html's Target Achievement metric.<br>
+  <strong>Zero-baseline / just-added handling:</strong> if the baseline window is empty (Days Live = 0) or baseline sales = &euro;0, % Change and Trend show as <strong>N/A / Insufficient data</strong> rather than a fabricated or infinite percentage &mdash; same convention already used by muguntha.html's Target Achievement metric.<br>
   <strong>Data source:</strong> two databases, both server-side only &mdash; the writable Neon tracker DB (<code>AUTH_DATABASE_URL</code>) for Label/Listing ID/SKU/Image Update Date, and the main read-only analytics Postgres (<code>order_management.orders</code>/<code>order_item_info</code>) for sales, matched on Listing ID only &middot; fetched via <code>/api/requirement?fn=jefri-req6-list</code>, added via <code>fn=jefri-req6-add</code>, removed via <code>fn=jefri-req6-delete</code>, using credentials stored only as Vercel server-side environment variables &mdash; never present in this HTML or any client-side script. Full discovery/validation: <code>evidence/jefri/2026-08-14_req6-image-update-live-sales-tracker.md</code>.
 </div>
 </div>
@@ -1758,8 +1758,14 @@ function r6Init(){
   r6LoadList();
 }
 
+// Store is ledsone.de (sub_source_id=108) — amounts in order_management
+// are the store's native currency, EUR, not GBP. Was showing £ (wrong,
+// found 2026-08-14 comparing against Shopify's own EUR total for a real
+// listing). No currency column exists on order_management.orders to read
+// this from — EUR is fixed here matching every other DE-scoped query on
+// this page (Req4/Req5's "sub_source_id=108" convention).
 function r6Money(n){
-  return n == null ? '&ndash;' : ('&pound;' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  return n == null ? '&ndash;' : ('&euro;' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 }
 
 function r6SetMsg(html, cls){
@@ -1881,7 +1887,7 @@ function r6FilteredRows(){
 
 function r6TrendCell(r){
   if (r.pctChangeVsBaseline == null) {
-    const reason = r.insufficientData ? 'Insufficient data' : (r.zeroBaseline ? 'Insufficient data (baseline sales = £0)' : 'Insufficient data');
+    const reason = r.insufficientData ? 'Insufficient data' : (r.zeroBaseline ? 'Insufficient data (baseline sales = €0)' : 'Insufficient data');
     return '<span class="r6-trend insufficient">' + reason + '</span>';
   }
   const cls = r.trend === 'Improved' ? 'improved' : (r.trend === 'Dropped' ? 'dropped' : 'same');

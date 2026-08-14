@@ -460,7 +460,7 @@ function renderTable() {
   window._orderStore = {};
   const isJackson = currentStaff === 'jackson';
   const urlCol = isJackson ? '<th>URL</th>' : '';
-  let html = `<table><thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Status</th><th class="r">Qty</th><th class="r">Revenue</th><th class="r" style="color:#0a7d4f;">Organic Qty</th><th class="r" style="color:#0a7d4f;">Organic Rev</th><th class="r" style="color:#b91c1c;">Ads Qty</th><th class="r" style="color:#b91c1c;">Ads Rev</th><th class="r">Current Stock</th><th>Sold?</th><th>Orders</th>${urlCol}</tr></thead><tbody>`;
+  let html = `<table><thead><tr><th>#</th><th>Product ID</th><th>Title</th><th>Status</th><th class="r">Qty</th><th class="r">Revenue</th><th class="r">Current Stock</th><th>Sold?</th><th>Orders</th>${urlCol}</tr></thead><tbody>`;
   pageRows.forEach((r,i) => {
     const n = start+i+1;
     const sb = r.status ? `<span class="badge ${r.status}">${r.status}</span>` : '—';
@@ -477,7 +477,6 @@ function renderTable() {
           ? `<td><a href="https://ledsone.co.uk/products/${r.shopify_handle}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600;">View ↗</a></td>`
           : '<td><span style="color:var(--muted);font-size:11px;">—</span></td>')
       : '';
-    const fmt = (v, prefix='') => v !== null && v > 0 ? prefix + (prefix ? v.toFixed(2) : v.toLocaleString()) : '<span style="color:var(--muted);font-size:11px;">—</span>';
     html += `<tr>
       <td style="color:var(--muted);font-size:11px;">${n}</td>
       <td class="pid">${r.product_id}</td>
@@ -485,10 +484,6 @@ function renderTable() {
       <td>${sb}</td>
       <td class="r">${r.total_qty>0?r.total_qty.toLocaleString():'<span style="color:var(--muted)">0</span>'}</td>
       <td class="r">${r.total_amount>0?'£'+r.total_amount.toFixed(2):'<span style="color:var(--muted)">£0</span>'}</td>
-      <td class="r" style="color:#0a7d4f;">${r.organic_qty===null?'<span style="color:var(--muted);font-size:10px;">pending</span>':fmt(r.organic_qty)}</td>
-      <td class="r" style="color:#0a7d4f;">${r.organic_rev===null?'<span style="color:var(--muted);font-size:10px;">pending</span>':fmt(r.organic_rev,'£')}</td>
-      <td class="r" style="color:#b91c1c;">${r.ads_qty===null?'<span style="color:var(--muted);font-size:10px;">pending</span>':fmt(r.ads_qty)}</td>
-      <td class="r" style="color:#b91c1c;">${r.ads_rev===null?'<span style="color:var(--muted);font-size:10px;">pending</span>':fmt(r.ads_rev,'£')}</td>
       <td class="r ${sc}">${r.current_stock.toLocaleString()}</td>
       <td>${sold}</td>
       <td>${orderBadge}</td>
