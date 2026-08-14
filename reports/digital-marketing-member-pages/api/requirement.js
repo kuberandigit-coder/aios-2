@@ -5664,7 +5664,7 @@ const jefriReq6HandlerModule = (function() {
     const shopifyql = `FROM sales SHOW total_sales WHERE product_id = ${productId} SINCE '${startDate}' UNTIL '${untilInclusive}'`;
     const gqlQuery = `query($q: String!) {
       shopifyqlQuery(query: $q) {
-        tableData { rowData columns { name } }
+        tableData { rows columns { name } }
         parseErrors
       }
     }`;
@@ -5688,7 +5688,7 @@ const jefriReq6HandlerModule = (function() {
     if (payload && payload.parseErrors) {
       throw new Error('ShopifyQL parse error: ' + payload.parseErrors);
     }
-    const rowData = payload && payload.tableData && payload.tableData.rowData;
+    const rowData = payload && payload.tableData && payload.tableData.rows; // JSON scalar — already an array of arrays
     if (!rowData || !rowData.length) return 0; // no sales in this window — genuinely zero, not an error
     // total_sales is the (only) column requested — take the first row's first value.
     return Number(rowData[0][0]) || 0;
