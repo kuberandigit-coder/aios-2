@@ -17,7 +17,7 @@
     return r.json();
   }).then(function (data) {
     if (!data) return;
-      if (data && data.success && data.user && data.user.staff_key === 'muguntha') {
+      if (data && data.success && data.user && (data.user.staff_key === 'muguntha' || data.user.staff_key === 'kuberan' || data.user.staff_key === 'piranav')) {
         document.documentElement.style.visibility = 'visible';
         requestAnimationFrame(function () { document.documentElement.classList.add('dm-ready'); });
         return;
