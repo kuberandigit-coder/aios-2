@@ -508,9 +508,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
               <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Vendor</th>
               <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Type</th>
               <th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--line);">Inventory</th>
+              <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);">Tag</th>
             </tr>
           </thead>
-          <tbody id="mgListingBody"><tr><td colspan="8" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr></tbody>
+          <tbody id="mgListingBody"><tr><td colspan="9" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1052,7 +1053,7 @@ function mgRenderListing() {
   document.getElementById('mgListingCount').textContent = rows.length + ' of ' + MG_LISTING_DATA.length + ' products shown';
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="padding:40px 20px;text-align:center;color:var(--muted);">No products match these filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:40px 20px;text-align:center;color:var(--muted);">No products match these filters.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((p) => {
@@ -1070,6 +1071,7 @@ function mgRenderListing() {
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.vendor || 'N/A') + '</td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + esc(p.productType || 'N/A') + '</td>' +
       '<td style="padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;color:' + stockColor + ';font-weight:600;">' + (p.totalInventory != null ? p.totalInventory : 'N/A') + '</td>' +
+      '<td style="padding:9px 12px;border-bottom:1px solid var(--line);">' + ((p.tags && p.tags.length) ? p.tags.map((t) => '<span style="display:inline-block;padding:2px 8px;margin:1px 3px 1px 0;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:600;">' + esc(t) + '</span>').join('') : '<span style="color:var(--muted);">N/A</span>') + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -1080,7 +1082,7 @@ async function mgLoadListing() {
   const btn = document.getElementById('mgListingRefreshBtn');
   btn.disabled = true;
   status.textContent = 'Loading…';
-  tbody.innerHTML = '<tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9" style="padding:40px 20px;text-align:center;color:var(--muted);">Loading 2026New listings…</td></tr>';
   try {
     const res = await fetch('/api/muguntha?action=tag-listing&tag=2026New');
     const data = await res.json();
@@ -1091,7 +1093,7 @@ async function mgLoadListing() {
     mgRenderListing();
   } catch (err) {
     status.textContent = 'Error: ' + (err.message || err);
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:40px 20px;text-align:center;color:var(--bad);">Error loading listings.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:40px 20px;text-align:center;color:var(--bad);">Error loading listings.</td></tr>';
   } finally {
     btn.disabled = false;
   }
