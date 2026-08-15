@@ -466,6 +466,7 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
         <input id="mgListingSearch" type="text" placeholder="Search title or SKU…" style="flex:1;min-width:200px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;">
         <select id="mgFilterType" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Product Types</option></select>
         <select id="mgFilterVendor" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Vendors</option></select>
+        <select id="mgFilterTag" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;"><option value="">All Tags</option></select>
         <select id="mgFilterStatus" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;">
           <option value="">All Statuses</option>
           <option value="ACTIVE">Active</option>
@@ -1015,10 +1016,13 @@ function mgFmtMoney(v, ccy) {
 function mgPopulateListingDropdowns() {
   const types = [...new Set(MG_LISTING_DATA.map((p) => p.productType).filter(Boolean))].sort();
   const vendors = [...new Set(MG_LISTING_DATA.map((p) => p.vendor).filter(Boolean))].sort();
+  const tags = [...new Set(MG_LISTING_DATA.flatMap((p) => p.tags || []).filter(Boolean))].sort();
   const typeSel = document.getElementById('mgFilterType');
   const vendorSel = document.getElementById('mgFilterVendor');
+  const tagSel = document.getElementById('mgFilterTag');
   typeSel.innerHTML = '<option value="">All Product Types</option>' + types.map((t) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
   vendorSel.innerHTML = '<option value="">All Vendors</option>' + vendors.map((v) => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join('');
+  tagSel.innerHTML = '<option value="">All Tags</option>' + tags.map((t) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
 }
 
 function mgRenderListing() {
@@ -1026,6 +1030,7 @@ function mgRenderListing() {
   const search = document.getElementById('mgListingSearch').value.trim().toLowerCase();
   const typeFilter = document.getElementById('mgFilterType').value;
   const vendorFilter = document.getElementById('mgFilterVendor').value;
+  const tagFilter = document.getElementById('mgFilterTag').value;
   const statusFilter = document.getElementById('mgFilterStatus').value;
   const stockFilter = document.getElementById('mgFilterStock').value;
   const sort = document.getElementById('mgFilterSort').value;
@@ -1036,6 +1041,7 @@ function mgRenderListing() {
   if (search) rows = rows.filter((p) => (p.title || '').toLowerCase().includes(search) || (p.sku || '').toLowerCase().includes(search));
   if (typeFilter) rows = rows.filter((p) => p.productType === typeFilter);
   if (vendorFilter) rows = rows.filter((p) => p.vendor === vendorFilter);
+  if (tagFilter) rows = rows.filter((p) => (p.tags || []).includes(tagFilter));
   if (statusFilter) rows = rows.filter((p) => p.status === statusFilter);
   if (stockFilter === 'in') rows = rows.filter((p) => p.totalInventory != null && p.totalInventory > 0);
   else if (stockFilter === 'out') rows = rows.filter((p) => p.totalInventory == null || p.totalInventory <= 0);
@@ -1118,13 +1124,14 @@ document.getElementById('mgListingSearch').addEventListener('input', () => {
   clearTimeout(mgSearchDebounce);
   mgSearchDebounce = setTimeout(mgRenderListing, 200);
 });
-['mgFilterType', 'mgFilterVendor', 'mgFilterStatus', 'mgFilterStock', 'mgFilterSort'].forEach((id) => {
+['mgFilterType', 'mgFilterVendor', 'mgFilterTag', 'mgFilterStatus', 'mgFilterStock', 'mgFilterSort'].forEach((id) => {
   document.getElementById(id).addEventListener('change', mgRenderListing);
 });
 document.getElementById('mgListingClearBtn').addEventListener('click', () => {
   document.getElementById('mgListingSearch').value = '';
   document.getElementById('mgFilterType').value = '';
   document.getElementById('mgFilterVendor').value = '';
+  document.getElementById('mgFilterTag').value = '';
   document.getElementById('mgFilterStatus').value = '';
   document.getElementById('mgFilterStock').value = '';
   document.getElementById('mgFilterSort').value = 'title-asc';
