@@ -471,9 +471,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
             <span id="mgTagFilterLabel">Exclude Tags</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
-          <div id="mgTagFilterPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;min-width:220px;max-height:280px;overflow-y:auto;">
+          <div id="mgTagFilterPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;min-width:220px;">
             <div style="font-size:11px;color:var(--muted);padding:4px 6px 8px;">Check a tag to hide products that have <strong>all</strong> checked tags together.</div>
-            <div id="mgTagFilterList"></div>
+            <input id="mgTagFilterSearch" type="text" placeholder="Search tags…" style="width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:6px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+            <div id="mgTagFilterList" style="max-height:220px;overflow-y:auto;"></div>
           </div>
         </div>
         <select id="mgFilterStatus" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--ink);cursor:pointer;">
@@ -1012,6 +1013,7 @@ var MG_LISTING_LOADED = false;
 var MG_LISTING_DATA = [];
 var MG_LISTING_FILTER = 'all';
 var MG_EXCLUDED_TAGS = new Set(); // checked in the Exclude Tags dropdown — products carrying ALL of these are hidden
+var MG_ALL_TAGS = []; // every distinct tag across loaded products — the Exclude Tags panel's search filters a view of this, not the underlying data
 
 function esc(s) { if (s === null || s === undefined) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function mgFmtMoney(v, ccy) {
@@ -1033,17 +1035,34 @@ function mgPopulateListingDropdowns() {
   vendorSel.innerHTML = '<option value="">All Vendors</option>' + vendors.map((v) => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join('');
 
   // Keep only still-valid selections (data may have refreshed) then rebuild the checkbox list.
+  MG_ALL_TAGS = tags;
   MG_EXCLUDED_TAGS = new Set([...MG_EXCLUDED_TAGS].filter((t) => tags.includes(t)));
+  mgRenderTagFilterList();
+  mgUpdateTagFilterLabel();
+}
+
+// Renders the checkbox list inside the Exclude Tags dropdown, filtered by
+// whatever's currently typed in the search box — search only narrows which
+// tags are SHOWN, it never touches MG_EXCLUDED_TAGS (the actual selection).
+function mgRenderTagFilterList() {
+  const q = (document.getElementById('mgTagFilterSearch').value || '').trim().toLowerCase();
+  const tags = q ? MG_ALL_TAGS.filter((t) => t.toLowerCase().includes(q)) : MG_ALL_TAGS;
   const list = document.getElementById('mgTagFilterList');
-  list.innerHTML = tags.length
-    ? tags.map((t) => {
-        const id = 'mgTagCb_' + t.replace(/[^a-zA-Z0-9]/g, '_');
-        const checked = MG_EXCLUDED_TAGS.has(t) ? ' checked' : '';
-        return '<label for="' + id + '" style="display:flex;align-items:center;gap:8px;padding:5px 6px;font-size:12.5px;cursor:pointer;border-radius:6px;">' +
-          '<input type="checkbox" id="' + id + '" class="mg-tag-cb" data-tag="' + esc(t) + '"' + checked + '> ' + esc(t) +
-        '</label>';
-      }).join('')
-    : '<div style="padding:6px;font-size:12px;color:var(--muted);">No tags found.</div>';
+  if (!MG_ALL_TAGS.length) {
+    list.innerHTML = '<div style="padding:6px;font-size:12px;color:var(--muted);">No tags found.</div>';
+    return;
+  }
+  if (!tags.length) {
+    list.innerHTML = '<div style="padding:6px;font-size:12px;color:var(--muted);">No tags match "' + esc(q) + '".</div>';
+    return;
+  }
+  list.innerHTML = tags.map((t) => {
+    const id = 'mgTagCb_' + t.replace(/[^a-zA-Z0-9]/g, '_');
+    const checked = MG_EXCLUDED_TAGS.has(t) ? ' checked' : '';
+    return '<label for="' + id + '" style="display:flex;align-items:center;gap:8px;padding:5px 6px;font-size:12.5px;cursor:pointer;border-radius:6px;">' +
+      '<input type="checkbox" id="' + id + '" class="mg-tag-cb" data-tag="' + esc(t) + '"' + checked + '> ' + esc(t) +
+    '</label>';
+  }).join('');
   list.querySelectorAll('.mg-tag-cb').forEach((cb) => {
     cb.addEventListener('change', () => {
       const tag = cb.getAttribute('data-tag');
@@ -1052,7 +1071,6 @@ function mgPopulateListingDropdowns() {
       mgRenderListing();
     });
   });
-  mgUpdateTagFilterLabel();
 }
 
 function mgUpdateTagFilterLabel() {
@@ -1165,16 +1183,20 @@ document.getElementById('mgListingSearch').addEventListener('input', () => {
 document.getElementById('mgTagFilterBtn').addEventListener('click', (e) => {
   e.stopPropagation();
   const panel = document.getElementById('mgTagFilterPanel');
-  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+  const opening = panel.style.display === 'none';
+  panel.style.display = opening ? '' : 'none';
+  if (opening) document.getElementById('mgTagFilterSearch').focus();
 });
 document.getElementById('mgTagFilterPanel').addEventListener('click', (e) => e.stopPropagation());
+document.getElementById('mgTagFilterSearch').addEventListener('input', mgRenderTagFilterList);
 document.addEventListener('click', () => { document.getElementById('mgTagFilterPanel').style.display = 'none'; });
 document.getElementById('mgListingClearBtn').addEventListener('click', () => {
   document.getElementById('mgListingSearch').value = '';
   document.getElementById('mgFilterType').value = '';
   document.getElementById('mgFilterVendor').value = '';
   MG_EXCLUDED_TAGS = new Set();
-  document.querySelectorAll('.mg-tag-cb').forEach((cb) => { cb.checked = false; });
+  document.getElementById('mgTagFilterSearch').value = '';
+  mgRenderTagFilterList();
   mgUpdateTagFilterLabel();
   document.getElementById('mgFilterStatus').value = '';
   document.getElementById('mgFilterStock').value = '';
