@@ -647,6 +647,77 @@ async function mapLimit(items, limit, fn) {
   return results;
 }
 
+// Builds the month-by-month rows from already-fetched sales/cost data.
+// liveMonthsPending (a Set of 'YYYY-MM' strings) marks live months whose
+// 2026 sales+cost haven't arrived yet — their row gets sales2026=undefined
+// (distinct from null) so renderTable can show "Loading…" instead of "N/A".
+function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending){
+  // Align by calendar month number (MM), not by array position — 2025 runs
+  // Jan-Jun and 2026 runs Jun-Aug, so a positional zip would pair e.g.
+  // 2025-01 with 2026-06 under a single mislabeled "June" row.
+  const allMonthNums = [...new Set([...MONTHS_2025, ...MONTHS_2026].map((m) => m.slice(5)))].sort();
+  const rows = [];
+  for (const mm of allMonthNums) {
+    const m25 = MONTHS_2025.find((m) => m.slice(5) === mm) || null;
+    const m26 = MONTHS_2026.find((m) => m.slice(5) === mm) || null;
+    const sales2025 = m25 ? sales25ByMonth[m25] : null;
+    const c25 = m25 ? cost25[m25] : null;
+    const pending = m26 && liveMonthsPending && liveMonthsPending.has(m26);
+    const sales2026 = pending ? undefined : (m26 ? sales26ByMonth[m26] : null);
+    const c26 = pending ? undefined : (m26 ? cost26[m26] : null);
+
+    // 2025 and 2026 Total Cost both = Sonya's own campaign cost + her
+    // product-share of the DM 46 campaign's spend, folded into one number,
+    // with the DM portion shown in brackets alongside it — identical
+    // treatment for both years (per user instruction 2026-08-04, reversing
+    // the earlier 2025-excludes-DM rule).
+    const costVal2025 = c25 ? c25.totalCost : null;
+    const ownCost2025 = c25 ? c25.ownCost : null;
+    const dmSonya2025 = c25 ? c25.dmSonyaProductCost : null;
+    const costVal2026 = pending ? undefined : (c26 ? c26.totalCost : null);
+    const ownCost2026 = pending ? undefined : (c26 ? c26.ownCost : null);
+    const dmSonya2026 = pending ? undefined : (c26 ? c26.dmSonyaProductCost : null);
+
+    const net2025 = sales2025 != null ? sales2025 - costVal2025 : null;
+    const roas2025 = sales2025 != null && costVal2025 > 0 ? sales2025 / costVal2025 : null;
+    const net2026 = pending ? undefined : (sales2026 != null ? sales2026 - costVal2026 : null);
+    const roas2026 = pending ? undefined : (sales2026 != null && costVal2026 > 0 ? sales2026 / costVal2026 : null);
+    const monthLabel = MONTH_NAME[mm];
+    // Target Achievement = 2026 Net vs. a 30%-YoY-growth target on 2025
+    // Net for the SAME calendar month (e.g. Jan 2025 Net £50k -> Jan 2026
+    // target £65k). Redefined 2026-08-10, then corrected same day to use
+    // Net (Sales - Cost) instead of raw Sales per explicit instruction.
+    // Requires both years' Net for that month, with 2025 Net > 0;
+    // otherwise N/A.
+    const targetAch = pending ? undefined : ((net2025 != null && net2026 != null && net2025 > 0)
+      ? net2026 / (net2025 * (1 + TARGET_ROAS))
+      : null);
+    // Raw actual YoY change — separate from Target Achievement, which
+    // measures actual-vs-target. This is just (2026 Net - 2025 Net) /
+    // 2025 Net, e.g. -7.10% if Net fell. Added 2026-08-10.
+    const yoyGrowth = pending ? undefined : ((net2025 != null && net2026 != null && net2025 > 0)
+      ? (net2026 - net2025) / net2025
+      : null);
+    const isLive = m26 && LIVE_2026.includes(m26);
+    rows.push({
+      monthLabel, m25, m26,
+      sales2025, costVal2025, ownCost2025, dmSonya2025, net2025, roas2025,
+      sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
+      targetAch, yoyGrowth, isLive, liveLoading: !!pending,
+    });
+  }
+  return rows;
+}
+
+// Loads all 20 months in two phases so the table isn't blocked on the
+// slowest call: closed months (fast, snapshot-backed) render immediately,
+// then the live month (2026-08, which needs a live Shopify order-journey
+// scan that documented-ly takes 30-90s+ whenever its cache is cold) loads
+// in the background and patches its row in when ready. Previously loadAll()
+// awaited all 20 months together before rendering anything, so the whole
+// table sat on "Loading…" for up to 90s even though 19/20 months were
+// already available in ~1-2s. Fixed 2026-08-19 per Kuberan: "taking too
+// much time to receive data and show".
 async function loadAll(member, idSuffix, force){
   const statusChip = document.getElementById('statusChip' + idSuffix);
   const refreshBtn = document.getElementById('refreshBtn' + idSuffix);
@@ -656,83 +727,42 @@ async function loadAll(member, idSuffix, force){
   statusChip.textContent = 'Loading…';
   tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
 
+  const nonLiveMonths2026 = MONTHS_2026.filter((m) => !LIVE_2026.includes(m));
+  const liveMonthsPending = new Set(LIVE_2026);
+
   try {
-    // Only the live/current month (2026-08) is ever force-refreshed. Closed
-    // historical months already have a static snapshot that never changes —
-    // forcing refresh=1 on all 20 months at once (previous behaviour) fired
-    // ~80 concurrent live requests at Shopify + Postgres on every "Refresh
-    // (live)" click, which is what caused the Shopify throttling
-    // ("exceeded retries") and Postgres connection-pool timeouts. Fixed
-    // 2026-08-05.
-    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = PERF_BATCH_MEMBERS.has(member)
-      ? await fetchPerfBatch(member, force)
-      : await Promise.all([
-          mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
-          mapLimit(MONTHS_2026, 5, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),
-          mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
-          mapLimit(MONTHS_2026, 5, (m) => fetchCost(member, m, force && LIVE_2026.includes(m))),
-        ]);
+    // Phase 1: everything except the live month(s) — always fast, snapshot-backed.
+    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
+      mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
+      mapLimit(nonLiveMonths2026, 5, (m) => fetchGroupSales('2026', member, m, false)),
+      mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
+      mapLimit(nonLiveMonths2026, 5, (m) => fetchCost(member, m, false)),
+    ]);
 
     const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
     MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; cost25[m] = cost25Arr[i]; });
-    MONTHS_2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; cost26[m] = cost26Arr[i]; });
+    nonLiveMonths2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; cost26[m] = cost26Arr[i]; });
 
-    // Align by calendar month number (MM), not by array position — 2025 runs
-    // Jan-Jun and 2026 runs Jun-Aug, so a positional zip would pair e.g.
-    // 2025-01 with 2026-06 under a single mislabeled "June" row.
-    const allMonthNums = [...new Set([...MONTHS_2025, ...MONTHS_2026].map((m) => m.slice(5)))].sort();
-    const rows = [];
-    for (const mm of allMonthNums) {
-      const m25 = MONTHS_2025.find((m) => m.slice(5) === mm) || null;
-      const m26 = MONTHS_2026.find((m) => m.slice(5) === mm) || null;
-      const sales2025 = m25 ? sales25ByMonth[m25] : null;
-      const c25 = m25 ? cost25[m25] : null;
-      const sales2026 = m26 ? sales26ByMonth[m26] : null;
-      const c26 = m26 ? cost26[m26] : null;
-
-      // 2025 and 2026 Total Cost both = Sonya's own campaign cost + her
-      // product-share of the DM 46 campaign's spend, folded into one number,
-      // with the DM portion shown in brackets alongside it — identical
-      // treatment for both years (per user instruction 2026-08-04, reversing
-      // the earlier 2025-excludes-DM rule).
-      const costVal2025 = c25 ? c25.totalCost : null;
-      const ownCost2025 = c25 ? c25.ownCost : null;
-      const dmSonya2025 = c25 ? c25.dmSonyaProductCost : null;
-      const costVal2026 = c26 ? c26.totalCost : null;
-      const ownCost2026 = c26 ? c26.ownCost : null;
-      const dmSonya2026 = c26 ? c26.dmSonyaProductCost : null;
-
-      const net2025 = sales2025 != null ? sales2025 - costVal2025 : null;
-      const roas2025 = sales2025 != null && costVal2025 > 0 ? sales2025 / costVal2025 : null;
-      const net2026 = sales2026 != null ? sales2026 - costVal2026 : null;
-      const roas2026 = sales2026 != null && costVal2026 > 0 ? sales2026 / costVal2026 : null;
-      const monthLabel = MONTH_NAME[mm];
-      // Target Achievement = 2026 Net vs. a 30%-YoY-growth target on 2025
-      // Net for the SAME calendar month (e.g. Jan 2025 Net £50k -> Jan 2026
-      // target £65k). Redefined 2026-08-10, then corrected same day to use
-      // Net (Sales - Cost) instead of raw Sales per explicit instruction.
-      // Requires both years' Net for that month, with 2025 Net > 0;
-      // otherwise N/A.
-      const targetAch = (net2025 != null && net2026 != null && net2025 > 0)
-        ? net2026 / (net2025 * (1 + TARGET_ROAS))
-        : null;
-      // Raw actual YoY change — separate from Target Achievement, which
-      // measures actual-vs-target. This is just (2026 Net - 2025 Net) /
-      // 2025 Net, e.g. -7.10% if Net fell. Added 2026-08-10.
-      const yoyGrowth = (net2025 != null && net2026 != null && net2025 > 0)
-        ? (net2026 - net2025) / net2025
-        : null;
-      const isLive = m26 && LIVE_2026.includes(m26);
-      rows.push({
-        monthLabel, m25, m26,
-        sales2025, costVal2025, ownCost2025, dmSonya2025, net2025, roas2025,
-        sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
-        targetAch, yoyGrowth, isLive,
-      });
-    }
-
+    const rows = buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending);
     renderTable(rows, memberLabel, idSuffix, member);
     renderCards(rows, idSuffix);
+    statusChip.textContent = 'Loading live month…';
+
+    // Phase 2: live month(s) — runs after the table is already visible, so
+    // the 30-90s live Shopify scan no longer blocks the other 19 months.
+    await Promise.all(LIVE_2026.map(async (m) => {
+      const [sales2026, cost2026] = await Promise.all([
+        fetchGroupSales('2026', member, m, force),
+        fetchCost(member, m, force),
+      ]);
+      sales26ByMonth[m] = sales2026;
+      cost26[m] = cost2026;
+      liveMonthsPending.delete(m);
+    }));
+
+    const finalRows = buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending);
+    renderTable(finalRows, memberLabel, idSuffix, member);
+    renderCards(finalRows, idSuffix);
     statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="13" class="empty">Error: ' + (err.message || err) + '</td></tr>';
@@ -771,6 +801,7 @@ function renderTable(rows, memberLabel, idSuffix, member){
 
   tbody.innerHTML = rows.map((r) => {
     const statusPill = r.isLive ? '<span class="pill notarchived">Not-Archived</span>' : '<span class="pill archived">Archived</span>';
+    const loadingCell = '<span class="costnote">Loading…</span>';
     return '<tr>' +
       '<td>' + r.monthLabel + '</td>' +
       '<td>' + memberLabel + '</td>' +
@@ -778,12 +809,12 @@ function renderTable(rows, memberLabel, idSuffix, member){
       '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) + (showDm && r.ownCost2025 != null && r.dmSonya2025 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2025) + ', DM: ' + fmtMoney(r.dmSonya2025) + ')</span>' : '') : 'N/A') + '</td>' +
       '<td class="num">' + netCell(r.net2025) + '</td>' +
       '<td class="num">' + roasCell(r.roas2025) + '</td>' +
-      '<td class="num">' + (r.sales2026 != null ? fmtMoney(r.sales2026) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.costVal2026 != null ? fmtMoney(r.costVal2026) + (showDm && r.ownCost2026 != null && r.dmSonya2026 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2026) + ', DM: ' + fmtMoney(r.dmSonya2026) + ')</span>' : '') : 'N/A') + '</td>' +
-      '<td class="num">' + netCell(r.net2026) + '</td>' +
-      '<td class="num">' + roasCell(r.roas2026) + '</td>' +
-      '<td class="num">' + growthCell(r.yoyGrowth) + '</td>' +
-      '<td class="num">' + targetCell(r.targetAch) + '</td>' +
+      '<td class="num">' + (r.liveLoading ? loadingCell : (r.sales2026 != null ? fmtMoney(r.sales2026) : 'N/A')) + '</td>' +
+      '<td class="num">' + (r.liveLoading ? loadingCell : (r.costVal2026 != null ? fmtMoney(r.costVal2026) + (showDm && r.ownCost2026 != null && r.dmSonya2026 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2026) + ', DM: ' + fmtMoney(r.dmSonya2026) + ')</span>' : '') : 'N/A')) + '</td>' +
+      '<td class="num">' + (r.liveLoading ? loadingCell : netCell(r.net2026)) + '</td>' +
+      '<td class="num">' + (r.liveLoading ? loadingCell : roasCell(r.roas2026)) + '</td>' +
+      '<td class="num">' + (r.liveLoading ? loadingCell : growthCell(r.yoyGrowth)) + '</td>' +
+      '<td class="num">' + (r.liveLoading ? loadingCell : targetCell(r.targetAch)) + '</td>' +
       '<td>' + statusPill + '</td>' +
       '</tr>';
   }).join('');
