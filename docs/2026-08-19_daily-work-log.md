@@ -43,5 +43,25 @@
 - Docs: evidence/jefri/2026-08-19_req7-deploy-with-ultrareview-fixes.md
 - Status: PASS (API-verified; full browser UI walkthrough not yet done)
 
+### Task: Sonya cost breakdown popup (VAT/Product Cost/Transaction Fee/Discount/Refund/Subscription Fee)
+- Built clickable popup on Sonya's 2025/2026 Total Cost cells; researched actual Shopify subscription fee ($399/mo Advanced plan, found via Shopify Admin Settings > Plan, converted to £294.82 at 2026-08-19 mid-market rate, split £73.71/2025 and £58.96/2026).
+- Iterated on the cost formula twice per Kuberan's corrections: (1) removed VAT/Discount/Refund from the total — Kuberan caught that Net Sales already excludes them, so summing them again double-subtracted; (2) revised again — VAT changed to a flat 20%-of-sales assumption (like Product Cost) and Discount/Refund restored as real counted costs, per Kuberan's final specification.
+- Table's Total Cost cell (not just the popup) now reflects the same full formula.
+- Files: `pages/muguntha.html`
+- Multiple commits, final state pushed + deployed to both repos.
+- Status: PASS
+
+### Task: Root-cause fix — 243 stale/missing api/data snapshot files (the REAL cause of muguntha.html's hangs)
+- While investigating why Sonya's Jan 2025 Transaction Fee showed £0.00, discovered `check-repo-sync.js` had ALWAYS skipped the `data/` directory — meaning every "FULLY IN SYNC" result for 2+ weeks was wrong for snapshot files specifically.
+- 174 snapshot files were completely missing from the deployed Staff-requirements worktree (including `sales25-sonya-2025-07.json` through `-12.json`, and all Kamsi/Dilaksi/Jefri cost snapshots), 69 more were stale (missing the vat/transactionFee fields added 2026-08-07).
+- This is almost certainly the TRUE root cause of the "random month hangs" chased earlier in the day via concurrency tuning (5→3→2→1) and a timeout/retry resilience layer — those were real, reasonable defensive fixes but were treating a symptom; missing snapshot files forced a live 30-90s Shopify scan for every affected month.
+- Fix: synced all 243 files from aios-2 (source of truth) into Staff-requirements; fixed check-repo-sync.js to cover `api/data/*.json` (file count checked: 50 -> 542).
+- Live-verified: transaction fee now correct, and all 6 previously-hanging months (2025-07 to -12) now respond in ~2s instead of 15-30s+ hangs.
+- Files: `api/data/*.json` (243 files), `scripts/check-repo-sync.js`
+- Committed + pushed to both repos, deployed to production, verified live.
+- Docs: evidence/muguntha/2026-08-19_snapshot-sync-root-cause-fix.md
+- Status: PASS
+
 ### Notes
 - New standing preference: only run `vercel --prod` when the user explicitly says "deploy" — see feedback_deploy_only_on_explicit_command memory. Manual CLI deploy method confirmed as the ongoing standard (both Kuberan and Piranav deploy manually; no Git-triggered auto-deploy is set up).
+- Important recurring lesson: check-repo-sync.js gaps have now caused real production bugs 4 times (Jefri Req4/hourly-cron/Req5 handlers, and this 243-file snapshot drift). Always re-run the checker after ANY session touching api/, pages/, or api/data/ — it's finally comprehensive now (542 files) but stayed silently wrong for weeks before today.
