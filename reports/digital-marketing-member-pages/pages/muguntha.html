@@ -597,10 +597,12 @@ function costPayloadToShape(data){
 
 // Replaces 40 separate requests (20 months x sales+cost) with 1 request that
 // fetches everything server-side in one serverless invocation — added
-// 2026-08-19 to fix Sonya's tab taking ~2.6s+ to load. See api/muguntha.js's
-// handlePerfBatch(). Scoped to Sonya only for now.
-async function fetchSonyaBatch(force){
-  const url = '/api/muguntha?action=perf-batch&member=sonya' + (force ? '&refresh=1' : '');
+// 2026-08-19 to fix each staff tab taking too long to load. See
+// api/muguntha.js's handlePerfBatch()/PERF_BATCH_MEMBERS for which members
+// are wired up (Sonya, Sajeepan so far).
+const PERF_BATCH_MEMBERS = new Set(['sonya', 'sajeepan']);
+async function fetchPerfBatch(member, force){
+  const url = '/api/muguntha?action=perf-batch&member=' + member + (force ? '&refresh=1' : '');
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'perf-batch failed');
@@ -654,8 +656,8 @@ async function loadAll(member, idSuffix, force){
     // (live)" click, which is what caused the Shopify throttling
     // ("exceeded retries") and Postgres connection-pool timeouts. Fixed
     // 2026-08-05.
-    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = member === 'sonya'
-      ? await fetchSonyaBatch(force)
+    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = PERF_BATCH_MEMBERS.has(member)
+      ? await fetchPerfBatch(member, force)
       : await Promise.all([
           mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
           mapLimit(MONTHS_2026, 5, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),

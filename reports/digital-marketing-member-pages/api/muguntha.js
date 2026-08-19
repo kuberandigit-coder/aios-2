@@ -514,13 +514,17 @@ const MONTHS_2026 = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '202
 // Batch endpoint (added 2026-08-19): replaces the 40 separate HTTP requests
 // muguntha.html's loadAll() previously fired per staff tab (20 months x 2
 // metrics) with a single request that fetches all months' sales+cost inside
-// one serverless function invocation. Scoped to Sonya only for now — see
+// one serverless function invocation. Sonya added 2026-08-19; Sajeepan added
+// same day — both use the identical group-param-equals-member-key pattern,
+// so no per-member special-casing needed beyond this allow-list. See
 // muguntha.html's loadAll()/fetchGroupSales()/fetchCost() for the client
-// side this replaces for her tab.
+// side this replaces for each member's tab.
+const PERF_BATCH_MEMBERS = new Set(['sonya', 'sajeepan']);
+
 async function handlePerfBatch(req, res) {
   const member = req.query && req.query.member ? String(req.query.member).toLowerCase() : 'sonya';
-  if (member !== 'sonya') {
-    res.status(400).json({ success: false, error: `perf-batch only supports "sonya" so far` });
+  if (!PERF_BATCH_MEMBERS.has(member)) {
+    res.status(400).json({ success: false, error: `perf-batch only supports "${[...PERF_BATCH_MEMBERS].join('", "')}" so far` });
     return;
   }
   const forceRefresh = req.query && req.query.refresh === '1';
@@ -529,10 +533,10 @@ async function handlePerfBatch(req, res) {
 
   try {
     const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      mapLimit(MONTHS_2025, 6, (m) => callHandlerInProcess(sales25, { group: 'sonya', month: m })),
-      mapLimit(MONTHS_2026, 6, (m) => callHandlerInProcess(salesuk, { group: 'sonya', month: m, refresh: (forceRefresh && m === '2026-08') ? '1' : undefined })),
-      mapLimit(MONTHS_2025, 6, (m) => getCostPayload('sonya', m, false)),
-      mapLimit(MONTHS_2026, 6, (m) => getCostPayload('sonya', m, forceRefresh && m === '2026-08')),
+      mapLimit(MONTHS_2025, 6, (m) => callHandlerInProcess(sales25, { group: member, month: m })),
+      mapLimit(MONTHS_2026, 6, (m) => callHandlerInProcess(salesuk, { group: member, month: m, refresh: (forceRefresh && m === '2026-08') ? '1' : undefined })),
+      mapLimit(MONTHS_2025, 6, (m) => getCostPayload(member, m, false)),
+      mapLimit(MONTHS_2026, 6, (m) => getCostPayload(member, m, forceRefresh && m === '2026-08')),
     ]);
 
     const byMonth = {};
