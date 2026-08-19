@@ -5533,6 +5533,324 @@ resolved_full AS (
   return handleJefriReq5;
 })();
 
+// ===== Jefri Requirement 7: T-07 B&Q -> Amazon -> Shopify SKU & Price
+// Reconciliation (added 2026-08-19, per prompts/jefri/jefri-req-07-t07-prompt.md).
+//
+// Source discovery (read-only, DATABASE_URL):
+//   order_management.sub_source id=242 ("bq_ledsone") — the only B&Q sub-source
+//   with real order rows (9,568 as of 2026-08-19); id=244 ("bq_ledsone_b&q")
+//   exists but has 0 orders, confirmed via COUNT before use.
+//   order_management.orders / order_item_info — item_sku/real_sku, item_price
+//   (confirmed PER-UNIT already, not a line total — spot-checked real rows:
+//   item_price=13.74 x item_quantity=2 => order total 27.48, i.e. item_price
+//   already equals price-per-unit), item_quantity, order_date.
+//   listings.amazon_listings — site='UK', sub_source=8 ("amazon Ledsone") is
+//   LEDSONE UK's Amazon channel (confirmed via order_management.sub_source
+//   name lookup). sku/mapped_sku/price/status.
+//   listings.shopify_listings — channel='LEDSone' (no country suffix) is
+//   LEDSONE UK's Shopify channel (DE/US/FR are separate channel values).
+//   sku/mapped_sku/price/status.
+//
+// B&Q Price Per Unit: DB item_price is already per-unit, so "B&Q Order Price"
+// (the line total, per the requirement's own definition) is reconstructed as
+// item_price * item_quantity, then divided back by item_quantity to get the
+// per-unit figure — mathematically resolves to item_price, kept as an
+// explicit division (not a shortcut) exactly per the requirement's mandated
+// formula, with divide-by-zero protection.
+//
+// SKU validation ambiguity (documented, not invented): Amazon/Shopify listings
+// occasionally have duplicate rows for the same exact sku (verified — same
+// price, same asin, likely duplicate import rows, not two genuinely different
+// listings). Exact-match rows are treated as "Correct"; when no row's `sku`
+// column matches exactly but a row's `mapped_sku` column matches the B&Q sku
+// (an existing schema field for recording a listing whose real sku differs
+// from what it should be), it is treated as "Incorrect" and that listing's
+// own sku is surfaced as "Amazon/Shopify SKU Found". No exact or mapped match
+// = "Not Found". This uses only existing, already-populated schema fields —
+// no invented matching heuristic.
+//
+// "Listing 1 / Listing 2": up to two listing rows per marketplace per sku
+// (prioritizing active-like statuses), matching what the schema actually
+// contains — most skus have exactly one live listing per marketplace; some
+// have two (duplicate import rows or a genuine second listing). Never more
+// than two are shown, and a second is never fabricated when only one exists.
+const jefriReq7HandlerModule = (function() {
+  const { Pool } = require('pg');
+
+  let pool;
+  function getPool() {
+    if (!pool) {
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString && !process.env.PGHOST) {
+        throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+      }
+      pool = new Pool({
+        connectionString: connectionString || undefined,
+        host: connectionString ? undefined : process.env.PGHOST,
+        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+        database: connectionString ? undefined : process.env.PGDATABASE,
+        user: connectionString ? undefined : process.env.PGUSER,
+        password: connectionString ? undefined : process.env.PGPASSWORD,
+        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+        connectionTimeoutMillis: 8000,
+        statement_timeout: 30000,
+        max: 3,
+      });
+    }
+    return pool;
+  }
+
+  const BQ_SUB_SOURCE_ID = 242;
+  const AMAZON_UK_SUB_SOURCE = 8;
+  const SHOPIFY_UK_CHANNEL = 'LEDSone';
+  const ACTIVE_STATUSES = new Set(['active', 'Active', 'BUYABLE', 'DISCOVERABLE']);
+
+  function isValidDateR7(s) {
+    return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  }
+
+  const BQ_LINES_QUERY = `
+    SELECT o.order_id, o.order_date,
+      COALESCE(NULLIF(oi.real_sku, ''), oi.item_sku) AS sku,
+      oi.item_price::numeric AS unit_price,
+      oi.item_quantity::numeric AS quantity
+    FROM order_management.orders o
+    JOIN order_management.order_item_info oi ON oi.order_id = o.id
+    WHERE o.sub_source_id = ${BQ_SUB_SOURCE_ID}
+      AND o.order_date >= $1::date AND o.order_date < $1::date + INTERVAL '1 day'
+    ORDER BY o.order_date ASC, o.order_id ASC
+  `;
+
+  const LATEST_BQ_DATE_QUERY = `
+    SELECT MAX(order_date)::date AS latest_date
+    FROM order_management.orders
+    WHERE sub_source_id = ${BQ_SUB_SOURCE_ID}
+  `;
+
+  const AMAZON_LISTINGS_QUERY = `
+    SELECT sku, mapped_sku, price, status, id
+    FROM listings.amazon_listings
+    WHERE site = 'UK' AND sub_source = ${AMAZON_UK_SUB_SOURCE}
+      AND (sku = ANY($1::text[]) OR mapped_sku = ANY($1::text[]))
+  `;
+
+  const SHOPIFY_LISTINGS_QUERY = `
+    SELECT sku, mapped_sku, price, status, id
+    FROM listings.shopify_listings
+    WHERE channel = '${SHOPIFY_UK_CHANNEL}'
+      AND (sku = ANY($1::text[]) OR mapped_sku = ANY($1::text[]))
+  `;
+
+  const CACHE = new Map();
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+
+  function round1(n) {
+    return Math.round((Number(n) + Number.EPSILON) * 10) / 10;
+  }
+  function round2(n) {
+    return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+  }
+
+  // Up to 2 listing rows for a given sku, active-like statuses first.
+  function pickListings(rowsForSku) {
+    const sorted = rowsForSku.slice().sort((a, b) => {
+      const aActive = ACTIVE_STATUSES.has(a.status) ? 0 : 1;
+      const bActive = ACTIVE_STATUSES.has(b.status) ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return Number(a.id) - Number(b.id);
+    });
+    return sorted.slice(0, 2);
+  }
+
+  // Deterministic tie-break (active-like status first, then lowest id) —
+  // real data has skus with MULTIPLE mapped_sku candidates (e.g. reseller
+  // duplicates), so picking an arbitrary query-order row would make the
+  // reported "SKU Found" flip nondeterministically between requests.
+  function sortByActiveThenId(rows) {
+    return rows.slice().sort((a, b) => {
+      const aActive = ACTIVE_STATUSES.has(a.status) ? 0 : 1;
+      const bActive = ACTIVE_STATUSES.has(b.status) ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return Number(a.id) - Number(b.id);
+    });
+  }
+
+  function validateSku(sku, listingRows) {
+    const exact = listingRows.filter((r) => r.sku === sku);
+    if (exact.length > 0) {
+      return { validation: 'Correct', foundSku: null, listings: pickListings(exact) };
+    }
+    const viaMapped = sortByActiveThenId(listingRows.filter((r) => r.mapped_sku === sku));
+    if (viaMapped.length > 0) {
+      return { validation: 'Incorrect', foundSku: viaMapped[0].sku, listings: [] };
+    }
+    return { validation: 'Not Found', foundSku: null, listings: [] };
+  }
+
+  function priceCompare(listings, bqPricePerUnit) {
+    if (bqPricePerUnit === null || !(bqPricePerUnit > 0)) return { pcts: [], prices: [] };
+    const prices = listings.map((l) => Number(l.price));
+    const pcts = prices.map((p) => round1(((p - bqPricePerUnit) / bqPricePerUnit) * 100));
+    return { pcts, prices };
+  }
+
+  function computeFlag(validation, pcts, fixLabel, notListedLabel) {
+    if (validation === 'Incorrect') return fixLabel;
+    if (validation === 'Not Found') return notListedLabel;
+    if (pcts.length === 0) return 'No Price Data';
+    const hasHigh = pcts.some((p) => p > 2);
+    const hasLow = pcts.some((p) => p < -2);
+    if (hasHigh && hasLow) return 'Mixed';
+    if (hasHigh) return 'High';
+    if (hasLow) return 'Low';
+    return 'Match';
+  }
+
+  async function handleJefriReq7(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    let date = isValidDateR7(req.query && req.query.date) ? req.query.date : null;
+    const forceRefresh = req.query && req.query.refresh === '1';
+
+    const client = await getPool().connect().catch((err) => {
+      console.error('[jefri/req7] DB connect failed:', err && err.message);
+      res.status(500).json({ error: 'Server not configured or database unreachable.' });
+      return null;
+    });
+    if (!client) return;
+
+    try {
+      if (!date) {
+        const latest = await client.query(LATEST_BQ_DATE_QUERY);
+        const latestDate = latest.rows[0] && latest.rows[0].latest_date;
+        if (!latestDate) {
+          res.status(200).json({ date: null, generatedAt: new Date().toISOString(), count: 0, rows: [], note: 'No B&Q orders found in source data.' });
+          client.release();
+          return;
+        }
+        date = new Date(latestDate).toISOString().slice(0, 10);
+      }
+
+      const cacheKey = date;
+      if (!forceRefresh) {
+        const cached = CACHE.get(cacheKey);
+        if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+          res.status(200).json(cached.data);
+          client.release();
+          return;
+        }
+      }
+
+      const linesResult = await client.query(BQ_LINES_QUERY, [date]);
+      const lines = linesResult.rows;
+
+      if (lines.length === 0) {
+        const payload = { date, generatedAt: new Date().toISOString(), count: 0, rows: [] };
+        CACHE.set(cacheKey, { data: payload, at: Date.now() });
+        res.status(200).json(payload);
+        client.release();
+        return;
+      }
+
+      const skus = Array.from(new Set(lines.map((l) => l.sku).filter(Boolean)));
+      const [amazonResult, shopifyResult] = await Promise.all([
+        client.query(AMAZON_LISTINGS_QUERY, [skus]),
+        client.query(SHOPIFY_LISTINGS_QUERY, [skus]),
+      ]);
+
+      const amazonBySku = new Map();
+      amazonResult.rows.forEach((r) => {
+        if (!amazonBySku.has(r.sku)) amazonBySku.set(r.sku, []);
+        amazonBySku.get(r.sku).push(r);
+        if (r.mapped_sku) {
+          if (!amazonBySku.has(r.mapped_sku)) amazonBySku.set(r.mapped_sku, []);
+          amazonBySku.get(r.mapped_sku).push(r);
+        }
+      });
+      const shopifyBySku = new Map();
+      shopifyResult.rows.forEach((r) => {
+        if (!shopifyBySku.has(r.sku)) shopifyBySku.set(r.sku, []);
+        shopifyBySku.get(r.sku).push(r);
+        if (r.mapped_sku) {
+          if (!shopifyBySku.has(r.mapped_sku)) shopifyBySku.set(r.mapped_sku, []);
+          shopifyBySku.get(r.mapped_sku).push(r);
+        }
+      });
+
+      const rows = lines.map((line) => {
+        const sku = line.sku;
+        const quantity = Number(line.quantity);
+        const unitPrice = Number(line.unit_price);
+        const bqOrderPrice = (quantity > 0) ? round2(unitPrice * quantity) : null;
+        const bqPricePerUnit = (quantity > 0) ? round2(bqOrderPrice / quantity) : null;
+
+        const amzRows = amazonBySku.get(sku) || [];
+        const shopRows = shopifyBySku.get(sku) || [];
+
+        const amz = validateSku(sku, amzRows);
+        const shop = validateSku(sku, shopRows);
+
+        const amzCompare = amz.validation === 'Correct' ? priceCompare(amz.listings, bqPricePerUnit) : { pcts: [], prices: [] };
+        const shopCompare = shop.validation === 'Correct' ? priceCompare(shop.listings, bqPricePerUnit) : { pcts: [], prices: [] };
+
+        const amzFlag = computeFlag(amz.validation, amzCompare.pcts, 'Fix Amazon SKU First', 'Not Listed');
+        const shopFlag = computeFlag(shop.validation, shopCompare.pcts, 'Fix Shopify SKU First', 'Not Listed');
+
+        return {
+          orderDate: line.order_date ? new Date(line.order_date).toISOString().slice(0, 10) : date,
+          orderId: line.order_id,
+          bqSku: sku,
+          orderQuantity: quantity,
+          bqOrderPrice,
+          bqPricePerUnit,
+          amazonSkuValidation: amz.validation,
+          amazonSkuFound: amz.foundSku,
+          amazonPriceListing1: amzCompare.prices[0] !== undefined ? round2(amzCompare.prices[0]) : null,
+          amazonPriceListing2: amzCompare.prices[1] !== undefined ? round2(amzCompare.prices[1]) : null,
+          amazonPctListing1: amzCompare.pcts[0] !== undefined ? amzCompare.pcts[0] : null,
+          amazonPctListing2: amzCompare.pcts[1] !== undefined ? amzCompare.pcts[1] : null,
+          amazonFlag: amzFlag,
+          shopifySkuValidation: shop.validation,
+          shopifyPriceListing1: shopCompare.prices[0] !== undefined ? round2(shopCompare.prices[0]) : null,
+          shopifyPriceListing2: shopCompare.prices[1] !== undefined ? round2(shopCompare.prices[1]) : null,
+          shopifyPctListing1: shopCompare.pcts[0] !== undefined ? shopCompare.pcts[0] : null,
+          shopifyPctListing2: shopCompare.pcts[1] !== undefined ? shopCompare.pcts[1] : null,
+          shopifyFlag: shopFlag,
+        };
+      });
+
+      const payload = {
+        date,
+        generatedAt: new Date().toISOString(),
+        count: rows.length,
+        rows,
+        summary: {
+          amazonMatch: rows.filter((r) => r.amazonFlag === 'Match').length,
+          amazonHigh: rows.filter((r) => r.amazonFlag === 'High').length,
+          amazonLow: rows.filter((r) => r.amazonFlag === 'Low').length,
+          amazonMixed: rows.filter((r) => r.amazonFlag === 'Mixed').length,
+          amazonFixSkuFirst: rows.filter((r) => r.amazonFlag === 'Fix Amazon SKU First').length,
+          amazonNotListed: rows.filter((r) => r.amazonFlag === 'Not Listed').length,
+          shopifyMatch: rows.filter((r) => r.shopifyFlag === 'Match').length,
+          shopifyHigh: rows.filter((r) => r.shopifyFlag === 'High').length,
+          shopifyLow: rows.filter((r) => r.shopifyFlag === 'Low').length,
+          shopifyMixed: rows.filter((r) => r.shopifyFlag === 'Mixed').length,
+          shopifyFixSkuFirst: rows.filter((r) => r.shopifyFlag === 'Fix Shopify SKU First').length,
+          shopifyNotListed: rows.filter((r) => r.shopifyFlag === 'Not Listed').length,
+        },
+      };
+      CACHE.set(cacheKey, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[jefri/req7] error:', err && err.message);
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    } finally {
+      client.release();
+    }
+  }
+
+  return handleJefriReq7;
+})();
+
 // ===== Jefri Requirement 6: Image Update Live Sales Tracker (added 2026-08-14,
 // reworked FOUR times same day, each per an explicit correction from
 // Kuberan — this is the final architecture, replacing all earlier ones:
@@ -5856,6 +6174,7 @@ const jefriReq6HandlerModule = (function() {
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
+  if (fn === 'jefri-req7') return jefriReq7HandlerModule(req, res);
   if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
   if (fn === 'jefri-req6-add') return jefriReq6HandlerModule.handleJefriReq6Add(req, res);
   if (fn === 'jefri-req6-delete') return jefriReq6HandlerModule.handleJefriReq6Delete(req, res);

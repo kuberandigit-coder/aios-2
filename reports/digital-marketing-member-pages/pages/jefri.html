@@ -163,6 +163,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-req="req4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span class="lbl">Requirement 4</span></a></li>
     <li><a href="#" data-req="req5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"></path></svg></span><span class="lbl">Requirement 5</span></a></li>
     <li><a href="#" data-req="req6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></span><span class="lbl">Requirement 6</span></a></li>
+    <li><a href="#" data-req="req7"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l2 2 4-4"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg></span><span class="lbl">Requirement 7</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -734,6 +735,113 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 </div>
 
+<div id="req7Tab" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 7 (Live)</div>
+  <h1>T-07 &middot; B&amp;Q &rarr; Amazon &rarr; Shopify SKU &amp; Price Reconciliation</h1>
+  <div class="sub">Process B&amp;Q order lines day-wise and independently verify each line's SKU and price against Amazon LEDSONE UK and Shopify LEDSONE UK. &nbsp;&middot;&nbsp; Store: <strong>ledsone.co.uk (B&amp;Q / Amazon UK / Shopify UK)</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong></div>
+  <style>
+    #req7Tab .filters{display:flex;flex-wrap:wrap;align-items:center;gap:14px;}
+    #req7Tab .filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);}
+    #req7Tab .filters input[type="date"]{
+      padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);
+      font-size:13px;font-weight:600;text-transform:none;letter-spacing:normal;cursor:pointer;min-height:38px;
+    }
+    #req7Tab .filters input[type="date"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,94,255,.15);}
+    #req7Tab .filters input[type="date"]:hover{border-color:#b9c2d4;}
+    #req7Tab .flag-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:700;font-size:11.5px;white-space:nowrap;}
+    #req7Tab .flag-Match{background:#e6f6ec;color:#0a7d4f;}
+    #req7Tab .flag-High{background:#fdf3e0;color:#b7791f;}
+    #req7Tab .flag-Low{background:#eaf1ff;color:#1f5eff;}
+    #req7Tab .flag-Mixed{background:#fdecea;color:#c62828;}
+    #req7Tab .flag-FixSkuFirst{background:#fdecea;color:#c62828;}
+    #req7Tab .flag-NotListed{background:#eef1f6;color:#5b6577;}
+    #req7Tab .flag-NoPriceData{background:#eef1f6;color:#5b6577;}
+  </style>
+  <div class="filters" style="margin-top:10px;">
+    <label>Order Date <input type="date" id="r7f_date"></label>
+    <button class="primary" id="r7RunBtn" type="button" style="align-self:flex-end;">Refresh (live)</button>
+    <span class="chip live" id="r7LiveChip" style="display:none;align-self:flex-end;">Loading&hellip;</span>
+  </div>
+</header>
+
+<div style="background:#eef3ff;border:1px solid #c7d7ff;border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:12.5px;color:#1a2233;line-height:1.7;">
+  <strong>B&amp;Q ORDER LINE</strong> &rarr; <strong>B&amp;Q PRICE PER UNIT</strong> &rarr; <strong>AMAZON SKU CHECK</strong> &rarr; <strong>AMAZON PRICE % vs B&amp;Q</strong> &nbsp;|&nbsp; <strong>SHOPIFY SKU CHECK</strong> &rarr; <strong>SHOPIFY PRICE % vs B&amp;Q</strong> &mdash; Amazon and Shopify are evaluated independently; there is no combined marketplace flag.
+</div>
+
+<div class="cards" id="r7Cards" style="display:none;">
+  <div class="card"><div class="label">Order Lines</div><div class="value" id="r7cCount">&ndash;</div></div>
+  <div class="card"><div class="label">Amazon Match</div><div class="value" id="r7cAmzMatch">&ndash;</div></div>
+  <div class="card"><div class="label">Amazon High/Low/Mixed</div><div class="value" id="r7cAmzOff">&ndash;</div></div>
+  <div class="card"><div class="label">Amazon Fix SKU / Not Listed</div><div class="value" id="r7cAmzBad">&ndash;</div></div>
+  <div class="card"><div class="label">Shopify Match</div><div class="value" id="r7cShopMatch">&ndash;</div></div>
+  <div class="card"><div class="label">Shopify High/Low/Mixed</div><div class="value" id="r7cShopOff">&ndash;</div></div>
+  <div class="card villain"><div class="label">Shopify Fix SKU / Not Listed</div><div class="value" id="r7cShopBad">&ndash;</div></div>
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="r7q" style="min-width:420px;" placeholder="Search B&amp;Q SKU(s) — comma-separated for multiple">
+    <label>Amazon Flag <select id="r7f_amzFlag">
+      <option value="">All</option>
+      <option value="Match">Match</option>
+      <option value="High">High</option>
+      <option value="Low">Low</option>
+      <option value="Mixed">Mixed</option>
+      <option value="Fix Amazon SKU First">Fix Amazon SKU First</option>
+      <option value="Not Listed">Not Listed</option>
+    </select></label>
+    <label>Shopify Flag <select id="r7f_shopFlag">
+      <option value="">All</option>
+      <option value="Match">Match</option>
+      <option value="High">High</option>
+      <option value="Low">Low</option>
+      <option value="Mixed">Mixed</option>
+      <option value="Fix Shopify SKU First">Fix Shopify SKU First</option>
+      <option value="Not Listed">Not Listed</option>
+    </select></label>
+    <button id="r7ExportCsv" type="button">Export CSV</button>
+    <span id="r7cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table>
+      <thead style="position:sticky;top:0;z-index:5;">
+        <tr>
+          <th>Order Date</th>
+          <th>B&amp;Q Order SKU</th>
+          <th class="num">Order Quantity</th>
+          <th class="num">B&amp;Q Order Price</th>
+          <th class="num">B&amp;Q Price Per Unit</th>
+          <th>Amazon SKU Validation</th>
+          <th>Amazon SKU Found</th>
+          <th class="num">Amazon Price &ndash; Listing 1</th>
+          <th class="num">Amazon Price &ndash; Listing 2</th>
+          <th>Shopify SKU Validation</th>
+          <th class="num">Shopify Price &ndash; Listing 1</th>
+          <th class="num">Shopify Price &ndash; Listing 2</th>
+          <th>Amazon % vs B&amp;Q</th>
+          <th>Shopify % vs B&amp;Q</th>
+          <th>Amazon Flag</th>
+          <th>Shopify Flag</th>
+        </tr>
+      </thead>
+      <tbody id="r7tbody"><tr><td colspan="16" class="loading">Loading Requirement 7 reconciliation&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r7empty" style="display:none;"></div>
+</div>
+
+<div class="footnotes">
+  <strong>Day-wise processing:</strong> one run = one calendar Order Date. Different dates are never aggregated together &mdash; pick a date above to see that day's B&amp;Q order lines only. Defaults to the most recent date with B&amp;Q orders.<br>
+  <strong>B&amp;Q Price Per Unit</strong> = B&amp;Q Order Price &divide; Order Quantity (divide-by-zero protected). This is the ONLY baseline ever used for marketplace comparisons &mdash; never the raw order total.<br>
+  <strong>SKU validation runs before price comparison, always:</strong> <strong>Correct</strong> = exact SKU match found on that marketplace &middot; <strong>Incorrect</strong> = a listing exists under a different SKU that is recorded as mapping back to this B&amp;Q SKU (shown in "SKU Found") &middot; <strong>Not Found</strong> = no listing at all. Price fields and % stay blank, and price comparison does not run, unless validation = Correct.<br>
+  <strong>Per-listing %</strong> = <code>((Listing Price &minus; B&amp;Q Price Per Unit) / B&amp;Q Price Per Unit) &times; 100</code>, calculated separately per listing &mdash; never averaged. Up to 2 listings are shown per marketplace, matching what actually exists in the source data (never fabricated).<br>
+  <strong>Flag logic (&plusmn;2%, independent per marketplace):</strong> <strong>Match</strong> = every listing within &minus;2% to +2% inclusive &middot; <strong>High</strong> = at least one listing &gt; +2% and none &lt; &minus;2% &middot; <strong>Low</strong> = at least one listing &lt; &minus;2% and none &gt; +2% &middot; <strong>Mixed</strong> = at least one listing on each side &middot; <strong>Fix Amazon/Shopify SKU First</strong> = SKU validation Incorrect &middot; <strong>Not Listed</strong> = SKU validation Not Found.<br>
+  <strong>Amazon and Shopify are fully independent</strong> &mdash; e.g. Amazon = High and Shopify = Match on the same line is expected and valid. There is no combined "Overall Marketplace Flag".<br>
+  <strong>Data source:</strong> PostgreSQL (read-only: <code>order_management.orders</code>/<code>order_item_info</code> filtered to <code>sub_source_id=242</code> "bq_ledsone", <code>listings.amazon_listings</code> filtered to <code>site='UK', sub_source=8</code> "amazon Ledsone", <code>listings.shopify_listings</code> filtered to <code>channel='LEDSone'</code>) &middot; fetched via <code>/api/requirement?fn=jefri-req7</code>. Full discovery/validation: <code>evidence/jefri/2026-08-19_req7-bq-amazon-shopify-reconciliation.md</code>.
+</div>
+</div>
+
 <script>
 // Captured BEFORE the unconditional showReqTab('req1') default call below
 // runs — that call itself now writes '#req1' to the URL (see showReqTab),
@@ -748,6 +856,7 @@ let R3_LOADED = false;
 let R4_LOADED = false;
 let R5_INIT = false;
 let R6_INIT = false;
+let R7_INIT = false;
 function showReqTab(which){
   document.getElementById('req1Tab').style.display = which === 'req1' ? '' : 'none';
   document.getElementById('req2Tab').style.display = which === 'req2' ? '' : 'none';
@@ -755,6 +864,7 @@ function showReqTab(which){
   document.getElementById('req4Tab').style.display = which === 'req4' ? '' : 'none';
   document.getElementById('req5Tab').style.display = which === 'req5' ? '' : 'none';
   document.getElementById('req6Tab').style.display = which === 'req6' ? '' : 'none';
+  document.getElementById('req7Tab').style.display = which === 'req7' ? '' : 'none';
   var tb1=document.getElementById('tabBtnReq1'), tb2=document.getElementById('tabBtnReq2'), tb3=document.getElementById('tabBtnReq3');
   if (tb1) tb1.classList.toggle('active', which === 'req1');
   if (tb2) tb2.classList.toggle('active', which === 'req2');
@@ -770,6 +880,10 @@ function showReqTab(which){
   if (which === 'req6' && !R6_INIT) {
     R6_INIT = true;
     r6Init();
+  }
+  if (which === 'req7' && !R7_INIT) {
+    R7_INIT = true;
+    r7Init();
   }
   if (which === 'req2' && !R2_LOADED) {
     R2_LOADED = true;
@@ -842,6 +956,7 @@ let r1RestoredTs = 0;
 function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function num(v){return v==null?'—':Number(v).toLocaleString();}
 function eur(v){return v==null?'—':'€'+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function gbp(v){return v==null?'—':'£'+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
 function roasDisp(p){
   if (p.roasAnomaly) return 'Unavailable (∞)';
   if (p.roas==null) return '—';
@@ -1739,6 +1854,167 @@ document.getElementById('r5q').addEventListener('input', r5Render);
 document.getElementById('r5f_verdict').addEventListener('change', r5Render);
 document.getElementById('r5ExportCsv').addEventListener('click', r5ExportCsv);
 
+// ===== Requirement 7: T-07 B&Q -> Amazon -> Shopify SKU & Price
+// Reconciliation (added 2026-08-19). Day-wise: one Order Date per run,
+// never aggregated. Auto-loads on tab open (defaults to the most recent
+// date with B&Q orders) and auto-reloads when the date changes, matching
+// the rest of this page's convention. =====
+let R7_ALL = [];
+
+function r7Init(){
+  // Default to today; if the backend has no B&Q orders for today it falls
+  // back to the most recent date with data and reports the actual date used.
+  document.getElementById('r7f_date').value = new Date().toISOString().slice(0,10);
+  r7Load(false, /*useServerDefault*/ true);
+}
+
+async function r7Load(force, useServerDefault){
+  const dateInput = document.getElementById('r7f_date').value;
+  const btn = document.getElementById('r7RunBtn');
+  const chip = document.getElementById('r7LiveChip');
+  btn.disabled = true;
+  chip.style.display = '';
+  chip.textContent = 'Loading live data from PostgreSQL…';
+  chip.className = 'chip live';
+  document.getElementById('r7tbody').innerHTML = '<tr><td colspan="16" class="loading">Loading Requirement 7 reconciliation…</td></tr>';
+  document.getElementById('r7Cards').style.display = 'none';
+  try {
+    let url = '/api/requirement?fn=jefri-req7';
+    if (!useServerDefault && dateInput) url += '&date=' + encodeURIComponent(dateInput);
+    if (force) url += '&refresh=1';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+    R7_ALL = data.rows || [];
+    if (data.date) document.getElementById('r7f_date').value = data.date;
+    chip.textContent = data.generatedAt ? ('Live · ' + new Date(data.generatedAt).toLocaleString()) : 'Live';
+    document.getElementById('r7Cards').style.display = '';
+    document.getElementById('r7cCount').textContent = num(data.count);
+    if (data.summary) {
+      document.getElementById('r7cAmzMatch').textContent = num(data.summary.amazonMatch);
+      document.getElementById('r7cAmzOff').textContent = num(data.summary.amazonHigh + data.summary.amazonLow + data.summary.amazonMixed);
+      document.getElementById('r7cAmzBad').textContent = num(data.summary.amazonFixSkuFirst + data.summary.amazonNotListed);
+      document.getElementById('r7cShopMatch').textContent = num(data.summary.shopifyMatch);
+      document.getElementById('r7cShopOff').textContent = num(data.summary.shopifyHigh + data.summary.shopifyLow + data.summary.shopifyMixed);
+      document.getElementById('r7cShopBad').textContent = num(data.summary.shopifyFixSkuFirst + data.summary.shopifyNotListed);
+    }
+    r7Render();
+  } catch (e) {
+    document.getElementById('r7tbody').innerHTML = '<tr><td colspan="16" class="empty">Error: ' + esc(e.message) + '</td></tr>';
+    chip.textContent = 'Unable to load — ' + e.message;
+    chip.className = 'chip stale';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function r7FlagPillClass(flag){
+  if (flag === 'Match') return 'flag-Match';
+  if (flag === 'High') return 'flag-High';
+  if (flag === 'Low') return 'flag-Low';
+  if (flag === 'Mixed') return 'flag-Mixed';
+  if (flag === 'Fix Amazon SKU First' || flag === 'Fix Shopify SKU First') return 'flag-FixSkuFirst';
+  if (flag === 'Not Listed') return 'flag-NotListed';
+  return 'flag-NoPriceData';
+}
+function r7FlagPill(flag){
+  return '<span class="flag-pill ' + r7FlagPillClass(flag) + '">' + esc(flag) + '</span>';
+}
+function r7Pct(p){
+  if (p == null) return '<span class="t1-na">—</span>';
+  const sign = p > 0 ? '+' : '';
+  return sign + p.toFixed(1) + '%';
+}
+function r7PctCell(pcts){
+  if (!pcts || !pcts.length) return '<span class="t1-na">—</span>';
+  return pcts.filter(function(p){ return p != null; }).map(r7Pct).join(' / ');
+}
+
+function r7FilteredRows(){
+  const qTerms = document.getElementById('r7q').value.split(',')
+    .map(function(s){ return s.trim().toLowerCase(); })
+    .filter(function(s){ return s.length > 0; });
+  const amzFilter = document.getElementById('r7f_amzFlag').value;
+  const shopFilter = document.getElementById('r7f_shopFlag').value;
+  return R7_ALL.filter(function(r){
+    const sku = (r.bqSku||'').toLowerCase();
+    const qHit = !qTerms.length || qTerms.some(function(t){ return sku.includes(t); });
+    const aHit = !amzFilter || r.amazonFlag === amzFilter;
+    const sHit = !shopFilter || r.shopifyFlag === shopFilter;
+    return qHit && aHit && sHit;
+  });
+}
+
+function r7Render(){
+  const rows = r7FilteredRows();
+  const tbody = document.getElementById('r7tbody');
+  const emptyEl = document.getElementById('r7empty');
+  if (!R7_ALL.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = 'No B&Q order lines found for this date.';
+    document.getElementById('r7cnt').textContent = '0 of 0';
+    return;
+  }
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = 'No rows match the current search/flag filter.';
+    document.getElementById('r7cnt').textContent = '0 of ' + R7_ALL.length;
+    return;
+  }
+  emptyEl.style.display = 'none';
+  tbody.innerHTML = rows.map(function(r){
+    return '<tr>' +
+      '<td>' + esc(r.orderDate) + '</td>' +
+      '<td>' + esc(r.bqSku) + '</td>' +
+      '<td class="num">' + num(r.orderQuantity) + '</td>' +
+      '<td class="num">' + (r.bqOrderPrice != null ? gbp(r.bqOrderPrice) : '<span class="t1-na">N/A</span>') + '</td>' +
+      '<td class="num">' + (r.bqPricePerUnit != null ? gbp(r.bqPricePerUnit) : '<span class="t1-na">N/A</span>') + '</td>' +
+      '<td>' + esc(r.amazonSkuValidation) + '</td>' +
+      '<td>' + (r.amazonSkuFound ? esc(r.amazonSkuFound) : '<span class="t1-na">—</span>') + '</td>' +
+      '<td class="num">' + (r.amazonPriceListing1 != null ? gbp(r.amazonPriceListing1) : '<span class="t1-na">—</span>') + '</td>' +
+      '<td class="num">' + (r.amazonPriceListing2 != null ? gbp(r.amazonPriceListing2) : '<span class="t1-na">—</span>') + '</td>' +
+      '<td>' + esc(r.shopifySkuValidation) + '</td>' +
+      '<td class="num">' + (r.shopifyPriceListing1 != null ? gbp(r.shopifyPriceListing1) : '<span class="t1-na">—</span>') + '</td>' +
+      '<td class="num">' + (r.shopifyPriceListing2 != null ? gbp(r.shopifyPriceListing2) : '<span class="t1-na">—</span>') + '</td>' +
+      '<td>' + r7PctCell([r.amazonPctListing1, r.amazonPctListing2]) + '</td>' +
+      '<td>' + r7PctCell([r.shopifyPctListing1, r.shopifyPctListing2]) + '</td>' +
+      '<td>' + r7FlagPill(r.amazonFlag) + '</td>' +
+      '<td>' + r7FlagPill(r.shopifyFlag) + '</td>' +
+      '</tr>';
+  }).join('');
+  document.getElementById('r7cnt').textContent = rows.length.toLocaleString() + ' of ' + R7_ALL.length.toLocaleString();
+}
+
+function r7ExportCsv(){
+  const rows = r7FilteredRows();
+  const header = ['Order Date','B&Q Order SKU','Order Quantity','B&Q Order Price','B&Q Price Per Unit','Amazon SKU Validation','Amazon SKU Found','Amazon Price Listing 1','Amazon Price Listing 2','Shopify SKU Validation','Shopify Price Listing 1','Shopify Price Listing 2','Amazon % vs B&Q','Shopify % vs B&Q','Amazon Flag','Shopify Flag'];
+  const lines = [header.join(',')];
+  rows.forEach(function(r){
+    const amzPct = [r.amazonPctListing1, r.amazonPctListing2].filter(function(p){ return p != null; }).join('/');
+    const shopPct = [r.shopifyPctListing1, r.shopifyPctListing2].filter(function(p){ return p != null; }).join('/');
+    lines.push([
+      r.orderDate, r.bqSku, r.orderQuantity, r.bqOrderPrice, r.bqPricePerUnit,
+      r.amazonSkuValidation, r.amazonSkuFound || '', r.amazonPriceListing1, r.amazonPriceListing2,
+      r.shopifySkuValidation, r.shopifyPriceListing1, r.shopifyPriceListing2,
+      amzPct, shopPct, r.amazonFlag, r.shopifyFlag
+    ].map(function(v){ return '"' + String(v==null?'':v).replace(/"/g,'""') + '"'; }).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jefri-req7-bq-amazon-shopify-reconciliation-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('r7RunBtn').addEventListener('click', () => r7Load(true, false));
+document.getElementById('r7f_date').addEventListener('change', () => r7Load(false, false));
+document.getElementById('r7q').addEventListener('input', r7Render);
+document.getElementById('r7f_amzFlag').addEventListener('change', r7Render);
+document.getElementById('r7f_shopFlag').addEventListener('change', r7Render);
+document.getElementById('r7ExportCsv').addEventListener('click', r7ExportCsv);
+
 // ===== Requirement 6: T-06 Image Update Live Sales Tracker (added 2026-08-14,
 // reworked 4 times same day, final version per Kuberan: "i need first
 // column as label user need to add the label and listing id and sku and
@@ -1983,7 +2259,7 @@ document.querySelectorAll('#msNavList a[data-req]').forEach(function (a) {
 // hash-clobbering bug — jefri.html's unconditional default-tab call was
 // silently destroying the real hash before this code ever ran).
 (function(){
-  var validTabs = ['req1','req2','req3','req4','req5','req6'];
+  var validTabs = ['req1','req2','req3','req4','req5','req6','req7'];
   var fromHash = (JEFRI_INITIAL_HASH || '').replace('#', '');
   if (validTabs.indexOf(fromHash) !== -1 && fromHash !== 'req1') {
     var link = document.querySelector('#msNavList a[data-req="' + fromHash + '"]');
