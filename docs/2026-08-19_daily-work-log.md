@@ -25,6 +25,15 @@
 - Status: PASS
 - Next: extend same batch pattern to Sajeepan/Kamsi/Jefri/Dilaksi tabs if requested.
 
+### Task: Sajeepan perf-batch endpoint (extending the Sonya fix)
+- Extended `handlePerfBatch()`'s allow-list (`PERF_BATCH_MEMBERS`) to include Sajeepan, same batch pattern as Sonya — no per-member special-casing needed since the batch logic was already member-agnostic.
+- Files: `api/muguntha.js`, `pages/muguntha.html`
+- Committed + pushed: Staff-requirements (e98e245), aios-2 (0b3411a)
+- Deployed to production (dpl_7YT9mjRzMGW3A3R4kapCPZz1Hovj)
+- Docs: evidence/muguntha/2026-08-19_sajeepan-perf-batch-endpoint.md
+- Status: PASS (deployed; not yet manually re-confirmed by Kuberan in browser)
+
 ### Notes
 - Left `pages/staff-id-performance.html` untouched (unrelated pre-existing local modification from Piranav's earlier sync, out of scope, not to be touched per standing instruction).
 - New standing preference: only run `vercel --prod` when the user explicitly says "deploy" — see feedback_deploy_only_on_explicit_command memory. Manual CLI deploy method confirmed as the ongoing standard (both Kuberan and Piranav deploy manually; no Git-triggered auto-deploy is set up).
+- Piranav's Jefri Req 7 work (requirement.js, jefri.html — commit 9689fe6) landed on aios-2 mid-session from Kuberan's own other Claude session (not Piranav's) — left untouched. An /ultrareview run against main surfaced real bugs in that Req7 code (double `client.release()`, undefined `r7Init()` call making the tab dead-on-arrival, a stray "i mean m" typo before `<!DOCTYPE html>` in staff-id-performance.html, SKU-duplication in amazonBySku/shopifyBySku) — flagged to Kuberan, not fixed here since it's out of scope for this session's task.
