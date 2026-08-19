@@ -5708,10 +5708,15 @@ const jefriReq7HandlerModule = (function() {
     return { validation: 'Correct', foundSku, listings };
   }
 
+  // 2026-08-19 (per Kuberan): the marketplace listing price is the BASE for
+  // this %, not B&Q — e.g. Amazon=£9, B&Q=£15 must show as positive (Amazon
+  // cheaper than B&Q); Amazon=£9, B&Q=£6 must show as negative (Amazon
+  // pricier than B&Q). That flips both which price is the denominator AND
+  // the sign versus the original ((listing-bq)/bq) formula.
   function priceCompare(listings, bqPricePerUnit) {
     if (bqPricePerUnit === null || !(bqPricePerUnit > 0)) return { pcts: [], prices: [] };
     const prices = listings.map((l) => Number(l.price));
-    const pcts = prices.map((p) => round1(((p - bqPricePerUnit) / bqPricePerUnit) * 100));
+    const pcts = prices.map((p) => (p > 0 ? round1(((bqPricePerUnit - p) / p) * 100) : null));
     return { pcts, prices };
   }
 
