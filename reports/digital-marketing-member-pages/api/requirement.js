@@ -5724,7 +5724,6 @@ const jefriReq7HandlerModule = (function() {
         const latestDate = latest.rows[0] && latest.rows[0].latest_date;
         if (!latestDate) {
           res.status(200).json({ date: null, generatedAt: new Date().toISOString(), count: 0, rows: [], note: 'No B&Q orders found in source data.' });
-          client.release();
           return;
         }
         date = new Date(latestDate).toISOString().slice(0, 10);
@@ -5735,7 +5734,6 @@ const jefriReq7HandlerModule = (function() {
         const cached = CACHE.get(cacheKey);
         if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
           res.status(200).json(cached.data);
-          client.release();
           return;
         }
       }
@@ -5747,7 +5745,6 @@ const jefriReq7HandlerModule = (function() {
         const payload = { date, generatedAt: new Date().toISOString(), count: 0, rows: [] };
         CACHE.set(cacheKey, { data: payload, at: Date.now() });
         res.status(200).json(payload);
-        client.release();
         return;
       }
 
@@ -5761,7 +5758,7 @@ const jefriReq7HandlerModule = (function() {
       amazonResult.rows.forEach((r) => {
         if (!amazonBySku.has(r.sku)) amazonBySku.set(r.sku, []);
         amazonBySku.get(r.sku).push(r);
-        if (r.mapped_sku) {
+        if (r.mapped_sku && r.mapped_sku !== r.sku) {
           if (!amazonBySku.has(r.mapped_sku)) amazonBySku.set(r.mapped_sku, []);
           amazonBySku.get(r.mapped_sku).push(r);
         }
@@ -5770,7 +5767,7 @@ const jefriReq7HandlerModule = (function() {
       shopifyResult.rows.forEach((r) => {
         if (!shopifyBySku.has(r.sku)) shopifyBySku.set(r.sku, []);
         shopifyBySku.get(r.sku).push(r);
-        if (r.mapped_sku) {
+        if (r.mapped_sku && r.mapped_sku !== r.sku) {
           if (!shopifyBySku.has(r.mapped_sku)) shopifyBySku.set(r.mapped_sku, []);
           shopifyBySku.get(r.mapped_sku).push(r);
         }
