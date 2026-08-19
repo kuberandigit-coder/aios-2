@@ -70,10 +70,25 @@ body.sb-open .t-main{margin-left:var(--sb-w) !important;}
   .t-topcontent,.t-topbar{padding-left:16px;padding-right:16px;}
 }
 
-.comingsoon{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:70px 30px;text-align:center;box-shadow:0 1px 3px rgba(16,24,40,.05);}
-.comingsoon-avatar{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#1f5eff,#3ddc97);color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
-.comingsoon h2{font-size:20px;color:var(--ink);margin-bottom:10px;}
-.comingsoon p{color:var(--muted);font-size:13.5px;line-height:1.7;max-width:420px;margin:0 auto;}
+/* Sample ASIN table -- same tbox/tbar/scroll pattern the other staff pages use */
+.tbox{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,.05);margin-bottom:20px;}
+.tbar{padding:12px 18px;border-bottom:1px solid var(--line);background:#f8f9fa;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.tbar b{color:var(--ink);font-size:13px;}
+.tbar .sub{font-size:11.5px;color:var(--muted);font-weight:400;margin-left:8px;}
+.sample-tag{display:inline-block;border-radius:6px;padding:3px 9px;font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:#fef3e2;color:#7d4e00;border:1px solid #f7d9a8;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px;}
+thead th{background:#f8f9fb;text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{background:#eef0f7;}
+thead th::after{content:' ⇅';color:#aaa;font-size:10px;}
+thead th.sort-asc::after{content:' ↑';color:var(--accent);}
+thead th.sort-desc::after{content:' ↓';color:var(--accent);}
+thead th.num,td.num{text-align:right;}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:hover{background:var(--accent-soft);}
+tfoot td{padding:11px 14px;border-top:2px solid var(--line);font-weight:800;color:var(--ink);background:#f8f9fa;}
+.asin{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-weight:600;color:var(--ink);letter-spacing:.3px;}
+.asin-title{display:block;font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -104,18 +119,102 @@ body.sb-open .t-main{margin-left:var(--sb-w) !important;}
     </div>
   </div>
   <div class="t-topcontent">
-    <div class="comingsoon">
-      <div class="comingsoon-avatar">D</div>
-      <h2>Dashboard coming soon</h2>
-      <p>This page hasn't been scoped yet. Once Dilaikshan's role and requirements are defined, this space will show his specific tools and data.</p>
+    <div class="tbox">
+      <div class="tbar">
+        <div><b>Amazon — ASIN Performance</b><span class="sub">Orders and sales by ASIN</span></div>
+        <span class="sample-tag">Sample data</span>
+      </div>
+      <div class="scroll">
+        <table id="asinTable">
+          <thead>
+            <tr>
+              <th data-key="asin">ASIN</th>
+              <th data-key="orders" class="num">Orders</th>
+              <th data-key="sales" class="num">Sales</th>
+            </tr>
+          </thead>
+          <tbody id="asinBody"></tbody>
+          <tfoot>
+            <tr>
+              <td>Total (<span id="totRows">0</span> ASINs)</td>
+              <td class="num" id="totOrders">0</td>
+              <td class="num" id="totSales">&pound;0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 </div>
 
 <script>
+// Placeholder rows only -- no endpoint serves Amazon ASIN data yet. When one
+// exists, swap SAMPLE_ROWS for a fetch returning the same
+// {asin,title,orders,sales} shape and renderAsinTable() keeps working as-is.
+var SAMPLE_ROWS = [
+  { asin: 'B08KFQ9L2M', title: 'LED Downlight 6W Warm White — 10 Pack', orders: 412, sales: 8642.50 },
+  { asin: 'B07XR4T8VN', title: 'GU10 Smart Bulb RGB — 4 Pack', orders: 287, sales: 6114.30 },
+  { asin: 'B09MND3W7K', title: 'LED Strip Light 5m Cool White', orders: 233, sales: 4108.75 },
+  { asin: 'B06ZY8HCPQ', title: 'Outdoor PIR Floodlight 30W', orders: 168, sales: 3927.20 },
+  { asin: 'B08JT6BR5D', title: 'Panel Light 600x600 40W', orders: 141, sales: 3560.00 },
+  { asin: 'B07QK2VLZ9', title: 'Emergency Bulkhead Light IP65', orders: 96, sales: 1874.40 },
+  { asin: 'B09HW5NDX3', title: 'Track Light Kit 3-Head Black', orders: 74, sales: 1622.85 },
+  { asin: 'B08LMP7QCF', title: 'Solar Wall Lantern — 2 Pack', orders: 58, sales: 986.10 },
+];
+
+var asinSort = { key: 'sales', dir: 'desc' };
+
+function fmtMoney(n) {
+  return '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function renderAsinTable() {
+  var rows = SAMPLE_ROWS.slice().sort(function (a, b) {
+    var x = a[asinSort.key], y = b[asinSort.key];
+    var cmp = (typeof x === 'string') ? x.localeCompare(y) : x - y;
+    return asinSort.dir === 'asc' ? cmp : -cmp;
+  });
+
+  document.getElementById('asinBody').innerHTML = rows.map(function (r) {
+    return '<tr>' +
+      '<td><span class="asin">' + r.asin + '</span><span class="asin-title">' + r.title + '</span></td>' +
+      '<td class="num">' + r.orders.toLocaleString('en-GB') + '</td>' +
+      '<td class="num">' + fmtMoney(r.sales) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var totOrders = rows.reduce(function (t, r) { return t + r.orders; }, 0);
+  var totSales = rows.reduce(function (t, r) { return t + r.sales; }, 0);
+  document.getElementById('totRows').textContent = rows.length;
+  document.getElementById('totOrders').textContent = totOrders.toLocaleString('en-GB');
+  document.getElementById('totSales').textContent = fmtMoney(totSales);
+
+  Array.prototype.forEach.call(document.querySelectorAll('#asinTable thead th'), function (th) {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.key === asinSort.key) th.classList.add(asinSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+}
+
 (function initUI() {
   var u = window.__dmUser || {};
+
+  Array.prototype.forEach.call(document.querySelectorAll('#asinTable thead th'), function (th) {
+    th.addEventListener('click', function () {
+      var key = th.dataset.key;
+      // Same-column click flips direction; a new column starts descending
+      // (highest orders/sales first), except ASIN which reads better A-Z.
+      if (asinSort.key === key) {
+        asinSort.dir = asinSort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        asinSort.key = key;
+        asinSort.dir = key === 'asin' ? 'asc' : 'desc';
+      }
+      renderAsinTable();
+    });
+  });
+  renderAsinTable();
+
   document.getElementById('whoLbl').textContent = 'Signed in as ' + (u.display_name || u.username || '') + ' (admin)';
 
   document.getElementById('tCollapseBtn').addEventListener('click', function () {

@@ -748,11 +748,10 @@ function memberExtraCost(member, year, month, netSales){
   const transactionFee = d.transactionFee || 0;
   const discounts = d.discounts || 0;
   const refunds = d.refunds || 0;
-  const productCost = Math.round((netSales || 0) * 0.20 * 100) / 100;
   const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
   const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
-  // VAT removed from Total Cost 2026-08-19 per Kuberan.
-  return Math.round((productCost + transactionFee + discounts + refunds + subscriptionFee) * 100) / 100;
+  // VAT removed 2026-08-19, Product Cost removed 2026-08-19, both per Kuberan.
+  return Math.round((transactionFee + discounts + refunds + subscriptionFee) * 100) / 100;
 }
 
 function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending, member){
@@ -1565,22 +1564,20 @@ async function openCostPopup(member, year, month, monthLabel){
     }
     const netSales = d.netSales || 0;
     const adsCost = (d.ownCost || 0) + (d.dmProductCost || 0);
-    const productCost = Math.round(netSales * 0.20 * 100) / 100;
     const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
     const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
-    // VAT removed from Total Cost 2026-08-19 per Kuberan.
-    const total = Math.round((adsCost + productCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
+    // VAT removed 2026-08-19, Product Cost removed 2026-08-19, both per Kuberan.
+    const total = Math.round((adsCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
 
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
     document.getElementById('cbBody').innerHTML =
       row('Ads Cost', adsCost, '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')') +
-      row('Product Cost (20% of Net Sales)', productCost, '20% × ' + fmtMoney(netSales)) +
       row('Transaction Fee', d.transactionFee) +
       row('Discount', d.discounts) +
       row('Refund', d.refunds) +
       row('Shopify Subscription Fee', subscriptionFee, '£' + SHOPIFY_SUBSCRIPTION_GBP.toFixed(2) + ' ÷ ' + splitBy + ' people') +
       '<div class="cb-row cb-total"><span class="cb-label">Total Cost</span><span class="cb-value">' + fmtMoney(total) + '</span></div>' +
-      '<div class="cb-note">Product Cost is a flat 20% assumption on Net Sales (' + fmtMoney(netSales) + '), not a per-product COGS figure. Discount and Refund are the actual amounts from that month\'s orders. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
+      '<div class="cb-note">Discount and Refund are the actual amounts from that month\'s orders. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
   } catch (err) {
     document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Error: ' + (err.message || err) + '</div>';
   }
