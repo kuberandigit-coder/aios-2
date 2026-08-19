@@ -98,6 +98,132 @@ const ROLE_LANDING = {
   piranav: 'pages/piranav.html',
 };
 
+// ===== EOD tool integration (added 2026-08-19) =====
+// The EOD submission tool (pages/eod/index.html) used to require every staff
+// member to paste in their own personal GitHub token, stored in
+// localStorage, to write directly to the eod-reports repo from the browser.
+// Per Kuberan: staff should not need a second login — being logged into
+// this dashboard should be enough. So EOD writes now go through this
+// session-authenticated server endpoint instead, using ONE shared
+// server-side token (EOD_GITHUB_TOKEN) that the browser never sees.
+const EOD_GITHUB_OWNER = 'digitalmarketing69140951-sys';
+const EOD_GITHUB_REPO = 'eod-reports';
+const EOD_GITHUB_BRANCH = 'main';
+
+// staff_key -> the exact name string already used as the GitHub file-path
+// segment and dropdown option text in pages/eod/*.html. Only mismatch is
+// 'thivajini' (this dashboard's staff_key) vs 'Thivagini' (EOD's existing
+// spelling) - matched here, not renamed on either side, per instruction.
+// Ripson and Thanishtika removed from the EOD system entirely (no login
+// account exists for them) - Kuberan's explicit instruction.
+const EOD_NAME_BY_STAFF_KEY = {
+  kuberan: 'Kuberan', piranav: 'Piranav', mahima: 'Mahima', sonya: 'Sonya',
+  kamsi: 'Kamsi', hetheesha: 'Hetheesha', dilaksi: 'Dilaksi', sukirtha: 'Sukirtha',
+  theekshy: 'Theekshy', thivajini: 'Thivagini', jefri: 'Jefri', sajeepan: 'Sajeepan',
+  jakshan: 'Jakshan', thasitha: 'Thasitha',
+};
+
+function eodGithubHeaders() {
+  const token = process.env.EOD_GITHUB_TOKEN;
+  if (!token) throw new Error('Server not configured: EOD_GITHUB_TOKEN missing');
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+function eodFileUrl(member, date) {
+  return `https://api.github.com/repos/${EOD_GITHUB_OWNER}/${EOD_GITHUB_REPO}/contents/eods/${encodeURIComponent(member)}/${date}.md`;
+}
+async function eodGetFile(url) {
+  const r = await fetch(url, { headers: eodGithubHeaders() });
+  if (r.status === 404) return null;
+  if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(`GitHub GET ${r.status}: ${b.message || r.statusText}`); }
+  return r.json();
+}
+async function eodPutFile(url, payload) {
+  const r = await fetch(url, { method: 'PUT', headers: eodGithubHeaders(), body: JSON.stringify(payload) });
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`GitHub PUT ${r.status}: ${b.message || r.statusText}`);
+  return b;
+}
+function isValidEodDate(s) {
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+// Every EOD action is scoped to the LOGGED-IN member only - the session's
+// own staff_key resolves the member name server-side; nothing client-sent
+// can pick a different member's identity for writes or reads.
+function requireEodMember(req) {
+  const cookies = parseCookies(req);
+  const session = verify(cookies[COOKIE_NAME]);
+  if (!session) return { error: 'Not authenticated.', status: 401 };
+  const member = EOD_NAME_BY_STAFF_KEY[session.staff_key];
+  if (!member) return { error: 'This account is not linked to an EOD member name.', status: 403 };
+  return { session, member };
+}
+
+async function handleEodSubmit(req, res) {
+  const auth = requireEodMember(req);
+  if (auth.error) return res.status(auth.status).json({ success: false, error: auth.error });
+  const body = await readJsonBody(req);
+  const date = isValidEodDate(body.date) ? body.date : null;
+  const report = (body.report || '').toString().trim();
+  if (!date) return res.status(400).json({ success: false, error: 'Invalid or missing date (YYYY-MM-DD).' });
+  if (!report) return res.status(400).json({ success: false, error: 'Report cannot be empty.' });
+  const url = eodFileUrl(auth.member, date);
+  const existing = await eodGetFile(url);
+  const isUpdate = existing !== null;
+  await eodPutFile(url, {
+    message: `EOD: ${auth.member} - ${date}`,
+    content: Buffer.from(report, 'utf8').toString('base64'),
+    branch: EOD_GITHUB_BRANCH,
+    ...(isUpdate && existing.sha ? { sha: existing.sha } : {}),
+  });
+  return res.status(200).json({ success: true, member: auth.member, date, action: isUpdate ? 'Updated' : 'Created' });
+}
+
+async function handleEodLeave(req, res) {
+  const auth = requireEodMember(req);
+  if (auth.error) return res.status(auth.status).json({ success: false, error: auth.error });
+  const body = await readJsonBody(req);
+  const date = isValidEodDate(body.date) ? body.date : null;
+  if (!date) return res.status(400).json({ success: false, error: 'Invalid or missing date (YYYY-MM-DD).' });
+  const url = eodFileUrl(auth.member, date);
+  const existing = await eodGetFile(url);
+  const content = `# Leave\n\nMember: ${auth.member}\nDate: ${date}\nStatus: On Leave`;
+  await eodPutFile(url, {
+    message: `Leave: ${auth.member} - ${date}`,
+    content: Buffer.from(content, 'utf8').toString('base64'),
+    branch: EOD_GITHUB_BRANCH,
+    ...(existing && existing.sha ? { sha: existing.sha } : {}),
+  });
+  return res.status(200).json({ success: true, member: auth.member, date });
+}
+
+async function handleEodList(req, res) {
+  const auth = requireEodMember(req);
+  if (auth.error) return res.status(auth.status).json({ success: false, error: auth.error });
+  const dirUrl = `https://api.github.com/repos/${EOD_GITHUB_OWNER}/${EOD_GITHUB_REPO}/contents/eods/${encodeURIComponent(auth.member)}`;
+  const r = await fetch(dirUrl, { headers: eodGithubHeaders() });
+  if (r.status === 404) return res.status(200).json({ success: true, member: auth.member, reports: [] });
+  if (!r.ok) {
+    const b = await r.json().catch(() => ({}));
+    return res.status(502).json({ success: false, error: `GitHub ${r.status}: ${b.message || r.statusText}` });
+  }
+  const list = await r.json();
+  const files = (Array.isArray(list) ? list : []).filter((f) => f.type === 'file' && f.name.endsWith('.md'));
+  const results = await Promise.all(files.map(async (f) => {
+    const data = await eodGetFile(f.url);
+    const text = data && data.content ? Buffer.from(data.content, 'base64').toString('utf8') : '';
+    const date = f.name.replace(/\.md$/, '');
+    const isLeave = /^#\s*Leave\b/im.test(text) || text.includes('Status: On Leave');
+    return { date, text, isLeave };
+  }));
+  results.sort((a, b) => (a.date < b.date ? 1 : -1));
+  return res.status(200).json({ success: true, member: auth.member, reports: results });
+}
+
 async function readJsonBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
   if (req.body && typeof req.body === 'string') {
@@ -160,7 +286,11 @@ async function handleSession(req, res) {
   if (!session) return res.status(401).json({ success: false, error: 'Not authenticated.' });
   return res.status(200).json({
     success: true,
-    user: { username: session.username, role: session.role, staff_key: session.staff_key, can_manage_users: !!session.can_manage_users },
+    user: {
+      username: session.username, role: session.role, staff_key: session.staff_key,
+      can_manage_users: !!session.can_manage_users,
+      eod_member: EOD_NAME_BY_STAFF_KEY[session.staff_key] || null,
+    },
   });
 }
 
@@ -210,6 +340,9 @@ module.exports = async function handler(req, res) {
     if (action === 'logout' && req.method === 'POST') return handleLogout(req, res);
     if (action === 'list-users' && req.method === 'GET') return await handleListUsers(req, res);
     if (action === 'update-password' && req.method === 'POST') return await handleUpdatePassword(req, res);
+    if (action === 'eod-submit' && req.method === 'POST') return await handleEodSubmit(req, res);
+    if (action === 'eod-leave' && req.method === 'POST') return await handleEodLeave(req, res);
+    if (action === 'eod-list' && req.method === 'GET') return await handleEodList(req, res);
     return res.status(400).json({ success: false, error: 'Unknown action or wrong HTTP method.' });
   } catch (err) {
     console.error('auth.js error:', err);

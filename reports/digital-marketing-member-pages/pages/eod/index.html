@@ -260,28 +260,6 @@
 <body>
 <script>if (location.search.indexOf('embed=1') !== -1) document.body.classList.add('eod-embed');</script>
 
-<!-- SETUP OVERLAY -->
-<div class="setup-overlay" id="setupOverlay">
-  <div class="setup-card">
-    <div class="setup-logo">
-      <img src="https://lh3.googleusercontent.com/p/AF1QipNp7Vykx7WuwLOTnfLruHpe6RscyUUKTi6hKPSJ=w243-h203-n-k-no-nu" alt="Logo" />
-      <div>
-        <div class="setup-logo-name">Digit Web Lanka</div>
-        <div class="setup-logo-sub">EOD Report Portal</div>
-      </div>
-    </div>
-    <div class="setup-title">Connect to EOD</div>
-    <div class="setup-desc">Enter your Personal Access Token to sync EOD reports. Stored only in <strong>your browser</strong> — never shared with anyone.</div>
-    <label class="field-label" for="tokenInput">Personal Access Token</label>
-    <div class="token-wrap">
-      <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
-      <button class="toggle-vis" id="toggleVis" type="button">👁</button>
-    </div>
-    <div class="setup-error" id="setupError"></div>
-    <button class="btn-primary" id="saveTokenBtn">Verify &amp; Continue</button>
-  </div>
-</div>
-
 <!-- LAYOUT -->
 <div class="layout">
 
@@ -298,7 +276,7 @@
       <a href="index.html" class="sb-link active"><span class="ico">📝</span> EOD Report</a>
       <a href="review.html" class="sb-link"><span class="ico">🔎</span> 14-Day Review</a>
       <div class="sb-section">Actions</div>
-      <button class="sb-link" onclick="document.getElementById('eodViewerOverlay').classList.add('visible')"><span class="ico">🔍</span> View EODs</button>
+      <button class="sb-link" onclick="document.getElementById('eodViewerOverlay').classList.add('visible'); loadMyReports(false);"><span class="ico">🔍</span> View EODs</button>
       <a href="#leaveSection" class="sb-link"><span class="ico">📂</span> Mark Leave</a>
       <a href="summary.html" class="sb-link"><span class="ico">📊</span> Summary View</a>
     </nav>
@@ -307,7 +285,11 @@
         <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text4);margin-bottom:.25rem;">Today</div>
         <div style="font-size:.775rem;font-weight:600;color:var(--text2);line-height:1.4;" id="sidebarDate">Loading…</div>
       </div>
-      <button class="btn-ghost" id="resetTokenBtn"><span>🔑</span> Update Token</button>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:.625rem;">
+        <div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text4);margin-bottom:.25rem;">Logged in as</div>
+        <div style="font-size:.775rem;font-weight:700;color:var(--blue);" id="sidebarMember">—</div>
+      </div>
+      <button class="btn-ghost" id="logoutBtn"><span>🚪</span> Log out</button>
     </div>
   </aside>
 
@@ -380,14 +362,8 @@
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="memberSelect">Your Name <span class="req">*</span></label>
-                  <select id="memberSelect">
-                    <option value="" disabled selected>Select your name…</option>
-                    <option>Kuberan</option><option>Piranav</option><option>Mahima</option>
-                    <option>Sonya</option><option>Kamsi</option><option>Hetheesha</option>
-                    <option>Dilaksi</option><option>Sukirtha</option>
-                    <option>Theekshy</option><option>Thivagini</option><option>Ripson</option>
-                    <option>Jefri</option><option>Sajeepan</option><option>Jakshan</option>
-                    <option>Thasitha</option><option>Thanishtika</option>
+                  <select id="memberSelect" disabled>
+                    <option value="" selected>Loading…</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -440,14 +416,8 @@
             </div>
             <div class="form-group" style="margin-bottom:1rem">
               <label class="form-label" for="leaveMember">Your Name <span class="req">*</span></label>
-              <select id="leaveMember">
-                <option value="" disabled selected>Select your name…</option>
-                <option>Kuberan</option><option>Piranav</option><option>Mahima</option>
-                <option>Sonya</option><option>Kamsi</option><option>Hetheesha</option>
-                <option>Dilaksi</option><option>Sukirtha</option><option>Thasitha</option>
-                <option>Theekshy</option><option>Thivagini</option><option>Ripson</option>
-                <option>Jefri</option><option>Sajeepan</option><option>Jakshan</option>
-                <option>Thanishtika</option>
+              <select id="leaveMember" disabled>
+                <option value="" selected>Loading…</option>
               </select>
             </div>
             <div class="form-group" style="margin-bottom:1.125rem">
@@ -491,12 +461,51 @@
   });
 
   /* ══════════════ CORE APP ══════════════ */
-  const CONFIG = { REPO_OWNER:"digitalmarketing69140951-sys", REPO_NAME:"eod-reports", BRANCH:"main" };
-  const TOKEN_KEY = "eod_gh_token";
-  const getToken  = () => localStorage.getItem(TOKEN_KEY) || "";
-  const saveToken = t  => localStorage.setItem(TOKEN_KEY, t.trim());
-  const clearToken = () => localStorage.removeItem(TOKEN_KEY);
   const $ = id => document.getElementById(id);
+
+  /* ══════════════ SESSION (replaces the old per-user GitHub token step —
+     2026-08-19: identity now comes entirely from the dashboard login you're
+     already signed into; nothing to connect/paste here anymore) ══════════ */
+  let SESSION_MEMBER = null;
+
+  async function initSession() {
+    let data;
+    try {
+      const r = await fetch('/api/auth?action=session', { credentials: 'same-origin' });
+      data = await r.json();
+    } catch (e) {
+      data = null;
+    }
+    if (!data || !data.success) {
+      window.location.replace('../../login.html');
+      return;
+    }
+    if (data.user.role === 'admin') {
+      // Admins manage EOD through admin.html, not this staff submission
+      // form — no EOD member name is tied to an admin login.
+      window.location.replace('admin.html');
+      return;
+    }
+    // Server is the source of truth for staff_key -> EOD member name (see
+    // api/auth.js EOD_NAME_BY_STAFF_KEY) — the session response already
+    // carries the resolved name, no need to fetch/decode report files here.
+    if (!data.user.eod_member) {
+      showAlert('error', 'Your account is not linked to an EOD member name. Contact an admin.');
+      return;
+    }
+    SESSION_MEMBER = data.user.eod_member;
+    [$("memberSelect"), $("leaveMember")].forEach(sel => {
+      sel.innerHTML = `<option>${SESSION_MEMBER}</option>`;
+      sel.value = SESSION_MEMBER;
+    });
+    $("sidebarMember").textContent = SESSION_MEMBER;
+  }
+  initSession();
+
+  $("logoutBtn").addEventListener("click", async () => {
+    try { await fetch('/api/auth?action=logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
+    window.location.replace('../../login.html');
+  });
 
   function todayISO() {
     const d = new Date();
@@ -535,69 +544,6 @@
 
   updateDate(); scheduleMidnight();
 
-  const toBase64 = s => btoa(unescape(encodeURIComponent(s)));
-  const apiURL   = (m,d) => `https://api.github.com/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/eods/${encodeURIComponent(m)}/${d}.md`;
-  const ghHeaders = () => ({
-    "Authorization":`Bearer ${getToken()}`,
-    "Accept":"application/vnd.github+json",
-    "Content-Type":"application/json",
-    "X-GitHub-Api-Version":"2022-11-28"
-  });
-
-  async function getFile(url) {
-    const r = await fetch(url,{headers:ghHeaders()});
-    if(r.status===404) return null;
-    if(!r.ok){const b=await r.json().catch(()=>{});throw new Error(`GET ${r.status}: ${b?.message||r.statusText}`);}
-    return r.json();
-  }
-
-  async function putFile(url,payload) {
-    const r = await fetch(url,{method:"PUT",headers:ghHeaders(),body:JSON.stringify(payload)});
-    const b = await r.json().catch(()=>{});
-    if(!r.ok) throw new Error(`PUT ${r.status}: ${b?.message||r.statusText}`);
-    return b;
-  }
-
-  if(!getToken()) showSetup();
-
-  function showSetup() {
-    $("tokenInput").value=""; $("setupError").style.display="none";
-    $("setupOverlay").classList.add("visible");
-    setTimeout(()=>$("tokenInput").focus(), 200);
-  }
-  function hideSetup() { $("setupOverlay").classList.remove("visible"); }
-
-  $("toggleVis").addEventListener("click",()=>{
-    const inp=$("tokenInput"), show=inp.type==="password";
-    inp.type = show?"text":"password";
-    $("toggleVis").textContent = show?"🙈":"👁";
-  });
-
-  $("saveTokenBtn").addEventListener("click", async()=>{
-    const token=$("tokenInput").value.trim(), errEl=$("setupError");
-    errEl.style.display="none";
-    if(!token.startsWith("ghp_")&&!token.startsWith("github_pat_")){
-      errEl.textContent="⚠ Enter a valid GitHub token (starts with ghp_)";
-      errEl.style.display="block"; return;
-    }
-    const btn=$("saveTokenBtn");
-    btn.disabled=true; btn.textContent="Verifying…";
-    try {
-      const r = await fetch(`https://api.github.com/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}`,{
-        headers:{"Authorization":`Bearer ${token}`,"Accept":"application/vnd.github+json"}
-      });
-      if(r.status===401) throw new Error("Invalid token — copy it again in full.");
-      if(r.status===404) throw new Error("Repository not found. Check CONFIG values.");
-      if(!r.ok) throw new Error(`GitHub error ${r.status}`);
-      saveToken(token); hideSetup();
-    } catch(err) {
-      errEl.textContent=`⚠ ${err.message}`; errEl.style.display="block";
-    } finally { btn.disabled=false; btn.textContent="Verify & Continue"; }
-  });
-
-  $("tokenInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("saveTokenBtn").click(); });
-  $("resetTokenBtn").addEventListener("click",()=>{ clearToken(); showSetup(); });
-
   function showAlert(type,msg) {
     $("alertBox").innerHTML=`<div class="alert alert-${type}"><span class="alert-icon">${type==="error"?"✕":"⚠"}</span><span>${msg}</span></div>`;
   }
@@ -616,26 +562,28 @@
 
   async function handleSubmit() {
     clearAlert();
-    const member=$("memberSelect").value.trim(), report=$("eodText").value.trim(), date=todayISO();
-    if(!member){showAlert("error","Please select your name."); $("memberSelect").focus(); return;}
+    const report=$("eodText").value.trim(), date=todayISO();
+    if(!SESSION_MEMBER){showAlert("error","Still loading your account — try again in a moment."); return;}
     if(!report){showAlert("error","Report cannot be empty."); $("eodText").focus(); return;}
-    if(!getToken()){showSetup(); return;}
     setLoading(true);
     try {
-      const url=apiURL(member,date), existing=await getFile(url), isUpdate=existing!==null;
-      await putFile(url,{message:`EOD: ${member} - ${date}`,content:toBase64(report),branch:CONFIG.BRANCH,...(isUpdate&&existing.sha?{sha:existing.sha}:{})});
-      $("sName").textContent=member; $("sDate").textContent=date;
-      $("sAction").textContent=isUpdate?"Updated":"Created";
+      const r = await fetch('/api/auth?action=eod-submit', {
+        method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ date, report })
+      });
+      const data = await r.json();
+      if(!r.ok || !data.success) throw new Error(data.error || `HTTP ${r.status}`);
+      $("sName").textContent=data.member; $("sDate").textContent=data.date;
+      $("sAction").textContent=data.action;
       $("formView").style.display="none"; $("successView").classList.add("visible");
-      if (unlockedMembers[member]) loadMemberReports(member);
     } catch(err) {
-      const msg=err.message.includes("401")?`Token expired. Click <strong>Update GitHub Token</strong> in the sidebar.`:`Submission failed: ${err.message}`;
+      const msg=err.message.includes("401")?`Your session expired. Please log in again.`:`Submission failed: ${err.message}`;
       showAlert("error",msg);
     } finally { setLoading(false); }
   }
 
   function resetForm() {
-    $("memberSelect").value=""; $("eodText").value="";
+    $("eodText").value="";
     $("charHint").textContent="0 characters · Ctrl+Enter to submit";
     clearAlert(); $("successView").classList.remove("visible"); $("formView").style.display="";
   }
@@ -655,44 +603,45 @@
   }
 
   $("leaveBtn").addEventListener("click", async()=>{
-    const member=$("leaveMember").value.trim(), date=$("leaveDate").value;
-    if(!member){showLeaveAlert("error","Please select your name."); $("leaveMember").focus(); return;}
+    const date=$("leaveDate").value;
+    if(!SESSION_MEMBER){showLeaveAlert("error","Still loading your account — try again in a moment."); return;}
     if(!date){showLeaveAlert("error","Please select a leave date."); return;}
-    if(!getToken()){showSetup(); return;}
     const btn=$("leaveBtn");
     btn.disabled=true; btn.innerHTML=`<span class="spinner" style="border-top-color:var(--blue);border-color:var(--blue-dim2)"></span> Saving…`;
     try {
-      const url=apiURL(member,date), existing=await getFile(url);
-      const content=`# Leave\n\nMember: ${member}\nDate: ${date}\nStatus: On Leave`;
-      await putFile(url,{message:`Leave: ${member} - ${date}`,content:toBase64(content),branch:CONFIG.BRANCH,...(existing?.sha?{sha:existing.sha}:{})});
-      $("leaveDate").value=""; $("leaveMember").value="";
-      showLeaveAlert("success",` <strong>${member}</strong> leave on <strong>${date}</strong>`);
+      const r = await fetch('/api/auth?action=eod-leave', {
+        method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ date })
+      });
+      const data = await r.json();
+      if(!r.ok || !data.success) throw new Error(data.error || `HTTP ${r.status}`);
+      $("leaveDate").value="";
+      showLeaveAlert("success",` <strong>${data.member}</strong> leave on <strong>${data.date}</strong>`);
     } catch(err) {
-      const msg=err.message.includes("401")?`Token expired. Click <strong>Update Token</strong>.`:`Failed: ${err.message}`;
+      const msg=err.message.includes("401")?`Your session expired. Please log in again.`:`Failed: ${err.message}`;
       showLeaveAlert("error",msg);
     } finally { btn.disabled=false; btn.innerHTML=`📂 Mark as Leave`; }
   });
 </script>
 
-<!-- ══════════════ EOD VIEWER OVERLAY ══════════════ -->
+<!-- ══════════════ EOD VIEWER OVERLAY (2026-08-19: simplified — this now only
+     ever shows the LOGGED-IN member's own reports, scoped server-side by
+     session; there's no member picker or password gate any more since real
+     login already establishes who you are) ══════════════ -->
 <div class="setup-overlay" id="eodViewerOverlay" style="z-index:500;">
-  <div style="width:100%;max-width:860px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-md);animation:cardin .3s cubic-bezier(.34,1.2,.64,1);" class="viewer-card">
+  <div style="width:100%;max-width:700px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-md);animation:cardin .3s cubic-bezier(.34,1.2,.64,1);" class="viewer-card">
     <div class="viewer-header">
       <div>
-        <div class="viewer-header-title">View EOD Reports</div>
-        <div class="viewer-header-sub">Click a member to view their reports</div>
+        <div class="viewer-header-title">My EOD Reports</div>
+        <div class="viewer-header-sub" id="viewerHeaderSub">Loading…</div>
       </div>
       <button class="viewer-close-btn" onclick="closeViewer()">✕ Close</button>
     </div>
     <div class="viewer-body">
-      <div class="viewer-sidebar">
-        <div class="viewer-sidebar-label">TEAM MEMBERS</div>
-        <div id="viewerMemberList"></div>
-      </div>
-      <div id="viewerReportsPanel" class="viewer-panel">
+      <div id="viewerReportsPanel" class="viewer-panel" style="width:100%;">
         <div id="viewerPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:0.75rem;color:var(--text3);font-size:0.875rem;padding:3rem 0;">
-          <div style="font-size:2.5rem;">👤</div>
-          <div>Select a team member to view their reports</div>
+          <span class="spinner" style="border-top-color:var(--blue);border-color:var(--blue-dim2);"></span>
+          <div>Loading your reports…</div>
         </div>
       </div>
     </div>
@@ -700,33 +649,6 @@
 </div>
 
 <script>
-const VIEWER_MEMBERS = [
-  "Kuberan","Piranav","Mahima","Sonya","Kamsi","Hetheesha",
-  "Dilaksi","Sukirtha","Theekshy","Thivagini","Ripson",
-  "Jefri","Sajeepan","Jakshan","Thasitha","Thanishtika"
-];
-
-let MEMBER_PASSWORDS = null;
-
-let LAST_PASSWORD_LOAD_ERROR = "";
-
-async function loadPasswords() {
-  if (MEMBER_PASSWORDS) return true;
-  try {
-    const url = `https://api.github.com/repos/${CONFIG.REPO_OWNER}/eod-tool/contents/passwords.json`;
-    const r = await fetch(url, { headers: ghHeaders() });
-    if (!r.ok) throw new Error(`GitHub ${r.status} - ${r.statusText}`);
-    const data = await r.json();
-    const text = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-    MEMBER_PASSWORDS = JSON.parse(text);
-    return true;
-  } catch (err) {
-    LAST_PASSWORD_LOAD_ERROR = err.message || String(err);
-    console.error("loadPasswords failed:", err);
-    return false;
-  }
-}
-
 function closeViewer() {
   document.getElementById('eodViewerOverlay').classList.remove('visible');
 }
@@ -735,206 +657,40 @@ document.getElementById('eodViewerOverlay').addEventListener('click', function(e
   if (e.target === this) closeViewer();
 });
 
-let viewerActiveBtn = null;
-let unlockedMembers = {};
+let MY_REPORTS_LOADED = false;
 
-(function buildMemberList() {
-  const list = document.getElementById('viewerMemberList');
-  VIEWER_MEMBERS.forEach(name => {
-    const btn = document.createElement('button');
-    btn.className = 'viewer-member-btn';
-    btn.id = `vmBtn_${name}`;
-    btn.innerHTML = `
-      <span class="viewer-member-avatar">${name.slice(0,2).toUpperCase()}</span>
-      <span style="flex:1;color:var(--text2);">${name}</span>
-      <span id="lock_${name}" style="font-size:0.8rem;flex-shrink:0;opacity:0.6;">🔒</span>
-    `;
-    btn.addEventListener('click', () => {
-      if (unlockedMembers[name]) {
-        activateMember(name, btn);
-        loadMemberReports(name);
-      } else {
-        showPasswordPrompt(name, btn);
-      }
-    });
-    list.appendChild(btn);
-  });
-})();
-
-function activateMember(name, btn) {
-  if (viewerActiveBtn && viewerActiveBtn !== btn) {
-    viewerActiveBtn.classList.remove('active');
-  }
-  btn.classList.add('active');
-  viewerActiveBtn = btn;
-}
-
-function showPasswordPrompt(name, btn) {
+async function loadMyReports(force) {
   const panel = document.getElementById('viewerReportsPanel');
-  const initials = name.slice(0,2).toUpperCase();
+  const sub = document.getElementById('viewerHeaderSub');
+  if (sub) sub.textContent = SESSION_MEMBER ? `Signed in as ${SESSION_MEMBER}` : 'Loading…';
   panel.innerHTML = `
-    <div style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:2rem;max-width:520px;margin:0 auto;width:100%;">
-      <div style="display:flex;align-items:center;gap:0.875rem;padding-bottom:1.375rem;margin-bottom:1.375rem;border-bottom:1px solid var(--border);">
-        <div style="width:44px;height:44px;border-radius:50%;background:var(--blue-bg);border:1.5px solid var(--blue-dim2);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--blue);flex-shrink:0;">${initials}</div>
-        <div style="flex:1;">
-          <div style="font-size:0.9375rem;font-weight:800;letter-spacing:-0.01em;color:var(--text);">${name}</div>
-          <div style="font-size:0.75rem;color:var(--text3);margin-top:0.1rem;">Restricted · Enter password to continue</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:0.35rem;background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:0.25rem 0.7rem;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span style="font-size:0.6875rem;font-weight:600;color:var(--text3);">Protected</span>
-        </div>
-      </div>
-      <div style="margin-bottom:0.5rem;">
-        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:0.4rem;">Password</label>
-        <div style="position:relative;">
-          <input
-            type="password"
-            id="pwInput_${name}"
-            placeholder="Enter your password…"
-            autocomplete="off"
-            style="width:100%;height:40px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:0 2.75rem 0 0.75rem;font-family:'Inter',sans-serif;font-size:0.8125rem;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;"
-            onkeydown="if(event.key==='Enter') checkPassword('${name}')"
-            onfocus="this.style.borderColor='var(--blue)';this.style.boxShadow='0 0 0 3px var(--blue-dim2)'"
-            onblur="this.style.borderColor='';this.style.boxShadow=''"
-          />
-          <button onclick="togglePwVis('${name}')" id="pwVis_${name}" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text4);display:flex;align-items:center;padding:0;" aria-label="Toggle visibility">
-            <svg id="pwVisIcon_${name}" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div id="pwError_${name}" style="display:none;align-items:center;gap:0.375rem;font-size:0.78rem;color:var(--red);margin-top:0.375rem;margin-bottom:0.25rem;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span id="pwErrorText_${name}"></span>
-      </div>
-      <div style="display:flex;gap:0.625rem;margin-top:1.25rem;">
-        <button
-          onclick="closeViewer()"
-          style="flex:1;height:40px;background:var(--white);color:var(--text2);border:1.5px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,background .15s;"
-          onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)';this.style.background='var(--blue-bg)'"
-          onmouseout="this.style.borderColor='';this.style.color='';this.style.background=''"
-        >Cancel</button>
-        <button
-          onclick="checkPassword('${name}')"
-          style="flex:2;height:40px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;transition:background .15s,transform .1s;"
-          onmouseover="this.style.background='var(--blue-hover)';this.style.transform='translateY(-1px)'"
-          onmouseout="this.style.background='var(--blue)';this.style.transform=''"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
-          Unlock reports
-        </button>
-      </div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:0.75rem;color:var(--text3);font-size:0.875rem;padding:3rem 0;">
+      <span class="spinner" style="border-top-color:var(--blue);border-color:var(--blue-dim2);"></span>
+      <div>Fetching your reports…</div>
     </div>
   `;
-  activateMember(name, btn);
-  setTimeout(() => {
-    const inp = document.getElementById(`pwInput_${name}`);
-    if (inp) inp.focus();
-  }, 100);
-}
-
-function togglePwVis(name) {
-  const inp = document.getElementById(`pwInput_${name}`);
-  const icon = document.getElementById(`pwVisIcon_${name}`);
-  if (!inp) return;
-  const show = inp.type === 'password';
-  inp.type = show ? 'text' : 'password';
-  icon.innerHTML = show
-    ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
-    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
-}
-
-async function checkPassword(name) {
-  const inp = document.getElementById(`pwInput_${name}`);
-  const errEl = document.getElementById(`pwError_${name}`);
-  if (!inp) return;
-  const entered = inp.value;
-  if (!entered) return;
-
-  inp.disabled = true;
-  errEl.style.display = 'none';
-
-  const ok = await loadPasswords();
-  inp.disabled = false;
-
-  if (!ok || !MEMBER_PASSWORDS) {
-    document.getElementById(`pwErrorText_${name}`).textContent =
-      `Could not load passwords (${LAST_PASSWORD_LOAD_ERROR || 'unknown error'}).`;
-    errEl.style.display = 'flex';
-    return;
-  }
-
-  if (entered === MEMBER_PASSWORDS[name]) {
-    unlockedMembers[name] = true;
-    const lockIcon = document.getElementById(`lock_${name}`);
-    if (lockIcon) lockIcon.textContent = '🔓';
-    loadMemberReports(name);
-  } else {
-    document.getElementById(`pwErrorText_${name}`).textContent = 'Incorrect password. Please try again.';
-    errEl.style.display = 'flex';
-    inp.value = '';
-    inp.style.borderColor = 'var(--red)';
-    inp.focus();
-    setTimeout(() => {
-      inp.style.borderColor = '';
-      errEl.style.display = 'none';
-    }, 2500);
-  }
-}
-
-async function loadMemberReports(member) {
-  const panel = document.getElementById('viewerReportsPanel');
-  panel.innerHTML = `
-    <div style="font-size:1rem;font-weight:800;margin-bottom:0.25rem;color:var(--text);">${member}</div>
-    <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.8rem;color:var(--text3);margin-bottom:1.25rem;">
-      <span class="spinner" style="border-top-color:var(--blue);border-color:var(--blue-dim2);"></span> Fetching reports from GitHub…
-    </div>
-  `;
-
-  if (!getToken()) { showSetup(); return; }
-
   try {
-    const url = `https://api.github.com/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/eods/${encodeURIComponent(member)}`;
-    const r = await fetch(url, { headers: ghHeaders(), cache: "no-store" });
+    const r = await fetch('/api/auth?action=eod-list' + (force ? '&refresh=1' : ''), { credentials: 'same-origin', cache: 'no-store' });
+    const data = await r.json();
+    if (!r.ok || !data.success) throw new Error(data.error || `HTTP ${r.status}`);
+    const reports = data.reports || [];
+    MY_REPORTS_LOADED = true;
 
-    if (r.status === 404) {
-      panel.innerHTML = `
-        <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
-        <div class="alert alert-warning"><span class="alert-icon">📭</span><span>No reports found for ${member} yet.</span></div>`;
-      return;
-    }
-    if (!r.ok) throw new Error(`GitHub error ${r.status}`);
-
-    const files = await r.json();
-    const mdFiles = files.filter(f => f.name.endsWith('.md')).sort((a,b) => b.name.localeCompare(a.name));
-
-    if (!mdFiles.length) {
-      panel.innerHTML = `
-        <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
-        <div class="alert alert-warning"><span class="alert-icon">📭</span><span>No reports found for ${member} yet.</span></div>`;
+    if (!reports.length) {
+      panel.innerHTML = `<div class="alert alert-warning"><span class="alert-icon">📭</span><span>No reports found yet.</span></div>`;
       return;
     }
 
     panel.innerHTML = `
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.25rem;">
-        <div>
-          <div style="font-size:1rem;font-weight:800;color:var(--text);">${member} 🔓</div>
-          <div style="font-size:0.75rem;color:var(--text3);">${mdFiles.length} report${mdFiles.length!==1?'s':''} found</div>
-        </div>
-        <div style="display:flex;gap:0.5rem;">
-          <button class="viewer-lock-btn" onclick="loadMemberReports('${member}')" title="Refresh reports">🔄 Refresh</button>
-          <button class="viewer-lock-btn" onclick="lockMember('${member}')" title="Lock this member">🔒 Lock</button>
-        </div>
+        <div style="font-size:0.75rem;color:var(--text3);">${reports.length} report${reports.length!==1?'s':''} found</div>
+        <button class="viewer-lock-btn" onclick="loadMyReports(true)" title="Refresh reports">🔄 Refresh</button>
       </div>
-      <div id="viewerCards_${member}"></div>
+      <div id="viewerCardsMine"></div>
     `;
+    const cardsDiv = document.getElementById('viewerCardsMine');
 
-    const cardsDiv = document.getElementById(`viewerCards_${member}`);
-
-    for (const file of mdFiles) {
-      const date = file.name.replace('.md','');
+    reports.forEach(rep => {
       const card = document.createElement('div');
       card.className = 'viewer-report-card';
 
@@ -943,81 +699,41 @@ async function loadMemberReports(member) {
       headerDiv.innerHTML = `
         <div style="display:flex;align-items:center;gap:0.6rem;">
           <span style="font-size:0.875rem;">📅</span>
-          <span style="font-size:0.875rem;font-weight:600;color:var(--text);">${date}</span>
+          <span style="font-size:0.875rem;font-weight:600;color:var(--text);">${rep.date}</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;">
-          <span class="card-badge cb-blue" id="tag_${date}">EOD</span>
-          <span id="chev_${date}" style="color:var(--text3);transition:transform 0.2s;font-size:0.8rem;">▾</span>
+          ${rep.isLeave
+            ? `<span class="card-badge" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);">Leave</span>`
+            : `<span class="card-badge cb-blue">EOD</span>`}
+          <span class="chevIcon" style="color:var(--text3);transition:transform 0.2s;font-size:0.8rem;">▾</span>
         </div>
       `;
 
       const bodyDiv = document.createElement('div');
       bodyDiv.className = 'viewer-report-body';
-      bodyDiv.textContent = 'Loading…';
+      bodyDiv.textContent = rep.text;
 
       let expanded = false;
-      let loaded = false;
-
-      headerDiv.addEventListener('click', async () => {
+      headerDiv.addEventListener('click', () => {
         expanded = !expanded;
         bodyDiv.style.display = expanded ? 'block' : 'none';
-        const chev = document.getElementById(`chev_${date}`);
+        const chev = headerDiv.querySelector('.chevIcon');
         if (chev) chev.style.transform = expanded ? 'rotate(180deg)' : '';
-
-        if (expanded && !loaded) {
-          loaded = true;
-          try {
-            const fr = await fetch(file.url, { headers: ghHeaders(), cache: "no-store" });
-            const data = await fr.json();
-            const text = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-            bodyDiv.textContent = text;
-            const tag = document.getElementById(`tag_${date}`);
-            if (tag) {
-              const isLv = text.includes('Status: On Leave');
-              tag.textContent = isLv ? 'Leave' : 'EOD';
-              if (isLv) {
-                tag.className = 'card-badge';
-                tag.style.cssText = 'background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);';
-              }
-            }
-          } catch(e) {
-            bodyDiv.textContent = 'Failed to load content.';
-          }
-        }
       });
 
       card.appendChild(headerDiv);
       card.appendChild(bodyDiv);
       cardsDiv.appendChild(card);
-    }
-
-  } catch(err) {
-    panel.innerHTML = `
-      <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--text);">${member}</div>
-      <div class="alert alert-error"><span class="alert-icon">✕</span><span>Failed to load: ${err.message}</span></div>`;
+    });
+  } catch (err) {
+    panel.innerHTML = `<div class="alert alert-error"><span class="alert-icon">✕</span><span>Failed to load: ${err.message}</span></div>`;
   }
-}
-
-function lockMember(name) {
-  delete unlockedMembers[name];
-  const lockIcon = document.getElementById(`lock_${name}`);
-  if (lockIcon) lockIcon.textContent = '🔒';
-  if (viewerActiveBtn) {
-    viewerActiveBtn.classList.remove('active');
-    viewerActiveBtn = null;
-  }
-  const panel = document.getElementById('viewerReportsPanel');
-  panel.innerHTML = `
-    <div id="viewerPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:0.75rem;color:var(--text3);font-size:0.875rem;padding:3rem 0;">
-      <div style="font-size:2.5rem;">🔒</div>
-      <div>${name}'s reports have been locked.</div>
-    </div>
-  `;
 }
 
   // Auto-open EOD viewer when navigated from another page via #view-eods
   if (window.location.hash === '#view-eods') {
     document.getElementById('eodViewerOverlay').classList.add('visible');
+    loadMyReports(false);
     history.replaceState(null, '', window.location.pathname);
   }
 
