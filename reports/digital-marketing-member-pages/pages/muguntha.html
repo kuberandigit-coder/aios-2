@@ -733,25 +733,23 @@ async function mapLimit(items, limit, fn) {
 // Reads from SONYA_MONTH_DATA (populated by fetchGroupSales()/fetchCost()
 // during the normal page load) — adds no new requests.
 //
-// CORRECTED 2026-08-19 (per Kuberan, caught a double-counting bug): Net
-// Sales is computed server-side as grossSales - discounts - refunds
-// (api/sales25.js's buildOrderRow()/netSales), and VAT is stripped out of
-// grossSales before that (gross = grossInclTax - tax). So VAT, Discounts,
-// and Refunds are ALL already excluded from the Net Sales figure shown in
-// the Sales column — adding them again here and subtracting via Net =
-// Sales - Cost would double-subtract money that was never in Sales to
-// begin with. Only Transaction Fee, Product Cost, and the Subscription Fee
-// are genuine additional costs not already reflected in Net Sales, so only
-// those three feed into the Total Cost figure. VAT/Discounts/Refunds are
-// still shown in the popup (see openCostPopup) as informational context,
-// just not summed into the total.
+// REVISED 2026-08-19 per Kuberan (2nd correction, overriding the first):
+// VAT = a flat 20% of Sales (same style of assumption as Product Cost, NOT
+// the actual combinedSummary.vat figure), and Discount + Refund count as
+// real costs (their actual combinedSummary.discounts/refunds values), not
+// just informational context. All six components — Ads Cost, VAT (20%),
+// Product Cost (20%), Transaction Fee, Discount, Refund, Subscription Fee —
+// feed into Total Cost.
 function sonyaExtraCost(year, month, netSales){
   const d = SONYA_MONTH_DATA[sonyaMonthKey(year, month)] || {};
   const transactionFee = d.transactionFee || 0;
+  const discounts = d.discounts || 0;
+  const refunds = d.refunds || 0;
   const productCost = Math.round((netSales || 0) * 0.20 * 100) / 100;
+  const vat = Math.round((netSales || 0) * 0.20 * 100) / 100;
   const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
   const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
-  return Math.round((productCost + transactionFee + subscriptionFee) * 100) / 100;
+  return Math.round((vat + productCost + transactionFee + discounts + refunds + subscriptionFee) * 100) / 100;
 }
 
 function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending, member){
@@ -1565,27 +1563,25 @@ async function openCostPopup(member, year, month, monthLabel){
     const netSales = d.netSales || 0;
     const adsCost = (d.ownCost || 0) + (d.dmProductCost || 0);
     const productCost = Math.round(netSales * 0.20 * 100) / 100;
+    const vat = Math.round(netSales * 0.20 * 100) / 100;
     const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
     const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
-    // VAT, Discount, and Refund are NOT summed into the total — Net Sales is
-    // already calculated as grossSales - discounts - refunds, with VAT
-    // stripped out before that, so they're already excluded from the Sales
-    // figure this Cost is compared against. Adding them here too would
-    // double-subtract money that was never in Sales to begin with. Fixed
-    // 2026-08-19 after Kuberan caught it.
-    const total = Math.round((adsCost + productCost + d.transactionFee + subscriptionFee) * 100) / 100;
+    // Revised 2026-08-19 per Kuberan (2nd correction): VAT is a flat 20% of
+    // Sales (same style of assumption as Product Cost), and Discount/Refund
+    // count as real costs, all summed into Total Cost.
+    const total = Math.round((adsCost + vat + productCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
 
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
     document.getElementById('cbBody').innerHTML =
       row('Ads Cost', adsCost, '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')') +
+      row('VAT (20% of Net Sales)', vat, '20% × ' + fmtMoney(netSales)) +
       row('Product Cost (20% of Net Sales)', productCost, '20% × ' + fmtMoney(netSales)) +
       row('Transaction Fee', d.transactionFee) +
+      row('Discount', d.discounts) +
+      row('Refund', d.refunds) +
       row('Shopify Subscription Fee', subscriptionFee, '£' + SHOPIFY_SUBSCRIPTION_GBP.toFixed(2) + ' ÷ ' + splitBy + ' people') +
       '<div class="cb-row cb-total"><span class="cb-label">Total Cost</span><span class="cb-value">' + fmtMoney(total) + '</span></div>' +
-      '<div class="cb-row" style="border-top:2px dashed var(--line);margin-top:10px;padding-top:14px;"><span class="cb-label">VAT (info only, not counted above)</span><span class="cb-value">' + fmtMoney(d.vat) + '</span></div>' +
-      row('Discount (info only, not counted above)', d.discounts) +
-      row('Refund (info only, not counted above)', d.refunds) +
-      '<div class="cb-note">This total matches the Total Cost figure shown in the table. VAT, Discount, and Refund are shown below for context but are NOT added into Total Cost — Net Sales (' + fmtMoney(netSales) + ') is already calculated after subtracting them, so counting them again here would double-subtract money that was never in Sales to begin with. Product Cost is a flat 20% assumption on Net Sales, not a per-product COGS figure. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
+      '<div class="cb-note">VAT and Product Cost are both flat 20% assumptions on Net Sales (' + fmtMoney(netSales) + '), not exact figures. Discount and Refund are the actual amounts from that month\'s orders. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
   } catch (err) {
     document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Error: ' + (err.message || err) + '</div>';
   }
