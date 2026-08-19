@@ -749,7 +749,10 @@ function memberExtraCost(member, year, month, netSales){
   const discounts = d.discounts || 0;
   const refunds = d.refunds || 0;
   const productCost = Math.round((netSales || 0) * 0.20 * 100) / 100;
-  const vat = Math.round((netSales || 0) * 0.20 * 100) / 100;
+  // VAT extracted from Sales as a VAT-inclusive gross figure (net=100%,
+  // VAT=20%, gross=120%), not a flat 20% on top. Changed 2026-08-19 per
+  // Kuberan: "need to change the vat caculation sales/120 * 20".
+  const vat = Math.round((netSales || 0) / 120 * 20 * 100) / 100;
   const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
   const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
   return Math.round((vat + productCost + transactionFee + discounts + refunds + subscriptionFee) * 100) / 100;
@@ -1566,7 +1569,9 @@ async function openCostPopup(member, year, month, monthLabel){
     const netSales = d.netSales || 0;
     const adsCost = (d.ownCost || 0) + (d.dmProductCost || 0);
     const productCost = Math.round(netSales * 0.20 * 100) / 100;
-    const vat = Math.round(netSales * 0.20 * 100) / 100;
+    // VAT extracted from Sales as a VAT-inclusive gross figure (Sales/120 x
+    // 20), not a flat 20% on top — matches memberExtraCost() above.
+    const vat = Math.round(netSales / 120 * 20 * 100) / 100;
     const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
     const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
     // Revised 2026-08-19 per Kuberan (2nd correction): VAT is a flat 20% of
@@ -1577,7 +1582,7 @@ async function openCostPopup(member, year, month, monthLabel){
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
     document.getElementById('cbBody').innerHTML =
       row('Ads Cost', adsCost, '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')') +
-      row('VAT (20% of Net Sales)', vat, '20% × ' + fmtMoney(netSales)) +
+      row('VAT (extracted from Net Sales)', vat, fmtMoney(netSales) + ' ÷ 120 × 20') +
       row('Product Cost (20% of Net Sales)', productCost, '20% × ' + fmtMoney(netSales)) +
       row('Transaction Fee', d.transactionFee) +
       row('Discount', d.discounts) +
