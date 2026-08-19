@@ -549,10 +549,52 @@ async function handlePerfBatch(req, res) {
   }
 }
 
+// Cache-warming endpoint (added 2026-08-19). The live month's (2026-08)
+// Shopify order-journey scan takes a documented 30-90s+, and its result
+// lives only in an in-memory Map inside salesuk.js that's local to one
+// serverless instance — a fresh instance (after every deploy, or ~10min
+// idle) starts cold and pays that 30-90s cost again on whichever real user
+// happens to load the page next. Vercel's own Cron Jobs can't fix this on
+// the Hobby plan (max once/day, need ~every 8min to beat the 10min cache
+// TTL), so this is meant to be pinged by a free external cron service
+// (e.g. cron-job.org) instead. Protected by CACHE_WARM_SECRET so random
+// traffic can't repeatedly trigger expensive live Shopify scans.
+const WARM_TARGETS = [
+  { member: 'sonya', month: '2026-08' },
+  { member: 'sajeepan', month: '2026-08' },
+];
+async function handleWarmCache(req, res) {
+  const secret = process.env.CACHE_WARM_SECRET;
+  if (!secret) {
+    res.status(500).json({ success: false, error: 'Server not configured: CACHE_WARM_SECRET missing' });
+    return;
+  }
+  if (!req.query || req.query.secret !== secret) {
+    res.status(403).json({ success: false, error: 'Forbidden' });
+    return;
+  }
+  const salesuk = require('./salesuk.js');
+  const startedAt = Date.now();
+  try {
+    const results = await Promise.all(WARM_TARGETS.map(async (t) => {
+      const t0 = Date.now();
+      const data = await callHandlerInProcess(salesuk, { group: t.member, month: t.month, refresh: '1' });
+      return { member: t.member, month: t.month, ok: !!data.success, ms: Date.now() - t0 };
+    }));
+    res.status(200).json({ success: true, results, totalMs: Date.now() - startedAt });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.query && req.query.action === 'tag-listing') {
     await handleTagListing(req, res);
+    return;
+  }
+  if (req.query && req.query.action === 'warm-cache') {
+    await handleWarmCache(req, res);
     return;
   }
   if (req.query && req.query.action === 'perf-batch') {
