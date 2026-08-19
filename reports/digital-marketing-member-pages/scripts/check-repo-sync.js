@@ -1,14 +1,21 @@
-// scripts/check-repo-sync.js — compares every api/*.js and pages/*.html file
-// between this repo (aios-2) and the Staff-requirements worktree, byte for
-// byte (ignoring line-ending style). Vercel deploys from Staff-requirements,
-// not aios-2, so any file that's edited in one repo and not pushed to the
-// other silently breaks production while looking fine in local dev/aios-2.
+// scripts/check-repo-sync.js — compares every api/*.js, pages/*.html, and
+// api/data/*.json file between this repo (aios-2) and the Staff-requirements
+// worktree, byte for byte (ignoring line-ending style). Vercel deploys from
+// Staff-requirements, not aios-2, so any file that's edited in one repo and
+// not pushed to the other silently breaks production while looking fine in
+// local dev/aios-2.
 //
-// This exact bug has recurred three times (Jefri Req4 handler, hourly
-// snapshot cron, Jefri Req5 handler) because syncing was done by manually
-// copying whichever files were remembered, not by systematically checking.
-// Run this after any session that touches api/ or pages/ files, before
-// considering the work "done":
+// This exact bug has recurred FOUR times now (Jefri Req4 handler, hourly
+// snapshot cron, Jefri Req5 handler, and — the worst instance, 2026-08-19 —
+// 243 api/data/*.json static snapshot files that had silently drifted for
+// over 2 weeks because this checker used to explicitly skip the `data/`
+// directory entirely, meaning every previous "FULLY IN SYNC" result was
+// wrong for any session that only touched snapshot data. 174 snapshot files
+// were completely missing from the deployed worktree (forcing live-query
+// fallbacks that intermittently hung — this is almost certainly what caused
+// the "random month" performance hangs investigated the same day), 69 more
+// had stale content. Run this after any session that touches api/, pages/,
+// or api/data/ files, before considering the work "done":
 //
 //   node scripts/check-repo-sync.js [path-to-staff-requirements-worktree]
 //
@@ -31,7 +38,7 @@ if (!fs.existsSync(B)) {
 function listFiles(dir, base) {
   let out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'data' || entry.name === 'node_modules' || entry.name === '.git') continue;
+    if (entry.name === 'node_modules' || entry.name === '.git') continue;
     const full = path.join(dir, entry.name);
     const rel = path.join(base, entry.name);
     if (entry.isDirectory()) out = out.concat(listFiles(full, rel));
@@ -40,7 +47,7 @@ function listFiles(dir, base) {
   return out;
 }
 
-const apiFiles = listFiles(path.join(A, 'api'), 'api').filter((f) => f.endsWith('.js'));
+const apiFiles = listFiles(path.join(A, 'api'), 'api').filter((f) => f.endsWith('.js') || f.endsWith('.json'));
 const pageFiles = listFiles(path.join(A, 'pages'), 'pages').filter((f) => f.endsWith('.html'));
 const allFiles = [...apiFiles, ...pageFiles];
 
@@ -50,9 +57,18 @@ for (const rel of allFiles) {
   const pA = path.join(A, rel);
   const pB = path.join(B, rel);
   if (!fs.existsSync(pB)) { missingInB.push(rel); continue; }
-  const cA = fs.readFileSync(pA, 'utf8').replace(/\r\n/g, '\n');
-  const cB = fs.readFileSync(pB, 'utf8').replace(/\r\n/g, '\n');
-  if (cA !== cB) mismatches.push(rel);
+  const bufA = fs.readFileSync(pA);
+  const bufB = fs.readFileSync(pB);
+  // Binary-safe comparison for .json (line-ending normalization would
+  // corrupt any \r\n that's meaningfully part of a JSON string value,
+  // however unlikely) — only normalize line endings for .js/.html.
+  if (rel.endsWith('.json')) {
+    if (!bufA.equals(bufB)) mismatches.push(rel);
+  } else {
+    const cA = bufA.toString('utf8').replace(/\r\n/g, '\n');
+    const cB = bufB.toString('utf8').replace(/\r\n/g, '\n');
+    if (cA !== cB) mismatches.push(rel);
+  }
 }
 
 console.log('aios-2 vs Staff-requirements — repo sync check');
