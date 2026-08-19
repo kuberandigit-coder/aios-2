@@ -5697,8 +5697,15 @@ const jefriReq7HandlerModule = (function() {
       return { validation: 'Not Found', foundSku: null, listings: [] };
     }
     const listings = pickListings(matched);
-    const corrected = sortByActiveThenId(matched).find((r) => r.sku !== sku);
-    return { validation: 'Correct', foundSku: corrected ? corrected.sku : null, listings };
+    // 2026-08-19 (2nd correction, per Kuberan): show the CORRECTED sku
+    // (mapped_sku, the value staff actually entered in the Listing Tool's
+    // own "correct the SKU" box) here — not the raw/uncorrected listing
+    // sku. Only populated when a correction was actually involved (i.e.
+    // no row's raw sku matched exactly); when the raw sku already matched
+    // B&Q exactly, nothing needs to be "found", so this stays blank.
+    const correctedRow = sortByActiveThenId(matched).find((r) => r.sku !== sku);
+    const foundSku = correctedRow ? (correctedRow.mapped_sku || correctedRow.sku) : null;
+    return { validation: 'Correct', foundSku, listings };
   }
 
   function priceCompare(listings, bqPricePerUnit) {
