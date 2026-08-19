@@ -595,12 +595,20 @@ function costPayloadToShape(data){
   };
 }
 
-// Replaces 40 separate requests (20 months x sales+cost) with 1 request that
-// fetches everything server-side in one serverless invocation — added
-// 2026-08-19 to fix each staff tab taking too long to load. See
-// api/muguntha.js's handlePerfBatch()/PERF_BATCH_MEMBERS for which members
-// are wired up (Sonya, Sajeepan so far).
-const PERF_BATCH_MEMBERS = new Set(['sonya', 'sajeepan']);
+// Batch endpoint (added 2026-08-19, reverted same day): tried replacing the
+// 40 separate per-tab requests with 1 request that fetches everything inside
+// one serverless invocation, but this made both Sonya's and Sajeepan's tabs
+// SLOWER, not faster — bundling all 20 months into a single function means
+// the whole tab now blocks on the single slowest call (the live-month
+// Shopify scan, 30-90s+) instead of that delay running in parallel with the
+// other 39 fast requests, and it funnels 20+ concurrent Postgres queries
+// through one shared connection pool instead of many separate serverless
+// instances each getting their own. Reverted to the original per-month
+// parallel-request path below (PERF_BATCH_MEMBERS empty = never taken).
+// api/muguntha.js's handlePerfBatch() is left in place, unused, in case a
+// smarter version (e.g. still-parallel per-month calls, not in-process) is
+// worth revisiting later.
+const PERF_BATCH_MEMBERS = new Set();
 async function fetchPerfBatch(member, force){
   const url = '/api/muguntha?action=perf-batch&member=' + member + (force ? '&refresh=1' : '');
   const res = await fetch(url);
