@@ -33,7 +33,15 @@
 - Docs: evidence/muguntha/2026-08-19_sajeepan-perf-batch-endpoint.md
 - Status: PASS (deployed; not yet manually re-confirmed by Kuberan in browser)
 
+### Task: Deploy Jefri Req 7 (with ultrareview bugfixes)
+- Req7 (B&Q -> Amazon -> Shopify SKU & Price Reconciliation), built in Kuberan's other Claude session (commit 9689fe6 on aios-2), was pending deploy.
+- Before deploying, `/ultrareview` findings were fixed first (Kuberan chose "fix first" when asked): removed 3 redundant `client.release()` calls in `handleJefriReq7` (finally block already covers every exit — double-release throws), added a `mapped_sku !== sku` guard to stop `amazonBySku`/`shopifyBySku` double-counting a row when sku==mapped_sku, and removed a stray "i mean m" typo before `<!DOCTYPE html>` in staff-id-performance.html (confirmed uncommitted-local-only, never actually live). The 4th finding (`r7Init()` "never defined") was a false positive — it IS defined later in the file in a separate but same-global-scope `<script>` tag.
+- This deploy also brought the entire Req7 feature into Staff-requirements for the first time (it previously only existed on aios-2, never synced to the repo Vercel actually deploys from).
+- Files: `api/requirement.js`, `pages/jefri.html` (unchanged, false-positive), `pages/staff-id-performance.html`
+- Committed + pushed: Staff-requirements (6b49bbf), aios-2 (c973932)
+- Deployed to production (dpl_9jsD9rU2PWvfbcLjSEjGoS3rGntq), live-tested `GET /api/requirement?fn=jefri-req7` — HTTP 200, real data returned.
+- Docs: evidence/jefri/2026-08-19_req7-deploy-with-ultrareview-fixes.md
+- Status: PASS (API-verified; full browser UI walkthrough not yet done)
+
 ### Notes
-- Left `pages/staff-id-performance.html` untouched (unrelated pre-existing local modification from Piranav's earlier sync, out of scope, not to be touched per standing instruction).
 - New standing preference: only run `vercel --prod` when the user explicitly says "deploy" — see feedback_deploy_only_on_explicit_command memory. Manual CLI deploy method confirmed as the ongoing standard (both Kuberan and Piranav deploy manually; no Git-triggered auto-deploy is set up).
-- Piranav's Jefri Req 7 work (requirement.js, jefri.html — commit 9689fe6) landed on aios-2 mid-session from Kuberan's own other Claude session (not Piranav's) — left untouched. An /ultrareview run against main surfaced real bugs in that Req7 code (double `client.release()`, undefined `r7Init()` call making the tab dead-on-arrival, a stray "i mean m" typo before `<!DOCTYPE html>` in staff-id-performance.html, SKU-duplication in amazonBySku/shopifyBySku) — flagged to Kuberan, not fixed here since it's out of scope for this session's task.
