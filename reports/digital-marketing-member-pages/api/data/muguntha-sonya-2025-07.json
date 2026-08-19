@@ -1,1 +1,17 @@
-{"success":true,"employee":"sonya","month":"2025-07","cost":1228.78,"dmSonyaProductCost":421.46,"dmTotalCost":5628.47,"totalCost":1650.24,"source":"google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='Sonya' AND account_id=4503486236 (LEDSone account only)","dmSource":"google_ads.product_performance WHERE campaign_id=20810136438 (DM 46 campaign), filtered to Sonya's owned product IDs (same list salesuk.js uses for sales attribution)","dmTotalSource":"google_ads.campaign_performance WHERE campaign_id=20810136438 (full DM 46 campaign spend, all products/traffic — shown for context only)","meta":{"cacheStatus":"live","generatedAt":"2026-08-04T10:08:19.469Z"}}
+{
+  "success": true,
+  "employee": "sonya",
+  "month": "2025-07",
+  "cost": 1228.78,
+  "dmSonyaProductCost": 1242.73,
+  "dmProductCost": 1242.73,
+  "dmTotalCost": 5628.47,
+  "totalCost": 2471.51,
+  "source": "google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='Sonya' AND account_id=4503486236 (LEDSone account only)",
+  "dmSource": "google_ads.product_performance WHERE campaign_id=20810136438 (DM 46 campaign), filtered to Sonya's owned product IDs (same list salesuk.js uses for sales attribution)",
+  "dmTotalSource": "google_ads.campaign_performance WHERE campaign_id=20810136438 (full DM 46 campaign spend, all products/traffic — shown for context only)",
+  "meta": {
+    "cacheStatus": "live",
+    "generatedAt": "2026-08-19T09:30:47.440Z"
+  }
+}
