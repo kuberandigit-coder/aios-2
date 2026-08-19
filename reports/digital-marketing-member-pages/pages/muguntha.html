@@ -585,6 +585,38 @@ async function fetchCost(member, month, force){
   };
 }
 
+function costPayloadToShape(data){
+  const dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
+  return {
+    ownCost: data.cost,
+    dmSonyaProductCost: dmProductCost,
+    dmTotalCost: data.dmTotalCost || 0,
+    totalCost: data.totalCost != null ? data.totalCost : data.cost,
+  };
+}
+
+// Replaces 40 separate requests (20 months x sales+cost) with 1 request that
+// fetches everything server-side in one serverless invocation — added
+// 2026-08-19 to fix Sonya's tab taking ~2.6s+ to load. See api/muguntha.js's
+// handlePerfBatch(). Scoped to Sonya only for now.
+async function fetchSonyaBatch(force){
+  const url = '/api/muguntha?action=perf-batch&member=sonya' + (force ? '&refresh=1' : '');
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'perf-batch failed');
+  const sales25Arr = MONTHS_2025.map((m) => {
+    const s = data.months[m] && data.months[m].sales;
+    return (s && s.combinedSummary) ? s.combinedSummary.netSales : 0;
+  });
+  const sales26Arr = MONTHS_2026.map((m) => {
+    const s = data.months[m] && data.months[m].sales;
+    return (s && s.combinedSummary) ? s.combinedSummary.netSales : 0;
+  });
+  const cost25Arr = MONTHS_2025.map((m) => costPayloadToShape(data.months[m].cost));
+  const cost26Arr = MONTHS_2026.map((m) => costPayloadToShape(data.months[m].cost));
+  return [sales25Arr, sales26Arr, cost25Arr, cost26Arr];
+}
+
 // Runs fn over items with at most `limit` in flight at once. Needed because
 // 40 concurrent requests (one loadAll()) takes ~2.6s server-side, but if the
 // user switches tabs before the previous tab finishes loading, the requests
@@ -622,12 +654,14 @@ async function loadAll(member, idSuffix, force){
     // (live)" click, which is what caused the Shopify throttling
     // ("exceeded retries") and Postgres connection-pool timeouts. Fixed
     // 2026-08-05.
-    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
-      mapLimit(MONTHS_2026, 5, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),
-      mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
-      mapLimit(MONTHS_2026, 5, (m) => fetchCost(member, m, force && LIVE_2026.includes(m))),
-    ]);
+    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = member === 'sonya'
+      ? await fetchSonyaBatch(force)
+      : await Promise.all([
+          mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
+          mapLimit(MONTHS_2026, 5, (m) => fetchGroupSales('2026', member, m, force && LIVE_2026.includes(m))),
+          mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
+          mapLimit(MONTHS_2026, 5, (m) => fetchCost(member, m, force && LIVE_2026.includes(m))),
+        ]);
 
     const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
     MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; cost25[m] = cost25Arr[i]; });

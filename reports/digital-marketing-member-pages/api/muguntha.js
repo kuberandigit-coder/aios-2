@@ -422,10 +422,137 @@ async function queryDmCostsForMonth(productIds, month) {
   }
 }
 
+// Extracted from the handler 2026-08-19 so the new perf-batch action (below)
+// can reuse the exact same snapshot-then-live logic per month, in-process,
+// without an HTTP round trip per call. Behaviour is unchanged from before —
+// this is a pure refactor, not a logic change.
+async function getCostPayload(employeeKey, month, forceRefresh) {
+  const cfg = EMPLOYEES[employeeKey];
+  if (!cfg) throw new Error(`Unknown employee "${employeeKey}"`);
+  const labels = buildSourceLabels(cfg);
+  const isLive = CURRENT_LIVE_MONTHS.includes(month);
+  if (!forceRefresh && !isLive) {
+    const staticPath = path.join(__dirname, 'data', `muguntha-${cfg.snapshotSlug}-${month}.json`);
+    if (fs.existsSync(staticPath)) {
+      const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+      // Snapshots written before the DM-cost fields were added (2026-08-04)
+      // don't have them — fall through to a live query rather than serving
+      // an incomplete row. Support both the legacy Sonya field name
+      // (dmSonyaProductCost) and the generic one (dmProductCost).
+      const dmCost = staticData.dmProductCost != null ? staticData.dmProductCost : staticData.dmSonyaProductCost;
+      if (dmCost != null && staticData.dmTotalCost != null) {
+        return { ...staticData, meta: { ...(staticData.meta || {}), cacheStatus: 'static-snapshot' } };
+      }
+    }
+  }
+
+  const [cost, dmCosts] = await Promise.all([
+    queryCostForMonth(cfg, month),
+    // Only Sonya/Sajeepan get a DM 46 product-share — Kamsi/Dilaksi are
+    // SEO/Organic and never receive DM-attributed sales, so skip the DM
+    // query entirely for them rather than running it and discarding a
+    // guaranteed-zero result (per explicit instruction 2026-08-05: remove
+    // DM cost from staff who don't actually have it, not just zero it).
+    (cfg.isJefri || !cfg.hasDm) ? Promise.resolve({ dmProductCost: 0, dmTotalCost: 0 }) : queryDmCostsForMonth(cfg.productIds, month),
+  ]);
+  const totalCost = Math.round((cost + dmCosts.dmProductCost) * 100) / 100;
+  return {
+    success: true,
+    employee: employeeKey,
+    month,
+    cost,
+    // dmSonyaProductCost kept for backward compatibility with existing
+    // Sonya snapshot files / any cached clients; dmProductCost is the
+    // generic name new code (and Sajeepan) should read.
+    dmSonyaProductCost: employeeKey === 'sonya' ? dmCosts.dmProductCost : undefined,
+    dmProductCost: dmCosts.dmProductCost,
+    dmTotalCost: dmCosts.dmTotalCost,
+    totalCost,
+    source: labels.source,
+    dmSource: labels.dmSource,
+    dmTotalSource: labels.dmTotalSource,
+    meta: { cacheStatus: 'live', generatedAt: new Date().toISOString() },
+  };
+}
+
+// Runs fn over items with at most `limit` in flight — same pattern used in
+// muguntha.html's client-side mapLimit, applied here server-side to avoid
+// hammering the Postgres pool with 20+ concurrent queries when perf-batch
+// fires them all in one function invocation.
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(new Array(Math.min(limit, items.length)).fill(0).map(worker));
+  return results;
+}
+
+// In-process call into salesuk.js/sales25.js's existing HTTP handler,
+// avoiding a real network round trip. Mocks just enough of (req, res) for
+// those handlers to run unmodified — same snapshot-then-live logic they
+// already use for every other staff dashboard.
+function callHandlerInProcess(handlerFn, query) {
+  return new Promise((resolve, reject) => {
+    const res = {
+      _status: 200,
+      setHeader() {},
+      status(code) { this._status = code; return this; },
+      json(body) { resolve(body); },
+    };
+    handlerFn({ query }, res).catch(reject);
+  });
+}
+
+const MONTHS_2025 = ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06', '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12'];
+const MONTHS_2026 = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+
+// Batch endpoint (added 2026-08-19): replaces the 40 separate HTTP requests
+// muguntha.html's loadAll() previously fired per staff tab (20 months x 2
+// metrics) with a single request that fetches all months' sales+cost inside
+// one serverless function invocation. Scoped to Sonya only for now — see
+// muguntha.html's loadAll()/fetchGroupSales()/fetchCost() for the client
+// side this replaces for her tab.
+async function handlePerfBatch(req, res) {
+  const member = req.query && req.query.member ? String(req.query.member).toLowerCase() : 'sonya';
+  if (member !== 'sonya') {
+    res.status(400).json({ success: false, error: `perf-batch only supports "sonya" so far` });
+    return;
+  }
+  const forceRefresh = req.query && req.query.refresh === '1';
+  const salesuk = require('./salesuk.js');
+  const sales25 = require('./sales25.js');
+
+  try {
+    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
+      mapLimit(MONTHS_2025, 6, (m) => callHandlerInProcess(sales25, { group: 'sonya', month: m })),
+      mapLimit(MONTHS_2026, 6, (m) => callHandlerInProcess(salesuk, { group: 'sonya', month: m, refresh: (forceRefresh && m === '2026-08') ? '1' : undefined })),
+      mapLimit(MONTHS_2025, 6, (m) => getCostPayload('sonya', m, false)),
+      mapLimit(MONTHS_2026, 6, (m) => getCostPayload('sonya', m, forceRefresh && m === '2026-08')),
+    ]);
+
+    const byMonth = {};
+    MONTHS_2025.forEach((m, i) => { byMonth[m] = { sales: sales25Arr[i], cost: cost25Arr[i] }; });
+    MONTHS_2026.forEach((m, i) => { byMonth[m] = { sales: sales26Arr[i], cost: cost26Arr[i] }; });
+
+    res.status(200).json({ success: true, member, months: byMonth, meta: { generatedAt: new Date().toISOString() } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.query && req.query.action === 'tag-listing') {
     await handleTagListing(req, res);
+    return;
+  }
+  if (req.query && req.query.action === 'perf-batch') {
+    await handlePerfBatch(req, res);
     return;
   }
   const month = req.query && req.query.month ? String(req.query.month) : '';
@@ -441,52 +568,9 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const labels = buildSourceLabels(cfg);
-  const isLive = CURRENT_LIVE_MONTHS.includes(month);
-  if (!forceRefresh && !isLive) {
-    const staticPath = path.join(__dirname, 'data', `muguntha-${cfg.snapshotSlug}-${month}.json`);
-    if (fs.existsSync(staticPath)) {
-      const staticData = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
-      // Snapshots written before the DM-cost fields were added (2026-08-04)
-      // don't have them — fall through to a live query rather than serving
-      // an incomplete row. Support both the legacy Sonya field name
-      // (dmSonyaProductCost) and the generic one (dmProductCost).
-      const dmCost = staticData.dmProductCost != null ? staticData.dmProductCost : staticData.dmSonyaProductCost;
-      if (dmCost != null && staticData.dmTotalCost != null) {
-        res.status(200).json({ ...staticData, meta: { ...(staticData.meta || {}), cacheStatus: 'static-snapshot' } });
-        return;
-      }
-    }
-  }
-
   try {
-    const [cost, dmCosts] = await Promise.all([
-      queryCostForMonth(cfg, month),
-      // Only Sonya/Sajeepan get a DM 46 product-share — Kamsi/Dilaksi are
-      // SEO/Organic and never receive DM-attributed sales, so skip the DM
-      // query entirely for them rather than running it and discarding a
-      // guaranteed-zero result (per explicit instruction 2026-08-05: remove
-      // DM cost from staff who don't actually have it, not just zero it).
-      (cfg.isJefri || !cfg.hasDm) ? Promise.resolve({ dmProductCost: 0, dmTotalCost: 0 }) : queryDmCostsForMonth(cfg.productIds, month),
-    ]);
-    const totalCost = Math.round((cost + dmCosts.dmProductCost) * 100) / 100;
-    res.status(200).json({
-      success: true,
-      employee: employeeKey,
-      month,
-      cost,
-      // dmSonyaProductCost kept for backward compatibility with existing
-      // Sonya snapshot files / any cached clients; dmProductCost is the
-      // generic name new code (and Sajeepan) should read.
-      dmSonyaProductCost: employeeKey === 'sonya' ? dmCosts.dmProductCost : undefined,
-      dmProductCost: dmCosts.dmProductCost,
-      dmTotalCost: dmCosts.dmTotalCost,
-      totalCost,
-      source: labels.source,
-      dmSource: labels.dmSource,
-      dmTotalSource: labels.dmTotalSource,
-      meta: { cacheStatus: 'live', generatedAt: new Date().toISOString() },
-    });
+    const payload = await getCostPayload(employeeKey, month, forceRefresh);
+    res.status(200).json(payload);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message || 'Unknown error' });
   }
