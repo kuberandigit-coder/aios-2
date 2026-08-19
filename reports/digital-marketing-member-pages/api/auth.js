@@ -96,6 +96,7 @@ const ROLE_LANDING = {
   jakshan: 'pages/jakshan.html',
   kuberan: 'pages/kuberan.html',
   piranav: 'pages/piranav.html',
+  dilaikshan: 'pages/dilaikshan.html',
 };
 
 // ===== EOD tool integration (added 2026-08-19) =====
@@ -331,6 +332,46 @@ async function handleUpdatePassword(req, res) {
   return res.status(200).json({ success: true });
 }
 
+// Admin-only user creation (added 2026-08-19, per Kuberan: "create a new
+// user dilaikshan"). No such endpoint existed before — new users had
+// always been created directly via SQL by a prior session with raw DB
+// access, which Claude Code's sandboxed env vars don't expose (secrets
+// come back redacted). Gated on either a valid can_manage_users session
+// (for future use via the Users tab UI) OR a matching ADMIN_TASK_SECRET
+// header (same pattern as CACHE_WARM_SECRET in api/muguntha.js), since
+// this session has no live admin session cookie to authenticate with.
+async function handleCreateUser(req, res) {
+  const cookies = parseCookies(req);
+  const session = verify(cookies[COOKIE_NAME]);
+  const hasSessionAuth = session && session.can_manage_users;
+  const secret = process.env.ADMIN_TASK_SECRET;
+  const hasSecretAuth = secret && req.headers['x-admin-secret'] === secret;
+  if (!hasSessionAuth && !hasSecretAuth) {
+    return res.status(403).json({ success: false, error: 'Not authorized.' });
+  }
+  const body = await readJsonBody(req);
+  const username = (body.username || '').toString().trim().toLowerCase();
+  const password = (body.password || '').toString();
+  const staffKey = (body.staff_key || username).toString().trim().toLowerCase();
+  const displayName = (body.display_name || username).toString().trim();
+  const role = (body.role === 'admin') ? 'admin' : 'staff';
+  const canManageUsers = !!body.can_manage_users;
+  if (!username || !password || password.length < 8) {
+    return res.status(400).json({ success: false, error: 'username and a password (8+ chars) are required.' });
+  }
+  const db = getPool();
+  const existing = await db.query('SELECT id FROM users WHERE username = $1', [username]);
+  if (existing.rowCount) {
+    return res.status(409).json({ success: false, error: 'Username already exists.' });
+  }
+  const hash = await bcrypt.hash(password, 12);
+  await db.query(
+    'INSERT INTO users (username, password_hash, role, staff_key, display_name, can_manage_users) VALUES ($1, $2, $3, $4, $5, $6)',
+    [username, hash, role, staffKey, displayName, canManageUsers]
+  );
+  return res.status(200).json({ success: true, username, staff_key: staffKey, role });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const action = (req.query && req.query.action) || '';
@@ -340,6 +381,7 @@ module.exports = async function handler(req, res) {
     if (action === 'logout' && req.method === 'POST') return handleLogout(req, res);
     if (action === 'list-users' && req.method === 'GET') return await handleListUsers(req, res);
     if (action === 'update-password' && req.method === 'POST') return await handleUpdatePassword(req, res);
+    if (action === 'create-user' && req.method === 'POST') return await handleCreateUser(req, res);
     if (action === 'eod-submit' && req.method === 'POST') return await handleEodSubmit(req, res);
     if (action === 'eod-leave' && req.method === 'POST') return await handleEodLeave(req, res);
     if (action === 'eod-list' && req.method === 'GET') return await handleEodList(req, res);
