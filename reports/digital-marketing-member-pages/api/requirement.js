@@ -5675,16 +5675,30 @@ const jefriReq7HandlerModule = (function() {
     });
   }
 
+  // Corrected 2026-08-19 per Kuberan: `mapped_sku` is NOT a red flag — it is
+  // the corrected/canonical SKU staff enter for that listing in the actual
+  // Listing Tool (confirmed against a real example: raw sku "LDMST64B228 D"
+  // with mapped_sku "LDMST64B228" — the Listing Tool's own "corrected SKU"
+  // box shows "LDMST64B228", matching mapped_sku exactly). So a listing
+  // whose `mapped_sku` equals the B&Q SKU has ALREADY been corrected to the
+  // right identity and counts as Correct, with its price included in the
+  // comparison — not "Incorrect". The raw `sku` is only shown (as "SKU
+  // Found") for transparency when it differs from the B&Q SKU, so staff can
+  // see what the uncorrected/displayed listing SKU still looks like.
+  // "Incorrect"/"Fix SKU First" is kept in the flag vocabulary for cases
+  // where a listing's raw sku is close-but-wrong AND no mapped_sku
+  // correction has been recorded — this data source cannot produce that
+  // case today (every match here is found via exact sku OR mapped_sku), so
+  // in practice this flag is currently unreachable; not invented, just
+  // dormant until a data source can signal a genuinely uncorrected mismatch.
   function validateSku(sku, listingRows) {
-    const exact = listingRows.filter((r) => r.sku === sku);
-    if (exact.length > 0) {
-      return { validation: 'Correct', foundSku: null, listings: pickListings(exact) };
+    const matched = listingRows.filter((r) => r.sku === sku || r.mapped_sku === sku);
+    if (matched.length === 0) {
+      return { validation: 'Not Found', foundSku: null, listings: [] };
     }
-    const viaMapped = sortByActiveThenId(listingRows.filter((r) => r.mapped_sku === sku));
-    if (viaMapped.length > 0) {
-      return { validation: 'Incorrect', foundSku: viaMapped[0].sku, listings: [] };
-    }
-    return { validation: 'Not Found', foundSku: null, listings: [] };
+    const listings = pickListings(matched);
+    const corrected = sortByActiveThenId(matched).find((r) => r.sku !== sku);
+    return { validation: 'Correct', foundSku: corrected ? corrected.sku : null, listings };
   }
 
   function priceCompare(listings, bqPricePerUnit) {
