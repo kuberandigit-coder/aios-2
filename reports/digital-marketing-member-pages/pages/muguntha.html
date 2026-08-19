@@ -606,6 +606,17 @@ async function fetchJsonResilient(url, timeoutMs, retries){
   return null;
 }
 
+// Sonya's cost-breakdown popup (and, added 2026-08-19, the Total Cost table
+// cell itself) reuse data the page already fetches during the normal
+// loadAll() pass — sales25.js/salesuk.js's combinedSummary already includes
+// vat/discounts/refunds/transactionFee, previously discarded here since
+// only netSales was needed for the Sales column. Stashing it avoids firing
+// any *additional* Shopify-backed requests on top of an already fragile
+// endpoint (see fetchJsonResilient above) — the popup becomes an instant
+// read of already-loaded data instead of a fresh fetch.
+const SONYA_MONTH_DATA = {};
+function sonyaMonthKey(year, month){ return year + ':' + month; }
+
 async function fetchGroupSales(year, member, month, force){
   const isJefri = member === 'jefri';
   const endpoint = isJefri ? (year === '2025' ? 'salesde25' : 'sales') : (year === '2025' ? 'sales25' : 'salesuk');
@@ -615,6 +626,14 @@ async function fetchGroupSales(year, member, month, force){
   const data = await fetchJsonResilient(url, 12000, 1);
   if (!data || !data.success) return null;
   if (!data.combinedSummary) return 0;
+  if (member === 'sonya') {
+    const s = data.combinedSummary;
+    const key = sonyaMonthKey(year, month);
+    SONYA_MONTH_DATA[key] = Object.assign({}, SONYA_MONTH_DATA[key], {
+      netSales: s.netSales, vat: s.vat || 0, discounts: s.discounts || 0,
+      refunds: s.refunds || 0, transactionFee: s.transactionFee || 0,
+    });
+  }
   // netSales (excl. tax/shipping/discounts/refunds) for Sonya/Sajeepan/Kamsi
   // — matches the "Net Sales" figure already shown on salesuk.html. Jefri
   // keeps orderTotalSum (incl. tax+shipping) per explicit user request.
@@ -626,6 +645,12 @@ async function fetchCost(member, month, force){
   const data = await fetchJsonResilient(url, 12000, 1);
   if (!data || !data.success) return { ownCost: null, dmSonyaProductCost: null, dmTotalCost: null, totalCost: null };
   const dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
+  if (member === 'sonya') {
+    const key = sonyaMonthKey(month.slice(0, 4), month);
+    SONYA_MONTH_DATA[key] = Object.assign({}, SONYA_MONTH_DATA[key], {
+      ownCost: data.cost, dmProductCost, dmTotalCost: data.dmTotalCost || 0,
+    });
+  }
   return {
     ownCost: data.cost,
     dmSonyaProductCost: dmProductCost,
@@ -700,7 +725,23 @@ async function mapLimit(items, limit, fn) {
 // liveMonthsPending (a Set of 'YYYY-MM' strings) marks live months whose
 // 2026 sales+cost haven't arrived yet — their row gets sales2026=undefined
 // (distinct from null) so renderTable can show "Loading…" instead of "N/A".
-function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending){
+// Sonya only (2026-08-19): Total Cost was previously ad spend only (own
+// campaign cost + DM 46 product-share). Kuberan wants the table's headline
+// Total Cost to be the true total — ad spend PLUS VAT, Product Cost (20% of
+// Net Sales), Transaction Fee, Discount, Refund, and her Shopify
+// subscription-fee share, i.e. exactly what the cost-breakdown popup shows.
+// Reads from SONYA_MONTH_DATA (populated by fetchGroupSales()/fetchCost()
+// during the normal page load) — adds no new requests.
+function sonyaExtraCost(year, month, netSales){
+  const d = SONYA_MONTH_DATA[sonyaMonthKey(year, month)] || {};
+  const vat = d.vat || 0, discounts = d.discounts || 0, refunds = d.refunds || 0, transactionFee = d.transactionFee || 0;
+  const productCost = Math.round((netSales || 0) * 0.20 * 100) / 100;
+  const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
+  const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
+  return Math.round((vat + productCost + transactionFee + discounts + refunds + subscriptionFee) * 100) / 100;
+}
+
+function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending, member){
   // Align by calendar month number (MM), not by array position — 2025 runs
   // Jan-Jun and 2026 runs Jun-Aug, so a positional zip would pair e.g.
   // 2025-01 with 2026-06 under a single mislabeled "June" row.
@@ -720,12 +761,21 @@ function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonth
     // with the DM portion shown in brackets alongside it — identical
     // treatment for both years (per user instruction 2026-08-04, reversing
     // the earlier 2025-excludes-DM rule).
-    const costVal2025 = c25 ? c25.totalCost : null;
+    const adsCost2025 = c25 ? c25.totalCost : null;
     const ownCost2025 = c25 ? c25.ownCost : null;
     const dmSonya2025 = c25 ? c25.dmSonyaProductCost : null;
-    const costVal2026 = pending ? undefined : (c26 ? c26.totalCost : null);
+    const adsCost2026 = pending ? undefined : (c26 ? c26.totalCost : null);
     const ownCost2026 = pending ? undefined : (c26 ? c26.ownCost : null);
     const dmSonya2026 = pending ? undefined : (c26 ? c26.dmSonyaProductCost : null);
+    // Sonya's Total Cost = ad spend + VAT/Product Cost/Transaction Fee/
+    // Discount/Refund/Subscription share (see sonyaExtraCost above) — every
+    // other member's Total Cost stays ad-spend-only, unchanged.
+    const costVal2025 = (member === 'sonya' && adsCost2025 != null && sales2025 != null)
+      ? Math.round((adsCost2025 + sonyaExtraCost('2025', m25, sales2025)) * 100) / 100
+      : adsCost2025;
+    const costVal2026 = (member === 'sonya' && !pending && adsCost2026 != null && sales2026 != null)
+      ? Math.round((adsCost2026 + sonyaExtraCost('2026', m26, sales2026)) * 100) / 100
+      : adsCost2026;
 
     const net2025 = sales2025 != null ? sales2025 - costVal2025 : null;
     const roas2025 = sales2025 != null && costVal2025 > 0 ? sales2025 / costVal2025 : null;
@@ -805,7 +855,7 @@ async function loadAll(member, idSuffix, force){
     MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; cost25[m] = cost25Arr[i]; });
     nonLiveMonths2026.forEach((m, i) => { sales26ByMonth[m] = sales26Arr[i]; cost26[m] = cost26Arr[i]; });
 
-    const rows = buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending);
+    const rows = buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending, member);
     renderTable(rows, memberLabel, idSuffix, member);
     renderCards(rows, idSuffix);
     statusChip.textContent = 'Loading live month…';
@@ -822,7 +872,7 @@ async function loadAll(member, idSuffix, force){
       liveMonthsPending.delete(m);
     }));
 
-    const finalRows = buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending);
+    const finalRows = buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonthsPending, member);
     renderTable(finalRows, memberLabel, idSuffix, member);
     renderCards(finalRows, idSuffix);
     statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
@@ -1470,41 +1520,53 @@ function cbCloseFn(){ document.getElementById('cbOverlay').classList.remove('ope
 document.getElementById('cbClose').addEventListener('click', cbCloseFn);
 document.getElementById('cbOverlay').addEventListener('click', (e) => { if (e.target.id === 'cbOverlay') cbCloseFn(); });
 
-// Fetches the same /api/sales25 or /api/salesuk endpoint the table already
-// uses (cached — a repeat call for a month already on-screen is near-
-// instant) and pulls out the extra combinedSummary fields (vat, discounts,
-// refunds) that loadAll()/fetchGroupSales() discard, since the table only
-// ever needed netSales. Only called lazily on click, not during page load.
+// Reads SONYA_MONTH_DATA (populated by fetchGroupSales()/fetchCost() during
+// the normal page load) instead of firing a fresh request — the table has
+// already fetched everything this popup needs, so opening it costs nothing
+// extra. Added 2026-08-19: also shows Ads Cost as its own line, since the
+// table's Total Cost cell now includes it in the headline total too (was
+// previously ad-spend-only, shown separately from this popup's other
+// components). Falls back to a resilient fetch only if the month's data
+// somehow isn't cached yet (e.g. clicked mid-load).
 async function openCostPopup(member, year, month, monthLabel){
   document.getElementById('cbTitle').textContent = memberDisplayName(member) + ' — ' + monthLabel + ' ' + year + ' Cost Breakdown';
   document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Loading breakdown&hellip;</div>';
   cbOpen();
   try {
-    const endpoint = year === '2025' ? 'sales25' : 'salesuk';
-    const res = await fetch('/api/' + endpoint + '?group=' + member + '&month=' + encodeURIComponent(month));
-    const data = await res.json();
-    if (!data.success || !data.combinedSummary) throw new Error(data.error || 'No data for this month');
-    const s = data.combinedSummary;
-    const netSales = s.netSales || 0;
-    const vat = s.vat || 0;
-    const discounts = s.discounts || 0;
-    const refunds = s.refunds || 0;
-    const transactionFee = s.transactionFee || 0;
+    let d = SONYA_MONTH_DATA[sonyaMonthKey(year, month)];
+    if (!d || d.netSales == null || d.ownCost == null) {
+      const endpoint = year === '2025' ? 'sales25' : 'salesuk';
+      const [salesData, costData] = await Promise.all([
+        fetchJsonResilient('/api/' + endpoint + '?group=' + member + '&month=' + encodeURIComponent(month), 12000, 1),
+        fetchJsonResilient('/api/muguntha?employee=' + member + '&month=' + encodeURIComponent(month), 12000, 1),
+      ]);
+      if (!salesData || !salesData.success || !salesData.combinedSummary) throw new Error('No data for this month');
+      const s = salesData.combinedSummary;
+      d = {
+        netSales: s.netSales || 0, vat: s.vat || 0, discounts: s.discounts || 0,
+        refunds: s.refunds || 0, transactionFee: s.transactionFee || 0,
+        ownCost: costData ? costData.cost : null,
+        dmProductCost: costData ? (costData.dmProductCost != null ? costData.dmProductCost : costData.dmSonyaProductCost) : null,
+      };
+    }
+    const netSales = d.netSales || 0;
+    const adsCost = (d.ownCost || 0) + (d.dmProductCost || 0);
     const productCost = Math.round(netSales * 0.20 * 100) / 100;
     const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
     const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
-    const total = Math.round((vat + productCost + transactionFee + discounts + refunds + subscriptionFee) * 100) / 100;
+    const total = Math.round((adsCost + d.vat + productCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
 
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
     document.getElementById('cbBody').innerHTML =
-      row('VAT', vat) +
+      row('Ads Cost', adsCost, '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')') +
+      row('VAT', d.vat) +
       row('Product Cost (20% of Net Sales)', productCost, '20% × ' + fmtMoney(netSales)) +
-      row('Transaction Fee', transactionFee) +
-      row('Discount', discounts) +
-      row('Refund', refunds) +
+      row('Transaction Fee', d.transactionFee) +
+      row('Discount', d.discounts) +
+      row('Refund', d.refunds) +
       row('Shopify Subscription Fee', subscriptionFee, '£' + SHOPIFY_SUBSCRIPTION_GBP.toFixed(2) + ' ÷ ' + splitBy + ' people') +
       '<div class="cb-row cb-total"><span class="cb-label">Total</span><span class="cb-value">' + fmtMoney(total) + '</span></div>' +
-      '<div class="cb-note">VAT, Discount, and Refund are pulled from the same Shopify order data used for that month\'s Net Sales (' + fmtMoney(netSales) + '). Product Cost is a flat 20% assumption on Net Sales, not a per-product COGS figure. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
+      '<div class="cb-note">This total matches the Total Cost figure shown in the table. VAT, Discount, and Refund are pulled from the same Shopify order data used for that month\'s Net Sales (' + fmtMoney(netSales) + '). Product Cost is a flat 20% assumption on Net Sales, not a per-product COGS figure. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
   } catch (err) {
     document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Error: ' + (err.message || err) + '</div>';
   }
