@@ -108,7 +108,7 @@ async function handleDataQuality(client, res) {
   return res.status(200).json({
     ok: true,
     sources: {
-      semrush:    { status:'static_csv', coverage:'Jul 2023–Jun 2026', months:36, note:'Loaded from master dataset CSV.' },
+      semrush:    { status:'live', coverage:'Jul 2023–present', note:'Weekly ingest via semrush-ingest.js script.' },
       gsc:        { status:'live', earliest:gscQ.rows[0].earliest, latest:gscQ.rows[0].latest, total_days:gscQ.rows[0].total_days, note:'Clicks ≈ 50% of true GSC totals.' },
       google_ads: { status:'live', earliest:adsQ.rows[0].earliest, latest:adsQ.rows[0].latest, account_id:ADS_ACCOUNT, note:'UK account GBP. cost column is already GBP.' },
       ga4:        { status:'limited', coverage:'Mar–Apr 2026 aggregate only', note:'Not reliable for monthly KPIs.' },
@@ -781,8 +781,8 @@ async function handleCwv(res, strategy) {
 /* ─── SEMRUSH ────────────────────────────────────────────────── */
 
 async function handleSemrush(type, res, req) {
-  const NEON_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-  if (!NEON_URL) return res.status(500).json({ ok:false, cause:'no_neon_url', error:'NEON_DATABASE_URL not set' });
+  const NEON_URL = process.env.semrush || process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+  if (!NEON_URL) return res.status(500).json({ ok:false, cause:'no_neon_url', error:'semrush DB env not set' });
   const nc = makeSeoClient(NEON_URL);
   try {
     await nc.connect();
@@ -877,8 +877,8 @@ async function handleSemrush(type, res, req) {
 /* ─── GEO ────────────────────────────────────────────────────── */
 
 async function handleGeo(type, query, res) {
-  const NEON_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-  if (!NEON_URL) return res.status(500).json({ ok:false, error:'NEON_DATABASE_URL not set' });
+  const NEON_URL = process.env.semrush || process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+  if (!NEON_URL) return res.status(500).json({ ok:false, error:'semrush DB env not set' });
   const nc = makeSeoClient(NEON_URL);
   try {
     await nc.connect();

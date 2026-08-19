@@ -637,6 +637,43 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
   </div><!-- /tab-panel-2 -->
 
+  <!-- Req 2 Fix Date Drawer -->
+  <div id="r2FxOverlay" onclick="r2FxClose()"></div>
+  <div id="r2FxDrawer" role="dialog" aria-modal="true">
+    <div class="hfx-hdr">
+      <button class="hfx-close-btn" onclick="r2FxClose()" title="Close">✕</button>
+      <h2 id="r2FxDTitle">Collection</h2>
+      <p id="r2FxDSub">—</p>
+    </div>
+    <div class="hfx-body">
+      <div class="hfx-row">
+        <div class="hfx-check-row">
+          <input type="checkbox" id="r2FxDStarted">
+          <label for="r2FxDStarted">Fix Applied on Shopify</label>
+        </div>
+      </div>
+      <div class="hfx-row">
+        <div class="hfx-label">Fix Date (when you applied it on Shopify)</div>
+        <input type="date" id="r2FxDDate" class="hfx-input" onchange="if(this.value&&_r2FxHandle) r2FxLoadBA(_r2FxHandle,this.value)">
+      </div>
+      <div class="hfx-row">
+        <div class="hfx-label">Notes (optional)</div>
+        <textarea id="r2FxDNotes" class="hfx-input" rows="3" placeholder="e.g. Added meta title targeting 'luminaire suspension'…" style="resize:vertical;"></textarea>
+      </div>
+      <button class="hfx-save-btn" onclick="r2FxSave()">Save Fix Record</button>
+      <div id="r2FxDMsg" style="text-align:center;font-size:12.5px;font-weight:700;margin-top:8px;min-height:18px;"></div>
+      <div class="hfx-ba-section" style="margin-top:18px;">
+        <div class="hfx-ba-title">Before vs After — GSC Performance</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button onclick="r2FxLoadBA(_r2FxHandle,document.getElementById('r2FxDDate').value,7)"  style="padding:4px 12px;font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:var(--card);">7d</button>
+          <button onclick="r2FxLoadBA(_r2FxHandle,document.getElementById('r2FxDDate').value,14)" style="padding:4px 12px;font-size:11px;font-weight:700;border:1px solid var(--accent);border-radius:6px;cursor:pointer;background:var(--accent-soft);color:var(--accent);">14d</button>
+          <button onclick="r2FxLoadBA(_r2FxHandle,document.getElementById('r2FxDDate').value,30)" style="padding:4px 12px;font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:var(--card);">30d</button>
+        </div>
+        <div id="r2FxDBA"><div style="color:var(--muted);font-size:12px;">Set a fix date above to load GSC comparison.</div></div>
+      </div>
+    </div>
+  </div>
+
   <!-- REQUIREMENT 3 -->
   <div class="tab-panel" id="tab-panel-3" role="tabpanel" aria-labelledby="tab-btn-3">
 
@@ -979,15 +1016,6 @@ document.querySelectorAll('#msSidebar a[data-tab]').forEach(function (a) {
     if (n === 5 && typeof r5Render === 'function') setTimeout(r5Render, 50);
   });
 });
-// Restore the tab the user was on before a browser refresh (URL hash of
-// the form #tN). Added 2026-08-12.
-(function(){
-  var m = (location.hash || '').match(/^#t([0-9]+)$/);
-  if (m && m[1] !== '1') {
-    var link = document.querySelector('a[data-tab="' + m[1] + '"]');
-    if (link) link.click();
-  }
-})();
 document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
   e.preventDefault();
   var lbl = document.getElementById('msSignOutLbl');
@@ -1028,8 +1056,16 @@ function showTab(n){
   if (panel) { panel.classList.add('active'); }
   const btn=document.getElementById('tab-btn-'+n);
   if (btn) { btn.classList.add('active');btn.setAttribute('aria-selected','true'); }
+  try { localStorage.setItem('heth_active_tab', n); } catch(e){}
   try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
+(function(){
+  var saved = null;
+  try { saved = localStorage.getItem('heth_active_tab'); } catch(e){}
+  var m = (location.hash || '').match(/^#t([0-9]+)$/);
+  var n = saved ? Number(saved) : (m ? Number(m[1]) : 1);
+  if (n && n !== 1) showTab(n);
+})();
 
 function toggleTrk1(){
   const wrap = document.getElementById('r1TrkWrap');
@@ -1360,21 +1396,13 @@ async function trk_loadDB(){
 // Merge live tracker DB data into TRK_DATA entries
 var _hFxDBCache={};
 async function trk_fetchAllDB(){
-  // Fetch fix entries for all handles in parallel (batched)
-  const issues=['meta_title','meta_desc','faq','alt'];
-  const toFetch=[];
-  P.forEach(p=>{ issues.forEach(iss=>{ toFetch.push({h:p.h,iss}); }); });
-  // Fetch in small parallel groups
+  // Single bulk call — replaces 200 individual requests
   const results={};
-  await Promise.all(toFetch.map(async ({h,iss})=>{
-    try {
-      const r=await fetch(`/api/members-api?member=hetheesha&type=fix-detail&handle=${encodeURIComponent(h)}&issue_type=${iss}`);
-      const d=await r.json();
-      if(d.ok && d.tracker && d.tracker.fix_started){
-        results[h+'|'+iss]=d.tracker;
-      }
-    } catch(e){}
-  }));
+  try {
+    const r=await fetch('/api/members-api?member=hetheesha&type=fix-load-all');
+    const d=await r.json();
+    if(d.ok && d.entries) Object.assign(results, d.entries);
+  } catch(e){}
   _hFxDBCache=results;
 }
 
@@ -1651,7 +1679,10 @@ function hFxBAHTML(data){
       <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);color:#0a7d4f;">${fmt(r.av,r.sfx)}</td>
       <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);">${chg(r.bv,r.av,r.lower)}</td>
     </tr>`).join('')}</tbody>
-  </table>`;
+  </table>
+  <div style="margin-top:10px;font-size:11.5px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;padding:10px 14px;border-radius:8px;line-height:1.6;">
+    <strong>ℹ Sales includes all channels</strong> — not just organic Google. A sale can come from: Direct (bookmarked / typed URL), Google Ads (paid — not in GSC), Email / newsletter, Referral (another site), or Social media. Zero GSC impressions does not mean zero sales.
+  </div>`;
 }
 async function hFxSave(){
   if(!hFxDrawerHandle||!hFxDrawerIssue) return;
@@ -1764,7 +1795,10 @@ function trkBaHTML(handle){
           <td style="text-align:right;padding:6px 10px;border-bottom:1px solid var(--line);">${chg(m.bv,m.av,m.lower)}</td>
         </tr>`).join('')}
       </tbody>
-    </table>`}
+    </table>
+    <div style="margin-top:10px;font-size:11.5px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;padding:10px 14px;border-radius:8px;line-height:1.6;">
+      <strong>ℹ Sales includes all channels</strong> — not just organic Google. A sale can come from: Direct (bookmarked / typed URL), Google Ads (paid — not in GSC), Email / newsletter, Referral (another site), or Social media. Zero GSC impressions does not mean zero sales.
+    </div>`}
   </div>`;
 }
 
@@ -2101,19 +2135,20 @@ async function r2_loadLive() {
   }
 }
 
-function trk2_init(tracker, fetched_at) {
-  const stored = JSON.parse(localStorage.getItem(TRK2_STORE_KEY) || '{}');
-  tracker.forEach(item => {
-    const k = item.handle + '::' + item.field_key;
-    if (item.now_fixed && !stored[k]) {
-      stored[k] = new Date(fetched_at).toISOString().slice(0, 10);
-    }
-  });
-  localStorage.setItem(TRK2_STORE_KEY, JSON.stringify(stored));
+let _r2FxDBCache = {};
+
+async function trk2_init(tracker, fetched_at) {
+  // Load all fix dates from DB
+  try {
+    const resp = await fetch('/api/members-api?member=hetheesha&type=r2-fix-load');
+    const data = await resp.json();
+    if (data.ok) _r2FxDBCache = data.entries || {};
+  } catch(e) { _r2FxDBCache = {}; }
 
   TRK2_DATA = tracker.map(item => {
     const k = item.handle + '::' + item.field_key;
-    return { ...item, fix_date: stored[k] || null };
+    const dbEntry = _r2FxDBCache[k];
+    return { ...item, fix_started: dbEntry ? !!dbEntry.fix_started : false, fix_date: dbEntry ? dbEntry.fix_date : null, notes: dbEntry ? dbEntry.notes : null };
   });
 
   trk2_render();
@@ -2179,19 +2214,33 @@ function trk2_render() {
   const SHOP_BASE = 'https://jedsz8-km.myshopify.com/admin/collections/';
 
   function rowHtml(item, idx) {
+    const rowId    = 'r2-ba-' + item.handle.replace(/[^a-z0-9]/g,'-') + '-' + item.field_key;
     const rankCls  = item.rank <= 10 ? 'rank-badge top10' : 'rank-badge';
     const rankHtml = `<span class="${rankCls}">#${item.rank}</span>`;
     const shopUrl  = `${SHOP_BASE}?handle=${item.handle}`;
-    const editBtn  = `<a class="shopify-fix-btn" href="${shopUrl}" target="_blank" rel="noopener">Fix on Shopify →</a>`;
+    const fixOnShopify = `<a class="shopify-fix-btn" href="${shopUrl}" target="_blank" rel="noopener">Fix →</a>`;
+    const h  = item.handle.replace(/'/g,"\\'");
+    const fk = item.field_key.replace(/'/g,"\\'");
+    const fd = (item.fix_date||'').replace(/'/g,"\\'");
+    const dateBtn = item.fix_date
+      ? `<button onclick="event.stopPropagation();r2FxOpen('${h}','${fk}')" style="border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;background:var(--good);color:#fff;margin-right:4px;">✏ Edit</button>`
+      : `<button onclick="event.stopPropagation();r2FxOpen('${h}','${fk}')" style="border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;margin-right:4px;">📅 Set Date</button>`;
+    const baBtn = item.fix_date
+      ? `<button id="btn2-${rowId}" onclick="event.stopPropagation();trk2ToggleBa('${rowId}','${h}','${fd}')" style="border:1px solid var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);cursor:pointer;margin-right:4px;">▶ B/A</button>`
+      : '';
     const lv = item.live_value ? `<span class="after-val">${String(item.live_value).slice(0,60)}</span>` : `<span class="trk-null">—</span>`;
-    return `<tr>
+    const mainRow = `<tr style="cursor:pointer;" onclick="trk2ToggleBa('${rowId}','${h}','${fd}')">
       <td class="rank">${idx+1} ${rankHtml}</td>
-      <td><a href="https://ledsone.fr/collections/${item.handle}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);">${item.handle}</a></td>
+      <td><a href="https://ledsone.fr/collections/${item.handle}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:12px;color:var(--accent);">${item.handle}</a></td>
       <td>${item.field}</td>
-      <td>${item.fix_date ? `<span class="fix-date">${item.fix_date}</span>` : `<span class="trk-pending">Pending</span>`}</td>
+      <td onclick="event.stopPropagation();">${item.fix_date ? `<span class="fix-date">📅 ${item.fix_date}</span>` : `<span style="color:var(--err);font-size:11px;font-weight:700;">⚠ Not set</span>`}</td>
       <td>${lv}</td>
-      <td>${editBtn}</td>
+      <td onclick="event.stopPropagation();">${dateBtn}${baBtn}${fixOnShopify}</td>
     </tr>`;
+    const expandRow = item.fix_date
+      ? `<tr id="${rowId}" style="display:none;background:#f0f8ff;"><td colspan="6" style="padding:0;"></td></tr>`
+      : '';
+    return mainRow + expandRow;
   }
 
   document.getElementById('r2TrkFixedBody').innerHTML = filtFixed.length
@@ -2217,6 +2266,186 @@ function trk2_exportCSV() {
   a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
   a.download = 'hetheesha-req02-collection-fix-tracker.csv';
   a.click();
+}
+
+async function trk2ToggleBa(rowId, handle, fix_date) {
+  const row = document.getElementById(rowId);
+  const btn = document.getElementById('btn2-' + rowId);
+  if (!row) return;
+  const open = row.style.display !== 'none';
+  if (open) {
+    row.style.display = 'none';
+    if (btn) btn.textContent = '▶ B/A';
+    return;
+  }
+  row.style.display = '';
+  if (btn) btn.textContent = '▼ Hide';
+  if (!fix_date) {
+    const td = row.querySelector('td');
+    if (td) td.innerHTML = '<div style="padding:14px 20px;color:var(--muted);font-size:12px;">No fix date set — set a fix date to see Before vs After GSC data.</div>';
+    return;
+  }
+  await trk2RefreshBa(rowId, handle, fix_date, 14);
+}
+
+async function trk2RefreshBa(rowId, handle, fix_date, days) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const td = row.querySelector('td');
+  if (!td) return;
+  td.innerHTML = '<div style="padding:10px 20px;color:var(--muted);font-size:12px;">⏳ Loading GSC data…</div>';
+  try {
+    const url = `/api/members-api?member=hetheesha&type=r2-fix-detail&handle=${encodeURIComponent(handle)}&fix_date=${encodeURIComponent(fix_date)}&days=${days}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.ok) {
+      td.innerHTML = trk2InlineBaHTML(data, rowId, handle, fix_date, days);
+    } else {
+      td.innerHTML = `<div style="padding:10px 20px;color:var(--err);font-size:12px;">Error: ${data.error || 'Failed'}</div>`;
+    }
+  } catch(e) {
+    td.innerHTML = `<div style="padding:10px 20px;color:var(--err);font-size:12px;">Failed to load GSC data</div>`;
+  }
+}
+
+function trk2InlineBaHTML(data, rowId, handle, fix_date, days) {
+  const before = data.before, after = data.after;
+  const noData = !before && !after;
+  const bPeriod = data.before_period || '—', aPeriod = data.after_period || '—';
+  const safeRow = rowId.replace(/'/g,"\\'"), safeH = handle.replace(/'/g,"\\'"), safeFd = fix_date.replace(/'/g,"\\'");
+  function fmt(v, suffix) {
+    if (v === null || v === undefined) return '<span style="color:var(--muted)">—</span>';
+    return (suffix==='€'?'€':'') + (typeof v==='number' ? v.toLocaleString('fr-FR') : v) + (suffix&&suffix!=='€'?suffix:'');
+  }
+  function chg(b, a, low) {
+    if (b===null||a===null||b===undefined||a===undefined) return '<span style="color:var(--muted)">—</span>';
+    const diff=a-b, sign=diff>=0?'+':'';
+    const col = low ? (diff<0?'var(--good)':'var(--err)') : (diff>=0?'var(--good)':'var(--err)');
+    const pct = b!==0 ? ` (${sign}${Math.round(diff/Math.abs(b)*100)}%)` : '';
+    return `<span style="color:${col};font-weight:700;">${sign}${parseFloat(diff.toFixed(2)).toLocaleString('fr-FR')}${pct}</span>`;
+  }
+  const metrics = [
+    {label:'Impressions', bv:before?.imp,     av:after?.imp,     suffix:'',  low:false},
+    {label:'Clicks',      bv:before?.clicks,  av:after?.clicks,  suffix:'',  low:false},
+    {label:'CTR (%)',     bv:before?.ctr,     av:after?.ctr,     suffix:'%', low:false},
+    {label:'Avg. Position',bv:before?.avg_pos,av:after?.avg_pos, suffix:'',  low:true},
+  ];
+  const btnStyle = (d) => `padding:3px 10px;font-size:11px;font-weight:700;border:1px solid ${d===days?'var(--accent)':'var(--line)'};border-radius:5px;cursor:pointer;background:${d===days?'var(--accent)':'var(--card)'};color:${d===days?'#fff':'var(--ink)'};`;
+  return `<div style="padding:14px 20px 18px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;">Before vs After Fix — GSC Performance</div>
+      <div style="display:flex;gap:6px;margin-left:auto;">
+        <button onclick="trk2RefreshBa('${safeRow}','${safeH}','${safeFd}',7)"  style="${btnStyle(7)}">7d</button>
+        <button onclick="trk2RefreshBa('${safeRow}','${safeH}','${safeFd}',14)" style="${btnStyle(14)}">14d</button>
+        <button onclick="trk2RefreshBa('${safeRow}','${safeH}','${safeFd}',30)" style="${btnStyle(30)}">30d</button>
+      </div>
+    </div>
+    ${noData
+      ? `<div style="color:var(--muted);font-size:12px;padding:8px 0;">No GSC data found for this collection URL in either period.</div>`
+      : `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr>
+        <th style="text-align:left;padding:6px 10px;background:#f0f3f8;border-bottom:2px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;">Metric</th>
+        <th style="text-align:right;padding:6px 10px;background:#fff0f0;border-bottom:2px solid var(--line);font-size:11px;color:#b91c1c;">Before Fix<br><span style="font-weight:400;font-size:10px;">${bPeriod}</span></th>
+        <th style="text-align:right;padding:6px 10px;background:#f0fff4;border-bottom:2px solid var(--line);font-size:11px;color:#0a7d4f;">After Fix<br><span style="font-weight:400;font-size:10px;">${aPeriod}</span></th>
+        <th style="text-align:right;padding:6px 10px;background:#f0f3f8;border-bottom:2px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#42506a;">Change</th>
+      </tr></thead>
+      <tbody>${metrics.map(m=>`<tr>
+        <td style="padding:6px 10px;font-weight:600;border-bottom:1px solid var(--line);">${m.label}</td>
+        <td style="text-align:right;padding:6px 10px;border-bottom:1px solid var(--line);color:#b91c1c;">${fmt(m.bv,m.suffix)}</td>
+        <td style="text-align:right;padding:6px 10px;border-bottom:1px solid var(--line);color:#0a7d4f;">${fmt(m.av,m.suffix)}</td>
+        <td style="text-align:right;padding:6px 10px;border-bottom:1px solid var(--line);">${chg(m.bv,m.av,m.low)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`}
+  </div>`;
+}
+
+let _r2FxHandle = null, _r2FxField = null;
+function r2FxOpen(handle, field_key) {
+  _r2FxHandle = handle; _r2FxField = field_key;
+  const item = TRK2_DATA.find(i => i.handle === handle && i.field_key === field_key) || {};
+  document.getElementById('r2FxDTitle').textContent = handle.length > 50 ? handle.slice(0,48)+'…' : handle;
+  document.getElementById('r2FxDSub').textContent = 'Field: ' + (item.field || field_key) + (item.rank ? ' · Rank #' + item.rank : '');
+  document.getElementById('r2FxDStarted').checked = !!item.fix_started;
+  document.getElementById('r2FxDDate').value = item.fix_date || '';
+  document.getElementById('r2FxDNotes').value = item.notes || '';
+  document.getElementById('r2FxDMsg').textContent = '';
+  document.getElementById('r2FxDBA').innerHTML = '<div style="color:var(--muted);font-size:12px;">Set a fix date above to load GSC comparison.</div>';
+  document.getElementById('r2FxOverlay').classList.add('open');
+  document.getElementById('r2FxDrawer').classList.add('open');
+  if (item.fix_date) r2FxLoadBA(handle, item.fix_date);
+}
+function r2FxClose() {
+  document.getElementById('r2FxOverlay').classList.remove('open');
+  document.getElementById('r2FxDrawer').classList.remove('open');
+  _r2FxHandle = null; _r2FxField = null;
+}
+async function r2FxSave() {
+  if (!_r2FxHandle || !_r2FxField) return;
+  const fix_started = document.getElementById('r2FxDStarted').checked;
+  const fix_date = document.getElementById('r2FxDDate').value || null;
+  const notes = document.getElementById('r2FxDNotes').value || null;
+  const msgEl = document.getElementById('r2FxDMsg');
+  msgEl.textContent = 'Saving…'; msgEl.style.color = 'var(--muted)';
+  try {
+    const res = await fetch('/api/members-api?member=hetheesha&type=r2-fix-save', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_handle: _r2FxHandle, field_key: _r2FxField, fix_started, fix_date, notes }),
+      credentials: 'same-origin',
+    });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'Save failed');
+    msgEl.textContent = '✓ Saved'; msgEl.style.color = 'var(--good)';
+    const k = _r2FxHandle + '::' + _r2FxField;
+    _r2FxDBCache[k] = { fix_started, fix_date, notes };
+    TRK2_DATA = TRK2_DATA.map(i => i.handle === _r2FxHandle && i.field_key === _r2FxField ? { ...i, fix_started, fix_date, notes } : i);
+    if (fix_date) r2FxLoadBA(_r2FxHandle, fix_date);
+    setTimeout(() => { msgEl.textContent = ''; trk2_render(); }, 1200);
+  } catch(e) { msgEl.textContent = '❌ ' + e.message; msgEl.style.color = 'var(--err)'; }
+}
+async function r2FxLoadBA(handle, fix_date, days) {
+  if (!fix_date) return;
+  const d = days || 14;
+  const el = document.getElementById('r2FxDBA');
+  if (el) el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;">⏳ Loading GSC data…</div>';
+  try {
+    const url = `/api/members-api?member=hetheesha&type=r2-fix-detail&handle=${encodeURIComponent(handle)}&fix_date=${encodeURIComponent(fix_date)}&days=${d}`;
+    const res = await fetch(url); const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'API error');
+    if (el) el.innerHTML = r2FxBAHTML(data);
+  } catch(e) { if (el) el.innerHTML = `<div style="color:var(--err);font-size:12px;">${e.message}</div>`; }
+}
+function r2FxBAHTML(data) {
+  const before = data.before, after = data.after;
+  if (!before && !after) return '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No GSC data found for this collection in this period.</div>';
+  function fmt(v, sfx) { if (v === null || v === undefined) return '<span style="color:var(--muted)">—</span>'; return (typeof v === 'number' ? v.toLocaleString('fr-FR') : v) + (sfx || ''); }
+  function chg(b, a, lower) {
+    if (b === null || a === null || b === undefined || a === undefined) return '<span style="color:var(--muted)">—</span>';
+    const diff = a - b, sign = diff >= 0 ? '+' : '';
+    const good = lower ? diff < 0 : diff >= 0;
+    const pct = b !== 0 ? ` (${sign}${Math.round(diff / Math.abs(b) * 100)}%)` : '';
+    return `<span style="color:${good ? 'var(--good)' : 'var(--err)'};font-weight:700;">${sign}${parseFloat(diff.toFixed(2)).toLocaleString('fr-FR')}${pct}</span>`;
+  }
+  const rows = [
+    { label:'Impressions', bv:before?.imp,      av:after?.imp,      sfx:'',  lower:false },
+    { label:'Clicks',      bv:before?.clicks,   av:after?.clicks,   sfx:'',  lower:false },
+    { label:'CTR (%)',     bv:before?.ctr,      av:after?.ctr,      sfx:'%', lower:false },
+    { label:'Avg. Position', bv:before?.avg_pos, av:after?.avg_pos, sfx:'',  lower:true  },
+  ];
+  return `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${data.before_period||''} vs ${data.after_period||''}</div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr>
+      <th style="text-align:left;padding:5px 8px;background:#f0f3f8;border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;color:#42506a;">Metric</th>
+      <th style="text-align:right;padding:5px 8px;background:#fff0f0;border-bottom:2px solid var(--line);font-size:10px;color:#b91c1c;">Before Fix</th>
+      <th style="text-align:right;padding:5px 8px;background:#f0fff4;border-bottom:2px solid var(--line);font-size:10px;color:#0a7d4f;">After Fix</th>
+      <th style="text-align:right;padding:5px 8px;background:#f0f3f8;border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;color:#42506a;">Change</th>
+    </tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td style="padding:5px 8px;font-weight:600;border-bottom:1px solid var(--line);">${r.label}</td>
+      <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);color:#b91c1c;">${fmt(r.bv, r.sfx)}</td>
+      <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);color:#0a7d4f;">${fmt(r.av, r.sfx)}</td>
+      <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);">${chg(r.bv, r.av, r.lower)}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
 }
 
 r2_loadLive();
@@ -4554,10 +4783,12 @@ if(document.getElementById('tab-panel-5').classList.contains('active')){
 
 <!-- Fix Tracker Drawer -->
 <style>
-#hFxOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
-#hFxOverlay.open{opacity:1;pointer-events:all;}
-#hFxDrawer{position:fixed;top:0;right:-480px;width:460px;max-width:96vw;height:100vh;background:#fff;z-index:201;box-shadow:-4px 0 32px rgba(0,0,0,.18);display:flex;flex-direction:column;transition:right .22s ease;overflow-y:auto;}
-#hFxDrawer.open{right:0;}
+#hFxOverlay,#r2FxOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+#hFxOverlay.open,#r2FxOverlay.open{opacity:1;pointer-events:all;}
+#hFxDrawer,#r2FxDrawer{position:fixed;top:0;right:-480px;width:460px;max-width:96vw;height:100vh;background:#fff;z-index:201;box-shadow:-4px 0 32px rgba(0,0,0,.18);transition:right .22s ease;overflow-y:auto;}
+#hFxDrawer.open,#r2FxDrawer.open{right:0;}
+#hFxDrawer{display:flex;flex-direction:column;}
+#r2FxDrawer{display:flex;flex-direction:column;}
 .hfx-hdr{padding:20px 22px 14px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#1f5eff,#3ddc97);color:#fff;}
 .hfx-hdr h2{font-size:15px;font-weight:700;margin:0 0 4px;}
 .hfx-hdr p{font-size:11.5px;opacity:.85;margin:0;}

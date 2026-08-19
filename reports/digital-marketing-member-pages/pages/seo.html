@@ -10,17 +10,19 @@
 <script>
 (function () {
   fetch('/api/auth?action=session', { credentials: 'same-origin' }).then(function (r) {
-    if (r.status !== 200) { window.location.replace('../login.html'); return; }
+    if (r.status !== 200) { (window.top||window).location.replace('../login.html'); return; }
     return r.json();
   }).then(function (data) {
     if (!data) return;
-      if (data && data.success && data.user && data.user.role === 'admin') {
+      var u = data.user;
+      var seoAllowed = ['dilaksi'];
+      if (data.success && u && (u.role === 'admin' || seoAllowed.indexOf(u.staff_key) !== -1)) {
         document.documentElement.style.visibility = 'visible';
         requestAnimationFrame(function () { document.documentElement.classList.add('dm-ready'); });
         return;
       }
-    window.location.replace('../login.html');
-  }).catch(function () { window.location.replace('../login.html'); });
+    (window.top||window).location.replace('../login.html');
+  }).catch(function () { (window.top||window).location.replace('../login.html'); });
 })();
 </script>
 <style>

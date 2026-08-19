@@ -308,6 +308,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <ul class="ms-navlist">
     <li><a href="eod/index.html" data-tool="eod/index.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">EOD Tool</span></a></li>
     <li><a href="blog-tool/index.html" data-tool="blog-tool/index.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Blog Tool</span></a></li>
+    <li><a href="seo.html" data-tool="seo.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">SEO Intelligence</span></a></li>
   </ul>
 
   <div class="ms-sidebar-spacer"></div>
@@ -5137,7 +5138,8 @@ window.flt = flt; window.rst = rst; if (typeof srt === 'function') window.srt = 
 </div>
 </div>
 
-<div id="msToolFrame" style="display:none;height:calc(100vh - 56px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
+<div id="msToolFrame" style="display:none;height:calc(100vh - 56px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;position:relative;">
+  <button onclick="msShowContent()" style="position:absolute;top:12px;right:14px;z-index:10;background:#0c1a30;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">&#8592; Back</button>
   <iframe id="msToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
 </div>
 <script>

@@ -867,7 +867,7 @@ async function handleJakshan(req, res) {
 
 // ─── SAJEEPAN ─────────────────────────────────────────────────────────────────
 
-const SJ_CAMPAIGN_IDS = [21069663519, 23110323532, 23516313256, 23590572906, 22079334413, 21242723265];
+const SJ_CAMPAIGN_IDS = [21069663519, 23110323532, 23516313256, 23590572906, 22079334413, 21242723265, 24092456136];
 const SJ_TARGET_ROAS  = {
   '21069663519': 320, '23110323532': 320, '23516313256': 400,
   '23590572906': 400, '22079334413': 380, '21242723265': 380,
@@ -955,8 +955,8 @@ async function handleSajeepanReq2(client, toDate, fromDate, prevFrom, prevTo) {
     SELECT search_term, campaign_id::text,
       ROUND(SUM(cost)::numeric,2) AS cost, SUM(clicks) AS clicks, SUM(impressions) AS imps
     FROM google_ads.pmax_campaign_search_term_data
-    WHERE campaign_id=ANY($1::bigint[]) AND date BETWEEN $2 AND $3 AND conversions=0
-    GROUP BY search_term, campaign_id HAVING SUM(cost)>2 ORDER BY cost DESC
+    WHERE campaign_id=ANY($1::bigint[]) AND date BETWEEN $2 AND $3
+    GROUP BY search_term, campaign_id HAVING SUM(conversions)=0 AND SUM(cost)>2 ORDER BY cost DESC
   `, [SJ_CAMPAIGN_IDS, fromDate, toDate]);
 
   const neg_kw = kwRows.map(r => ({ term: r.search_term, cid: r.campaign_id, cost: n(r.cost),
@@ -1523,6 +1523,151 @@ async function handleHetheeshaFixDetail(req, res) {
   } catch(e) {
     await db.end().catch(()=>{});
     return errResponse(res, e);
+  }
+}
+
+async function handleHetheeshaR2FixDetail(req, res) {
+  const { handle, fix_date: fixDateQ, days: daysQ } = req.query || {};
+  if (!handle || !fixDateQ) return res.status(400).json({ ok:false, error:'handle and fix_date required' });
+  const days = parseInt(daysQ) || 14;
+  const d = new Date(fixDateQ);
+  const fmt = x => x.toISOString().slice(0,10);
+  const beforeTo   = new Date(d); beforeTo.setDate(beforeTo.getDate() - 1);
+  const beforeFrom = new Date(beforeTo); beforeFrom.setDate(beforeFrom.getDate() - days);
+  const afterFrom  = new Date(d);
+  const afterTo    = new Date(d); afterTo.setDate(afterTo.getDate() + days);
+  const pat = '%/collections/' + handle + '%';
+  const { Client } = require('pg');
+  const db = new Client({ connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false });
+  try {
+    await db.connect();
+    const gsc = await db.query(`
+      SELECT period,
+        SUM(impressions) AS imp, SUM(clicks) AS clicks,
+        ROUND(SUM(clicks)::numeric / NULLIF(SUM(impressions),0) * 100, 2) AS ctr_pct,
+        ROUND(AVG(position)::numeric, 1) AS avg_pos
+      FROM (
+        SELECT 'before' AS period, impressions, clicks, position
+        FROM google_search_console.page
+        WHERE sub_source=233 AND search_type='web' AND page ILIKE $5
+          AND date BETWEEN $1 AND $2
+        UNION ALL
+        SELECT 'after' AS period, impressions, clicks, position
+        FROM google_search_console.page
+        WHERE sub_source=233 AND search_type='web' AND page ILIKE $5
+          AND date BETWEEN $3 AND $4
+      ) p GROUP BY period
+    `, [fmt(beforeFrom), fmt(beforeTo), fmt(afterFrom), fmt(afterTo), pat]);
+    await db.end();
+    const result = { before: null, after: null };
+    gsc.rows.forEach(r => {
+      result[r.period] = { imp: parseInt(r.imp)||0, clicks: parseInt(r.clicks)||0,
+        ctr: parseFloat(r.ctr_pct)||0, avg_pos: r.avg_pos !== null ? parseFloat(r.avg_pos) : null };
+    });
+    return res.status(200).json({
+      ok: true, before: result.before, after: result.after,
+      before_period: `${fmt(beforeFrom)} → ${fmt(beforeTo)}`,
+      after_period:  `${fmt(afterFrom)} → ${fmt(afterTo)}`,
+    });
+  } catch(e) {
+    await db.end().catch(()=>{});
+    return errResponse(res, e);
+  }
+}
+
+async function handleHetheeshaFixLoadAll(req, res) {
+  const neonStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  if (!neonStr) return res.status(200).json({ ok:true, entries:{} });
+  const { Pool } = require('pg');
+  const pool = new Pool({ connectionString: neonStr, max:2, connectionTimeoutMillis:6000 });
+  try {
+    const { rows } = await pool.query(`SELECT product_handle, issue_type, fix_started, fix_date, notes FROM public.hetheesha_fix_tracker`);
+    const entries = {};
+    for (const r of rows) {
+      const k = r.product_handle + '|' + r.issue_type;
+      entries[k] = {
+        fix_started: r.fix_started,
+        fix_date: r.fix_date ? (r.fix_date.toISOString ? r.fix_date.toISOString().slice(0,10) : String(r.fix_date).slice(0,10)) : null,
+        notes: r.notes || null,
+      };
+    }
+    return res.status(200).json({ ok:true, entries });
+  } catch(e) {
+    return res.status(200).json({ ok:true, entries:{} });
+  } finally {
+    await pool.end().catch(()=>{});
+  }
+}
+
+async function handleHetheeshaR2FixSave(req, res) {
+  const neonStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  if (!neonStr) return res.status(500).json({ ok:false, error:'FEED_TRACKER_DB_URL not configured' });
+  const body = req.body || {};
+  const { collection_handle, field_key, fix_date, notes, fix_started } = body;
+  if (!collection_handle || !field_key) return res.status(400).json({ ok:false, error:'collection_handle and field_key required' });
+  const { Pool } = require('pg');
+  const pool = new Pool({ connectionString: neonStr, max:2, connectionTimeoutMillis:6000 });
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS public.hetheesha_fix_tracker_r2 (
+        collection_handle TEXT NOT NULL,
+        field_key TEXT NOT NULL,
+        fix_date DATE,
+        fix_started BOOLEAN DEFAULT FALSE,
+        notes TEXT,
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (collection_handle, field_key)
+      )
+    `);
+    await pool.query(`ALTER TABLE public.hetheesha_fix_tracker_r2 ADD COLUMN IF NOT EXISTS fix_started BOOLEAN DEFAULT FALSE`);
+    await pool.query(`
+      INSERT INTO public.hetheesha_fix_tracker_r2
+        (collection_handle, field_key, fix_date, fix_started, notes, updated_at)
+      VALUES ($1,$2,$3,$4,$5,NOW())
+      ON CONFLICT (collection_handle, field_key) DO UPDATE SET
+        fix_date=EXCLUDED.fix_date, fix_started=EXCLUDED.fix_started, notes=EXCLUDED.notes, updated_at=NOW()
+    `, [collection_handle, field_key, fix_date || null, !!fix_started, notes || null]);
+    return res.status(200).json({ ok:true });
+  } catch(e) {
+    return errResponse(res, e);
+  } finally {
+    await pool.end().catch(()=>{});
+  }
+}
+
+async function handleHetheeshaR2FixLoad(req, res) {
+  const neonStr = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  if (!neonStr) return res.status(200).json({ ok:true, entries:{} });
+  const { Pool } = require('pg');
+  const pool = new Pool({ connectionString: neonStr, max:2, connectionTimeoutMillis:6000 });
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS public.hetheesha_fix_tracker_r2 (
+        collection_handle TEXT NOT NULL,
+        field_key TEXT NOT NULL,
+        fix_date DATE,
+        fix_started BOOLEAN DEFAULT FALSE,
+        notes TEXT,
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (collection_handle, field_key)
+      )
+    `);
+    await pool.query(`ALTER TABLE public.hetheesha_fix_tracker_r2 ADD COLUMN IF NOT EXISTS fix_started BOOLEAN DEFAULT FALSE`);
+    const { rows } = await pool.query(`SELECT collection_handle, field_key, fix_date, fix_started, notes FROM public.hetheesha_fix_tracker_r2`);
+    const entries = {};
+    for (const r of rows) {
+      const k = r.collection_handle + '::' + r.field_key;
+      entries[k] = {
+        fix_date: r.fix_date ? (r.fix_date.toISOString ? r.fix_date.toISOString().slice(0,10) : String(r.fix_date).slice(0,10)) : null,
+        fix_started: !!r.fix_started,
+        notes: r.notes || null,
+      };
+    }
+    return res.status(200).json({ ok:true, entries });
+  } catch(e) {
+    return res.status(200).json({ ok:true, entries:{} });
+  } finally {
+    await pool.end().catch(()=>{});
   }
 }
 
@@ -2835,6 +2980,10 @@ module.exports = async function handler(req, res) {
     if (type === 'req2') return handleHetheeshaReq2(req, res);
     if (type === 'fix-save') return handleHetheeshaFixSave(req, res);
     if (type === 'fix-detail') return handleHetheeshaFixDetail(req, res);
+    if (type === 'fix-load-all') return handleHetheeshaFixLoadAll(req, res);
+    if (type === 'r2-fix-save') return handleHetheeshaR2FixSave(req, res);
+    if (type === 'r2-fix-load') return handleHetheeshaR2FixLoad(req, res);
+    if (type === 'r2-fix-detail') return handleHetheeshaR2FixDetail(req, res);
     return handleHetheeshaReq1(req, res); // req1 + ba handled inside
   }
 
@@ -2853,5 +3002,137 @@ module.exports = async function handler(req, res) {
   // ── thivajini ─────────────────────────────────────────────────────────────
   if (member === 'thivajini') return handleThivajini(req, res);
 
+  // ── monitor ───────────────────────────────────────────────────────────────
+  if (member === 'monitor') {
+    if (type === 'hetheesha-all-r1') return handleMonitorHetheeshaR1All(req, res);
+    if (type === 'hetheesha-all-r2') return handleMonitorHetheeshaR2All(req, res);
+    if (type === 'sajeepan-all')     return handleMonitorSajeepanAll(req, res);
+    return handleMonitorSummary(req, res);
+  }
+
   return res.status(400).json({ ok: false, error: `Unknown member "${member}"` });
 };
+
+// ─── MONITOR HELPERS ──────────────────────────────────────────────────────────
+function monitorTrackerClient() {
+  // hetheesha_fix_tracker + feed_optimization_tracker both live in AUTH DB
+  const cs = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  return new Client({ connectionString: cs, ssl: process.env.PGSSL === 'false' ? false : { rejectUnauthorized: false } });
+}
+function fmtDate(v) { return v ? (v.toISOString ? v.toISOString().slice(0,10) : String(v).slice(0,10)) : null; }
+
+// ─── MONITOR SUMMARY ─────────────────────────────────────────────────────────
+async function handleMonitorSummary(req, res) {
+  const client = monitorTrackerClient();
+  try {
+    await client.connect();
+    const [r1, r2, sj] = await Promise.all([
+      client.query(`SELECT COUNT(*) AS total, COUNT(CASE WHEN fix_date IS NOT NULL THEN 1 END) AS fixed FROM public.hetheesha_fix_tracker`),
+      client.query(`SELECT COUNT(*) AS total, COUNT(CASE WHEN fix_date IS NOT NULL THEN 1 END) AS fixed FROM public.hetheesha_fix_tracker_r2`),
+      client.query(`SELECT COUNT(*) AS total, COUNT(CASE WHEN optimization_started = true THEN 1 END) AS started, COUNT(CASE WHEN sale_received = true THEN 1 END) AS sale FROM public.feed_optimization_tracker`),
+    ]);
+    return res.status(200).json({
+      ok: true,
+      generatedAt: new Date().toISOString(),
+      hetheesha: {
+        req1: { total: parseInt(r1.rows[0].total), fixed: parseInt(r1.rows[0].fixed) },
+        req2: { total: parseInt(r2.rows[0].total), fixed: parseInt(r2.rows[0].fixed) },
+      },
+      sajeepan: {
+        req4: { total: parseInt(sj.rows[0].total), started: parseInt(sj.rows[0].started), sale: parseInt(sj.rows[0].sale) },
+      },
+    });
+  } catch (e) {
+    return errResponse(res, e);
+  } finally {
+    await client.end().catch(()=>{});
+  }
+}
+
+// ─── MONITOR ALL DATA — Hetheesha Req1 ───────────────────────────────────────
+async function handleMonitorHetheeshaR1All(req, res) {
+  const client = monitorTrackerClient();
+  try {
+    await client.connect();
+    const { rows } = await client.query(
+      `SELECT product_handle, issue_type, fix_started, fix_date, notes, updated_at
+       FROM public.hetheesha_fix_tracker
+       ORDER BY updated_at DESC NULLS LAST`
+    );
+    return res.status(200).json({
+      ok: true,
+      generatedAt: new Date().toISOString(),
+      rows: rows.map(r => ({
+        product_handle: r.product_handle,
+        issue_type: r.issue_type,
+        fix_started: !!r.fix_started,
+        fix_date: fmtDate(r.fix_date),
+        notes: r.notes || '',
+        updated_at: fmtDate(r.updated_at),
+      })),
+    });
+  } catch (e) {
+    return errResponse(res, e);
+  } finally {
+    await client.end().catch(()=>{});
+  }
+}
+
+// ─── MONITOR ALL DATA — Hetheesha Req2 ───────────────────────────────────────
+async function handleMonitorHetheeshaR2All(req, res) {
+  const client = monitorTrackerClient();
+  try {
+    await client.connect();
+    const { rows } = await client.query(
+      `SELECT collection_handle, field_key, fix_started, fix_date, notes, updated_at
+       FROM public.hetheesha_fix_tracker_r2
+       ORDER BY updated_at DESC NULLS LAST`
+    );
+    return res.status(200).json({
+      ok: true,
+      generatedAt: new Date().toISOString(),
+      rows: rows.map(r => ({
+        collection_handle: r.collection_handle,
+        field_key: r.field_key,
+        fix_started: !!r.fix_started,
+        fix_date: fmtDate(r.fix_date),
+        notes: r.notes || '',
+        updated_at: fmtDate(r.updated_at),
+      })),
+    });
+  } catch (e) {
+    return errResponse(res, e);
+  } finally {
+    await client.end().catch(()=>{});
+  }
+}
+
+// ─── MONITOR ALL DATA — Sajeepan Req4 ────────────────────────────────────────
+async function handleMonitorSajeepanAll(req, res) {
+  const client = monitorTrackerClient();
+  try {
+    await client.connect();
+    const { rows } = await client.query(
+      `SELECT product_item_id, campaign_id::text, level, optimization_started, start_date, notes, sale_received
+       FROM public.feed_optimization_tracker
+       ORDER BY level ASC, product_item_id ASC`
+    );
+    return res.status(200).json({
+      ok: true,
+      generatedAt: new Date().toISOString(),
+      rows: rows.map(r => ({
+        product_item_id: r.product_item_id,
+        campaign_id: r.campaign_id || '',
+        level: r.level,
+        optimization_started: !!r.optimization_started,
+        start_date: fmtDate(r.start_date),
+        notes: r.notes || '',
+        sale_received: r.sale_received === true ? true : r.sale_received === false ? false : null,
+      })),
+    });
+  } catch (e) {
+    return errResponse(res, e);
+  } finally {
+    await client.end().catch(()=>{});
+  }
+}

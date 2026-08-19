@@ -175,17 +175,17 @@ tbody td.r{text-align:right;}
     <button class="staff-tab" data-staff="sonya" onclick="switchStaff('sonya')">Sonya</button>
   </div>
 
-  <!-- Jackson date filter -->
-  <div id="jacksonDateBar" style="display:none;margin-bottom:16px;display:none;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;">
+  <!-- Date filter (all staff) -->
+  <div id="dateBar" style="display:none;margin-bottom:16px;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;">
     <span style="font-size:13px;font-weight:600;color:var(--muted);">Date Range</span>
     <label style="font-size:12px;color:var(--muted);">From
-      <input type="date" id="jacksonFrom" value="2026-04-10" style="margin-left:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--bg);color:var(--fg);">
+      <input type="date" id="dateFrom" style="margin-left:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--bg);color:var(--fg);">
     </label>
     <label style="font-size:12px;color:var(--muted);">To
-      <input type="date" id="jacksonTo" style="margin-left:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--bg);color:var(--fg);">
+      <input type="date" id="dateTo" style="margin-left:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--bg);color:var(--fg);">
     </label>
-    <button id="jacksonApplyBtn" onclick="applyJacksonFilter()" style="border:none;background:var(--accent);color:#fff;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Apply</button>
-    <button id="jacksonLifetimeBtn" onclick="applyJacksonLifetime()" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Lifetime</button>
+    <button id="dateApplyBtn" onclick="applyDateFilter()" style="border:none;background:var(--accent);color:#fff;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Apply</button>
+    <button id="dateLifetimeBtn" onclick="applyLifetime()" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Lifetime</button>
   </div>
 
   <!-- Error -->
@@ -265,45 +265,50 @@ async function switchStaff(staff) {
   if (staff === currentStaff && allRows.length > 0) return;
   currentStaff = staff;
   document.querySelectorAll('.staff-tab').forEach(t => t.classList.toggle('active', t.dataset.staff === staff));
-  // Show date bar only for Jackson; set default To = today on first show
-  const bar = document.getElementById('jacksonDateBar');
+
+  const bar = document.getElementById('dateBar');
+  const today = new Date().toISOString().slice(0,10);
+
   if (staff === 'jackson') {
-    if (!document.getElementById('jacksonTo').value) {
-      document.getElementById('jacksonTo').value = new Date().toISOString().slice(0,10);
-    }
-    bar.style.display = 'flex';
-    // Reset to date-range mode on tab switch
-    jacksonLifetimeMode = false;
-    document.getElementById('jacksonApplyBtn').style.background = 'var(--accent)';
-    document.getElementById('jacksonApplyBtn').style.color = '#fff';
-    document.getElementById('jacksonLifetimeBtn').style.background = 'transparent';
-    document.getElementById('jacksonLifetimeBtn').style.color = 'var(--muted)';
+    // Jackson: date-range mode by default (from 2026-04-10)
+    if (!document.getElementById('dateFrom').value) document.getElementById('dateFrom').value = '2026-04-10';
+    if (!document.getElementById('dateTo').value)   document.getElementById('dateTo').value   = today;
+    lifetimeMode = false;
   } else {
-    bar.style.display = 'none';
+    // All others: Lifetime by default, clear any previous dates
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value   = today;
+    lifetimeMode = true;
   }
+
+  bar.style.display = 'flex';
+  syncDateBarButtons();
   resetUI();
   await loadData(staff);
 }
 
-let jacksonLifetimeMode = false;
+let lifetimeMode = true;
 
-function applyJacksonFilter() {
-  jacksonLifetimeMode = false;
-  document.getElementById('jacksonApplyBtn').style.background = 'var(--accent)';
-  document.getElementById('jacksonLifetimeBtn').style.background = 'transparent';
-  document.getElementById('jacksonLifetimeBtn').style.color = 'var(--muted)';
-  resetUI();
-  loadData('jackson');
+function syncDateBarButtons() {
+  document.getElementById('dateApplyBtn').style.background   = lifetimeMode ? 'transparent' : 'var(--accent)';
+  document.getElementById('dateApplyBtn').style.color        = lifetimeMode ? 'var(--muted)' : '#fff';
+  document.getElementById('dateApplyBtn').style.border       = lifetimeMode ? '1px solid var(--line)' : 'none';
+  document.getElementById('dateLifetimeBtn').style.background = lifetimeMode ? 'var(--accent)' : 'transparent';
+  document.getElementById('dateLifetimeBtn').style.color      = lifetimeMode ? '#fff' : 'var(--muted)';
 }
 
-function applyJacksonLifetime() {
-  jacksonLifetimeMode = true;
-  document.getElementById('jacksonLifetimeBtn').style.background = 'var(--accent)';
-  document.getElementById('jacksonLifetimeBtn').style.color = '#fff';
-  document.getElementById('jacksonApplyBtn').style.background = 'transparent';
-  document.getElementById('jacksonApplyBtn').style.color = 'var(--muted)';
+function applyDateFilter() {
+  lifetimeMode = false;
+  syncDateBarButtons();
   resetUI();
-  loadData('jackson');
+  loadData(currentStaff);
+}
+
+function applyLifetime() {
+  lifetimeMode = true;
+  syncDateBarButtons();
+  resetUI();
+  loadData(currentStaff);
 }
 
 function resetUI() {
@@ -319,9 +324,9 @@ function resetUI() {
 async function loadData(staff) {
   try {
     let url = '/api/staff-id-performance?staff=' + staff;
-    if (staff === 'jackson' && !jacksonLifetimeMode) {
-      const from = document.getElementById('jacksonFrom').value;
-      const to   = document.getElementById('jacksonTo').value;
+    if (!lifetimeMode) {
+      const from = document.getElementById('dateFrom').value;
+      const to   = document.getElementById('dateTo').value;
       if (from) url += '&from=' + from;
       if (to)   url += '&to='   + to;
     }
@@ -444,14 +449,12 @@ function renderTable() {
   const pageRows = filteredRows.slice(start, start+PAGE_SIZE);
   const name = currentStaff.charAt(0).toUpperCase()+currentStaff.slice(1);
   let title = name + ' — Product ID Performance';
-  if (currentStaff === 'jackson') {
-    if (jacksonLifetimeMode) {
-      title += ' (Lifetime)';
-    } else {
-      const from = document.getElementById('jacksonFrom').value;
-      const to   = document.getElementById('jacksonTo').value;
-      if (from || to) title += ` (${from || '…'} to ${to || '…'})`;
-    }
+  if (lifetimeMode) {
+    title += ' (Lifetime)';
+  } else {
+    const from = document.getElementById('dateFrom').value;
+    const to   = document.getElementById('dateTo').value;
+    if (from || to) title += ` (${from || '…'} to ${to || '…'})`;
   }
   document.getElementById('tblTitle').textContent = title;
   document.getElementById('tblCount').textContent = filteredRows.length.toLocaleString() + ' products';
@@ -547,6 +550,10 @@ async function refreshAttribution() {
   }
 }
 
+// Initial load — Kamsi, Lifetime mode
+document.getElementById('dateTo').value = new Date().toISOString().slice(0,10);
+document.getElementById('dateBar').style.display = 'flex';
+syncDateBarButtons();
 loadData('kamsi');
 
 // Orders modal — event delegation avoids inline JSON quoting issues
