@@ -606,16 +606,18 @@ async function fetchJsonResilient(url, timeoutMs, retries){
   return null;
 }
 
-// Sonya's cost-breakdown popup (and, added 2026-08-19, the Total Cost table
-// cell itself) reuse data the page already fetches during the normal
-// loadAll() pass — sales25.js/salesuk.js's combinedSummary already includes
+// Cost-breakdown popup (and, added 2026-08-19, the Total Cost table cell
+// itself) reuse data the page already fetches during the normal loadAll()
+// pass — sales25.js/salesuk.js's combinedSummary already includes
 // vat/discounts/refunds/transactionFee, previously discarded here since
 // only netSales was needed for the Sales column. Stashing it avoids firing
 // any *additional* Shopify-backed requests on top of an already fragile
 // endpoint (see fetchJsonResilient above) — the popup becomes an instant
-// read of already-loaded data instead of a fresh fetch.
-const SONYA_MONTH_DATA = {};
-function sonyaMonthKey(year, month){ return year + ':' + month; }
+// read of already-loaded data instead of a fresh fetch. Sonya added
+// 2026-08-19, Sajeepan added same day — both use COST_POPUP_MEMBERS below.
+const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan']);
+const MEMBER_MONTH_DATA = {};
+function memberMonthKey(member, year, month){ return member + ':' + year + ':' + month; }
 
 async function fetchGroupSales(year, member, month, force){
   const isJefri = member === 'jefri';
@@ -626,10 +628,10 @@ async function fetchGroupSales(year, member, month, force){
   const data = await fetchJsonResilient(url, 12000, 1);
   if (!data || !data.success) return null;
   if (!data.combinedSummary) return 0;
-  if (member === 'sonya') {
+  if (COST_POPUP_MEMBERS.has(member)) {
     const s = data.combinedSummary;
-    const key = sonyaMonthKey(year, month);
-    SONYA_MONTH_DATA[key] = Object.assign({}, SONYA_MONTH_DATA[key], {
+    const key = memberMonthKey(member, year, month);
+    MEMBER_MONTH_DATA[key] = Object.assign({}, MEMBER_MONTH_DATA[key], {
       netSales: s.netSales, vat: s.vat || 0, discounts: s.discounts || 0,
       refunds: s.refunds || 0, transactionFee: s.transactionFee || 0,
     });
@@ -645,9 +647,9 @@ async function fetchCost(member, month, force){
   const data = await fetchJsonResilient(url, 12000, 1);
   if (!data || !data.success) return { ownCost: null, dmSonyaProductCost: null, dmTotalCost: null, totalCost: null };
   const dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
-  if (member === 'sonya') {
-    const key = sonyaMonthKey(month.slice(0, 4), month);
-    SONYA_MONTH_DATA[key] = Object.assign({}, SONYA_MONTH_DATA[key], {
+  if (COST_POPUP_MEMBERS.has(member)) {
+    const key = memberMonthKey(member, month.slice(0, 4), month);
+    MEMBER_MONTH_DATA[key] = Object.assign({}, MEMBER_MONTH_DATA[key], {
       ownCost: data.cost, dmProductCost, dmTotalCost: data.dmTotalCost || 0,
     });
   }
@@ -725,13 +727,14 @@ async function mapLimit(items, limit, fn) {
 // liveMonthsPending (a Set of 'YYYY-MM' strings) marks live months whose
 // 2026 sales+cost haven't arrived yet — their row gets sales2026=undefined
 // (distinct from null) so renderTable can show "Loading…" instead of "N/A".
-// Sonya only (2026-08-19): Total Cost was previously ad spend only (own
-// campaign cost + DM 46 product-share). Kuberan wants the table's headline
-// Total Cost to be the true total — ad spend PLUS VAT, Product Cost (20% of
-// Net Sales), Transaction Fee, Discount, Refund, and her Shopify
-// subscription-fee share, i.e. exactly what the cost-breakdown popup shows.
-// Reads from SONYA_MONTH_DATA (populated by fetchGroupSales()/fetchCost()
-// during the normal page load) — adds no new requests.
+// Sonya + Sajeepan (COST_POPUP_MEMBERS, 2026-08-19): Total Cost was
+// previously ad spend only (own campaign cost + DM 46 product-share).
+// Kuberan wants the table's headline Total Cost to be the true total — ad
+// spend PLUS VAT, Product Cost (20% of Net Sales), Transaction Fee,
+// Discount, Refund, and their Shopify subscription-fee share, i.e. exactly
+// what the cost-breakdown popup shows. Reads from MEMBER_MONTH_DATA
+// (populated by fetchGroupSales()/fetchCost() during the normal page load)
+// — adds no new requests.
 //
 // REVISED 2026-08-19 per Kuberan (2nd correction, overriding the first):
 // VAT = a flat 20% of Sales (same style of assumption as Product Cost, NOT
@@ -740,8 +743,8 @@ async function mapLimit(items, limit, fn) {
 // just informational context. All six components — Ads Cost, VAT (20%),
 // Product Cost (20%), Transaction Fee, Discount, Refund, Subscription Fee —
 // feed into Total Cost.
-function sonyaExtraCost(year, month, netSales){
-  const d = SONYA_MONTH_DATA[sonyaMonthKey(year, month)] || {};
+function memberExtraCost(member, year, month, netSales){
+  const d = MEMBER_MONTH_DATA[memberMonthKey(member, year, month)] || {};
   const transactionFee = d.transactionFee || 0;
   const discounts = d.discounts || 0;
   const refunds = d.refunds || 0;
@@ -778,14 +781,14 @@ function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonth
     const adsCost2026 = pending ? undefined : (c26 ? c26.totalCost : null);
     const ownCost2026 = pending ? undefined : (c26 ? c26.ownCost : null);
     const dmSonya2026 = pending ? undefined : (c26 ? c26.dmSonyaProductCost : null);
-    // Sonya's Total Cost = ad spend + VAT/Product Cost/Transaction Fee/
-    // Discount/Refund/Subscription share (see sonyaExtraCost above) — every
-    // other member's Total Cost stays ad-spend-only, unchanged.
-    const costVal2025 = (member === 'sonya' && adsCost2025 != null && sales2025 != null)
-      ? Math.round((adsCost2025 + sonyaExtraCost('2025', m25, sales2025)) * 100) / 100
+    // Sonya/Sajeepan's Total Cost = ad spend + VAT/Product Cost/Transaction
+    // Fee/Discount/Refund/Subscription share (see memberExtraCost above) —
+    // every other member's Total Cost stays ad-spend-only, unchanged.
+    const costVal2025 = (COST_POPUP_MEMBERS.has(member) && adsCost2025 != null && sales2025 != null)
+      ? Math.round((adsCost2025 + memberExtraCost(member, '2025', m25, sales2025)) * 100) / 100
       : adsCost2025;
-    const costVal2026 = (member === 'sonya' && !pending && adsCost2026 != null && sales2026 != null)
-      ? Math.round((adsCost2026 + sonyaExtraCost('2026', m26, sales2026)) * 100) / 100
+    const costVal2026 = (COST_POPUP_MEMBERS.has(member) && !pending && adsCost2026 != null && sales2026 != null)
+      ? Math.round((adsCost2026 + memberExtraCost(member, '2026', m26, sales2026)) * 100) / 100
       : adsCost2026;
 
     const net2025 = sales2025 != null ? sales2025 - costVal2025 : null;
@@ -925,7 +928,7 @@ function renderTable(rows, memberLabel, idSuffix, member){
   // Cost-breakdown popup (VAT/product cost/transaction fee/discount/refund/
   // Shopify subscription share) — Sonya only for now, per Kuberan's request
   // 2026-08-19. Applies to both the 2025 and 2026 Total Cost cells.
-  const costPopupEnabled = member === 'sonya';
+  const costPopupEnabled = COST_POPUP_MEMBERS.has(member);
   const costCell = (val, own, dm, year, m, monthLabel) => {
     if (val == null) return 'N/A';
     const base = fmtMoney(val) + (showDm && own != null && dm != null ? ' <span class="costnote">(Own: ' + fmtMoney(own) + ', DM: ' + fmtMoney(dm) + ')</span>' : '');
@@ -1531,7 +1534,7 @@ function cbCloseFn(){ document.getElementById('cbOverlay').classList.remove('ope
 document.getElementById('cbClose').addEventListener('click', cbCloseFn);
 document.getElementById('cbOverlay').addEventListener('click', (e) => { if (e.target.id === 'cbOverlay') cbCloseFn(); });
 
-// Reads SONYA_MONTH_DATA (populated by fetchGroupSales()/fetchCost() during
+// Reads MEMBER_MONTH_DATA (populated by fetchGroupSales()/fetchCost() during
 // the normal page load) instead of firing a fresh request — the table has
 // already fetched everything this popup needs, so opening it costs nothing
 // extra. Added 2026-08-19: also shows Ads Cost as its own line, since the
@@ -1544,7 +1547,7 @@ async function openCostPopup(member, year, month, monthLabel){
   document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Loading breakdown&hellip;</div>';
   cbOpen();
   try {
-    let d = SONYA_MONTH_DATA[sonyaMonthKey(year, month)];
+    let d = MEMBER_MONTH_DATA[memberMonthKey(member, year, month)];
     if (!d || d.netSales == null || d.ownCost == null) {
       const endpoint = year === '2025' ? 'sales25' : 'salesuk';
       const [salesData, costData] = await Promise.all([
