@@ -8,6 +8,9 @@
 <style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}</style>
 <script>
 (function () {
+  if (/[?&]embed=1/.test(window.location.search)) {
+    document.documentElement.classList.add('mn-embed');
+  }
   fetch('/api/auth?action=session', { credentials: 'same-origin' }).then(function (r) {
     if (r.status !== 200) { window.location.replace('../login.html'); return; }
     return r.json();
@@ -72,6 +75,9 @@ body.sb-open .tog svg{transform:rotate(180deg);}
 .who-badge span{display:block;color:#e8d59a;font-size:10px;white-space:nowrap;}
 
 /* ── Main ── */
+html.mn-embed .sb,html.mn-embed .tog{display:none;}
+html.mn-embed .main{margin-left:0 !important;}
+html.mn-embed .tab-bar-wrap{display:none;}
 .main{margin-left:var(--sb-w-collapsed);display:flex;flex-direction:column;min-height:100vh;transition:margin-left .18s;}
 body.sb-open .main{margin-left:var(--sb-w);}
 .topbar{background:var(--sb-navy2);color:#fff;padding:11px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:3px solid var(--sb-gold);}
