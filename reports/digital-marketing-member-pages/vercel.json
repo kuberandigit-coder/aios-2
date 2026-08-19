@@ -25,7 +25,7 @@
       "maxDuration": 300
     },
     "api/muguntha.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "api/auth.js": {
       "maxDuration": 15
