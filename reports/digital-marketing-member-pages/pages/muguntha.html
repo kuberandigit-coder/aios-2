@@ -137,6 +137,27 @@ tbody tr:hover td:first-child{color:var(--accent);}
 .comingsoon p{color:var(--muted);font-size:13.5px;line-height:1.7;max-width:420px;margin:0 auto 18px;}
 .comingsoon .chip{background:var(--warn-soft);color:var(--warn);}
 @media(max-width:700px){.topbar h1{font-size:19px;}.card .value{font-size:18px;}.topbar{padding:18px 20px;}}
+
+/* ── Cost breakdown popup (added 2026-08-19, Sonya only for now) ── */
+.cost-clickable{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;}
+.cost-clickable:hover{color:var(--accent);}
+.cb-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.cb-overlay.open{display:flex;}
+.cb-modal{background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(16,24,40,.25);overflow:hidden;}
+.cb-head{padding:20px 24px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;}
+.cb-head h3{font-size:16px;font-weight:800;margin:0;}
+.cb-head .cb-close{cursor:pointer;background:rgba(255,255,255,.12);border:none;color:#fff;width:28px;height:28px;border-radius:8px;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;}
+.cb-head .cb-close:hover{background:rgba(255,255,255,.22);}
+.cb-body{padding:20px 24px;}
+.cb-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+.cb-row:last-of-type{border-bottom:none;}
+.cb-row .cb-label{color:var(--muted);}
+.cb-row .cb-value{font-weight:700;color:var(--ink);}
+.cb-row.cb-total{margin-top:6px;padding-top:14px;border-top:2px solid var(--ink);}
+.cb-row.cb-total .cb-label{color:var(--ink);font-weight:800;}
+.cb-row.cb-total .cb-value{font-size:15.5px;}
+.cb-note{margin-top:14px;font-size:11.5px;color:var(--muted);line-height:1.6;}
+.cb-loading{padding:30px;text-align:center;color:var(--muted);}
 </style>
 </head>
 <body>
@@ -799,6 +820,17 @@ function renderTable(rows, memberLabel, idSuffix, member){
     return '<span class="' + (v >= 0 ? 'up' : 'down') + '">' + (v >= 0 ? '+' : '') + fmtPct(v) + '</span>';
   };
 
+  // Cost-breakdown popup (VAT/product cost/transaction fee/discount/refund/
+  // Shopify subscription share) — Sonya only for now, per Kuberan's request
+  // 2026-08-19. Applies to both the 2025 and 2026 Total Cost cells.
+  const costPopupEnabled = member === 'sonya';
+  const costCell = (val, own, dm, year, m, monthLabel) => {
+    if (val == null) return 'N/A';
+    const base = fmtMoney(val) + (showDm && own != null && dm != null ? ' <span class="costnote">(Own: ' + fmtMoney(own) + ', DM: ' + fmtMoney(dm) + ')</span>' : '');
+    if (!costPopupEnabled || !m) return base;
+    return '<span class="cost-clickable" onclick="openCostPopup(\'' + member + '\',\'' + year + '\',\'' + m + '\',\'' + monthLabel + '\')">' + base + '</span>';
+  };
+
   tbody.innerHTML = rows.map((r) => {
     const statusPill = r.isLive ? '<span class="pill notarchived">Not-Archived</span>' : '<span class="pill archived">Archived</span>';
     const loadingCell = '<span class="costnote">Loading…</span>';
@@ -806,11 +838,11 @@ function renderTable(rows, memberLabel, idSuffix, member){
       '<td>' + r.monthLabel + '</td>' +
       '<td>' + memberLabel + '</td>' +
       '<td class="num">' + (r.sales2025 != null ? fmtMoney(r.sales2025) : 'N/A') + '</td>' +
-      '<td class="num">' + (r.costVal2025 != null ? fmtMoney(r.costVal2025) + (showDm && r.ownCost2025 != null && r.dmSonya2025 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2025) + ', DM: ' + fmtMoney(r.dmSonya2025) + ')</span>' : '') : 'N/A') + '</td>' +
+      '<td class="num">' + costCell(r.costVal2025, r.ownCost2025, r.dmSonya2025, '2025', r.m25, r.monthLabel) + '</td>' +
       '<td class="num">' + netCell(r.net2025) + '</td>' +
       '<td class="num">' + roasCell(r.roas2025) + '</td>' +
       '<td class="num">' + (r.liveLoading ? loadingCell : (r.sales2026 != null ? fmtMoney(r.sales2026) : 'N/A')) + '</td>' +
-      '<td class="num">' + (r.liveLoading ? loadingCell : (r.costVal2026 != null ? fmtMoney(r.costVal2026) + (showDm && r.ownCost2026 != null && r.dmSonya2026 != null ? ' <span class="costnote">(Own: ' + fmtMoney(r.ownCost2026) + ', DM: ' + fmtMoney(r.dmSonya2026) + ')</span>' : '') : 'N/A')) + '</td>' +
+      '<td class="num">' + (r.liveLoading ? loadingCell : costCell(r.costVal2026, r.ownCost2026, r.dmSonya2026, '2026', r.m26, r.monthLabel)) + '</td>' +
       '<td class="num">' + (r.liveLoading ? loadingCell : netCell(r.net2026)) + '</td>' +
       '<td class="num">' + (r.liveLoading ? loadingCell : roasCell(r.roas2026)) + '</td>' +
       '<td class="num">' + (r.liveLoading ? loadingCell : growthCell(r.yoyGrowth)) + '</td>' +
@@ -1370,6 +1402,73 @@ document.querySelectorAll('#mgOverviewNav a[data-tab]').forEach(function (a) {
   });
 });
 if (!location.hash) mgShowView('pages');
+</script>
+
+<!-- Cost breakdown popup (added 2026-08-19, Sonya only for now) -->
+<div class="cb-overlay" id="cbOverlay">
+  <div class="cb-modal">
+    <div class="cb-head">
+      <h3 id="cbTitle">Cost Breakdown</h3>
+      <button type="button" class="cb-close" id="cbClose">&times;</button>
+    </div>
+    <div class="cb-body" id="cbBody"><div class="cb-loading">Loading breakdown&hellip;</div></div>
+  </div>
+</div>
+<script>
+// Shopify "Advanced" plan, $399 USD/month, converted to GBP at the
+// mid-market rate on 2026-08-19 (1 USD = 0.7389 GBP) = £294.82/month.
+// Split across the team members sharing this cost: 4 people in 2025, 5 in
+// 2026 (per Kuberan, headcount change). Fixed figure, not live-converted —
+// update SHOPIFY_SUBSCRIPTION_GBP by hand if the plan or FX rate changes
+// meaningfully.
+const SHOPIFY_SUBSCRIPTION_GBP = 294.82;
+const SHOPIFY_SUBSCRIPTION_SPLIT = { '2025': 4, '2026': 5 };
+
+function cbOpen(){ document.getElementById('cbOverlay').classList.add('open'); }
+function cbCloseFn(){ document.getElementById('cbOverlay').classList.remove('open'); }
+document.getElementById('cbClose').addEventListener('click', cbCloseFn);
+document.getElementById('cbOverlay').addEventListener('click', (e) => { if (e.target.id === 'cbOverlay') cbCloseFn(); });
+
+// Fetches the same /api/sales25 or /api/salesuk endpoint the table already
+// uses (cached — a repeat call for a month already on-screen is near-
+// instant) and pulls out the extra combinedSummary fields (vat, discounts,
+// refunds) that loadAll()/fetchGroupSales() discard, since the table only
+// ever needed netSales. Only called lazily on click, not during page load.
+async function openCostPopup(member, year, month, monthLabel){
+  document.getElementById('cbTitle').textContent = memberDisplayName(member) + ' — ' + monthLabel + ' ' + year + ' Cost Breakdown';
+  document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Loading breakdown&hellip;</div>';
+  cbOpen();
+  try {
+    const endpoint = year === '2025' ? 'sales25' : 'salesuk';
+    const res = await fetch('/api/' + endpoint + '?group=' + member + '&month=' + encodeURIComponent(month));
+    const data = await res.json();
+    if (!data.success || !data.combinedSummary) throw new Error(data.error || 'No data for this month');
+    const s = data.combinedSummary;
+    const netSales = s.netSales || 0;
+    const vat = s.vat || 0;
+    const discounts = s.discounts || 0;
+    const refunds = s.refunds || 0;
+    const transactionFee = s.transactionFee || 0;
+    const productCost = Math.round(netSales * 0.20 * 100) / 100;
+    const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
+    const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
+    const total = Math.round((vat + productCost + transactionFee + discounts + refunds + subscriptionFee) * 100) / 100;
+
+    const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
+    document.getElementById('cbBody').innerHTML =
+      row('VAT', vat) +
+      row('Product Cost (20% of Net Sales)', productCost, '20% × ' + fmtMoney(netSales)) +
+      row('Transaction Fee', transactionFee) +
+      row('Discount', discounts) +
+      row('Refund', refunds) +
+      row('Shopify Subscription Fee', subscriptionFee, '£' + SHOPIFY_SUBSCRIPTION_GBP.toFixed(2) + ' ÷ ' + splitBy + ' people') +
+      '<div class="cb-row cb-total"><span class="cb-label">Total</span><span class="cb-value">' + fmtMoney(total) + '</span></div>' +
+      '<div class="cb-note">VAT, Discount, and Refund are pulled from the same Shopify order data used for that month\'s Net Sales (' + fmtMoney(netSales) + '). Product Cost is a flat 20% assumption on Net Sales, not a per-product COGS figure. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
+  } catch (err) {
+    document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Error: ' + (err.message || err) + '</div>';
+  }
+}
+function memberDisplayName(member){ return MEMBER_NAMES[member] || member; }
 </script>
 </body>
 </html>
