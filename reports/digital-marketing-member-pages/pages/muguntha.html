@@ -753,9 +753,14 @@ async function loadAll(member, idSuffix, force){
 
   try {
     // Phase 1: everything except the live month(s) — always fast, snapshot-backed.
+    // Sales concurrency capped at 3 (not 5) — confirmed 2026-08-19 that firing
+    // 8+ concurrent Shopify-backed requests at once causes some of them to
+    // hang indefinitely (Shopify's own per-shop API rate limit), even though
+    // each request is individually fast. Cost calls hit Postgres, not
+    // Shopify, and aren't implicated — left at 5.
     const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      mapLimit(MONTHS_2025, 5, (m) => fetchGroupSales('2025', member, m, false)),
-      mapLimit(nonLiveMonths2026, 5, (m) => fetchGroupSales('2026', member, m, false)),
+      mapLimit(MONTHS_2025, 3, (m) => fetchGroupSales('2025', member, m, false)),
+      mapLimit(nonLiveMonths2026, 3, (m) => fetchGroupSales('2026', member, m, false)),
       mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
       mapLimit(nonLiveMonths2026, 5, (m) => fetchCost(member, m, false)),
     ]);
