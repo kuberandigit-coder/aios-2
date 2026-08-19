@@ -576,15 +576,44 @@ function fmtPct(n){ return isFinite(n) ? (Math.round(n*10000)/100).toFixed(2) + 
 // user request 2026-08-05 — NOT netSales like the other three tabs).
 // salesde25.js was backfilled to the full Jan-Dec 2025 range 2026-08-05
 // (previously Jan-Jun only) — no more client-side month skipping needed.
+// Some individual month/group combos have been observed to hang for 15-20s+
+// with no response (root cause not yet identified as of 2026-08-19 — ruled
+// out both request concurrency and order-override processing, neither of
+// which was implicated), even though the exact same request usually
+// succeeds in under 1s. Rather than let one stuck month block the whole
+// table forever (or fail the entire page load), every fetch here is
+// timeout-bounded (12s) with one retry; a month that still won't respond
+// returns null (rendered as "N/A", not "£0.00" — distinct from a real zero)
+// instead of hanging the page or throwing and killing every other month's
+// data too.
+async function fetchJsonWithTimeout(url, timeoutMs){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function fetchJsonResilient(url, timeoutMs, retries){
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try { return await fetchJsonWithTimeout(url, timeoutMs); }
+    catch (e) { lastErr = e; }
+  }
+  console.warn('[muguntha] giving up on', url, lastErr);
+  return null;
+}
+
 async function fetchGroupSales(year, member, month, force){
   const isJefri = member === 'jefri';
   const endpoint = isJefri ? (year === '2025' ? 'salesde25' : 'sales') : (year === '2025' ? 'sales25' : 'salesuk');
   const paramName = isJefri ? 'staff' : 'group';
   const paramValue = isJefri ? 'jeffri-ads' : member;
   const url = '/api/' + endpoint + '?' + paramName + '=' + paramValue + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error || (endpoint + ' failed for ' + month));
+  const data = await fetchJsonResilient(url, 12000, 1);
+  if (!data || !data.success) return null;
   if (!data.combinedSummary) return 0;
   // netSales (excl. tax/shipping/discounts/refunds) for Sonya/Sajeepan/Kamsi
   // — matches the "Net Sales" figure already shown on salesuk.html. Jefri
@@ -594,9 +623,8 @@ async function fetchGroupSales(year, member, month, force){
 
 async function fetchCost(member, month, force){
   const url = '/api/muguntha?employee=' + member + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error || ('cost fetch failed for ' + month));
+  const data = await fetchJsonResilient(url, 12000, 1);
+  if (!data || !data.success) return { ownCost: null, dmSonyaProductCost: null, dmTotalCost: null, totalCost: null };
   const dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
   return {
     ownCost: data.cost,
@@ -753,20 +781,25 @@ async function loadAll(member, idSuffix, force){
 
   try {
     // Phase 1: everything except the live month(s) — always fast, snapshot-backed.
-    // Sales concurrency capped at 2 (not 5) — confirmed 2026-08-19 that the
-    // live platform's actual ceiling is only ~6 concurrent Shopify-backed
-    // requests before some hang indefinitely (Shopify's own per-shop API
-    // rate limit), even though each request is individually fast. 3+3=6 sat
-    // right at that edge with no safety margin, so dropped to 2+2=4 to stay
-    // clearly under it, especially given the warm-cache cron job's own
-    // concurrent Shopify load can land at the same time. Cost calls hit
-    // Postgres, not Shopify, and aren't implicated — left at 5.
-    const [sales25Arr, sales26Arr, cost25Arr, cost26Arr] = await Promise.all([
-      mapLimit(MONTHS_2025, 2, (m) => fetchGroupSales('2025', member, m, false)),
-      mapLimit(nonLiveMonths2026, 2, (m) => fetchGroupSales('2026', member, m, false)),
+    // Concurrency tuning alone (tried 5 -> 3 -> 2 -> 1 on 2026-08-19) never
+    // fully eliminated occasional per-month hangs of unclear origin — ruled
+    // out both request concurrency and order-override processing as the
+    // cause. The real fix is fetchGroupSales()/fetchCost()'s own 12s
+    // timeout + 1 retry (see fetchJsonResilient above), which now guarantees
+    // no single month can hang the page no matter what's causing it — so
+    // concurrency is back up to 5 for speed, since it's no longer the thing
+    // protecting reliability.
+    const salesJobs = [
+      ...MONTHS_2025.map((m) => ({ year: '2025', m })),
+      ...nonLiveMonths2026.map((m) => ({ year: '2026', m })),
+    ];
+    const [salesResults, cost25Arr, cost26Arr] = await Promise.all([
+      mapLimit(salesJobs, 5, (j) => fetchGroupSales(j.year, member, j.m, false)),
       mapLimit(MONTHS_2025, 5, (m) => fetchCost(member, m, false)),
       mapLimit(nonLiveMonths2026, 5, (m) => fetchCost(member, m, false)),
     ]);
+    const sales25Arr = salesResults.slice(0, MONTHS_2025.length);
+    const sales26Arr = salesResults.slice(MONTHS_2025.length);
 
     const sales25ByMonth = {}, sales26ByMonth = {}, cost25 = {}, cost26 = {};
     MONTHS_2025.forEach((m, i) => { sales25ByMonth[m] = sales25Arr[i]; cost25[m] = cost25Arr[i]; });
