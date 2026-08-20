@@ -6219,8 +6219,121 @@ const jefriReq6HandlerModule = (function() {
 // false-confidence match. If no utmParameters: 'direct' source -> Direct;
 // otherwise -> Organic/Other (raw source shown).
 const jefriReq8HandlerModule = (function() {
+  const { Pool } = require('pg');
   const SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
   const API_VERSION = '2024-10';
+  const GADS_ACCOUNT_ID = 9031058245;
+
+  let pool;
+  function getPool() {
+    if (!pool) {
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString && !process.env.PGHOST) {
+        throw new Error('Server not configured: DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD) missing');
+      }
+      pool = new Pool({
+        connectionString: connectionString || undefined,
+        host: connectionString ? undefined : process.env.PGHOST,
+        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+        database: connectionString ? undefined : process.env.PGDATABASE,
+        user: connectionString ? undefined : process.env.PGUSER,
+        password: connectionString ? undefined : process.env.PGPASSWORD,
+        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+        connectionTimeoutMillis: 8000,
+        statement_timeout: 30000,
+        max: 3,
+      });
+    }
+    return pool;
+  }
+
+  // Attributed Date / Campaign matching (added 2026-08-20, Method 2 —
+  // Inferred, per T-08's own Step 3/4/7). Two real, exact-cent matches
+  // found before building this (see evidence/jefri/req-08-t08-attribution-
+  // discovery.md): campaign_performance is a per-day AGGREGATE (many
+  // orders summed — exact-value matching against it fails almost always,
+  // confirmed by exhaustively searching a real order's value across every
+  // conversion_value column in the whole account, all-time, zero matches).
+  // google_ads.product_performance is per-day PER-PRODUCT — much finer
+  // grain, so a `conversions = 1` row usually isolates exactly one order.
+  // Google Ads' "New Customer Acquisition" bid strategy (confirmed via
+  // google_ads.campaigns.customer_acquisition = 'BID_HIGHER_FOR_NEW_
+  // CUSTOMER' on these campaigns) ADDS a bonus on top of the real order
+  // value for new-customer conversions — the bonus €-amount itself is NOT
+  // stored anywhere in Postgres (only the on/off flag), so these values
+  // were supplied directly by Kuberan from the Google Ads UI and are
+  // hardcoded here, keyed by campaign_id (resolved from the real campaign
+  // names via a live query before building this).
+  // IMPORTANT: the matched product_performance row is NOT necessarily the
+  // literal product the customer bought (verified on a real order — the
+  // matched row's product title differed from the order's actual line
+  // item) — Google Ads Shopping/PMax can attribute a conversion's value to
+  // whichever product ad was last clicked, not necessarily what ended up
+  // in the cart. So matching is done on CAMPAIGN + DATE + VALUE only, not
+  // on product identity — the product_performance table is used purely as
+  // a finer-grained VALUE signal than campaign_performance, to avoid the
+  // multi-order-per-day aggregation problem, not as a product-level join.
+  const ACTIVE_CAMPAIGN_BONUS = {
+    '23246898942': [0.70, 0.90], // Pmax | Jeff | Klarna | BT | Backup | TROAS | DE-11/11
+    '23141810147': [0.70, 0.90], // Pmax | Jeff | Klarna | NEWALL | All Products | MCV | DE -16/10
+    '24038115272': [0.70, 0.90], // Pmax | Jeff | Klarna | SANCTUARY | SoftMinimalism | MCV | DE-16/07
+    '23411228109': [0.50, 0.70], // Pmax | Jeff | Shoparize | ALL | All Products | MCV | DE-01/01/26
+    '23473840779': [1.00, 1.10], // Pmax | Jeff | Shoparize | FTJ | FinetunedProducts | TROAS | DE-20.01
+    '23340277562': [0.80, 0.90], // Pmax | Jeff | Shoparize | IT | Italy | TROAS | IT-08/12
+    '21923476465': [0.70, 0.90], // Pmax | Jeff | Shoptimised | BLACKFRIDAY | Blackfriday | MCV | DE- 18/11
+    '23791285134': [0.70, 0.90], // Pmax | Thasi | Shoptimised | MT | Metal Product | MCV -27/04
+    '23765634627': [0.50, 0.70], // Pmax | Thasi | Shoptimised | THT | NewProduct | MCV -20/04
+    '24051146082': [0.50, 0.70], // Pmax | Thasi | Klarna | SUMT | NewProduct | MCV -22/07
+    '20763699505': [0.70, 0.90], // Pmax DE | Mahi | Klarna | DE | All_Myid | MCV
+    '23053104908': [0.60, 0.90], // Pmax DE | Mahi | Shoptimised | LIGHTINGSOLUTION | All_Myid_1 | MCV
+    '23431543574': [1.00, 1.10], // Pmax DE | Mahi | Shoptimised | JAN-TOP-SALES | JanTopSales_3 | MCV
+    '23684789991': [0.75, 0.95], // Pmax DE | Mahi | Shoptimised | BESTEN-BELEUCHTUNG | priceGT10_5 | MCV
+    '22539594891': [1.00],       // Shopping | Jeff | Shoptimised | AOVU15 | TROAS | DE -12/05
+    '23926509987': [1.00],       // Shopping DE | Mahi | klarna | TOP-MAHI | Verkaufsprodukt | tROAS | 11/06
+  };
+  const ACTIVE_CAMPAIGN_IDS = Object.keys(ACTIVE_CAMPAIGN_BONUS);
+  const BONUS_MATCH_TOLERANCE = 0.03; // real matches seen were exact-to-the-cent
+
+  const ATTRIBUTION_CANDIDATES_QUERY = `
+    SELECT pp.date, pp.campaign_id, c.campaign_name, pp.conversion_value
+    FROM google_ads.product_performance pp
+    JOIN google_ads.campaigns c ON c.campaign_id = pp.campaign_id
+    WHERE pp.campaign_id = ANY($1::bigint[])
+      AND pp.date >= $2::date AND pp.date <= $3::date
+      AND pp.conversions = 1
+      AND pp.conversion_value > 0
+  `;
+
+  // For one order, find every campaign/date candidate whose
+  // product_performance conversion_value equals the order value, either
+  // exactly (no bonus / bonus not applicable) or exactly minus that
+  // specific campaign's known bonus (new-customer or high-value-customer).
+  function findAttributionCandidates(orderValue, candidateRows) {
+    const matches = [];
+    candidateRows.forEach((row) => {
+      const bonuses = ACTIVE_CAMPAIGN_BONUS[row.campaign_id] || [];
+      const diff = Number(row.conversion_value) - orderValue;
+      let bonusType = null;
+      if (Math.abs(diff) <= BONUS_MATCH_TOLERANCE) {
+        bonusType = 'none';
+      } else if (bonuses.length && Math.abs(diff - bonuses[0]) <= BONUS_MATCH_TOLERANCE) {
+        bonusType = 'new_customer';
+      } else if (bonuses.length > 1 && Math.abs(diff - bonuses[1]) <= BONUS_MATCH_TOLERANCE) {
+        bonusType = 'high_value_customer';
+      }
+      if (bonusType) {
+        matches.push({
+          campaignId: row.campaign_id,
+          campaignName: row.campaign_name,
+          attributedDate: new Date(row.date).toISOString().slice(0, 10),
+          conversionValue: Number(row.conversion_value),
+          bonusApplied: bonusType === 'none' ? 0 : (bonusType === 'new_customer' ? bonuses[0] : bonuses[1]),
+          bonusType,
+        });
+      }
+    });
+    return matches;
+  }
 
   // Same 5 campaigns already used by Req5 (JEFRI_CAMPAIGNS_R5) — duplicated
   // here rather than reaching into that IIFE's closure, since these lists
@@ -6381,6 +6494,46 @@ const jefriReq8HandlerModule = (function() {
         hasNext = conn.pageInfo && conn.pageInfo.hasNextPage;
         cursor = conn.pageInfo && conn.pageInfo.endCursor;
       }
+
+      // Attributed Date / Campaign (Method 2, inferred) — one Postgres
+      // query covering the whole date range (+padding for attribution
+      // lag), then matched in-memory per order. See ACTIVE_CAMPAIGN_BONUS
+      // comment above for the full method.
+      const windowStart = new Date(new Date(startDate + 'T00:00:00Z').getTime() - 1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const windowEnd = new Date(new Date(endDate + 'T00:00:00Z').getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      let candidateRows = [];
+      const client = await getPool().connect().catch((err) => {
+        console.error('[jefri/req8-orders] Postgres connect failed (attribution skipped):', err && err.message);
+        return null;
+      });
+      if (client) {
+        try {
+          const result = await client.query(ATTRIBUTION_CANDIDATES_QUERY, [ACTIVE_CAMPAIGN_IDS, windowStart, windowEnd]);
+          candidateRows = result.rows;
+        } catch (err) {
+          console.error('[jefri/req8-orders] attribution query failed:', err && err.message);
+        } finally {
+          client.release();
+        }
+      }
+
+      orders.forEach((o) => {
+        if (o.orderValueExclShipping == null) {
+          o.attribution = { status: 'No match', candidates: [] };
+          return;
+        }
+        const orderDate = o.createdAt.slice(0, 10);
+        const rowsNearOrder = candidateRows.filter((r) => {
+          const rDate = new Date(r.date).toISOString().slice(0, 10);
+          return rDate >= new Date(new Date(orderDate + 'T00:00:00Z').getTime() - 1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+              && rDate <= new Date(new Date(orderDate + 'T00:00:00Z').getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        });
+        const candidates = findAttributionCandidates(o.orderValueExclShipping, rowsNearOrder);
+        o.attribution = {
+          status: candidates.length === 0 ? 'No match' : (candidates.length === 1 ? 'Matched' : 'Ambiguous'),
+          candidates,
+        };
+      });
 
       const payload = { startDate, endDate, generatedAt: new Date().toISOString(), count: orders.length, orders };
       CACHE.set(cacheKey, { data: payload, at: Date.now() });
