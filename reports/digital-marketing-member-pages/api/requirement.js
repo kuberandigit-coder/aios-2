@@ -6560,11 +6560,12 @@ module.exports = async (req, res) => {
     if (!req.query.secret || req.query.secret !== process.env.MIGRATION_RUNNER_SECRET) {
       return res.status(403).json({ error: 'forbidden' });
     }
-    const fs = require('fs');
-    const path = require('path');
-    const file = (req.query.file || '').replace(/[^a-zA-Z0-9_.\-]/g, '');
-    const migPath = path.join(__dirname, 'db', 'migrations', file);
-    if (!fs.existsSync(migPath)) return res.status(400).json({ error: 'file not found: ' + file });
+    // .sql files aren't traced/bundled by Vercel (only require()'d modules
+    // are) so the two migrations are embedded as JS modules exporting the
+    // SQL string, generated verbatim from db/migrations/*.sql.
+    const EMBEDDED = { '001': require('../db/migrations-embed/001.js'), '002': require('../db/migrations-embed/002.js') };
+    const key = (req.query.file || '').replace(/[^0-9]/g, '');
+    if (!EMBEDDED[key]) return res.status(400).json({ error: 'file must be 001 or 002' });
     const { Pool } = require('pg');
     const cs = process.env.NEON_DATABASE_URL;
     if (!cs) return res.status(500).json({ error: 'NEON_DATABASE_URL missing' });
@@ -6576,9 +6577,8 @@ module.exports = async (req, res) => {
         const r2 = await client.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename LIKE 'thivajini_feed%' ORDER BY tablename");
         return res.status(200).json({ ok: true, info: r1.rows[0], existingTables: r2.rows.map(r => r.tablename) });
       }
-      const sql = fs.readFileSync(migPath, 'utf8');
-      await client.query(sql);
-      return res.status(200).json({ ok: true, ran: file });
+      await client.query(EMBEDDED[key]);
+      return res.status(200).json({ ok: true, ran: key });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
     } finally {
