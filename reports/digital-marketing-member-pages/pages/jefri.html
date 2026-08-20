@@ -164,6 +164,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-req="req5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"></path></svg></span><span class="lbl">Requirement 5</span></a></li>
     <li><a href="#" data-req="req6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></span><span class="lbl">Requirement 6</span></a></li>
     <li><a href="#" data-req="req7"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l2 2 4-4"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg></span><span class="lbl">Requirement 7</span></a></li>
+    <li><a href="#" data-req="req8"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span><span class="lbl">Requirement 8</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -842,6 +843,40 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 </div>
 
+<div id="req8Tab" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#c62828;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 8 (Blocked)</div>
+  <h1>T-08 &middot; Order Conversion Split by Campaign Date</h1>
+  <div class="sub">Match each Shopify order to the Google Ads campaign(s) and date(s) that received its conversion value &mdash; split correctly when an order was attributed across more than one campaign/date, reconciled to the order's real value.</div>
+</header>
+
+<div style="background:#fdecea;border:1px solid #f5c6c6;border-radius:12px;padding:18px 22px;margin-bottom:18px;">
+  <div style="font-size:14px;font-weight:800;color:#c62828;margin-bottom:8px;">&#9888; This requirement cannot be built yet &mdash; required data does not exist in the database</div>
+  <div style="font-size:13px;color:#3a2323;line-height:1.8;">
+    A full read-only PostgreSQL discovery (whole-database search, not just one schema) confirmed that none of the following exist anywhere in the connected database:
+    <ul style="margin:10px 0 10px 20px;padding:0;">
+      <li><strong>Google Ads Transaction ID / order-level conversion data</strong> &mdash; only campaign+date aggregate totals exist (<code>google_ads.campaign_performance</code>), with no per-order breakdown. This is the exact match method the requirement needs and prefers.</li>
+      <li><strong>A historical/versioned conversion snapshot</strong> to compute a "Current Update &minus; Last Update" delta &mdash; the aggregate table is overwritten in place, not historized, so there's no fallback method either.</li>
+      <li><strong>Bid-strategy bonus data</strong> (New Customer bonus, High Value Customer bonus, etc.) &mdash; needed to adjust deltas before matching, if the delta method were ever usable.</li>
+      <li><strong>UTM tracking data</strong> on Shopify orders &mdash; needed for the "Order Summary" column (UTM Term / Direct / Organic / Other), independent of the Google Ads gaps above.</li>
+    </ul>
+    No numbers, deltas, or attribution have been invented or estimated to fill this gap &mdash; this tab intentionally shows nothing rather than a guess.
+  </div>
+  <div style="font-size:13px;color:#3a2323;margin-top:14px;font-weight:700;">To unblock this, one of the following needs to happen:</div>
+  <ol style="font-size:13px;color:#3a2323;line-height:1.8;margin:8px 0 0 20px;padding:0;">
+    <li>Set up a Google Ads conversion-level import with Transaction ID / Order Number per conversion (the clean, exact fix).</li>
+    <li>Start historizing <code>google_ads.campaign_performance</code> (daily append-only snapshots instead of overwrite-in-place) so deltas become computable going forward.</li>
+    <li>Add UTM tracking to the Shopify order pipeline, if the Order Summary column is wanted independent of the above.</li>
+    <li>Or explicitly descope T-08 to whatever is actually answerable with existing data.</li>
+  </ol>
+</div>
+
+<div class="footnotes">
+  <strong>Full discovery record:</strong> <code>evidence/jefri/req-08-t08-discovery.md</code> and <code>evidence/jefri/req-08-t08-postgres-source-mapping.md</code> &mdash; every table/column checked, exact search queries used, and the full 13-step T-08 logic this requirement was specified against.<br>
+  <strong>Status:</strong> BLOCKED at discovery, per explicit stop-condition instructions in the governing prompt &mdash; not implemented, not deployed, no data invented.
+</div>
+</div>
+
 <script>
 // Captured BEFORE the unconditional showReqTab('req1') default call below
 // runs — that call itself now writes '#req1' to the URL (see showReqTab),
@@ -865,6 +900,7 @@ function showReqTab(which){
   document.getElementById('req5Tab').style.display = which === 'req5' ? '' : 'none';
   document.getElementById('req6Tab').style.display = which === 'req6' ? '' : 'none';
   document.getElementById('req7Tab').style.display = which === 'req7' ? '' : 'none';
+  document.getElementById('req8Tab').style.display = which === 'req8' ? '' : 'none';
   var tb1=document.getElementById('tabBtnReq1'), tb2=document.getElementById('tabBtnReq2'), tb3=document.getElementById('tabBtnReq3');
   if (tb1) tb1.classList.toggle('active', which === 'req1');
   if (tb2) tb2.classList.toggle('active', which === 'req2');
@@ -2259,7 +2295,7 @@ document.querySelectorAll('#msNavList a[data-req]').forEach(function (a) {
 // hash-clobbering bug — jefri.html's unconditional default-tab call was
 // silently destroying the real hash before this code ever ran).
 (function(){
-  var validTabs = ['req1','req2','req3','req4','req5','req6','req7'];
+  var validTabs = ['req1','req2','req3','req4','req5','req6','req7','req8'];
   var fromHash = (JEFRI_INITIAL_HASH || '').replace('#', '');
   if (validTabs.indexOf(fromHash) !== -1 && fromHash !== 'req1') {
     var link = document.querySelector('#msNavList a[data-req="' + fromHash + '"]');
