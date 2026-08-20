@@ -1,6 +1,6 @@
 // Intel API — routes by ?service=seo|germany|organic
 // ?service=seo     → SEO Intelligence (?module=exec|products|keywords|landing|actions|technical|semrush|geo)
-// ?service=germany → Germany dashboard (?type=marketplace-gap|uk-bundle)
+// ?service=germany → Germany dashboard (?type=marketplace-gap|uk-bundle|listing-log-save|listing-log-load)
 // ?service=organic → Organic revenue (?type=overview|by-page|trend|by-type)
 
 const { Client } = require('pg');
@@ -1266,10 +1266,78 @@ async function handleUkBundle(client, res) {
   });
 }
 
+// ── DE Marketplace Listing Log (DB-backed, shared across all browsers) ─────────
+
+function makeTrackerClient() {
+  const cs = process.env.FEED_TRACKER_DB_URL || process.env.AUTH_DATABASE_URL;
+  if (!cs) return null;
+  return new Client({ connectionString: cs, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 6000 });
+}
+
+async function handleListingLogSave(req, res) {
+  const client = makeTrackerClient();
+  if (!client) return res.status(500).json({ ok: false, error: 'Tracker DB not configured (FEED_TRACKER_DB_URL or AUTH_DATABASE_URL required)' });
+  const { sku, channel, added_at } = req.body || {};
+  if (!sku || !channel) return res.status(400).json({ ok: false, error: 'sku and channel required' });
+  const VALID_CHANNELS = ['Amazon DE', 'eBay DE', 'Shopify DE'];
+  if (!VALID_CHANNELS.includes(channel)) return res.status(400).json({ ok: false, error: `channel must be one of: ${VALID_CHANNELS.join(', ')}` });
+  try {
+    await client.connect();
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.de_marketplace_listing_log (
+        id SERIAL PRIMARY KEY,
+        sku TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(sku, channel)
+      )
+    `);
+    await client.query(`
+      INSERT INTO public.de_marketplace_listing_log (sku, channel, added_at)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (sku, channel) DO NOTHING
+    `, [sku, channel, added_at || new Date().toISOString()]);
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
+
+async function handleListingLogLoad(req, res) {
+  const client = makeTrackerClient();
+  if (!client) return res.status(200).json({ ok: true, entries: [] });
+  try {
+    await client.connect();
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.de_marketplace_listing_log (
+        id SERIAL PRIMARY KEY,
+        sku TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(sku, channel)
+      )
+    `);
+    const { rows } = await client.query(
+      `SELECT sku, channel, added_at FROM public.de_marketplace_listing_log ORDER BY added_at DESC LIMIT 2000`
+    );
+    return res.status(200).json({ ok: true, entries: rows.map(r => ({ sku: r.sku, channel: r.channel, addedAt: r.added_at })) });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message, entries: [] });
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
+
 async function handleGermany(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const type = req.query.type;
-  if (!type) return res.status(400).json({ ok: false, error: 'Missing ?type= (marketplace-gap | uk-bundle)' });
+  if (!type) return res.status(400).json({ ok: false, error: 'Missing ?type= (marketplace-gap | uk-bundle | listing-log-save | listing-log-load)' });
+
+  if (type === 'listing-log-save') return await handleListingLogSave(req, res);
+  if (type === 'listing-log-load') return await handleListingLogLoad(req, res);
+
   if (!['marketplace-gap', 'uk-bundle'].includes(type)) {
     return res.status(400).json({ ok: false, error: `Unknown type: ${type}` });
   }
