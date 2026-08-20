@@ -6557,7 +6557,7 @@ module.exports = async (req, res) => {
   // by ADMIN_TASK_SECRET (existing env var, never exposed). Remove this
   // block once both migrations have been confirmed applied — 2026-08-20.
   if (fn === 'admin-run-migration') {
-    if (!req.query.secret || req.query.secret !== process.env.ADMIN_TASK_SECRET) {
+    if (!req.query.secret || req.query.secret !== process.env.MIGRATION_RUNNER_SECRET) {
       return res.status(403).json({ error: 'forbidden' });
     }
     const fs = require('fs');
