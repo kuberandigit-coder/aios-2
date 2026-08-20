@@ -6552,6 +6552,40 @@ module.exports = async (req, res) => {
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
   if (fn === 'jefri-req7') return jefriReq7HandlerModule(req, res);
   if (fn === 'jefri-req8-orders') return jefriReq8HandlerModule.handleJefriReq8Orders(req, res);
+  // TEMPORARY — one-off migration runner for the thivajini Feed Optimization
+  // module's Neon schema (db/migrations/2026-08-20_00{1,2}_*.sql). Guarded
+  // by ADMIN_TASK_SECRET (existing env var, never exposed). Remove this
+  // block once both migrations have been confirmed applied — 2026-08-20.
+  if (fn === 'admin-run-migration') {
+    if (!req.query.secret || req.query.secret !== process.env.ADMIN_TASK_SECRET) {
+      return res.status(403).json({ error: 'forbidden' });
+    }
+    const fs = require('fs');
+    const path = require('path');
+    const file = (req.query.file || '').replace(/[^a-zA-Z0-9_.\-]/g, '');
+    const migPath = path.join(__dirname, 'db', 'migrations', file);
+    if (!fs.existsSync(migPath)) return res.status(400).json({ error: 'file not found: ' + file });
+    const { Pool } = require('pg');
+    const cs = process.env.NEON_DATABASE_URL;
+    if (!cs) return res.status(500).json({ error: 'NEON_DATABASE_URL missing' });
+    const pool = new Pool({ connectionString: cs, ssl: { rejectUnauthorized: false }, max: 1 });
+    const client = await pool.connect();
+    try {
+      if (req.query.precheck === '1') {
+        const r1 = await client.query('SELECT current_database() AS db, current_user AS usr');
+        const r2 = await client.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename LIKE 'thivajini_feed%' ORDER BY tablename");
+        return res.status(200).json({ ok: true, info: r1.rows[0], existingTables: r2.rows.map(r => r.tablename) });
+      }
+      const sql = fs.readFileSync(migPath, 'utf8');
+      await client.query(sql);
+      return res.status(200).json({ ok: true, ran: file });
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: err.message });
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  }
   if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
   if (fn === 'jefri-req6-add') return jefriReq6HandlerModule.handleJefriReq6Add(req, res);
   if (fn === 'jefri-req6-delete') return jefriReq6HandlerModule.handleJefriReq6Delete(req, res);

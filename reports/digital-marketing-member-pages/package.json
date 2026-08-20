@@ -4,5 +4,9 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "pg": "^8.13.1"
+  },
+  "scripts": {
+    "test": "node --test tests/feed/feed.test.js tests/feed/export.test.js tests/feed/dbboundary.test.js",
+    "check": "node --check api/members-api.js && node --check lib/feed/req5.js"
   }
 }

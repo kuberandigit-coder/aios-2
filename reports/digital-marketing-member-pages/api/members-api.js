@@ -4,6 +4,11 @@
 
 const { Client } = require('pg');
 const https      = require('https');
+// Thivajini Req5 — Ledsone.fr Feed Optimization.
+// Lives under lib/feed/ (NOT api/lib/) because every file under api/ becomes
+// its own Vercel Function and this project is already at the 12-function
+// Hobby ceiling — see .vercelignore's note about api/scripts/.
+const feedReq5   = require('../lib/feed/req5');
 
 // ─── SHARED HELPERS ───────────────────────────────────────────────────────────
 
@@ -3000,7 +3005,13 @@ module.exports = async function handler(req, res) {
   if (member === 'theekshy') return handleTheekshy(req, res);
 
   // ── thivajini ─────────────────────────────────────────────────────────────
-  if (member === 'thivajini') return handleThivajini(req, res);
+  if (member === 'thivajini') {
+    // Req5 = Feed Optimization. Session-enforced inside feedReq5.handleReq5.
+    if (typeof type === 'string' && type.startsWith('req5')) {
+      return feedReq5.handleReq5(req, res, type);
+    }
+    return handleThivajini(req, res);
+  }
 
   // ── monitor ───────────────────────────────────────────────────────────────
   if (member === 'monitor') {
