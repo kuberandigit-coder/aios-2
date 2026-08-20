@@ -868,7 +868,25 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
 <div class="tablebox">
   <div class="tbar">
-    <input type="text" id="r8q" placeholder="Search Order Number">
+    <input type="text" id="r8q" placeholder="Search Order Number" style="min-width:220px;">
+    <label>Order Summary <select id="r8f_summaryType">
+      <option value="">All types</option>
+      <option value="Google Ads">Google Ads</option>
+      <option value="Meta Ads">Meta Ads</option>
+      <option value="Direct">Direct</option>
+      <option value="Organic/Other">Organic/Other</option>
+      <option value="Other (tagged)">Other (tagged)</option>
+    </select></label>
+    <label>Attribution <select id="r8f_attributionStatus">
+      <option value="">All statuses</option>
+      <option value="Matched">Matched</option>
+      <option value="Ambiguous">Ambiguous</option>
+      <option value="No match">No match</option>
+    </select></label>
+    <label>Campaign <select id="r8f_campaign">
+      <option value="">All campaigns</option>
+    </select></label>
+    <button id="r8ExportCsv" type="button">Export CSV</button>
     <span id="r8cnt" style="margin-left:auto;">&ndash;</span>
   </div>
   <div class="scroll" style="max-height:640px;overflow-y:auto;">
@@ -2120,6 +2138,7 @@ async function r8Load(force){
     if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
     R8_ALL = data.orders || [];
     chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString();
+    r8PopulateCampaignFilter();
     r8Render();
   } catch (e) {
     document.getElementById('r8tbody').innerHTML = '<tr><td colspan="6" class="empty">Error: ' + esc(e.message) + '</td></tr>';
@@ -2130,10 +2149,38 @@ async function r8Load(force){
   }
 }
 
+function r8RowCampaigns(r){
+  const names = [];
+  if (r.campaignMatched) names.push(r.campaignMatched);
+  if (r.attribution && r.attribution.candidates) {
+    r.attribution.candidates.forEach(function(c){ if (names.indexOf(c.campaignName) === -1) names.push(c.campaignName); });
+  }
+  return names;
+}
+
 function r8FilteredRows(){
   const q = document.getElementById('r8q').value.trim().toLowerCase();
-  if (!q) return R8_ALL;
-  return R8_ALL.filter(function(r){ return (r.orderNumber||'').toLowerCase().includes(q); });
+  const summaryType = document.getElementById('r8f_summaryType').value;
+  const attrStatus = document.getElementById('r8f_attributionStatus').value;
+  const campaign = document.getElementById('r8f_campaign').value;
+  return R8_ALL.filter(function(r){
+    const qHit = !q || (r.orderNumber||'').toLowerCase().includes(q);
+    const typeHit = !summaryType || r.orderSummaryType === summaryType;
+    const attrHit = !attrStatus || (r.attribution && r.attribution.status === attrStatus);
+    const campHit = !campaign || r8RowCampaigns(r).indexOf(campaign) !== -1;
+    return qHit && typeHit && attrHit && campHit;
+  });
+}
+
+function r8PopulateCampaignFilter(){
+  const sel = document.getElementById('r8f_campaign');
+  const current = sel.value;
+  const names = new Set();
+  R8_ALL.forEach(function(r){ r8RowCampaigns(r).forEach(function(n){ names.add(n); }); });
+  const sorted = Array.from(names).sort();
+  sel.innerHTML = '<option value="">All campaigns</option>' + sorted.map(function(n){
+    return '<option value="' + esc(n) + '"' + (n === current ? ' selected' : '') + '>' + esc(n) + '</option>';
+  }).join('');
 }
 
 function r8SummaryPill(r){
@@ -2213,10 +2260,34 @@ function r8Render(){
   document.getElementById('r8cnt').textContent = rows.length.toLocaleString() + ' of ' + R8_ALL.length.toLocaleString();
 }
 
+function r8ExportCsv(){
+  const rows = r8FilteredRows();
+  const header = ['Order Number','Order Value (Excl. Shipping)','Order Summary','Order Summary Type','Campaign (Attribution Match)','Attribution Status','Attributed Date','Created At'];
+  const lines = [header.join(',')];
+  rows.forEach(function(r){
+    const a = r.attribution || { status: 'No match', candidates: [] };
+    const campaigns = a.candidates.map(function(c){ return c.campaignName; }).join(' / ');
+    const dates = a.candidates.map(function(c){ return c.attributedDate; }).join(' / ');
+    lines.push([
+      r.orderNumber, r.orderValueExclShipping, r.orderSummaryDisplay, r.orderSummaryType,
+      campaigns, a.status, dates, r.createdAt
+    ].map(function(v){ return '"' + String(v==null?'':v).replace(/"/g,'""') + '"'; }).join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jefri-req8-order-conversion-split-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
 document.getElementById('r8RunBtn').addEventListener('click', () => r8Load(true));
 document.getElementById('r8f_startDate').addEventListener('change', () => r8Load(false));
 document.getElementById('r8f_endDate').addEventListener('change', () => r8Load(false));
 document.getElementById('r8q').addEventListener('input', r8Render);
+document.getElementById('r8f_summaryType').addEventListener('change', r8Render);
+document.getElementById('r8f_attributionStatus').addEventListener('change', r8Render);
+document.getElementById('r8f_campaign').addEventListener('change', r8Render);
+document.getElementById('r8ExportCsv').addEventListener('click', r8ExportCsv);
 
 // ===== Requirement 6: T-06 Image Update Live Sales Tracker (added 2026-08-14,
 // reworked 4 times same day, final version per Kuberan: "i need first
