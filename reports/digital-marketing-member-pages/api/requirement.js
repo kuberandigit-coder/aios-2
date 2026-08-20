@@ -6194,10 +6194,98 @@ const jefriReq6HandlerModule = (function() {
   return { handleJefriReq6List, handleJefriReq6Add, handleJefriReq6Delete };
 })();
 
+// ===== Jefri Requirement 8: T-08 Order Conversion Split by Campaign Date
+// (added 2026-08-20). BLOCKED end-to-end per evidence/jefri/req-08-t08-*.md
+// (no Google Ads transaction ID / delta / bid-adjustment / UTM data exists
+// in Postgres) — built incrementally, step by step, per Kuberan's explicit
+// "let's do one by one" instruction. THIS step: Order Number + Order Value
+// (Excl. Shipping) pulled LIVE and DIRECTLY from the Shopify Admin REST API
+// (ledsone-de.myshopify.com), NOT Postgres, per explicit instruction —
+// confirmed field: `current_subtotal_price` (spot-checked against a real
+// order: subtotal 16.88 + shipping 10.57 = total_price 27.45, matches
+// exactly). No Google Ads columns are shown yet — those remain blocked.
+const jefriReq8HandlerModule = (function() {
+  const SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
+  const API_VERSION = '2024-10';
+
+  async function shopifyRest(path) {
+    const token = process.env.SHOPIFY_ADMIN_TOKEN;
+    if (!token) throw new Error('Server not configured: SHOPIFY_ADMIN_TOKEN missing');
+    const res = await fetch(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${API_VERSION}/${path}`, {
+      headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(`Shopify ${res.status}: ${(body && body.errors) || res.statusText}`);
+    return { body, linkHeader: res.headers.get('link') };
+  }
+
+  function isValidDateR8(s) {
+    return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  }
+
+  const CACHE = new Map();
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+
+  async function handleJefriReq8Orders(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const startDate = isValidDateR8(req.query && req.query.startDate) ? req.query.startDate : null;
+    const endDate = isValidDateR8(req.query && req.query.endDate) ? req.query.endDate : null;
+    const forceRefresh = req.query && req.query.refresh === '1';
+    if (!startDate || !endDate) {
+      res.status(400).json({ error: 'Provide ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD' });
+      return;
+    }
+
+    const cacheKey = `${startDate}|${endDate}`;
+    if (!forceRefresh) {
+      const cached = CACHE.get(cacheKey);
+      if (cached && (Date.now() - cached.at) < CACHE_TTL_MS) {
+        res.status(200).json(cached.data);
+        return;
+      }
+    }
+
+    try {
+      const fields = 'id,name,current_subtotal_price,total_price,created_at,cancelled_at,financial_status';
+      let path = `orders.json?status=any&limit=250&fields=${fields}` +
+        `&created_at_min=${encodeURIComponent(startDate + 'T00:00:00Z')}` +
+        `&created_at_max=${encodeURIComponent(endDate + 'T23:59:59Z')}`;
+      const orders = [];
+      let guard = 0;
+      while (path && guard < 20) {
+        guard += 1;
+        const { body, linkHeader } = await shopifyRest(path);
+        (body.orders || []).forEach((o) => {
+          orders.push({
+            orderNumber: o.name,
+            orderValueExclShipping: o.current_subtotal_price != null ? Number(o.current_subtotal_price) : null,
+            totalPrice: o.total_price != null ? Number(o.total_price) : null,
+            createdAt: o.created_at,
+            cancelled: !!o.cancelled_at,
+            financialStatus: o.financial_status,
+          });
+        });
+        const next = linkHeader && /<([^>]+)>;\s*rel="next"/.exec(linkHeader);
+        path = next ? next[1].replace(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${API_VERSION}/`, '') : null;
+      }
+
+      const payload = { startDate, endDate, generatedAt: new Date().toISOString(), count: orders.length, orders };
+      CACHE.set(cacheKey, { data: payload, at: Date.now() });
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[jefri/req8-orders] error:', err && err.message);
+      res.status(500).json({ error: err.message || 'Unknown error' });
+    }
+  }
+
+  return { handleJefriReq8Orders };
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
   if (fn === 'jefri-req7') return jefriReq7HandlerModule(req, res);
+  if (fn === 'jefri-req8-orders') return jefriReq8HandlerModule.handleJefriReq8Orders(req, res);
   if (fn === 'jefri-req6-list') return jefriReq6HandlerModule.handleJefriReq6List(req, res);
   if (fn === 'jefri-req6-add') return jefriReq6HandlerModule.handleJefriReq6Add(req, res);
   if (fn === 'jefri-req6-delete') return jefriReq6HandlerModule.handleJefriReq6Delete(req, res);

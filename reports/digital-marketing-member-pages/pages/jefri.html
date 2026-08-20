@@ -57,9 +57,9 @@ h1{font-size:22px;letter-spacing:.2px;}
 .tbar input,.tbar select{padding:8px 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;color:var(--ink);}
 .tbar input{flex:1;min-width:200px;}
 .tbar select{cursor:pointer;}
-.tbar button, #refreshBtn, #r2RefreshBtn, #r3RefreshBtn, #r4RefreshBtn, #r5RunBtn, #r7RunBtn{padding:7px 16px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:12.5px;font-weight:600;}
-.tbar button:hover, #refreshBtn:hover, #r2RefreshBtn:hover, #r3RefreshBtn:hover, #r4RefreshBtn:hover, #r5RunBtn:hover, #r7RunBtn:hover{background:#1848cc;}
-.tbar button:disabled, #refreshBtn:disabled, #r2RefreshBtn:disabled, #r3RefreshBtn:disabled, #r4RefreshBtn:disabled, #r5RunBtn:disabled, #r7RunBtn:disabled{opacity:.6;cursor:default;}
+.tbar button, #refreshBtn, #r2RefreshBtn, #r3RefreshBtn, #r4RefreshBtn, #r5RunBtn, #r7RunBtn, #r8RunBtn{padding:7px 16px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:12.5px;font-weight:600;}
+.tbar button:hover, #refreshBtn:hover, #r2RefreshBtn:hover, #r3RefreshBtn:hover, #r4RefreshBtn:hover, #r5RunBtn:hover, #r7RunBtn:hover, #r8RunBtn:hover{background:#1848cc;}
+.tbar button:disabled, #refreshBtn:disabled, #r2RefreshBtn:disabled, #r3RefreshBtn:disabled, #r4RefreshBtn:disabled, #r5RunBtn:disabled, #r7RunBtn:disabled, #r8RunBtn:disabled{opacity:.6;cursor:default;}
 .scroll{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:13px;min-width:1200px;}
 thead th{background:#f0f3f8;text-align:left;padding:12px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#42506a;border-bottom:2px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap;}
@@ -164,6 +164,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-req="req5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"></path></svg></span><span class="lbl">Requirement 5</span></a></li>
     <li><a href="#" data-req="req6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></span><span class="lbl">Requirement 6</span></a></li>
     <li><a href="#" data-req="req7"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l2 2 4-4"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg></span><span class="lbl">Requirement 7</span></a></li>
+    <li><a href="#" data-req="req8"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span><span class="lbl">Requirement 8</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -842,6 +843,72 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 </div>
 
+<div id="req8Tab" style="display:none;">
+<header>
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Jefri — Requirement 8 (Building Step by Step)</div>
+  <h1>T-08 &middot; Order Conversion Split by Campaign Date</h1>
+  <div class="sub">Match each Shopify order to the Google Ads campaign(s) and date(s) that received its conversion value &mdash; split correctly when an order was attributed across more than one campaign/date, reconciled to the order's real value. &nbsp;&middot;&nbsp; Store: <strong>ledsone.de</strong> &nbsp;&middot;&nbsp; Requested by: <strong>Jefri</strong> (Google Ads)</div>
+  <style>
+    #req8Tab .filters{display:flex;flex-wrap:wrap;align-items:center;gap:14px;}
+    #req8Tab .filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);}
+    #req8Tab .filters input[type="date"]{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;min-height:38px;}
+    #req8Tab .filters input[type="date"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,94,255,.15);}
+  </style>
+  <div class="filters" style="margin-top:10px;">
+    <label>Start Date <input type="date" id="r8f_startDate"></label>
+    <label>End Date <input type="date" id="r8f_endDate"></label>
+    <button class="primary" id="r8RunBtn" type="button" style="align-self:flex-end;">Refresh (live)</button>
+    <span class="chip live" id="r8LiveChip" style="display:none;align-self:flex-end;">Loading&hellip;</span>
+  </div>
+</header>
+
+<div style="background:#eef3ff;border:1px solid #c7d7ff;border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:12.5px;color:#1a2233;line-height:1.7;">
+  <strong>Building this step by step, per explicit instruction.</strong> Step 1 (below, LIVE): Order Number + Order Value (Excl. Shipping), pulled directly from the Shopify Admin API &mdash; NOT Postgres. The remaining columns (Campaign, Attributed Date, Conv. Value Added, Split?) stay blocked until a Google Ads transaction-level/delta data source exists &mdash; see the notice further down for exactly what's missing and why.
+</div>
+
+<div class="tablebox">
+  <div class="tbar">
+    <input type="text" id="r8q" placeholder="Search Order Number">
+    <span id="r8cnt" style="margin-left:auto;">&ndash;</span>
+  </div>
+  <div class="scroll" style="max-height:640px;overflow-y:auto;">
+    <table>
+      <thead style="position:sticky;top:0;z-index:5;">
+        <tr>
+          <th>Order Number</th>
+          <th class="num">Order Value (Excl. Shipping)</th>
+          <th class="num">Order Total (Incl. Shipping)</th>
+          <th>Created At</th>
+          <th>Financial Status</th>
+        </tr>
+      </thead>
+      <tbody id="r8tbody"><tr><td colspan="5" class="loading">Loading orders from Shopify&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="empty" id="r8empty" style="display:none;"></div>
+</div>
+
+<div style="background:#fdecea;border:1px solid #f5c6c6;border-radius:12px;padding:18px 22px;margin:18px 0;">
+  <div style="font-size:14px;font-weight:800;color:#c62828;margin-bottom:8px;">&#9888; The remaining columns (Campaign, Attributed Date, Conv. Value, Split?) cannot be built yet &mdash; required data does not exist in the database</div>
+  <div style="font-size:13px;color:#3a2323;line-height:1.8;">
+    A full read-only PostgreSQL discovery (whole-database search, not just one schema) confirmed that none of the following exist anywhere in the connected database:
+    <ul style="margin:10px 0 10px 20px;padding:0;">
+      <li><strong>Google Ads Transaction ID / order-level conversion data</strong> &mdash; only campaign+date aggregate totals exist (<code>google_ads.campaign_performance</code>), with no per-order breakdown. This is the exact match method the requirement needs and prefers.</li>
+      <li><strong>A historical/versioned conversion snapshot</strong> to compute a "Current Update &minus; Last Update" delta &mdash; the aggregate table is overwritten in place, not historized, so there's no fallback method either.</li>
+      <li><strong>Bid-strategy bonus data</strong> (New Customer bonus, High Value Customer bonus, etc.) &mdash; needed to adjust deltas before matching, if the delta method were ever usable.</li>
+      <li><strong>UTM tracking data</strong> on Shopify orders &mdash; needed for the "Order Summary" column (UTM Term / Direct / Organic / Other), independent of the Google Ads gaps above.</li>
+    </ul>
+    No numbers, deltas, or attribution have been invented or estimated to fill this gap.
+  </div>
+</div>
+
+<div class="footnotes">
+  <strong>Order Value (Excl. Shipping):</strong> Shopify's <code>current_subtotal_price</code> field &mdash; spot-checked against a real live order (subtotal &euro;16.88 + shipping &euro;10.57 = total &euro;27.45, confirmed matching exactly). Reflects refunds/edits since the order was placed.<br>
+  <strong>Data source:</strong> Shopify Admin REST API (<code>ledsone-de.myshopify.com/admin/api/2024-10/orders.json</code>), fetched directly server-side per explicit instruction &mdash; NOT Postgres &middot; via <code>/api/requirement?fn=jefri-req8-orders</code>.<br>
+  <strong>Full discovery record:</strong> <code>evidence/jefri/req-08-t08-discovery.md</code> and <code>evidence/jefri/req-08-t08-postgres-source-mapping.md</code>.
+</div>
+</div>
+
 <script>
 // Captured BEFORE the unconditional showReqTab('req1') default call below
 // runs — that call itself now writes '#req1' to the URL (see showReqTab),
@@ -857,6 +924,7 @@ let R4_LOADED = false;
 let R5_INIT = false;
 let R6_INIT = false;
 let R7_INIT = false;
+let R8_INIT = false;
 function showReqTab(which){
   document.getElementById('req1Tab').style.display = which === 'req1' ? '' : 'none';
   document.getElementById('req2Tab').style.display = which === 'req2' ? '' : 'none';
@@ -865,6 +933,7 @@ function showReqTab(which){
   document.getElementById('req5Tab').style.display = which === 'req5' ? '' : 'none';
   document.getElementById('req6Tab').style.display = which === 'req6' ? '' : 'none';
   document.getElementById('req7Tab').style.display = which === 'req7' ? '' : 'none';
+  document.getElementById('req8Tab').style.display = which === 'req8' ? '' : 'none';
   var tb1=document.getElementById('tabBtnReq1'), tb2=document.getElementById('tabBtnReq2'), tb3=document.getElementById('tabBtnReq3');
   if (tb1) tb1.classList.toggle('active', which === 'req1');
   if (tb2) tb2.classList.toggle('active', which === 'req2');
@@ -884,6 +953,10 @@ function showReqTab(which){
   if (which === 'req7' && !R7_INIT) {
     R7_INIT = true;
     r7Init();
+  }
+  if (which === 'req8' && !R8_INIT) {
+    R8_INIT = true;
+    r8Init();
   }
   if (which === 'req2' && !R2_LOADED) {
     R2_LOADED = true;
@@ -2015,6 +2088,92 @@ document.getElementById('r7f_amzFlag').addEventListener('change', r7Render);
 document.getElementById('r7f_shopFlag').addEventListener('change', r7Render);
 document.getElementById('r7ExportCsv').addEventListener('click', r7ExportCsv);
 
+// ===== Requirement 8: T-08 Order Conversion Split by Campaign Date (added
+// 2026-08-20). Built step by step per explicit instruction. THIS step:
+// Order Number + Order Value (Excl. Shipping) live from Shopify Admin API
+// directly (not Postgres). Remaining columns stay blocked (see tab's own
+// notice) until Google Ads transaction/delta data exists. =====
+let R8_ALL = [];
+
+function r8Init(){
+  const today = new Date();
+  const start = new Date(today.getTime() - 30*24*60*60*1000);
+  document.getElementById('r8f_endDate').value = today.toISOString().slice(0,10);
+  document.getElementById('r8f_startDate').value = start.toISOString().slice(0,10);
+  r8Load(false);
+}
+
+async function r8Load(force){
+  const startDate = document.getElementById('r8f_startDate').value;
+  const endDate = document.getElementById('r8f_endDate').value;
+  if (!startDate || !endDate) { alert('Choose a Start Date and End Date first.'); return; }
+  const btn = document.getElementById('r8RunBtn');
+  const chip = document.getElementById('r8LiveChip');
+  btn.disabled = true;
+  chip.style.display = '';
+  chip.textContent = 'Loading live orders from Shopify…';
+  chip.className = 'chip live';
+  document.getElementById('r8tbody').innerHTML = '<tr><td colspan="5" class="loading">Loading orders from Shopify…</td></tr>';
+  try {
+    const url = '/api/requirement?fn=jefri-req8-orders&startDate=' + encodeURIComponent(startDate)
+      + '&endDate=' + encodeURIComponent(endDate) + (force ? '&refresh=1' : '');
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+    R8_ALL = data.orders || [];
+    chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString();
+    r8Render();
+  } catch (e) {
+    document.getElementById('r8tbody').innerHTML = '<tr><td colspan="5" class="empty">Error: ' + esc(e.message) + '</td></tr>';
+    chip.textContent = 'Unable to load — ' + e.message;
+    chip.className = 'chip stale';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function r8FilteredRows(){
+  const q = document.getElementById('r8q').value.trim().toLowerCase();
+  if (!q) return R8_ALL;
+  return R8_ALL.filter(function(r){ return (r.orderNumber||'').toLowerCase().includes(q); });
+}
+
+function r8Render(){
+  const rows = r8FilteredRows();
+  const tbody = document.getElementById('r8tbody');
+  const emptyEl = document.getElementById('r8empty');
+  if (!R8_ALL.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = 'No orders found for this date range.';
+    document.getElementById('r8cnt').textContent = '0 of 0';
+    return;
+  }
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = 'No rows match the current search.';
+    document.getElementById('r8cnt').textContent = '0 of ' + R8_ALL.length;
+    return;
+  }
+  emptyEl.style.display = 'none';
+  tbody.innerHTML = rows.map(function(r){
+    return '<tr>' +
+      '<td>' + esc(r.orderNumber) + (r.cancelled ? ' <span class="t1-na">(cancelled)</span>' : '') + '</td>' +
+      '<td class="num">' + eur(r.orderValueExclShipping) + '</td>' +
+      '<td class="num">' + eur(r.totalPrice) + '</td>' +
+      '<td>' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</td>' +
+      '<td>' + esc(r.financialStatus) + '</td>' +
+      '</tr>';
+  }).join('');
+  document.getElementById('r8cnt').textContent = rows.length.toLocaleString() + ' of ' + R8_ALL.length.toLocaleString();
+}
+
+document.getElementById('r8RunBtn').addEventListener('click', () => r8Load(true));
+document.getElementById('r8f_startDate').addEventListener('change', () => r8Load(false));
+document.getElementById('r8f_endDate').addEventListener('change', () => r8Load(false));
+document.getElementById('r8q').addEventListener('input', r8Render);
+
 // ===== Requirement 6: T-06 Image Update Live Sales Tracker (added 2026-08-14,
 // reworked 4 times same day, final version per Kuberan: "i need first
 // column as label user need to add the label and listing id and sku and
@@ -2259,7 +2418,7 @@ document.querySelectorAll('#msNavList a[data-req]').forEach(function (a) {
 // hash-clobbering bug — jefri.html's unconditional default-tab call was
 // silently destroying the real hash before this code ever ran).
 (function(){
-  var validTabs = ['req1','req2','req3','req4','req5','req6','req7'];
+  var validTabs = ['req1','req2','req3','req4','req5','req6','req7','req8'];
   var fromHash = (JEFRI_INITIAL_HASH || '').replace('#', '');
   if (validTabs.indexOf(fromHash) !== -1 && fromHash !== 'req1') {
     var link = document.querySelector('#msNavList a[data-req="' + fromHash + '"]');
