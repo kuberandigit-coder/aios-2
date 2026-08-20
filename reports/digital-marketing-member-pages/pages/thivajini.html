@@ -291,6 +291,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-tab="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg></span><span class="lbl">Product Performance</span></a></li>
     <li><a href="#" data-tab="3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span><span class="lbl">Stock-Spend Tracker</span></a></li>
     <li><a href="#" data-tab="4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg></span><span class="lbl">Order Data</span></a></li>
+    <li><a href="#" data-tab="5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></span><span class="lbl">Feed Optimization</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -863,11 +864,287 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   </div>
 
 
+    <!-- ══════════════════ REQ5 — FEED OPTIMIZATION ══════════════════ -->
+    <div class="tab-panel" id="panel-5" role="tabpanel">
+      <h1>Feed Optimization &mdash; Ledsone.fr</h1>
+      <div class="sub" id="r5-sub">Converting-search-term based GMC title &amp; description optimisation with A/B variants.</div>
+
+      <!-- Standing limitations. These are NOT decoration: every one is a
+           verified gap from the Ledsone DB audit and must stay visible. -->
+      <div id="r5-gaps" style="background:#fff8e6;border:1px solid #f0d9a0;border-radius:10px;padding:12px 14px;margin:14px 0;font-size:12.5px;line-height:1.6;">
+        <b style="color:#8a6100;">⚠ Known data limitations — preserved, not solved</b>
+        <ul style="margin:6px 0 0 18px;padding:0;">
+          <li><b>Feed Eligible = UNKNOWN / NOT VERIFIED.</b> Ledsone DB holds no France Merchant eligibility source. Never read as “Y”. Generation is <b>draft only</b>; production push is blocked.</li>
+          <li><b>Paid converting search terms are STALE</b> — <span id="r5-terms-fresh">checking…</span>. These are <u>not</u> “latest 30-day converting terms”.</li>
+          <li><b>Exact search-term → product attribution is NOT available.</b> Terms map at campaign or search-category level only.</li>
+          <li><b>Keyword Planner: not available.</b> No volume data is shown or generated.</li>
+          <li><b>Intent Type: not stored.</b> Nothing is classified in this build.</li>
+          <li><b>Attribution-adjusted verdict (×2.9): NOT IMPLEMENTED / AWAITING APPROVAL.</b></li>
+          <li><b>Technical specs:</b> only verified Component SOT values are used (~4.5% of FR ad-active SKUs). Nothing is inferred from title, description or image.</li>
+        </ul>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="nav-btn" id="r5-load" style="background:var(--accent);color:#fff;font-size:12px;padding:6px 14px;">Load candidates</button>
+        <button class="nav-btn" id="r5-newbatch" style="font-size:12px;padding:6px 14px;">Start batch</button>
+        <button class="nav-btn" id="r5-terms-btn" style="font-size:12px;padding:6px 14px;">Search-term review</button>
+        <button class="nav-btn" id="r5-hist-btn" style="font-size:12px;padding:6px 14px;">History</button>
+        <button class="nav-btn" id="r5-tel-btn" style="font-size:12px;padding:6px 14px;">Provider telemetry</button>
+        <button class="nav-btn" id="r5-appr-btn" style="font-size:12px;padding:6px 14px;">Approved variants / export</button>
+        <button class="nav-btn" id="r5-mon-btn" style="font-size:12px;padding:6px 14px;">Monitoring</button>
+        <button class="nav-btn" id="r5-exp-btn" style="font-size:12px;padding:6px 14px;">Export history</button>
+        <span id="r5-batch-lbl" style="font-size:12px;color:var(--muted);align-self:center;"></span>
+      </div>
+
+      <div id="r5-msg" style="font-size:12.5px;margin-bottom:10px;"></div>
+
+      <!-- A. CANDIDATES -->
+      <div id="r5-candidates-wrap" style="display:none;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;">A. Candidate products <span id="r5-cand-count" style="font-weight:400;color:var(--muted);"></span></div>
+        <div style="overflow-x:auto;">
+          <table class="rpt" id="r5-cand-tbl">
+            <thead><tr>
+              <th>Item ID</th><th>Title</th><th>Type</th><th>Tier</th>
+              <th>Impr</th><th>Clicks</th><th>CTR</th><th>Conv</th><th>Conv rate</th>
+              <th>Shopify conv</th><th>Stock</th><th>Feed eligible</th><th>Specs</th><th>Missing</th><th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- B. EVIDENCE DRAWER -->
+      <div id="r5-evidence" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:700;">B. Product evidence &mdash; <span id="r5-ev-item"></span></div>
+          <button class="nav-btn" id="r5-ev-close" style="font-size:12px;padding:4px 10px;">Close</button>
+        </div>
+        <div id="r5-ev-body" style="margin-top:12px;font-size:12.5px;"></div>
+
+        <!-- C. SEARCH TERM REVIEW -->
+        <div style="margin-top:18px;border-top:1px solid var(--line,#e3e7ee);padding-top:14px;">
+          <div style="font-size:13px;font-weight:700;">C. Paid converting search terms <span style="font-weight:400;color:#b45309;">(PRIMARY keyword evidence)</span></div>
+          <div id="r5-terms-note" style="font-size:12px;color:var(--muted);margin:6px 0;"></div>
+          <div style="max-height:260px;overflow:auto;">
+            <table class="rpt" id="r5-terms-tbl">
+              <thead><tr><th>Use</th><th>Term</th><th>Search category</th><th>Impr</th><th>Clicks</th><th>Conv</th><th>Conv value</th><th>Conv rate</th><th>Source</th><th>Period</th><th>Mapping</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <button class="nav-btn" id="r5-save-terms" style="font-size:12px;padding:5px 12px;margin-top:8px;">Save term selection</button>
+        </div>
+
+        <!-- ORGANIC — structurally separate, never merged -->
+        <div style="margin-top:18px;border-top:1px dashed var(--line,#e3e7ee);padding-top:14px;">
+          <div style="font-size:13px;font-weight:700;color:#3f6212;">Organic search evidence <span style="font-weight:400;">(Google Search Console — supporting only)</span></div>
+          <div style="font-size:12px;color:var(--muted);margin:6px 0;">Organic Google Search language. <b>No conversion metric exists.</b> This is never a paid converting term and never enters the Converting Search Terms evidence.</div>
+          <div style="max-height:180px;overflow:auto;">
+            <table class="rpt" id="r5-organic-tbl">
+              <thead><tr><th>Query</th><th>Impressions</th><th>Clicks</th><th>Period</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;margin-top:8px;">
+            <input type="checkbox" id="r5-inc-organic"> Include organic evidence in the prompt (clearly labelled as organic)
+          </label>
+        </div>
+
+        <!-- D. GENERATE -->
+        <div style="margin-top:18px;border-top:1px solid var(--line,#e3e7ee);padding-top:14px;">
+          <div style="font-size:13px;font-weight:700;">D. Generate A/B variants</div>
+          <div id="r5-provider-status" style="font-size:12px;color:var(--muted);margin:6px 0;">Provider status not checked.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="nav-btn" id="r5-check-provider" style="font-size:12px;padding:5px 12px;">Check providers</button>
+            <button class="nav-btn" id="r5-generate" style="font-size:12px;padding:5px 12px;background:var(--accent);color:#fff;">Generate (draft)</button>
+          </div>
+          <div id="r5-gen-result" style="margin-top:12px;font-size:12.5px;"></div>
+        </div>
+      </div>
+
+      <!-- E/F. COMPARE + SELECT -->
+      <div id="r5-compare" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;">E. Compare Variant A / Variant B</div>
+        <div id="r5-compare-body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"></div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="nav-btn" id="r5-sel-a" style="font-size:12px;padding:5px 14px;">Select A</button>
+          <button class="nav-btn" id="r5-sel-b" style="font-size:12px;padding:5px 14px;">Select B</button>
+          <button class="nav-btn" id="r5-csv" style="font-size:12px;padding:5px 14px;">Download CSV</button>
+          <button class="nav-btn" id="r5-push" style="font-size:12px;padding:5px 14px;" disabled title="Production push target/approval not configured">Push (disabled)</button>
+          <span style="font-size:11.5px;color:#b45309;">Push is disabled: feed eligibility not verified and no approved push target.</span>
+        </div>
+      </div>
+
+      <!-- G. SEARCH TERM BROWSER (batch-wide) -->
+      <div id="r5-termbrowser" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:700;">Search-term review (all France paid terms)</div>
+          <button class="nav-btn" id="r5-tb-close" style="font-size:12px;padding:4px 10px;">Close</button>
+        </div>
+        <div id="r5-tb-note" style="font-size:12px;color:var(--muted);margin:8px 0;"></div>
+        <div style="max-height:420px;overflow:auto;">
+          <table class="rpt" id="r5-tb-tbl">
+            <thead><tr><th>Term</th><th>Search category</th><th>Impr</th><th>Clicks</th><th>Conv</th><th>Conv value</th><th>Conv rate</th><th>Source table</th><th>Period</th><th>Mapping</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- H. HISTORY -->
+      <div id="r5-history" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:700;">H. Generation &amp; iteration history</div>
+          <button class="nav-btn" id="r5-hist-close" style="font-size:12px;padding:4px 10px;">Close</button>
+        </div>
+        <div id="r5-hist-body" style="margin-top:12px;font-size:12.5px;"></div>
+      </div>
+
+      <!-- I. TELEMETRY -->
+      <div id="r5-telemetry" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:700;">I. Provider telemetry <span style="font-weight:400;color:var(--muted);">(application observed usage only)</span></div>
+          <button class="nav-btn" id="r5-tel-close" style="font-size:12px;padding:4px 10px;">Close</button>
+        </div>
+        <div id="r5-tel-body" style="margin-top:12px;font-size:12.5px;"></div>
+      </div>
+
+      <!-- J. APPROVED / EXPORTABLE GENERATIONS -->
+      <div id="r5-approved" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:700;">J. Approved variants &mdash; select products to export</div>
+          <button class="nav-btn" id="r5-appr-close" style="font-size:12px;padding:4px 10px;">Close</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
+          <button class="nav-btn" id="r5-sel-all"   style="font-size:12px;padding:4px 10px;">Select all visible</button>
+          <button class="nav-btn" id="r5-sel-none"  style="font-size:12px;padding:4px 10px;">Clear selection</button>
+          <button class="nav-btn" id="r5-open-csv"  style="font-size:12px;padding:4px 12px;background:var(--accent);color:#fff;">Download CSV…</button>
+          <span id="r5-appr-count" style="font-size:12px;color:var(--muted);align-self:center;"></span>
+        </div>
+        <div style="overflow-x:auto;max-height:340px;">
+          <table class="rpt" id="r5-appr-tbl">
+            <thead><tr><th style="width:34px;"></th><th>Item ID</th><th>Iter</th><th>Variant</th><th>Title</th><th>Chars</th><th>Validation</th><th>Eligible</th><th>Draft</th><th>Generated</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- K. MONITORING -->
+      <div id="r5-monitor" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:700;">K. Performance monitoring</div>
+          <button class="nav-btn" id="r5-mon-close" style="font-size:12px;padding:4px 10px;">Close</button>
+        </div>
+        <div id="r5-mon-note" style="font-size:12px;color:var(--muted);margin:8px 0;"></div>
+        <div style="overflow-x:auto;">
+          <table class="rpt" id="r5-mon-tbl">
+            <thead><tr>
+              <th>Item</th><th>Variant</th><th>Method</th><th>Intended start</th><th>Actual go-live</th>
+              <th>Days Live</th><th>Baseline period</th><th>Baseline CTR</th><th>Baseline CvR</th>
+              <th>Latest CTR</th><th>Latest CvR</th><th>Shopify o/l/u</th><th>Status</th><th>Verdict</th><th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:#fff8e6;border:1px solid #f0d9a0;border-radius:8px;font-size:12px;">
+          <b>Attribution-adjusted verdict:</b> not implemented / awaiting approved business logic.
+          A CSV download does <b>not</b> set go-live &mdash; use <b>Confirm change is live</b> once the feed actually reflects the new copy.
+        </div>
+      </div>
+
+      <!-- L. EXPORT HISTORY -->
+      <div id="r5-exports" style="display:none;border:1px solid var(--line,#e3e7ee);border-radius:12px;padding:16px;margin-top:16px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:700;">L. Export history</div>
+          <button class="nav-btn" id="r5-exp-close" style="font-size:12px;padding:4px 10px;">Close</button>
+        </div>
+        <div style="overflow-x:auto;margin-top:10px;">
+          <table class="rpt" id="r5-exp-tbl">
+            <thead><tr><th>Exported</th><th>By</th><th>Rows</th><th>Columns</th><th>Monitoring start</th><th>Mode</th><th>Method</th><th>Status</th><th>SHA-256</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:18px;font-size:11.5px;color:var(--muted);line-height:1.6;">
+        <b>Sources:</b> Ledsone DB (read-only) — <code>google_ads.product_performance</code>, <code>google_ads.merchant_products</code> (merchant 5551466539),
+        <code>listings.shopify_listings</code> (site=France), <code>order_management.orders</code> (sub_source 233),
+        <code>configurator.components_sot_*</code>, <code>google_ads.campaign_search_term_data</code> + <code>pmax_campaign_search_term_data</code> + <code>campaign_search_term_insights</code>,
+        <code>google_search_console.query_page</code> (organic). ·
+        <b>Workflow history:</b> application-owned Neon tables <code>thivajini_feed_*</code>. ·
+        <b>Ads account:</b> 1266953046 (LEDSone FR) · <b>Campaigns:</b> 23103582865 / 23533025729 / 23405519670.
+      </div>
+    </div>
+
+
 </div><!-- /wrap -->
 
 
 </div><!-- /ms-topcontent -->
 </div><!-- /ms-main -->
+
+<!-- ═══════════ REQ5 MODALS: CSV columns + monitoring date + push preview ═══════════ -->
+<div id="r5-modal-back" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9000;"></div>
+
+<!-- CSV configuration modal -->
+<div id="r5-csv-modal" style="display:none;position:fixed;z-index:9001;top:50%;left:50%;transform:translate(-50%,-50%);width:min(880px,94vw);max-height:88vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 64px rgba(15,23,42,.28);padding:22px;">
+  <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Download CSV</div>
+  <div id="r5-csv-sub" style="font-size:12.5px;color:#5b6577;margin-bottom:14px;"></div>
+
+  <!-- 1. monitoring start -->
+  <div style="border:1px solid #e3e7ee;border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;">1. When should performance monitoring start?</div>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;cursor:pointer;">
+      <input type="radio" name="r5mon" id="r5-mon-today" checked style="margin-top:3px;">
+      <span><b>Start checking performance from today</b><br>
+        <span style="font-size:11.5px;color:#5b6577;">Baseline = the 30 days ending yesterday.</span></span>
+    </label>
+    <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;">
+      <input type="radio" name="r5mon" id="r5-mon-custom" style="margin-top:3px;">
+      <span><b>Start checking performance from a custom date</b><br>
+        <span style="font-size:11.5px;color:#5b6577;">A future date is stored as <code>SCHEDULED</code>; no baseline is invented until the window opens.</span></span>
+    </label>
+    <div id="r5-mon-datewrap" style="display:none;margin-top:10px;">
+      <input type="date" id="r5-mon-date" style="padding:6px 10px;border:1px solid #d7dde7;border-radius:8px;font-size:13px;">
+      <div style="margin-top:6px;">
+        <input type="text" id="r5-mon-reason" placeholder="Reason for the custom date (recorded)" style="width:100%;max-width:420px;padding:6px 10px;border:1px solid #d7dde7;border-radius:8px;font-size:12.5px;">
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:8px 10px;background:#fff8e6;border:1px solid #f0d9a0;border-radius:8px;font-size:12px;">
+      <b>Minimum meaningful verdict: 14 days after monitoring starts.</b><br>
+      Downloading this file does <b>not</b> prove the feed changed. The plan is stored as
+      <code>AWAITING_MANUAL_GO_LIVE</code> until you confirm it is live.
+    </div>
+  </div>
+
+  <!-- 2. columns -->
+  <div style="border:1px solid #e3e7ee;border-radius:10px;padding:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:13px;font-weight:700;">2. Which columns do you want in the file?</div>
+      <div style="display:flex;gap:6px;">
+        <button class="nav-btn" id="r5-col-rec"  style="font-size:11.5px;padding:3px 10px;">Recommended</button>
+        <button class="nav-btn" id="r5-col-all"  style="font-size:11.5px;padding:3px 10px;">Select all</button>
+        <button class="nav-btn" id="r5-col-none" style="font-size:11.5px;padding:3px 10px;">Clear all</button>
+      </div>
+    </div>
+    <div id="r5-col-groups" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;"></div>
+    <div id="r5-col-warn" style="font-size:12px;color:#b91c1c;margin-top:10px;display:none;">Select at least one column.</div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+    <button class="nav-btn" id="r5-csv-cancel" style="font-size:12.5px;padding:6px 14px;">Cancel</button>
+    <button class="nav-btn" id="r5-csv-go" style="font-size:12.5px;padding:6px 18px;background:var(--accent);color:#fff;">Generate &amp; download</button>
+  </div>
+</div>
+
+<!-- Push preview modal -->
+<div id="r5-push-modal" style="display:none;position:fixed;z-index:9001;top:50%;left:50%;transform:translate(-50%,-50%);width:min(820px,94vw);max-height:88vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 64px rgba(15,23,42,.28);padding:22px;">
+  <div style="font-size:15px;font-weight:700;margin-bottom:10px;">Push Preview &mdash; Google Merchant Center <span style="font-size:12px;font-weight:400;color:#b45309;">(read-only)</span></div>
+  <div id="r5-push-body" style="font-size:12.5px;"></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+    <button class="nav-btn" id="r5-push-close" style="font-size:12.5px;padding:6px 14px;">Close</button>
+    <button class="nav-btn" id="r5-push-do" style="font-size:12.5px;padding:6px 18px;" disabled>Push to Merchant Center</button>
+  </div>
+</div>
+
 <div id="msToolFrame" style="display:none;height:calc(100vh - 56px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
   <iframe id="msToolFrameIframe" src="" style="width:100%;height:100%;border:none;" title="Tool"></iframe>
 </div>
@@ -937,6 +1214,7 @@ function showTab(n){
   if(n===2)tvLoadReq2();
   if(n===3)tvLoadReq3();
   if(n===4)tvLoadReq4();
+  if(n===5&&typeof r5Init==='function')r5Init();
   try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
@@ -1485,6 +1763,788 @@ document.addEventListener('DOMContentLoaded',function(){
   tvLoadReq1();
   tvLoadReq4();
 });
+
+
+/* ══════════════ REQ5 — FEED OPTIMIZATION (Ledsone.fr) ══════════════
+   Extends the existing Thivajini dashboard. All state-changing calls are
+   POST + same-origin credentials; the server enforces the dm_session.
+   No environment variable or secret is ever referenced here.            */
+var R5 = {
+  batchId: null,
+  candidates: [],
+  terms: [],
+  current: null,      // currently open product
+  currentGen: null,   // last generation result
+  freshness: null,
+  gaps: null
+};
+
+function r5Msg(html, kind){
+  var el = document.getElementById('r5-msg');
+  if(!el) return;
+  var colour = kind === 'error' ? '#b91c1c' : (kind === 'ok' ? '#15803d' : 'var(--muted)');
+  el.innerHTML = '<span style="color:' + colour + '">' + html + '</span>';
+}
+function r5Esc(s){
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function r5Num(n, d){
+  if(n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-GB', {minimumFractionDigits: d||0, maximumFractionDigits: d||0});
+}
+function r5Pct(n){
+  if(n === null || n === undefined || isNaN(n)) return '—';
+  return (Number(n)*100).toFixed(2) + '%';
+}
+function r5Get(type, extra){
+  return fetch('/api/members-api?member=thivajini&type=' + type + (extra||''), {credentials:'same-origin'})
+    .then(function(r){ return r.json().then(function(j){ j.__http = r.status; return j; }); });
+}
+function r5Post(type, payload){
+  return fetch('/api/members-api?member=thivajini&type=' + type, {
+    method:'POST', credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload||{})
+  }).then(function(r){ return r.json().then(function(j){ j.__http = r.status; return j; }); });
+}
+
+/* ── A. candidates ─────────────────────────────────────────────── */
+function r5LoadCandidates(){
+  r5Msg('⏳ Loading candidate products from Ledsone DB…');
+  r5Get('req5-candidates', '&limit=200').then(function(d){
+    if(!d.ok){ r5Msg('Error: ' + r5Esc(d.error || 'unknown') + (d.__http===401?' — please sign in again.':''), 'error'); return; }
+    R5.candidates = d.products || [];
+    R5.freshness = d.terms_freshness;
+    R5.gaps = d.known_gaps;
+
+    var f = d.terms_freshness || {};
+    var fe = document.getElementById('r5-terms-fresh');
+    if(fe){
+      fe.innerHTML = f.latest
+        ? 'latest FR paid term date <b>' + r5Esc(f.latest) + '</b> (' + r5Esc(f.days_behind) + ' days old; PMax ' +
+          r5Esc(f.pmax_latest||'—') + ', conventional ' + r5Esc(f.conventional_latest||'—') + ')'
+        : 'no FR paid search-term rows found';
+    }
+    document.getElementById('r5-cand-count').textContent = '(' + R5.candidates.length + ' served in ' + r5Esc(d.window.from) + ' → ' + r5Esc(d.window.to) + ')';
+
+    var tb = document.querySelector('#r5-cand-tbl tbody');
+    tb.innerHTML = '';
+    R5.candidates.forEach(function(c, i){
+      var p = c.perf_30d || {};
+      var sc = c.shopify_conversions || {};
+      var stockTxt = c.stock.status === 'UNKNOWN' ? '<span style="color:#b45309;">UNKNOWN</span>'
+        : r5Esc(c.stock.status) + ' <span style="color:var(--muted);font-size:11px;">(' + r5Esc(c.stock.source) + ')</span>';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="font-family:monospace;font-size:11px;">' + r5Esc(c.item_id) + '</td>' +
+        '<td>' + r5Esc((c.current_title||'—')).slice(0,70) + '</td>' +
+        '<td>' + r5Esc(c.product_type||'—') + '</td>' +
+        '<td>' + r5Esc(c.priority_tier) + '</td>' +
+        '<td>' + r5Num(p.impressions) + '</td>' +
+        '<td>' + r5Num(p.clicks) + '</td>' +
+        '<td>' + r5Pct(p.ctr) + '</td>' +
+        '<td>' + r5Num(p.conversions,2) + '</td>' +
+        '<td>' + r5Pct(p.conversion_rate) + '</td>' +
+        '<td title="orders/lines/units — grain not yet chosen">' + r5Num(sc.orders) + '/' + r5Num(sc.lines) + '/' + r5Num(sc.units) + '</td>' +
+        '<td>' + stockTxt + '</td>' +
+        '<td><span style="color:#b45309;font-weight:600;">' + r5Esc(c.feed_eligible.status) + '</span></td>' +
+        '<td>' + (c.specs && c.specs.length ? c.specs.length : '<span style="color:#b45309;">0</span>') + '</td>' +
+        '<td style="font-size:11px;color:var(--muted);">' + r5Esc((c.missing_evidence||[]).join(', ')).slice(0,60) + '</td>' +
+        '<td><button class="nav-btn r5-open" data-i="' + i + '" style="font-size:11px;padding:3px 9px;">Open</button></td>';
+      tb.appendChild(tr);
+    });
+    document.getElementById('r5-candidates-wrap').style.display = '';
+    r5Msg('Loaded ' + R5.candidates.length + ' candidate products. Ads data to ' + r5Esc(d.source_cutoffs.ads_perf||'—') + '.', 'ok');
+
+    Array.prototype.forEach.call(document.querySelectorAll('.r5-open'), function(b){
+      b.addEventListener('click', function(){ r5OpenProduct(Number(b.getAttribute('data-i'))); });
+    });
+  }).catch(function(e){ r5Msg('Fetch failed: ' + r5Esc(e.message), 'error'); });
+}
+
+/* ── B. evidence drawer ────────────────────────────────────────── */
+function r5OpenProduct(i){
+  var c = R5.candidates[i];
+  if(!c) return;
+  R5.current = c;
+  document.getElementById('r5-ev-item').textContent = c.item_id;
+  document.getElementById('r5-evidence').style.display = '';
+  document.getElementById('r5-compare').style.display = 'none';
+
+  var specRows = (c.specs||[]).map(function(s){
+    return '<tr><td style="font-family:monospace;font-size:11px;">' + r5Esc(s.key) + '</td><td>' + r5Esc(s.value) + '</td></tr>';
+  }).join('');
+
+  document.getElementById('r5-ev-body').innerHTML =
+    '<div style="display:grid;grid-template-columns:120px 1fr;gap:14px;">' +
+      '<div>' + (c.image_link ? '<img src="' + r5Esc(c.image_link) + '" alt="" style="width:120px;border-radius:8px;border:1px solid #e3e7ee;">' : '<div style="width:120px;height:120px;background:#f4f6f9;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9aa4b2;font-size:11px;">no image</div>') + '</div>' +
+      '<div style="line-height:1.7;">' +
+        '<div><b>Current title:</b> ' + r5Esc(c.current_title || '— none on file —') + '</div>' +
+        '<div><b>Current description:</b> ' + r5Esc((c.current_description||'— none on file —')).slice(0,400) + '</div>' +
+        '<div><b>Product type:</b> ' + r5Esc(c.product_type||'—') + ' · <b>GPC:</b> ' + r5Esc(c.google_product_category||'—') +
+          (c.gpc_format ? ' <span style="color:var(--muted);font-size:11px;">(' + r5Esc(c.gpc_format) + ')</span>' : '') + '</div>' +
+        '<div><b>Price:</b> ' + (c.price_eur!=null ? '€'+r5Esc(c.price_eur) : '—') + ' · <b>SKU:</b> ' + r5Esc(c.sku||'—') + ' · <b>Brand:</b> ' + r5Esc(c.brand||'—') + '</div>' +
+        '<div><b>Stock:</b> GMC=' + r5Esc(c.stock.gmc_availability||'—') + ' · Shopify qty=' + r5Esc(c.stock.shopify_quantity) +
+          ' · France-local=' + r5Esc(c.stock.france_local_units) + ' · UK/global=' + r5Esc(c.stock.uk_global_units) + '</div>' +
+        '<div><b>Feed eligible:</b> <span style="color:#b45309;font-weight:600;">' + r5Esc(c.feed_eligible.status) + '</span> — ' + r5Esc(c.feed_eligible.note) + '</div>' +
+        '<div><b>Missing evidence:</b> ' + r5Esc((c.missing_evidence||[]).join(', ') || 'none') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="margin-top:12px;"><b>Verified technical specifications</b> ' +
+      (specRows ? '<span style="color:var(--muted);font-size:11px;">(Component SOT)</span>' : '<span style="color:#b45309;">— none. No technical claim may be generated for this product.</span>') + '</div>' +
+    (specRows ? '<table class="rpt" style="margin-top:6px;"><thead><tr><th>Attribute</th><th>Value</th></tr></thead><tbody>' + specRows + '</tbody></table>' : '');
+
+  r5LoadProductTerms(c);
+}
+
+function r5LoadProductTerms(c){
+  r5Get('req5-search-terms', '&days=180').then(function(d){
+    if(!d.ok) return;
+    R5.terms = d.terms || [];
+    document.getElementById('r5-terms-note').innerHTML =
+      '<b style="color:#b45309;">' + r5Esc(d.terms_freshness.note) + '</b><br>' +
+      r5Esc(d.attribution_note) + '<br><span style="font-size:11px;">' + r5Esc(d.conflict_note) + '</span>';
+    var tb = document.querySelector('#r5-terms-tbl tbody');
+    tb.innerHTML = '';
+    R5.terms.forEach(function(t, i){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><input type="checkbox" class="r5-term" data-i="' + i + '"></td>' +
+        '<td>' + r5Esc(t.search_term) + '</td>' +
+        '<td>' + r5Esc(t.category_label||'—') + '</td>' +
+        '<td>' + r5Num(t.impressions) + '</td>' +
+        '<td>' + r5Num(t.clicks) + '</td>' +
+        '<td>' + r5Num(t.conversions,2) + '</td>' +
+        '<td>€' + r5Num(t.conversion_value,2) + '</td>' +
+        '<td>' + r5Pct(t.conversion_rate) + '</td>' +
+        '<td style="font-size:11px;">' + r5Esc(t.source_table) + '</td>' +
+        '<td style="font-size:11px;color:#b45309;">' + r5Esc(t.source_min_date) + ' → ' + r5Esc(t.source_max_date) + '</td>' +
+        '<td style="font-size:11px;" title="' + r5Esc(t.mapping_note) + '">' + r5Esc(t.mapping_level) + ' / ' + r5Esc(t.mapping_confidence) + '</td>';
+      tb.appendChild(tr);
+    });
+  });
+
+  r5Get('req5-product', '&item=' + encodeURIComponent(c.item_id)).then(function(d){
+    if(!d.ok) return;
+    var tb = document.querySelector('#r5-organic-tbl tbody');
+    tb.innerHTML = '';
+    (d.organic_evidence||[]).forEach(function(o){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + r5Esc(o.query) + '</td><td>' + r5Num(o.impressions) + '</td><td>' + r5Num(o.clicks) + '</td>' +
+        '<td style="font-size:11px;">' + r5Esc(o.source_min_date) + ' → ' + r5Esc(o.source_max_date) + '</td>';
+      tb.appendChild(tr);
+    });
+    if(!(d.organic_evidence||[]).length){
+      tb.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">No organic query data for this product page.</td></tr>';
+    }
+  });
+}
+
+/* ── batch + term selection ────────────────────────────────────── */
+function r5NewBatch(){
+  r5Msg('⏳ Creating batch…');
+  r5Post('req5-create-batch', {notes:'Created from Thivajini Req5 UI'}).then(function(d){
+    if(!d.ok){ r5Msg('Could not create batch: ' + r5Esc(d.error) + (d.code==='MIGRATION_NOT_APPLIED'?' — the Neon migration has not been applied yet.':''), 'error'); return; }
+    R5.batchId = d.batch.batch_id;
+    document.getElementById('r5-batch-lbl').textContent = 'Batch ' + R5.batchId.slice(0,8) + ' · terms to ' + (d.batch.pmax_terms_cutoff||'—');
+    r5Msg('Batch created. Source cutoffs recorded on the batch.', 'ok');
+  }).catch(function(e){ r5Msg('Fetch failed: ' + r5Esc(e.message), 'error'); });
+}
+
+function r5SaveTerms(){
+  if(!R5.batchId){ r5Msg('Start a batch first.', 'error'); return; }
+  if(!R5.current){ r5Msg('Open a product first.', 'error'); return; }
+  var picked = [];
+  Array.prototype.forEach.call(document.querySelectorAll('.r5-term:checked'), function(cb){
+    var t = R5.terms[Number(cb.getAttribute('data-i'))];
+    if(t) picked.push(Object.assign({}, t, {
+      freshness_status: (R5.freshness && R5.freshness.status) || 'STALE',
+      is_selected: true
+    }));
+  });
+  if(!picked.length){ r5Msg('Select at least one term.', 'error'); return; }
+  r5Msg('⏳ Saving ' + picked.length + ' term selections…');
+  r5Post('req5-save-terms', {batch_id:R5.batchId, item_id:R5.current.item_id, terms:picked}).then(function(d){
+    if(!d.ok){ r5Msg('Save failed: ' + r5Esc(d.error), 'error'); return; }
+    r5Msg('Saved ' + d.saved + ' term selections (application-owned; nothing written to Ledsone DB).', 'ok');
+  });
+}
+
+/* ── D. providers + generate ───────────────────────────────────── */
+function r5CheckProviders(){
+  var el = document.getElementById('r5-provider-status');
+  el.textContent = '⏳ Probing providers…';
+  r5Get('req5-provider-status').then(function(d){
+    if(!d.ok){ el.innerHTML = '<span style="color:#b91c1c;">' + r5Esc(d.error) + '</span>'; return; }
+    function line(name, p){
+      var ok = p.configured && p.reachable;
+      return '<div><b>' + name + ':</b> ' +
+        (ok ? '<span style="color:#15803d;">available</span>' : '<span style="color:#b45309;">unavailable</span>') +
+        (p.model ? ' · model <code>' + r5Esc(p.model) + '</code>' : '') +
+        (p.input_context_limit ? ' · context ' + r5Num(p.input_context_limit) + ' (' + r5Esc(p.context_limit_source) + ')' : ' · context UNKNOWN') +
+        (p.error ? ' · <span style="color:var(--muted);">' + r5Esc(p.error) + '</span>' : '') + '</div>';
+    }
+    el.innerHTML = '<div style="line-height:1.7;">' +
+      '<div style="color:var(--muted);">Priority: local → gemini_key_1 → gemini_key_2 (a later provider is used only if the previous one fails).</div>' +
+      line('local_primary', d.local) + line('gemini_key_1', d.gemini_key_1) + line('gemini_key_2', d.gemini_key_2) +
+      '<div style="font-size:11px;color:#b45309;margin-top:4px;">' + r5Esc(d.quota_note) + '</div></div>';
+  });
+}
+
+function r5Generate(){
+  if(!R5.batchId){ r5Msg('Start a batch first.', 'error'); return; }
+  if(!R5.current){ r5Msg('Open a product first.', 'error'); return; }
+  var out = document.getElementById('r5-gen-result');
+  out.innerHTML = '⏳ Generating (local → Gemini fallback)… this may take up to a minute.';
+  r5Post('req5-generate', {
+    batch_id: R5.batchId,
+    item_id: R5.current.item_id,
+    include_organic: document.getElementById('r5-inc-organic').checked
+  }).then(function(d){
+    if(!d.ok){ out.innerHTML = '<span style="color:#b91c1c;">Generation failed: ' + r5Esc(d.error) + '</span>'; return; }
+    R5.currentGen = d;
+    var rows = (d.attempts||[]).map(function(a){
+      var col = a.status === 'SUCCESS' ? '#15803d' : '#b45309';
+      return '<tr><td>' + a.seq + '</td><td>' + r5Esc(a.provider_alias) + '</td><td>' + r5Esc(a.model||'—') + '</td>' +
+        '<td style="color:' + col + ';">' + r5Esc(a.status) + '</td>' +
+        '<td style="font-size:11px;">' + r5Esc(a.fallback_reason||'') + '</td>' +
+        '<td>' + r5Num(a.input_tokens) + '/' + r5Num(a.output_tokens) + ' <span style="font-size:10px;color:var(--muted);">' + r5Esc(a.token_count_method||'') + '</span></td>' +
+        '<td>' + (a.context_utilization_pct!=null ? a.context_utilization_pct + '%' : '—') + ' <span style="font-size:10px;color:var(--muted);">' + r5Esc(a.context_limit_source) + '</span></td>' +
+        '<td>' + r5Num(a.latency_ms) + 'ms</td></tr>';
+    }).join('');
+
+    out.innerHTML =
+      '<div><b>Status:</b> ' + r5Esc(d.status) + (d.draft_only ? ' · <span style="color:#b45309;font-weight:600;">Feed eligibility not verified — draft only</span>' : '') + '</div>' +
+      '<div><b>Evidence confidence:</b> ' + r5Esc(d.evidence_confidence.level) + ' <span style="font-size:11px;color:var(--muted);">(' + r5Esc((d.evidence_confidence.reasons||[]).join('; ')) + ')</span></div>' +
+      '<div><b>Prompt:</b> ' + r5Esc(d.prompt.version) + ' · hash <code style="font-size:11px;">' + r5Esc(d.prompt.hash.slice(0,16)) + '…</code></div>' +
+      '<div style="margin-top:8px;"><b>Provider attempts</b> (every attempt is stored, including failures):</div>' +
+      '<table class="rpt" style="margin-top:4px;"><thead><tr><th>#</th><th>Alias</th><th>Model</th><th>Status</th><th>Reason</th><th>Tokens in/out</th><th>Context</th><th>Latency</th></tr></thead><tbody>' + rows + '</tbody></table>';
+
+    if(d.variants && d.variants.length){ r5RenderCompare(d.variants); }
+    else { document.getElementById('r5-compare').style.display = 'none'; }
+  }).catch(function(e){ out.innerHTML = '<span style="color:#b91c1c;">Fetch failed: ' + r5Esc(e.message) + '</span>'; });
+}
+
+/* ── E. compare ────────────────────────────────────────────────── */
+function r5RenderCompare(variants){
+  var body = document.getElementById('r5-compare-body');
+  body.innerHTML = variants.map(function(v){
+    var okCol = v.validation_status === 'PASS' ? '#15803d' : '#b91c1c';
+    var terms = [];
+    try { terms = JSON.parse(v.converting_terms_used || '[]'); } catch(e){ terms = v.converting_terms_used || []; }
+    return '<div style="border:1px solid #e3e7ee;border-radius:10px;padding:12px;">' +
+      '<div style="font-weight:700;margin-bottom:6px;">Variant ' + r5Esc(v.variant_label) +
+        ' <span style="color:' + okCol + ';font-weight:600;">' + r5Esc(v.validation_status) + '</span></div>' +
+      '<div><b>Title</b> (' + r5Esc(v.title_char_count) + '/150 chars)</div>' +
+      '<div style="background:#f8f9fb;border-radius:6px;padding:8px;margin:4px 0;">' + r5Esc(v.title_fr) + '</div>' +
+      '<div><b>Description</b></div>' +
+      '<div style="background:#f8f9fb;border-radius:6px;padding:8px;margin:4px 0;">' + r5Esc(v.description_fr) + '</div>' +
+      '<div><b>Converting terms used:</b> ' + r5Esc((Array.isArray(terms)?terms:[]).join(', ') || '—') + '</div>' +
+      '<div><b>Suggested GPC:</b> ' + r5Esc(v.suggested_gpc||'—') + '</div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('r5-compare').style.display = '';
+}
+
+/* ── F. select ─────────────────────────────────────────────────── */
+function r5Select(label){
+  if(!R5.currentGen || !R5.current){ return; }
+  if(!window.confirm('Confirm selection of Variant ' + label + ' for ' + R5.current.item_id +
+     '?\n\nThis records an iteration in the history. It does NOT push anything live.')) return;
+  r5Post('req5-select', {
+    generation_id: R5.currentGen.generation_id,
+    item_id: R5.current.item_id,
+    variant_label: label,
+    reason: 'Selected by staff in Req5 review',
+    review_status: 'APPROVED'
+  }).then(function(d){
+    if(!d.ok){ r5Msg('Selection failed: ' + r5Esc(d.error), 'error'); return; }
+    r5Msg('Variant ' + label + ' selected and recorded. ' + r5Esc(d.push_blocked_reason), 'ok');
+  });
+}
+
+/* ── G. CSV download ───────────────────────────────────────────── */
+function r5CSV(){
+  if(!R5.currentGen || !R5.currentGen.variants || !R5.currentGen.variants.length){
+    r5Msg('Nothing to download yet — generate first.', 'error'); return;
+  }
+  var g = R5.currentGen, c = R5.current;
+  var hdr = ['Item ID','Date Generated','Variant (A/B)','New Title','Title Char Count','New Description',
+             'Suggested Google Product Category','Converting Terms Used','Status',
+             'Generation ID','Iteration','Prompt Version','Prompt Hash','Evidence Confidence',
+             'Feed Eligible','Draft Only','Paid Terms Latest Date','Attribution Note'];
+  var lines = [hdr];
+  g.variants.forEach(function(v){
+    var terms = [];
+    try { terms = JSON.parse(v.converting_terms_used || '[]'); } catch(e){ terms = v.converting_terms_used || []; }
+    lines.push([
+      c.item_id,
+      (v.created_at||'').slice(0,10),
+      v.variant_label,
+      v.title_fr,
+      v.title_char_count,
+      v.description_fr,
+      v.suggested_gpc || '',
+      (Array.isArray(terms)?terms:[]).join(' | '),
+      v.validation_status,
+      g.generation_id,
+      g.iteration_no,
+      g.prompt.version,
+      g.prompt.hash,
+      g.evidence_confidence.level,
+      c.feed_eligible.status,
+      g.draft_only ? 'YES' : 'NO',
+      (R5.freshness && R5.freshness.latest) || '',
+      'Search terms attributed at campaign/search-category level only; exact product attribution unavailable'
+    ]);
+  });
+  var csv = lines.map(function(r){
+    return r.map(function(x){ return '"' + String(x===null||x===undefined?'':x).replace(/"/g,'""') + '"'; }).join(',');
+  }).join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv);
+  a.download = 'thivajini-feed-optimization-' + c.item_id + '-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+/* ── H. history ────────────────────────────────────────────────── */
+function r5History(){
+  var box = document.getElementById('r5-history');
+  var body = document.getElementById('r5-hist-body');
+  box.style.display = '';
+  body.innerHTML = '⏳ Loading history…';
+  r5Get('req5-history', R5.current ? '&item=' + encodeURIComponent(R5.current.item_id) : '').then(function(d){
+    if(!d.ok){ body.innerHTML = '<span style="color:#b91c1c;">' + r5Esc(d.error) + '</span>'; return; }
+    if(!(d.generations||[]).length){ body.innerHTML = '<span style="color:var(--muted);">No generations recorded yet.</span>'; return; }
+    var gens = d.generations.map(function(g){
+      var att = (g.attempts||[]).map(function(a){ return r5Esc(a.provider_alias) + ':' + r5Esc(a.status); }).join(' → ');
+      return '<tr><td style="font-size:11px;font-family:monospace;">' + r5Esc(g.item_id) + '</td>' +
+        '<td>' + r5Esc(g.iteration_no) + '</td>' +
+        '<td>' + r5Esc((g.created_at||'').slice(0,16).replace('T',' ')) + '</td>' +
+        '<td>' + r5Esc(g.generation_status) + '</td>' +
+        '<td style="font-size:11px;">' + att + '</td>' +
+        '<td>' + r5Esc(g.evidence_confidence||'—') + '</td>' +
+        '<td>' + (g.is_draft_only ? '<span style="color:#b45309;">DRAFT ONLY</span>' : '—') + '</td>' +
+        '<td>' + r5Esc((g.variants||[]).length) + '</td></tr>';
+    }).join('');
+    var sels = (d.selections||[]).map(function(s){
+      return '<tr><td style="font-size:11px;font-family:monospace;">' + r5Esc(s.item_id) + '</td>' +
+        '<td>' + r5Esc(s.iteration_no) + '</td>' +
+        '<td>' + r5Esc(s.selected_variant_label||'—') + '</td>' +
+        '<td>' + r5Esc((s.selected_at||'').slice(0,16).replace('T',' ')) + '</td>' +
+        '<td>' + r5Esc(s.selected_by) + '</td>' +
+        '<td>' + r5Esc(s.review_status) + '</td>' +
+        '<td>' + r5Esc(s.push_state) + '</td>' +
+        '<td style="font-size:11px;color:var(--muted);">' + r5Esc(s.push_blocked_reason||'') + '</td></tr>';
+    }).join('');
+    var snaps = (d.performance_snapshots||[]).map(function(p){
+      var daysLive = '—';
+      if(p.snapshot_type === 'POST_CHANGE' && p.period_start){
+        // Days Live rendered as an INTEGER number of days. The source workbook
+        // held a valid day count but formatted the cell as a date, so it showed
+        // as e.g. "1900-01-18". Corrected here — documented known gap #1.
+        daysLive = Math.max(0, Math.round((Date.now() - Date.parse(p.period_start)) / 86400000));
+      }
+      return '<tr><td style="font-size:11px;font-family:monospace;">' + r5Esc(p.item_id) + '</td>' +
+        '<td>' + r5Esc(p.snapshot_type) + '</td>' +
+        '<td>' + r5Esc(String(p.period_start).slice(0,10)) + ' → ' + r5Esc(String(p.period_end).slice(0,10)) + '</td>' +
+        '<td>' + daysLive + '</td>' +
+        '<td>' + r5Num(p.impressions) + '</td><td>' + r5Num(p.clicks) + '</td>' +
+        '<td>' + r5Num(p.gads_conversions,2) + '</td>' +
+        '<td>' + r5Num(p.shopify_conv_orders) + '/' + r5Num(p.shopify_conv_lines) + '/' + r5Num(p.shopify_conv_units) + '</td></tr>';
+    }).join('');
+
+    body.innerHTML =
+      '<div style="font-weight:700;margin-bottom:6px;">Generations</div>' +
+      '<table class="rpt"><thead><tr><th>Item</th><th>Iter</th><th>Created</th><th>Status</th><th>Provider path</th><th>Confidence</th><th>Draft</th><th>Variants</th></tr></thead><tbody>' + gens + '</tbody></table>' +
+      '<div style="font-weight:700;margin:14px 0 6px;">Selections / iteration log</div>' +
+      (sels ? '<table class="rpt"><thead><tr><th>Item</th><th>Iter</th><th>Variant</th><th>Selected at</th><th>By</th><th>Review</th><th>Push</th><th>Blocked reason</th></tr></thead><tbody>' + sels + '</tbody></table>' : '<span style="color:var(--muted);">None yet.</span>') +
+      '<div style="font-weight:700;margin:14px 0 6px;">Performance snapshots</div>' +
+      (snaps ? '<table class="rpt"><thead><tr><th>Item</th><th>Type</th><th>Period</th><th>Days Live</th><th>Impr</th><th>Clicks</th><th>Conv</th><th>Shopify o/l/u</th></tr></thead><tbody>' + snaps + '</tbody></table>' : '<span style="color:var(--muted);">None yet.</span>') +
+      '<div style="margin-top:12px;padding:10px;background:#fff8e6;border:1px solid #f0d9a0;border-radius:8px;font-size:12px;">' +
+        '<b>Verdict:</b> ' + r5Esc(d.verdict_note) + '</div>';
+  });
+}
+
+/* ── I. telemetry ──────────────────────────────────────────────── */
+function r5Telemetry(){
+  var box = document.getElementById('r5-telemetry');
+  var body = document.getElementById('r5-tel-body');
+  box.style.display = '';
+  body.innerHTML = '⏳ Loading telemetry…';
+  r5Get('req5-telemetry').then(function(d){
+    if(!d.ok){ body.innerHTML = '<span style="color:#b91c1c;">' + r5Esc(d.error) + '</span>'; return; }
+    var rows = (d.telemetry||[]).map(function(t){
+      return '<tr><td>' + r5Esc(t.provider_alias) + '</td><td>' + r5Esc(t.model||'—') + '</td>' +
+        '<td>' + r5Num(t.attempts) + '</td><td>' + r5Num(t.successes) + '</td>' +
+        '<td>' + r5Num(t.failures) + '</td><td>' + r5Num(t.rate_limited) + '</td>' +
+        '<td>' + r5Num(t.quota_exhausted) + '</td>' +
+        '<td>' + r5Num(t.input_tokens) + '</td><td>' + r5Num(t.output_tokens) + '</td>' +
+        '<td>' + (t.configured_rpm!=null ? r5Num(t.configured_rpm) : '<span style="color:#b45309;">UNKNOWN</span>') + '</td>' +
+        '<td>' + (t.configured_rpd!=null ? r5Num(t.configured_rpd) : '<span style="color:#b45309;">UNKNOWN</span>') + '</td></tr>';
+    }).join('');
+    var mig = d.migration || {};
+    var envRows = Object.keys(d.env_present||{}).map(function(k){
+      return '<li>' + r5Esc(k) + ': ' + (d.env_present[k] ? '<span style="color:#15803d;">present</span>' : '<span style="color:#b45309;">not set</span>') + '</li>';
+    }).join('');
+    body.innerHTML =
+      '<div><b>Provider priority:</b> ' + r5Esc((d.provider_priority||[]).join(' → ')) + '</div>' +
+      '<div><b>Neon migration:</b> ' + (mig.applied ? '<span style="color:#15803d;">applied</span>' : '<span style="color:#b91c1c;">NOT applied — ' + r5Esc((mig.missing||[]).join(', ')) + '</span>') + '</div>' +
+      '<div style="margin-top:8px;"><b>Environment variables (presence only — values never read):</b><ul style="margin:4px 0 0 18px;">' + envRows + '</ul></div>' +
+      '<div style="margin-top:10px;"><b>Attempts (last 7 days)</b></div>' +
+      (rows ? '<table class="rpt" style="margin-top:4px;"><thead><tr><th>Alias</th><th>Model</th><th>Attempts</th><th>OK</th><th>Fail</th><th>429</th><th>Quota</th><th>In tok</th><th>Out tok</th><th>RPM</th><th>RPD</th></tr></thead><tbody>' + rows + '</tbody></table>'
+            : '<span style="color:var(--muted);">No attempts recorded yet.</span>') +
+      '<div style="margin-top:10px;padding:10px;background:#fff8e6;border:1px solid #f0d9a0;border-radius:8px;font-size:12px;">' +
+        r5Esc(d.usage_note) + '<br><br>' + r5Esc(d.quota_note) + '</div>';
+  });
+}
+
+/* ── batch-wide term browser ───────────────────────────────────── */
+function r5TermBrowser(){
+  var box = document.getElementById('r5-termbrowser');
+  box.style.display = '';
+  document.getElementById('r5-tb-note').textContent = '⏳ Loading…';
+  r5Get('req5-search-terms', '&days=180').then(function(d){
+    if(!d.ok){ document.getElementById('r5-tb-note').innerHTML = '<span style="color:#b91c1c;">' + r5Esc(d.error) + '</span>'; return; }
+    document.getElementById('r5-tb-note').innerHTML =
+      '<b style="color:#b45309;">' + r5Esc(d.terms_freshness.note) + '</b><br>' +
+      r5Esc(d.window.anchor_note) + '<br>' + r5Esc(d.attribution_note) +
+      '<br><span style="font-size:11px;">' + r5Esc(d.conflict_note) + '</span>';
+    var tb = document.querySelector('#r5-tb-tbl tbody');
+    tb.innerHTML = (d.terms||[]).map(function(t){
+      return '<tr><td>' + r5Esc(t.search_term) + '</td><td>' + r5Esc(t.category_label||'—') + '</td>' +
+        '<td>' + r5Num(t.impressions) + '</td><td>' + r5Num(t.clicks) + '</td>' +
+        '<td>' + r5Num(t.conversions,2) + '</td><td>€' + r5Num(t.conversion_value,2) + '</td>' +
+        '<td>' + r5Pct(t.conversion_rate) + '</td>' +
+        '<td style="font-size:11px;">' + r5Esc(t.source_table) + '</td>' +
+        '<td style="font-size:11px;color:#b45309;">' + r5Esc(t.source_min_date) + ' → ' + r5Esc(t.source_max_date) + '</td>' +
+        '<td style="font-size:11px;">' + r5Esc(t.mapping_level) + '</td></tr>';
+    }).join('') || '<tr><td colspan="10" style="color:var(--muted);">No paid terms in this window.</td></tr>';
+  });
+}
+
+/* Lazy first-load, matching the behaviour of the other tabs. Candidate
+   loading is a real Ledsone query, so it runs once per session, not on
+   every tab switch. */
+var r5Loaded = false;
+function r5Init(){
+  if(r5Loaded) return;
+  r5Loaded = true;
+  r5LoadCandidates();
+}
+
+/* ── wiring ────────────────────────────────────────────────────── */
+(function(){
+  function on(id, fn){ var el = document.getElementById(id); if(el) el.addEventListener('click', fn); }
+  on('r5-load', r5LoadCandidates);
+  on('r5-newbatch', r5NewBatch);
+  on('r5-terms-btn', r5TermBrowser);
+  on('r5-hist-btn', r5History);
+  on('r5-tel-btn', r5Telemetry);
+  on('r5-appr-btn', r5LoadApproved);
+  on('r5-mon-btn', r5Monitoring);
+  on('r5-exp-btn', r5ExportHistory);
+  on('r5-save-terms', r5SaveTerms);
+  on('r5-check-provider', r5CheckProviders);
+  on('r5-generate', r5Generate);
+  on('r5-sel-a', function(){ r5Select('A'); });
+  on('r5-sel-b', function(){ r5Select('B'); });
+  on('r5-csv', r5CSV);
+  on('r5-ev-close', function(){ document.getElementById('r5-evidence').style.display='none'; });
+  on('r5-tb-close', function(){ document.getElementById('r5-termbrowser').style.display='none'; });
+  on('r5-hist-close', function(){ document.getElementById('r5-history').style.display='none'; });
+  on('r5-tel-close', function(){ document.getElementById('r5-telemetry').style.display='none'; });
+})();
+
+
+/* ═════════ REQ5 — approved variants, CSV modal, monitoring, push preview ═════════ */
+R5.approved = [];
+R5.picked = new Set();       // "generationId|variantLabel"
+R5.colCatalogue = null;
+
+function r5ModalOpen(id){
+  document.getElementById('r5-modal-back').style.display='block';
+  document.getElementById(id).style.display='block';
+}
+function r5ModalClose(){
+  document.getElementById('r5-modal-back').style.display='none';
+  ['r5-csv-modal','r5-push-modal'].forEach(function(x){var e=document.getElementById(x);if(e)e.style.display='none';});
+}
+
+/* ── J. approved variants (exportable) ─────────────────────────── */
+function r5LoadApproved(){
+  var box=document.getElementById('r5-approved');
+  box.style.display='';
+  var tb=document.querySelector('#r5-appr-tbl tbody');
+  tb.innerHTML='<tr><td colspan="11">⏳ Loading…</td></tr>';
+  r5Get('req5-history').then(function(d){
+    if(!d.ok){tb.innerHTML='<tr><td colspan="11" style="color:#b91c1c;">'+r5Esc(d.error)+'</td></tr>';return;}
+    R5.approved=[];
+    (d.generations||[]).forEach(function(g){
+      (g.variants||[]).forEach(function(v){
+        R5.approved.push({gen:g,variant:v});
+      });
+    });
+    if(!R5.approved.length){
+      tb.innerHTML='<tr><td colspan="11" style="color:var(--muted);">No generated variants yet. Generate one first.</td></tr>';
+      r5ApprCount();return;
+    }
+    tb.innerHTML='';
+    R5.approved.forEach(function(a,i){
+      var key=a.gen.generation_id+'|'+a.variant.variant_label;
+      var okCol=a.variant.validation_status==='PASS'?'#15803d':'#b91c1c';
+      var tr=document.createElement('tr');
+      tr.innerHTML=
+        '<td><input type="checkbox" class="r5-pick" data-i="'+i+'" data-key="'+r5Esc(key)+'"'+(R5.picked.has(key)?' checked':'')+(a.variant.validation_status!=='PASS'?' disabled title="Failed validation — cannot be exported"':'')+'></td>'+
+        '<td style="font-family:monospace;font-size:11px;">'+r5Esc(a.gen.item_id)+'</td>'+
+        '<td>'+r5Esc(a.gen.iteration_no)+'</td>'+
+        '<td><b>'+r5Esc(a.variant.variant_label)+'</b></td>'+
+        '<td>'+r5Esc((a.variant.title_fr||'').slice(0,60))+'</td>'+
+        '<td>'+r5Esc(a.variant.title_char_count)+'</td>'+
+        '<td style="color:'+okCol+';">'+r5Esc(a.variant.validation_status)+'</td>'+
+        '<td style="color:#b45309;">'+r5Esc(a.gen.feed_eligible_status)+'</td>'+
+        '<td>'+(a.gen.is_draft_only?'<span style="color:#b45309;">DRAFT</span>':'—')+'</td>'+
+        '<td>'+r5Esc((a.gen.created_at||'').slice(0,10))+'</td>'+
+        '<td><button class="nav-btn r5-pp" data-i="'+i+'" style="font-size:11px;padding:3px 8px;">Push preview</button></td>';
+      tb.appendChild(tr);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.r5-pick'),function(cb){
+      cb.addEventListener('change',function(){
+        var k=cb.getAttribute('data-key');
+        if(cb.checked)R5.picked.add(k);else R5.picked.delete(k);
+        r5ApprCount();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.r5-pp'),function(b){
+      b.addEventListener('click',function(){r5PushPreview(R5.approved[Number(b.getAttribute('data-i'))]);});
+    });
+    r5ApprCount();
+  });
+}
+function r5ApprCount(){
+  var el=document.getElementById('r5-appr-count');
+  if(el)el.textContent=R5.picked.size+' product'+(R5.picked.size===1?'':'s')+' selected for export';
+}
+
+/* ── CSV modal ─────────────────────────────────────────────────── */
+function r5OpenCsvModal(){
+  if(!R5.picked.size){r5Msg('Select at least one product to export.','error');return;}
+  document.getElementById('r5-csv-sub').textContent=
+    R5.picked.size+' selected variant'+(R5.picked.size===1?'':'s')+' will be exported. Only selected products are included.';
+  document.getElementById('r5-mon-date').value=new Date().toISOString().slice(0,10);
+  var go=function(){ r5ModalOpen('r5-csv-modal'); };
+  if(R5.colCatalogue){r5RenderColumns();go();return;}
+  r5Get('req5-export-columns').then(function(d){
+    if(!d.ok){r5Msg('Could not load column list: '+r5Esc(d.error),'error');return;}
+    R5.colCatalogue=d;
+    r5RenderColumns();
+    go();
+  });
+}
+function r5RenderColumns(sel){
+  var d=R5.colCatalogue;
+  var chosen=sel||d.default_keys;
+  var wrap=document.getElementById('r5-col-groups');
+  wrap.innerHTML=Object.keys(d.groups).map(function(g){
+    return '<div><div style="font-size:12px;font-weight:700;margin-bottom:5px;color:#42506a;">'+r5Esc(g)+'</div>'+
+      d.groups[g].map(function(c){
+        return '<label style="display:block;font-size:12px;margin-bottom:3px;cursor:pointer;">'+
+          '<input type="checkbox" class="r5-col" value="'+r5Esc(c.key)+'"'+(chosen.indexOf(c.key)>=0?' checked':'')+'> '+r5Esc(c.label)+'</label>';
+      }).join('')+'</div>';
+  }).join('');
+}
+function r5ChosenColumns(){
+  return Array.prototype.map.call(document.querySelectorAll('.r5-col:checked'),function(c){return c.value;});
+}
+
+function r5DoExport(){
+  var cols=r5ChosenColumns();
+  var warn=document.getElementById('r5-col-warn');
+  if(!cols.length){warn.style.display='';return;}
+  warn.style.display='none';
+
+  var custom=document.getElementById('r5-mon-custom').checked;
+  var payload={
+    batch_id: R5.batchId||null,
+    columns: cols,
+    monitoring_start_mode: custom?'CUSTOM':'TODAY',
+    monitoring_start_date: custom?document.getElementById('r5-mon-date').value:null,
+    monitoring_reason: custom?(document.getElementById('r5-mon-reason').value||null):null,
+    selections: Array.from(R5.picked).map(function(k){
+      var p=k.split('|');
+      var hit=R5.approved.find(function(a){return a.gen.generation_id===p[0]&&a.variant.variant_label===p[1];});
+      return {generation_id:p[0],variant_label:p[1],item_id:hit?hit.gen.item_id:null};
+    })
+  };
+  var btn=document.getElementById('r5-csv-go');
+  btn.disabled=true;btn.textContent='Generating…';
+  r5Post('req5-export',payload).then(function(d){
+    btn.disabled=false;btn.textContent='Generate & download';
+    if(!d.ok){r5Msg('Export failed: '+r5Esc(d.error)+(d.rejected_columns&&d.rejected_columns.length?' (rejected columns: '+r5Esc(d.rejected_columns.join(', '))+')':''),'error');return;}
+    // Server builds the CSV so the exported bytes and the stored SHA-256 match.
+    var blob=new Blob([d.csv],{type:'text/csv;charset=utf-8;'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=d.filename;
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+    r5ModalClose();
+    r5Msg('Exported '+d.row_count+' row(s), '+d.columns.length+' column(s). '+r5Esc(d.go_live_note)+' '+r5Esc(d.baseline_note),'ok');
+    r5Monitoring();
+  }).catch(function(e){
+    btn.disabled=false;btn.textContent='Generate & download';
+    r5Msg('Export failed: '+r5Esc(e.message),'error');
+  });
+}
+
+/* ── K. monitoring ─────────────────────────────────────────────── */
+function r5Monitoring(){
+  var box=document.getElementById('r5-monitor');
+  box.style.display='';
+  var tb=document.querySelector('#r5-mon-tbl tbody');
+  tb.innerHTML='<tr><td colspan="15">⏳ Loading…</td></tr>';
+  r5Get('req5-monitoring').then(function(d){
+    if(!d.ok){tb.innerHTML='<tr><td colspan="15" style="color:#b91c1c;">'+r5Esc(d.error)+'</td></tr>';return;}
+    document.getElementById('r5-mon-note').textContent=d.go_live_note;
+    if(!(d.plans||[]).length){
+      tb.innerHTML='<tr><td colspan="15" style="color:var(--muted);">No monitoring plans yet — download a CSV to create one.</td></tr>';return;
+    }
+    tb.innerHTML='';
+    d.plans.forEach(function(m){
+      var b=m.baseline||{},p=m.post_change||{};
+      var tr=document.createElement('tr');
+      tr.innerHTML=
+        '<td style="font-family:monospace;font-size:11px;">'+r5Esc(m.item_id)+'</td>'+
+        '<td>'+r5Esc(m.selected_variant_label||'—')+'</td>'+
+        '<td>'+r5Esc(m.change_method)+'</td>'+
+        '<td>'+r5Esc(String(m.monitoring_start_date||'').slice(0,10))+'</td>'+
+        '<td>'+(m.actual_go_live_date?r5Esc(String(m.actual_go_live_date).slice(0,10)):'<span style="color:#b45309;">not confirmed</span>')+'</td>'+
+        '<td>'+(m.days_live===null||m.days_live===undefined?'—':r5Esc(m.days_live))+'</td>'+
+        '<td style="font-size:11px;">'+(m.baseline_period_start?r5Esc(String(m.baseline_period_start).slice(0,10))+' → '+r5Esc(String(m.baseline_period_end).slice(0,10)):'—')+'</td>'+
+        '<td>'+r5Pct(b.ctr)+'</td><td>'+r5Pct(b.conversion_rate)+'</td>'+
+        '<td>'+r5Pct(p.ctr)+'</td><td>'+r5Pct(p.conversion_rate)+'</td>'+
+        '<td>'+(b.shopify_conv_orders!==undefined&&b.shopify_conv_orders!==null?r5Num(b.shopify_conv_orders)+'/'+r5Num(b.shopify_conv_lines)+'/'+r5Num(b.shopify_conv_units):'—')+'</td>'+
+        '<td>'+r5Esc(m.status)+'</td>'+
+        '<td>'+r5Esc(m.verdict)+'</td>'+
+        '<td>'+(m.actual_go_live_date?'':'<button class="nav-btn r5-live" data-id="'+r5Esc(m.monitoring_id)+'" style="font-size:11px;padding:3px 8px;">Confirm change is live</button>')+'</td>';
+      tb.appendChild(tr);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.r5-live'),function(b){
+      b.addEventListener('click',function(){
+        var when=window.prompt('Date the change actually went live (YYYY-MM-DD).\n\nThis is recorded separately from the download timestamp.',new Date().toISOString().slice(0,10));
+        if(!when)return;
+        r5Post('req5-confirm-live',{monitoring_id:b.getAttribute('data-id'),actual_go_live_date:when}).then(function(d){
+          if(!d.ok){r5Msg('Could not confirm: '+r5Esc(d.error),'error');return;}
+          r5Msg('Go-live confirmed for '+r5Esc(when)+'. Monitoring is now LIVE_TESTING.','ok');
+          r5Monitoring();
+        });
+      });
+    });
+  });
+}
+
+/* ── L. export history ─────────────────────────────────────────── */
+function r5ExportHistory(){
+  var box=document.getElementById('r5-exports');
+  box.style.display='';
+  var tb=document.querySelector('#r5-exp-tbl tbody');
+  tb.innerHTML='<tr><td colspan="9">⏳ Loading…</td></tr>';
+  r5Get('req5-export-history').then(function(d){
+    if(!d.ok){tb.innerHTML='<tr><td colspan="9" style="color:#b91c1c;">'+r5Esc(d.error)+'</td></tr>';return;}
+    if(!(d.exports||[]).length){tb.innerHTML='<tr><td colspan="9" style="color:var(--muted);">No exports yet.</td></tr>';return;}
+    tb.innerHTML=d.exports.map(function(e){
+      var cols=[];try{cols=JSON.parse(e.selected_columns||'[]');}catch(x){cols=e.selected_columns||[];}
+      return '<tr>'+
+        '<td>'+r5Esc((e.generated_at||'').slice(0,16).replace('T',' '))+'</td>'+
+        '<td>'+r5Esc(e.generated_by)+'</td>'+
+        '<td>'+r5Esc(e.row_count)+'</td>'+
+        '<td title="'+r5Esc((Array.isArray(cols)?cols:[]).join(', '))+'">'+(Array.isArray(cols)?cols.length:'—')+'</td>'+
+        '<td>'+r5Esc(String(e.monitoring_start_date||'').slice(0,10))+'</td>'+
+        '<td>'+r5Esc(e.monitoring_start_mode)+'</td>'+
+        '<td>'+r5Esc(e.change_method)+'</td>'+
+        '<td>'+r5Esc(e.change_status)+'</td>'+
+        '<td style="font-family:monospace;font-size:10.5px;">'+r5Esc((e.content_sha256||'').slice(0,16))+'…</td>'+
+        '</tr>';
+    }).join('');
+  });
+}
+
+/* ── Push preview (read-only) ──────────────────────────────────── */
+function r5PushPreview(a){
+  var body=document.getElementById('r5-push-body');
+  body.innerHTML='⏳ Loading preview…';
+  r5ModalOpen('r5-push-modal');
+  r5Get('req5-push-preview','&generation='+encodeURIComponent(a.gen.generation_id)+'&variant='+encodeURIComponent(a.variant.variant_label))
+    .then(function(d){
+      if(!d.ok){body.innerHTML='<span style="color:#b91c1c;">'+r5Esc(d.error)+'</span>';return;}
+      var p=d.preview;
+      var diff=p.changes.map(function(c){
+        return '<tr><td style="font-weight:600;">'+r5Esc(c.field)+'</td>'+
+          '<td style="background:#fff1f2;">'+r5Esc(c.before||'(none)')+'</td>'+
+          '<td style="background:#f0fdf4;">'+r5Esc(c.after)+'</td></tr>';
+      }).join('');
+      body.innerHTML=
+        '<div style="line-height:1.7;">'+
+          '<div><b>Merchant account:</b> '+r5Esc(p.merchant_account_id)+'</div>'+
+          '<div><b>Item / offer ID:</b> <code>'+r5Esc(p.offer_id)+'</code></div>'+
+          '<div><b>ProductInput resource:</b> '+r5Esc(p.product_input_resource)+'</div>'+
+          '<div><b>Data source:</b> '+r5Esc(p.data_source)+'</div>'+
+          '<div><b>Content language / feed label:</b> '+r5Esc(p.content_language)+' / '+r5Esc(p.feed_label)+'</div>'+
+          '<div><b>Generation / variant:</b> '+r5Esc(p.generation_id).slice(0,8)+'… / '+r5Esc(p.variant_label)+' ('+r5Esc(p.validation_status)+')</div>'+
+          '<div><b>Feed eligible:</b> <span style="color:#b45309;">'+r5Esc(p.feed_eligible_status)+'</span>'+(p.is_draft_only?' · <span style="color:#b45309;">DRAFT ONLY</span>':'')+'</div>'+
+          '<div><b>Operator:</b> '+r5Esc(p.operator||'—')+'</div>'+
+        '</div>'+
+        '<div style="font-weight:700;margin:12px 0 6px;">Fields that WOULD change</div>'+
+        '<table class="rpt"><thead><tr><th>Field</th><th>Current</th><th>Proposed</th></tr></thead><tbody>'+diff+'</tbody></table>'+
+        '<div style="font-weight:700;margin:12px 0 6px;">Fields that would NOT change</div>'+
+        '<div style="font-size:12px;color:#5b6577;">'+r5Esc(p.unchanged_fields.join(' · '))+'</div>'+
+        '<div style="margin-top:14px;padding:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;">'+
+          '<b style="color:#b91c1c;">Push state: '+r5Esc(d.push_state)+' — production push is disabled.</b>'+
+          '<ul style="margin:6px 0 0 18px;">'+d.blocked_reasons.map(function(r){return '<li>'+r5Esc(r)+'</li>';}).join('')+'</ul>'+
+          '<div style="margin-top:6px;">'+r5Esc(d.note)+'</div>'+
+        '</div>';
+      var btn=document.getElementById('r5-push-do');
+      btn.disabled=true;
+      btn.title=d.blocked_reasons.join(' | ');
+    });
+}
+
+/* ── wiring for the new sections ───────────────────────────────── */
+(function(){
+  function on(id,fn){var e=document.getElementById(id);if(e)e.addEventListener('click',fn);}
+  on('r5-appr-close',function(){document.getElementById('r5-approved').style.display='none';});
+  on('r5-mon-close',function(){document.getElementById('r5-monitor').style.display='none';});
+  on('r5-exp-close',function(){document.getElementById('r5-exports').style.display='none';});
+  on('r5-sel-all',function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.r5-pick:not(:disabled)'),function(cb){cb.checked=true;R5.picked.add(cb.getAttribute('data-key'));});
+    r5ApprCount();
+  });
+  on('r5-sel-none',function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.r5-pick'),function(cb){cb.checked=false;});
+    R5.picked.clear();r5ApprCount();
+  });
+  on('r5-open-csv',r5OpenCsvModal);
+  on('r5-csv-cancel',r5ModalClose);
+  on('r5-csv-go',r5DoExport);
+  on('r5-push-close',r5ModalClose);
+  on('r5-modal-back',r5ModalClose);
+  on('r5-col-rec',function(){r5RenderColumns(R5.colCatalogue.default_keys);});
+  on('r5-col-all',function(){r5RenderColumns(R5.colCatalogue.all_keys);});
+  on('r5-col-none',function(){r5RenderColumns([]);});
+  var mt=document.getElementById('r5-mon-today'),mc=document.getElementById('r5-mon-custom');
+  function toggleDate(){document.getElementById('r5-mon-datewrap').style.display=mc.checked?'':'none';}
+  if(mt)mt.addEventListener('change',toggleDate);
+  if(mc)mc.addEventListener('change',toggleDate);
+  // The Push button is disabled by the SERVER's answer, never by the client's
+  // opinion. Even if the DOM is edited, req5-push-execute returns 403.
+  on('r5-push-do',function(){
+    r5Post('req5-push-execute',{}).then(function(d){
+      window.alert('Push refused by the server:\n\n'+(d.reasons||[d.error]).join('\n'));
+    });
+  });
+})();
 
 </script>
 </body>
