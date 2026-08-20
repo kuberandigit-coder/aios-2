@@ -14,3 +14,6 @@ shopify.theme.toml.local
 # Shopify theme repos — each has its own .git
 shopify-themes/
 piranav_aios/
+
+# Staff-requirements git clone (used only for pushing to that repo + Vercel deploys — never commit into aios-2)
+staff-req-sync3/
