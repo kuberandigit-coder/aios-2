@@ -213,26 +213,17 @@ const EMPLOYEES = {
   // Added 2026-08-05 per explicit user choice (keep the same table shape as
   // Sonya/Sajeepan rather than a Sales-only panel).
   //
-  // SEO tool cost added 2026-08-05, confirmed split:
-  // 2025 — Semrush £265.62/month total, split 50% ledsone.de / 50% ledsone
-  // UK. The UK 50% share (£132.81/mo) is split between the UK SEO staff who
-  // actually existed that month: 3-way (Kamsi/Dilaksi/Sukirtha) Jan-Oct 2025
-  // = £44.27/mo each, then 4-way (adding Hetheesha) Nov-Dec 2025 = £33.20/mo
-  // each — Hetheesha joined the split from November. Sukirtha and
-  // Hetheesha's own cost rows are NOT added to this dashboard yet (held per
-  // explicit instruction — no muguntha.html panel for them yet); only
-  // Kamsi's and Dilaksi's shares are reflected here, using the correct
-  // 3-way/4-way per-person amount even though the other two aren't shown.
-  // 2026 — Semrush + Arrow AI combined £149/month total, split 40% UK /
-  // 40% DE / 20% FR; the UK 40% share (£59.60/mo) is split evenly between
-  // Kamsi and Dilaksi only (unchanged, not part of the above correction) —
-  // £29.80/mo each.
+  // SEO/AI tool cost — REVISED 2026-08-20 per Kuberan, replacing the old
+  // year-varying GBP split (2026-08-05) entirely: Semrush $358.95/mo and
+  // Arrow $149.00/mo, each split 4 ways, same formula for both 2025 and
+  // 2026 (no more different splits/currencies per year). See getToolCost()
+  // below for the exact USD->GBP conversion.
   kamsi: {
     groupName: '',
     productIds: new Set(),
     snapshotSlug: 'kamsi',
     hasDm: false,
-    toolCost: { uk2025Share3: 44.27, uk2025Share4: 33.20, uk2026Share2: 29.80 },
+    toolCost: true,
   },
   // Dilaksi is also SEO/Organic (product-scoped), same as Kamsi — confirmed
   // no "Dilaksi" group_name exists in google_ads.campaigns for this account
@@ -240,14 +231,14 @@ const EMPLOYEES = {
   // Sonya/Susain/Thanishtika/Tharshan/Theekshi/null — no Dilaksi), and her
   // Sales attribution (salesuk.js/sales25.js) only routes orders to her via
   // organic/pure-direct channels, never the paid DM 46 campaign. Added
-  // 2026-08-05, same reasoning as Kamsi — including the SEO tool cost split
-  // (see Kamsi's comment above for the full breakdown).
+  // 2026-08-05, same reasoning as Kamsi — including the SEO/AI tool cost
+  // split (see Kamsi's comment above for the current formula).
   dilaksi: {
     groupName: '',
     productIds: new Set(),
     snapshotSlug: 'dilaksi',
     hasDm: false,
-    toolCost: { uk2025Share3: 44.27, uk2025Share4: 33.20, uk2026Share2: 29.80 },
+    toolCost: true,
   },
   // Jefri runs Google Ads on the DE store (ledsone.de), a completely
   // separate Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi's UK
@@ -301,7 +292,7 @@ function buildSourceLabels(cfg) {
   }
   if (!cfg.hasDm) {
     const toolNote = cfg.toolCost
-      ? ` Cost also includes a fixed monthly SEO tool-cost share: 2025 = Semrush £265.62/mo total, split 50% ledsone.de / 50% ledsone UK, with the UK 50% share (£132.81/mo) split 3-way between Kamsi/Dilaksi/Sukirtha Jan-Oct 2025 (£44.27/mo each) and 4-way after Hetheesha joins the split Nov-Dec 2025 (£33.20/mo each) — only Kamsi's and Dilaksi's shares are reflected on this dashboard, Sukirtha/Hetheesha have no cost row here yet; 2026 = Semrush + Arrow AI combined £149/mo total, split 40% UK / 40% DE / 20% FR, with the UK 40% share (£59.60/mo) split evenly between Kamsi and Dilaksi only (£29.80/mo each). No Google Ads spend applies (SEO/Organic role) — Cost is tool-cost share only.`
+      ? ` Cost also includes a fixed monthly AI/SEO tool-cost share: Semrush $358.95/mo ÷ 4 + Arrow $149.00/mo ÷ 4, converted to £ at the 2026-08-19 mid-market USD/GBP rate, same formula for both 2025 and 2026 (revised 2026-08-20, replacing the earlier year-varying GBP split). No Google Ads spend applies (SEO/Organic role) — Cost is tool-cost share only.`
       : '';
     return {
       source: `google_ads.campaign_performance JOIN google_ads.campaigns WHERE group_name='${cfg.groupName}' AND account_id=${LEDSONE_ACCOUNT_ID} (LEDSone account only, always £0 — no ads role).${toolNote}`,
@@ -374,15 +365,21 @@ const CURRENT_LIVE_MONTHS = ['2026-08'];
 // 2025 Jan-Oct = 3-way UK Semrush split (Kamsi/Dilaksi/Sukirtha); Nov-Dec =
 // 4-way (Hetheesha joins). 2026 = 2-way UK Semrush+Arrow AI split
 // (Kamsi/Dilaksi only). See the Kamsi config comment for the full math.
+// AI/SEO tool cost — REVISED 2026-08-20 per Kuberan: Semrush $358.95/mo and
+// Arrow $149.00/mo, each split 4 ways, same for both 2025 and 2026 (no more
+// year-varying GBP split). USD->GBP at the same fixed mid-market rate
+// already used for the Shopify subscription fee elsewhere on this page
+// (2026-08-19, 1 USD = 0.7389 GBP) — not live-converted; update by hand if
+// the rate or subscriptions change meaningfully.
+const USD_TO_GBP_RATE = 0.7389;
+const TOOL_COST_SPLIT_BY = 4;
+const SEMRUSH_MONTHLY_USD = 358.95;
+const ARROW_MONTHLY_USD = 149.00;
 function getToolCost(cfg, month) {
   if (!cfg.toolCost) return 0;
-  const year = month.slice(0, 4);
-  if (year === '2025') {
-    const isNovDec = month === '2025-11' || month === '2025-12';
-    return isNovDec ? cfg.toolCost.uk2025Share4 : cfg.toolCost.uk2025Share3;
-  }
-  if (year === '2026') return cfg.toolCost.uk2026Share2 || 0;
-  return 0;
+  const semrush = (SEMRUSH_MONTHLY_USD * USD_TO_GBP_RATE) / TOOL_COST_SPLIT_BY;
+  const arrow = (ARROW_MONTHLY_USD * USD_TO_GBP_RATE) / TOOL_COST_SPLIT_BY;
+  return Math.round((semrush + arrow) * 100) / 100;
 }
 
 async function queryCostForMonth(cfg, month) {

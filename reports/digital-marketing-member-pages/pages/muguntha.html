@@ -1532,6 +1532,14 @@ if (!location.hash) mgShowView('pages');
 const SHOPIFY_SUBSCRIPTION_GBP = 294.82;
 const SHOPIFY_SUBSCRIPTION_SPLIT = { '2025': 4, '2026': 5 };
 
+// Kamsi/Dilaksi AI tools cost (Semrush + Arrow) — REVISED 2026-08-20 per
+// Kuberan, mirrors api/muguntha.js's getToolCost() exactly: same USD->GBP
+// rate as the Shopify subscription above, ÷4, same formula for both years.
+const USD_TO_GBP_RATE = 0.7389;
+const TOOL_COST_SPLIT_BY = 4;
+const SEMRUSH_MONTHLY_USD = 358.95;
+const ARROW_MONTHLY_USD = 149.00;
+
 function cbOpen(){ document.getElementById('cbOverlay').classList.add('open'); }
 function cbCloseFn(){ document.getElementById('cbOverlay').classList.remove('open'); }
 document.getElementById('cbClose').addEventListener('click', cbCloseFn);
@@ -1573,15 +1581,27 @@ async function openCostPopup(member, year, month, monthLabel){
     // VAT removed 2026-08-19, Product Cost removed 2026-08-19, both per Kuberan.
     const total = Math.round((adsCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
     // Kamsi/Dilaksi (SEO/Organic, added 2026-08-20) have no ad spend — their
-    // base cost is a shared SEO tool-cost share, not Ads Cost, so label and
-    // Own/DM breakdown only make sense for HAS_DM members (Sonya/Sajeepan).
+    // base cost is a shared AI tool-cost split (Semrush + Arrow), shown as
+    // two separate lines instead of one combined "Ads Cost" row. Mirrors
+    // api/muguntha.js's getToolCost() exactly (same USD->GBP rate, same
+    // ÷4 split, same for both years) so these two lines always sum to the
+    // backend's returned ownCost for these members.
     const isAdsRole = HAS_DM.has(member);
-    const baseCostLabel = isAdsRole ? 'Ads Cost' : 'SEO Tool Cost';
-    const baseCostNote = isAdsRole ? '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')' : null;
-
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
+    let baseCostRows;
+    if (isAdsRole) {
+      baseCostRows = row('Ads Cost', adsCost, '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')');
+    } else {
+      const semrushCost = Math.round((SEMRUSH_MONTHLY_USD * USD_TO_GBP_RATE / TOOL_COST_SPLIT_BY) * 100) / 100;
+      const arrowCost = Math.round((ARROW_MONTHLY_USD * USD_TO_GBP_RATE / TOOL_COST_SPLIT_BY) * 100) / 100;
+      baseCostRows =
+        '<div class="cb-row" style="padding-bottom:0;"><span class="cb-label" style="font-weight:700;color:var(--ink);">AI Tools Cost</span><span class="cb-value"></span></div>' +
+        row('— Semrush ($' + SEMRUSH_MONTHLY_USD.toFixed(2) + ' ÷ ' + TOOL_COST_SPLIT_BY + ')', semrushCost) +
+        row('— Arrow ($' + ARROW_MONTHLY_USD.toFixed(2) + ' ÷ ' + TOOL_COST_SPLIT_BY + ')', arrowCost);
+    }
+
     document.getElementById('cbBody').innerHTML =
-      row(baseCostLabel, adsCost, baseCostNote) +
+      baseCostRows +
       row('Transaction Fee', d.transactionFee) +
       row('Discount', d.discounts) +
       row('Refund', d.refunds) +
