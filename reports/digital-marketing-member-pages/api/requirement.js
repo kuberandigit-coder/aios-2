@@ -6196,27 +6196,117 @@ const jefriReq6HandlerModule = (function() {
 
 // ===== Jefri Requirement 8: T-08 Order Conversion Split by Campaign Date
 // (added 2026-08-20). BLOCKED end-to-end per evidence/jefri/req-08-t08-*.md
-// (no Google Ads transaction ID / delta / bid-adjustment / UTM data exists
-// in Postgres) — built incrementally, step by step, per Kuberan's explicit
-// "let's do one by one" instruction. THIS step: Order Number + Order Value
-// (Excl. Shipping) pulled LIVE and DIRECTLY from the Shopify Admin REST API
-// (ledsone-de.myshopify.com), NOT Postgres, per explicit instruction —
-// confirmed field: `current_subtotal_price` (spot-checked against a real
-// order: subtotal 16.88 + shipping 10.57 = total_price 27.45, matches
-// exactly). No Google Ads columns are shown yet — those remain blocked.
+// (no Google Ads transaction ID / delta / bid-adjustment data exists in
+// Postgres) — built incrementally, step by step, per Kuberan's explicit
+// "let's do one by one" instruction.
+// Step 1: Order Number + Order Value (Excl. Shipping) — Shopify Admin API
+// `current_subtotal_price` (spot-checked: 16.88 + 10.57 shipping = 27.45
+// total, matches exactly).
+// Step 2 (this update): Order Summary / conversion source. Discovered that
+// Shopify's own GraphQL Admin API exposes `Order.customerJourneySummary`
+// — literally the same "Conversion summary" panel visible on each order's
+// admin page — including UTM source/medium/campaign/term per visit. This
+// is NOT the blocked Google Ads transaction-level data (still doesn't
+// exist), but it IS a real, live, per-order attribution signal Shopify
+// itself already tracks, spot-checked against 10 real live orders before
+// building (see evidence/jefri/req-08-t08-order-summary-discovery.md).
+// Classification: if firstVisit.utmParameters exists, the order is
+// UTM-tagged (Google Ads, in every real order seen so far) — attempt to
+// match the source/medium/campaign/term combination against Jefri's 5
+// known named campaigns (JEFRI_CAMPAIGNS_R5, same list as Req1/4/5) using
+// simple keyword rules; if no confident, unambiguous match is found, the
+// raw UTM tags are shown instead of a guessed campaign name — never a
+// false-confidence match. If no utmParameters: 'direct' source -> Direct;
+// otherwise -> Organic/Other (raw source shown).
 const jefriReq8HandlerModule = (function() {
   const SHOPIFY_STORE_DOMAIN = 'ledsone-de.myshopify.com';
   const API_VERSION = '2024-10';
 
-  async function shopifyRest(path) {
+  // Same 5 campaigns already used by Req5 (JEFRI_CAMPAIGNS_R5) — duplicated
+  // here rather than reaching into that IIFE's closure, since these lists
+  // must stay identical by construction (both are literally Jefri's fixed
+  // 5 named campaigns) and this keeps the two modules independently
+  // readable/deployable.
+  const JEFRI_CAMPAIGN_NAMES = [
+    'Pmax | Jeff | Klarna | NEWALL | All Products | MCV | DE -16/10',
+    'Pmax | Jeff | Shoparize | ALL | All Products | MCV | DE-01/01/26',
+    'Shopping | Jeff | Shoptimised | AOVU15 | TROAS | DE -12/05',
+    'Pmax | Jeff | Shoparize | FTJ | FinetunedProducts | TROAS | DE-20.01',
+    'Pmax | Jeff | Shoparize | IT | Italy | TROAS | IT-08/12',
+  ];
+
+  // Best-effort match of UTM fragments -> one of Jefri's 5 named campaigns.
+  // Returns the full campaign name ONLY when the combination is unambiguous;
+  // returns null otherwise (caller falls back to showing the raw UTM tags).
+  function matchJefriCampaign(utm) {
+    if (!utm) return null;
+    const src = (utm.source || '').toLowerCase();
+    const med = (utm.medium || '').toLowerCase();
+    const camp = (utm.campaign || '').toLowerCase();
+    const isPmax = camp.includes('pmax') || camp.includes('pamx'); // real data has a typo variant "Pamx"
+    const isShopping = camp.includes('shopping');
+    if (isShopping && src.includes('shoptimised')) {
+      return JEFRI_CAMPAIGN_NAMES[2]; // Shopping | Shoptimised | AOVU15
+    }
+    if (isPmax && src.includes('klarna')) {
+      return JEFRI_CAMPAIGN_NAMES[0]; // Pmax | Klarna | NEWALL
+    }
+    if (isPmax && src.includes('shoparize')) {
+      if (med.includes('italy') || src.includes('asset')) {
+        return JEFRI_CAMPAIGN_NAMES[4]; // Pmax | Shoparize | IT
+      }
+      // Ambiguous between "ALL" and "FTJ" Shoparize Pmax campaigns —
+      // both share the same source fragment with no distinguishing UTM
+      // signal seen in real data yet. Do not guess.
+      return null;
+    }
+    return null;
+  }
+
+  function classifyOrderSummary(journey) {
+    const visit = journey && journey.firstVisit;
+    const utm = visit && visit.utmParameters;
+    const src = (visit && visit.source) || '';
+    const srcLower = src.toLowerCase();
+
+    if (utm && (utm.campaign || utm.source || utm.medium || utm.term)) {
+      const rawTag = [utm.source, utm.medium, utm.campaign, utm.term].filter(Boolean).join(' / ');
+      // The journey's own `source` field (Shopify's platform detection, e.g.
+      // "Google", "Meta", a raw domain) decides the PLATFORM — the UTM
+      // fragments are only ever used to pick a Jefri campaign name WITHIN
+      // Google Ads, never to guess the platform itself. A "Meta"-sourced
+      // order with UTM tags is Meta Ads, not an "unmatched Google" order —
+      // caught via a real live order (#LSDE19256, source="Meta") during
+      // testing before this went live.
+      if (srcLower.includes('google')) {
+        const matched = matchJefriCampaign(utm);
+        return {
+          type: 'Google Ads',
+          campaignMatched: matched,
+          campaignRaw: rawTag,
+          display: matched || `Google Ads (unmatched tag: ${rawTag})`,
+        };
+      }
+      if (srcLower.includes('meta') || srcLower.includes('facebook') || srcLower.includes('instagram')) {
+        return { type: 'Meta Ads', campaignRaw: rawTag, display: `Meta Ads (${rawTag})` };
+      }
+      return { type: 'Other (tagged)', campaignRaw: rawTag, display: `${src || 'Tagged'} (${rawTag})` };
+    }
+    if (!src || srcLower === 'direct') return { type: 'Direct', display: 'Direct' };
+    return { type: 'Organic/Other', display: src };
+  }
+
+  async function shopifyGraphQL(query, variables) {
     const token = process.env.SHOPIFY_ADMIN_TOKEN;
     if (!token) throw new Error('Server not configured: SHOPIFY_ADMIN_TOKEN missing');
-    const res = await fetch(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${API_VERSION}/${path}`, {
+    const res = await fetch(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+      method: 'POST',
       headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(`Shopify ${res.status}: ${(body && body.errors) || res.statusText}`);
-    return { body, linkHeader: res.headers.get('link') };
+    if (!res.ok || body.errors) throw new Error(`Shopify GraphQL: ${JSON.stringify(body.errors || res.statusText)}`);
+    return body.data;
   }
 
   function isValidDateR8(s) {
@@ -6225,6 +6315,25 @@ const jefriReq8HandlerModule = (function() {
 
   const CACHE = new Map();
   const CACHE_TTL_MS = 5 * 60 * 1000;
+
+  const ORDERS_QUERY = `
+    query($cursor: String, $searchQuery: String!) {
+      orders(first: 100, after: $cursor, query: $searchQuery, sortKey: CREATED_AT, reverse: true) {
+        pageInfo { hasNextPage endCursor }
+        edges {
+          node {
+            name
+            createdAt
+            cancelledAt
+            currentSubtotalPriceSet { shopMoney { amount } }
+            customerJourneySummary {
+              firstVisit { source utmParameters { source medium campaign term } }
+            }
+          }
+        }
+      }
+    }
+  `;
 
   async function handleJefriReq8Orders(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -6246,27 +6355,31 @@ const jefriReq8HandlerModule = (function() {
     }
 
     try {
-      const fields = 'id,name,current_subtotal_price,total_price,created_at,cancelled_at,financial_status';
-      let path = `orders.json?status=any&limit=250&fields=${fields}` +
-        `&created_at_min=${encodeURIComponent(startDate + 'T00:00:00Z')}` +
-        `&created_at_max=${encodeURIComponent(endDate + 'T23:59:59Z')}`;
+      const searchQuery = `created_at:>='${startDate}' AND created_at:<='${endDate}T23:59:59Z'`;
       const orders = [];
+      let cursor = null;
       let guard = 0;
-      while (path && guard < 20) {
+      let hasNext = true;
+      while (hasNext && guard < 50) {
         guard += 1;
-        const { body, linkHeader } = await shopifyRest(path);
-        (body.orders || []).forEach((o) => {
+        const data = await shopifyGraphQL(ORDERS_QUERY, { cursor, searchQuery });
+        const conn = data.orders;
+        (conn.edges || []).forEach(({ node: o }) => {
+          const summary = classifyOrderSummary(o.customerJourneySummary);
           orders.push({
             orderNumber: o.name,
-            orderValueExclShipping: o.current_subtotal_price != null ? Number(o.current_subtotal_price) : null,
-            totalPrice: o.total_price != null ? Number(o.total_price) : null,
-            createdAt: o.created_at,
-            cancelled: !!o.cancelled_at,
-            financialStatus: o.financial_status,
+            orderValueExclShipping: o.currentSubtotalPriceSet && o.currentSubtotalPriceSet.shopMoney
+              ? Number(o.currentSubtotalPriceSet.shopMoney.amount) : null,
+            createdAt: o.createdAt,
+            cancelled: !!o.cancelledAt,
+            orderSummaryType: summary.type,
+            orderSummaryDisplay: summary.display,
+            campaignMatched: summary.campaignMatched || null,
+            campaignRaw: summary.campaignRaw || null,
           });
         });
-        const next = linkHeader && /<([^>]+)>;\s*rel="next"/.exec(linkHeader);
-        path = next ? next[1].replace(`https://${SHOPIFY_STORE_DOMAIN}/admin/api/${API_VERSION}/`, '') : null;
+        hasNext = conn.pageInfo && conn.pageInfo.hasNextPage;
+        cursor = conn.pageInfo && conn.pageInfo.endCursor;
       }
 
       const payload = { startDate, endDate, generatedAt: new Date().toISOString(), count: orders.length, orders };

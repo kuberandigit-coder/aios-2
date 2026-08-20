@@ -863,7 +863,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </header>
 
 <div style="background:#eef3ff;border:1px solid #c7d7ff;border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:12.5px;color:#1a2233;line-height:1.7;">
-  <strong>Building this step by step, per explicit instruction.</strong> Step 1 (below, LIVE): Order Number + Order Value (Excl. Shipping), pulled directly from the Shopify Admin API &mdash; NOT Postgres. The remaining columns (Campaign, Attributed Date, Conv. Value Added, Split?) stay blocked until a Google Ads transaction-level/delta data source exists &mdash; see the notice further down for exactly what's missing and why.
+  <strong>Building this step by step, per explicit instruction.</strong> Step 1 (LIVE): Order Number + Order Value (Excl. Shipping). Step 2 (LIVE): Order Summary &mdash; where each order's traffic came from, using Shopify's own "Conversion summary" data (<code>customerJourneySummary</code>), matched against Jefri's 5 named Google Ads campaigns where the UTM tags confidently identify one. Both pulled directly from the Shopify Admin API &mdash; NOT Postgres. <strong>Attributed Date and Conv. Value Added (Split?)</strong> stay blocked until a Google Ads transaction-level/delta data source exists &mdash; see the notice further down for exactly what's missing and why.
 </div>
 
 <div class="tablebox">
@@ -877,10 +877,11 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
         <tr>
           <th style="padding:10px 12px;">Order Number</th>
           <th class="num" style="padding:10px 12px;">Order Value (Excl. Shipping)</th>
+          <th style="padding:10px 12px;">Order Summary</th>
           <th style="padding:10px 12px;">Created At</th>
         </tr>
       </thead>
-      <tbody id="r8tbody"><tr><td colspan="3" class="loading">Loading orders from Shopify&hellip;</td></tr></tbody>
+      <tbody id="r8tbody"><tr><td colspan="4" class="loading">Loading orders from Shopify&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r8empty" style="display:none;"></div>
@@ -902,6 +903,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
 <div class="footnotes">
   <strong>Order Value (Excl. Shipping):</strong> Shopify's <code>current_subtotal_price</code> field &mdash; spot-checked against a real live order (subtotal &euro;16.88 + shipping &euro;10.57 = total &euro;27.45, confirmed matching exactly). Reflects refunds/edits since the order was placed.<br>
+  <strong>Order Summary:</strong> Shopify's own <code>customerJourneySummary.firstVisit</code> &mdash; the exact same "Conversion summary" data shown on each order's admin page, including UTM source/medium/campaign/term. <strong>Green pill</strong> = matched to one of Jefri's 5 named Google Ads campaigns with confidence (UTM fragments uniquely identify it) &middot; <strong>amber pill</strong> = clearly Google Ads (source="Google") but the UTM tags don't confidently match one specific named campaign &mdash; shown as the raw tags instead of guessing &middot; <strong>blue</strong> = Meta Ads &middot; <strong>purple</strong> = tagged traffic from another platform &middot; <strong>grey</strong> = Direct or Organic/referrer traffic. Hover any pill to see the raw UTM tags behind it. This is NOT the blocked Google Ads transaction-level data (that still doesn't exist) &mdash; it's a separate, real, live signal Shopify itself already tracks per order.<br>
   <strong>Data source:</strong> Shopify Admin REST API (<code>ledsone-de.myshopify.com/admin/api/2024-10/orders.json</code>), fetched directly server-side per explicit instruction &mdash; NOT Postgres &middot; via <code>/api/requirement?fn=jefri-req8-orders</code>.<br>
   <strong>Full discovery record:</strong> <code>evidence/jefri/req-08-t08-discovery.md</code> and <code>evidence/jefri/req-08-t08-postgres-source-mapping.md</code>.
 </div>
@@ -2111,7 +2113,7 @@ async function r8Load(force){
   chip.style.display = '';
   chip.textContent = 'Loading live orders from Shopify…';
   chip.className = 'chip live';
-  document.getElementById('r8tbody').innerHTML = '<tr><td colspan="3" class="loading">Loading orders from Shopify…</td></tr>';
+  document.getElementById('r8tbody').innerHTML = '<tr><td colspan="4" class="loading">Loading orders from Shopify…</td></tr>';
   try {
     const url = '/api/requirement?fn=jefri-req8-orders&startDate=' + encodeURIComponent(startDate)
       + '&endDate=' + encodeURIComponent(endDate) + (force ? '&refresh=1' : '');
@@ -2122,7 +2124,7 @@ async function r8Load(force){
     chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString();
     r8Render();
   } catch (e) {
-    document.getElementById('r8tbody').innerHTML = '<tr><td colspan="3" class="empty">Error: ' + esc(e.message) + '</td></tr>';
+    document.getElementById('r8tbody').innerHTML = '<tr><td colspan="4" class="empty">Error: ' + esc(e.message) + '</td></tr>';
     chip.textContent = 'Unable to load — ' + e.message;
     chip.className = 'chip stale';
   } finally {
@@ -2134,6 +2136,27 @@ function r8FilteredRows(){
   const q = document.getElementById('r8q').value.trim().toLowerCase();
   if (!q) return R8_ALL;
   return R8_ALL.filter(function(r){ return (r.orderNumber||'').toLowerCase().includes(q); });
+}
+
+function r8SummaryPill(r){
+  const colors = {
+    'Google Ads': r.campaignMatched ? '#0a7d4f' : '#b7791f',
+    'Meta Ads': '#1f5eff',
+    'Direct': '#5b6577',
+    'Organic/Other': '#5b6577',
+    'Other (tagged)': '#9a1e9a',
+  };
+  const bg = {
+    'Google Ads': r.campaignMatched ? '#e6f6ec' : '#fdf3e0',
+    'Meta Ads': '#eaf1ff',
+    'Direct': '#eef1f6',
+    'Organic/Other': '#eef1f6',
+    'Other (tagged)': '#f7e8f7',
+  };
+  const type = r.orderSummaryType || 'Organic/Other';
+  const c = colors[type] || '#5b6577';
+  const b = bg[type] || '#eef1f6';
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:999px;font-weight:600;font-size:11.5px;background:' + b + ';color:' + c + ';" title="' + esc(r.campaignRaw || '') + '">' + esc(r.orderSummaryDisplay || '') + '</span>';
 }
 
 function r8Render(){
@@ -2159,6 +2182,7 @@ function r8Render(){
     return '<tr>' +
       '<td style="padding:8px 12px;">' + esc(r.orderNumber) + (r.cancelled ? ' <span class="t1-na">(cancelled)</span>' : '') + '</td>' +
       '<td class="num" style="padding:8px 12px;">' + eur(r.orderValueExclShipping) + '</td>' +
+      '<td style="padding:8px 12px;">' + r8SummaryPill(r) + '</td>' +
       '<td style="padding:8px 12px;">' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</td>' +
       '</tr>';
   }).join('');
