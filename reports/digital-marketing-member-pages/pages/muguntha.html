@@ -615,7 +615,7 @@ async function fetchJsonResilient(url, timeoutMs, retries){
 // endpoint (see fetchJsonResilient above) — the popup becomes an instant
 // read of already-loaded data instead of a fresh fetch. Sonya added
 // 2026-08-19, Sajeepan added same day — both use COST_POPUP_MEMBERS below.
-const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan']);
+const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan', 'kamsi', 'dilaksi']);
 const MEMBER_MONTH_DATA = {};
 function memberMonthKey(member, year, month){ return member + ':' + year + ':' + month; }
 
@@ -1572,10 +1572,16 @@ async function openCostPopup(member, year, month, monthLabel){
     const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
     // VAT removed 2026-08-19, Product Cost removed 2026-08-19, both per Kuberan.
     const total = Math.round((adsCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
+    // Kamsi/Dilaksi (SEO/Organic, added 2026-08-20) have no ad spend — their
+    // base cost is a shared SEO tool-cost share, not Ads Cost, so label and
+    // Own/DM breakdown only make sense for HAS_DM members (Sonya/Sajeepan).
+    const isAdsRole = HAS_DM.has(member);
+    const baseCostLabel = isAdsRole ? 'Ads Cost' : 'SEO Tool Cost';
+    const baseCostNote = isAdsRole ? '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')' : null;
 
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
     document.getElementById('cbBody').innerHTML =
-      row('Ads Cost', adsCost, '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')') +
+      row(baseCostLabel, adsCost, baseCostNote) +
       row('Transaction Fee', d.transactionFee) +
       row('Discount', d.discounts) +
       row('Refund', d.refunds) +
