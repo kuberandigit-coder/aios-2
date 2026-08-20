@@ -52,6 +52,30 @@ body.sb-open .t-collapse-btn svg{transform:rotate(180deg);}
 .t-brand-txt b{display:block;color:#fff;font-size:15px;letter-spacing:.2px;white-space:nowrap;}
 .t-brand-txt span{display:block;font-size:10px;color:#7f8bab;letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;}
 
+.t-navlabel{font-size:10px;color:#5e6b8a;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:14px 10px 8px;white-space:nowrap;}
+.t-navlist{list-style:none;display:flex;flex-direction:column;gap:3px;margin:0;padding:0;}
+.t-navlist a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;color:var(--sb-text);text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease;border:1px solid transparent;}
+.t-navlist a .ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:.85;}
+.t-navlist a .ic svg{width:18px;height:18px;}
+.t-navlist a:hover{background:rgba(255,255,255,.06);color:#fff;transform:translateX(2px);}
+.t-navlist a.on{background:rgba(31,94,255,.16);color:#fff;border-color:rgba(31,94,255,.35);box-shadow:inset 3px 0 0 var(--accent);}
+.t-navlist a.on .ic{opacity:1;color:#8fb2ff;}
+.t-navlist a span.lbl{white-space:normal;line-height:1.25;}
+.tabpanel{display:none;}
+.tabpanel.on{display:block;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:16px;}
+.card h2{font-size:15px;margin-bottom:14px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.pagelink{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px;background:#fafbfd;transition:border-color .15s,background .15s;}
+.pagelink:hover{border-color:var(--accent);background:var(--accent-soft);}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge.admin{background:var(--accent-soft);color:var(--accent);}
+.badge.staff{background:#eef1f6;color:var(--muted);}
+.pwbtn{padding:5px 12px;border:1px solid var(--accent);border-radius:7px;background:#fff;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600;}
+.pwbtn:hover{background:var(--accent-soft);}
+.msg{font-size:12.5px;margin-top:10px;}
+.msg.ok{color:var(--good);}
+.msg.err{color:var(--bad);}
 .t-sidebar-spacer{flex:1;}
 .t-back{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:#dfe4ee;text-decoration:none;font-size:12.5px;font-weight:700;margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;cursor:pointer;}
 .t-back:hover{color:#fff;}
@@ -89,6 +113,12 @@ tbody tr:hover{background:var(--accent-soft);}
 tfoot td{padding:11px 14px;border-top:2px solid var(--line);font-weight:800;color:var(--ink);background:#f8f9fa;}
 .asin{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-weight:600;color:var(--ink);letter-spacing:.3px;}
 .asin-title{display:block;font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:2px;}
+.camp-name{font-weight:600;color:var(--ink);}
+.roas-pill{display:inline-block;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;}
+.roas-great{background:#e6f4ea;color:#137333;}
+.roas-ok{background:#e8f0fe;color:#1967d2;}
+.roas-warn{background:#fef3e2;color:#7d4e00;}
+.roas-bad{background:#fce8e6;color:#b31412;}
 </style>
 </head>
 <body>
@@ -102,6 +132,12 @@ tfoot td{padding:11px 14px;border-top:2px solid var(--line);font-weight:800;colo
     <div class="mark">D</div>
     <div class="t-brand-txt"><b>Dilaikshan</b><span>DM Admin</span></div>
   </div>
+
+  <div class="t-navlabel">Overview</div>
+  <ul class="t-navlist" id="tNavList">
+    <li><a href="#" data-tab="pages" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span class="lbl">Requirement Pages</span></a></li>
+    <li><a href="#" data-tab="users"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="lbl">Users</span></a></li>
+  </ul>
 
   <div class="t-sidebar-spacer"></div>
 
@@ -119,6 +155,25 @@ tfoot td{padding:11px 14px;border-top:2px solid var(--line);font-weight:800;colo
     </div>
   </div>
   <div class="t-topcontent">
+
+    <div class="tabpanel on" id="tabPanelPages">
+      <div class="card">
+        <h2>All Staff Requirement Pages</h2>
+        <div class="grid" id="pagesGrid"></div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tabPanelUsers">
+      <div class="card">
+        <h2>All Users</h2>
+        <table>
+          <thead><tr><th>Username</th><th>Display Name</th><th>Role</th><th>Last Login</th><th></th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+        <div class="msg" id="usersMsg"></div>
+      </div>
+    </div>
+
     <div class="tbox">
       <div class="tbar">
         <div><b>Amazon — ASIN Performance</b><span class="sub">Orders and sales by ASIN</span></div>
@@ -139,6 +194,36 @@ tfoot td{padding:11px 14px;border-top:2px solid var(--line);font-weight:800;colo
               <td>Total (<span id="totRows">0</span> ASINs)</td>
               <td class="num" id="totOrders">0</td>
               <td class="num" id="totSales">&pound;0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="tbox">
+      <div class="tbar">
+        <div><b>Amazon &mdash; Ad Campaign Performance</b><span class="sub">Spend, sales, ACOS and ROAS by campaign</span></div>
+        <span class="sample-tag">Sample data</span>
+      </div>
+      <div class="scroll">
+        <table id="campaignTable">
+          <thead>
+            <tr>
+              <th data-key="campaign">Campaign</th>
+              <th data-key="spend" class="num">Spend</th>
+              <th data-key="sales" class="num">Sales</th>
+              <th data-key="acos" class="num">ACOS</th>
+              <th data-key="roas" class="num">ROAS</th>
+            </tr>
+          </thead>
+          <tbody id="campaignBody"></tbody>
+          <tfoot>
+            <tr>
+              <td>Total (<span id="campRows">0</span> campaigns)</td>
+              <td class="num" id="campSpend">&pound;0.00</td>
+              <td class="num" id="campSales">&pound;0.00</td>
+              <td class="num" id="campAcos">0.0%</td>
+              <td class="num" id="campRoas">0.00</td>
             </tr>
           </tfoot>
         </table>
@@ -169,12 +254,18 @@ function fmtMoney(n) {
   return '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function renderAsinTable() {
-  var rows = SAMPLE_ROWS.slice().sort(function (a, b) {
-    var x = a[asinSort.key], y = b[asinSort.key];
+// Sorts a copy of rows by st.key/st.dir; strings compare alphabetically,
+// everything else numerically. Shared by both sample tables.
+function sortRows(rows, st) {
+  return rows.slice().sort(function (a, b) {
+    var x = a[st.key], y = b[st.key];
     var cmp = (typeof x === 'string') ? x.localeCompare(y) : x - y;
-    return asinSort.dir === 'asc' ? cmp : -cmp;
+    return st.dir === 'asc' ? cmp : -cmp;
   });
+}
+
+function renderAsinTable() {
+  var rows = sortRows(SAMPLE_ROWS, asinSort);
 
   document.getElementById('asinBody').innerHTML = rows.map(function (r) {
     return '<tr>' +
@@ -190,30 +281,98 @@ function renderAsinTable() {
   document.getElementById('totOrders').textContent = totOrders.toLocaleString('en-GB');
   document.getElementById('totSales').textContent = fmtMoney(totSales);
 
-  Array.prototype.forEach.call(document.querySelectorAll('#asinTable thead th'), function (th) {
+  markSorted('asinTable', asinSort);
+}
+
+// Paints the up/down arrow on whichever header a table is currently sorted by.
+function markSorted(tableId, st) {
+  Array.prototype.forEach.call(document.querySelectorAll('#' + tableId + ' thead th'), function (th) {
     th.classList.remove('sort-asc', 'sort-desc');
-    if (th.dataset.key === asinSort.key) th.classList.add(asinSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    if (th.dataset.key === st.key) th.classList.add(st.dir === 'asc' ? 'sort-asc' : 'sort-desc');
   });
 }
+
+// Second placeholder dataset -- Amazon Ads campaigns. Only spend and sales
+// are stored; ACOS and ROAS are derived below so the rows and the totals
+// row can never disagree. ARCHITECTURE.md lists an `amazon_campaigns`
+// schema (campaign + search-term data), so a real endpoint would return
+// this same {campaign,spend,sales} shape.
+var CAMPAIGN_ROWS = [
+  { campaign: 'SP - Downlights', spend: 842.30, sales: 4210.50 },
+  { campaign: 'SP - Smart Bulbs', spend: 610.75, sales: 2930.20 },
+  { campaign: 'SB - Brand Defence', spend: 395.10, sales: 2568.10 },
+  { campaign: 'SD - Retargeting', spend: 288.40, sales: 1124.70 },
+  { campaign: 'SP - Floodlights', spend: 201.90, sales: 807.60 },
+];
+CAMPAIGN_ROWS.forEach(function (r) {
+  r.acos = r.sales ? (r.spend / r.sales) * 100 : 0;
+  r.roas = r.spend ? r.sales / r.spend : 0;
+});
+
+var campSort = { key: 'sales', dir: 'desc' };
+
+function roasPill(roas) {
+  var cls = roas >= 5 ? 'roas-great' : roas >= 3.5 ? 'roas-ok' : roas >= 2 ? 'roas-warn' : 'roas-bad';
+  return '<span class="roas-pill ' + cls + '">' + roas.toFixed(2) + '</span>';
+}
+
+function renderCampaignTable() {
+  var rows = sortRows(CAMPAIGN_ROWS, campSort);
+
+  document.getElementById('campaignBody').innerHTML = rows.map(function (r) {
+    return '<tr>' +
+      '<td><span class="camp-name">' + r.campaign + '</span></td>' +
+      '<td class="num">' + fmtMoney(r.spend) + '</td>' +
+      '<td class="num">' + fmtMoney(r.sales) + '</td>' +
+      '<td class="num">' + r.acos.toFixed(1) + '%</td>' +
+      '<td class="num">' + roasPill(r.roas) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var totSpend = rows.reduce(function (t, r) { return t + r.spend; }, 0);
+  var totSales = rows.reduce(function (t, r) { return t + r.sales; }, 0);
+  document.getElementById('campRows').textContent = rows.length;
+  document.getElementById('campSpend').textContent = fmtMoney(totSpend);
+  document.getElementById('campSales').textContent = fmtMoney(totSales);
+  // Blended, not an average of the per-row rates -- a mean of ratios would
+  // over-weight small campaigns.
+  document.getElementById('campAcos').textContent = (totSales ? (totSpend / totSales) * 100 : 0).toFixed(1) + '%';
+  document.getElementById('campRoas').textContent = (totSpend ? totSales / totSpend : 0).toFixed(2);
+
+  markSorted('campaignTable', campSort);
+}
+
+// Shared click-to-sort wiring. textKey names the one column that reads
+// better A-Z; every other column starts descending (biggest first).
+// Clicking the active column flips its direction.
+function attachSort(tableId, sortState, render, textKey) {
+  Array.prototype.forEach.call(document.querySelectorAll('#' + tableId + ' thead th'), function (th) {
+    th.addEventListener('click', function () {
+      var key = th.dataset.key;
+      if (sortState.key === key) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.key = key;
+        sortState.dir = key === textKey ? 'asc' : 'desc';
+      }
+      render();
+    });
+  });
+  render();
+}
+
+// Same staff-page list used on kuberan.html's admin overview.
+var STAFF_PAGES = [
+  ['jefri','Jefri'],['dilaksi','Dilaksi'],['kamsi','Kamsi'],['mahima','Mahima'],
+  ['thasitha','Thasitha'],['sukirtha','Sukirtha'],['sonya','Sonya'],['sajeepan','Sajeepan'],
+  ['theekshy','Theekshy'],['thivajini','Thivajini'],['hetheesha','Hetheesha'],['jakshan','Jakshan']
+];
 
 (function initUI() {
   var u = window.__dmUser || {};
 
-  Array.prototype.forEach.call(document.querySelectorAll('#asinTable thead th'), function (th) {
-    th.addEventListener('click', function () {
-      var key = th.dataset.key;
-      // Same-column click flips direction; a new column starts descending
-      // (highest orders/sales first), except ASIN which reads better A-Z.
-      if (asinSort.key === key) {
-        asinSort.dir = asinSort.dir === 'asc' ? 'desc' : 'asc';
-      } else {
-        asinSort.key = key;
-        asinSort.dir = key === 'asin' ? 'asc' : 'desc';
-      }
-      renderAsinTable();
-    });
-  });
-  renderAsinTable();
+  attachSort('asinTable', asinSort, renderAsinTable, 'asin');
+  attachSort('campaignTable', campSort, renderCampaignTable, 'campaign');
 
   document.getElementById('whoLbl').textContent = 'Signed in as ' + (u.display_name || u.username || '') + ' (admin)';
 
@@ -229,7 +388,89 @@ function renderAsinTable() {
     xhr.onload = function () { document.documentElement.classList.remove('dm-ready'); setTimeout(function () { window.location.replace('../login.html'); }, 160); };
     xhr.send(null);
   });
+
+  var grid = document.getElementById('pagesGrid');
+  STAFF_PAGES.forEach(function (p) {
+    var a = document.createElement('a');
+    a.className = 'pagelink';
+    a.href = p[0] + '.html';
+    a.textContent = p[1];
+    grid.appendChild(a);
+  });
+  var muguntha = document.createElement('a');
+  muguntha.className = 'pagelink';
+  muguntha.href = 'muguntha.html';
+  muguntha.textContent = 'Muguntha (Admin Dashboard)';
+  grid.appendChild(muguntha);
+
+  document.querySelectorAll('#tNavList a[data-tab]').forEach(function (tab) {
+    tab.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.querySelectorAll('#tNavList a').forEach(function (t) { t.classList.remove('on'); });
+      document.querySelectorAll('.tabpanel').forEach(function (p) { p.classList.remove('on'); });
+      tab.classList.add('on');
+      var key = tab.getAttribute('data-tab');
+      document.getElementById(key === 'users' ? 'tabPanelUsers' : 'tabPanelPages').classList.add('on');
+      if (key === 'users') loadUsers();
+    });
+  });
 })();
+
+function loadUsers() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/auth?action=list-users', true);
+  xhr.withCredentials = true;
+  xhr.onload = function () {
+    var msg = document.getElementById('usersMsg');
+    if (xhr.status !== 200) { msg.textContent = 'Failed to load users.'; msg.className = 'msg err'; return; }
+    var data = JSON.parse(xhr.responseText);
+    if (!data.success) { msg.textContent = data.error || 'Failed to load users.'; msg.className = 'msg err'; return; }
+    msg.textContent = ''; msg.className = 'msg';
+    var body = document.getElementById('usersBody');
+    body.innerHTML = '';
+    data.users.forEach(function (u2) {
+      var tr = document.createElement('tr');
+      var last = u2.last_login_at ? new Date(u2.last_login_at).toLocaleString() : '—';
+      tr.innerHTML =
+        '<td>' + u2.username + '</td>' +
+        '<td>' + (u2.display_name || '') + '</td>' +
+        '<td><span class="badge ' + (u2.role === 'admin' ? 'admin' : 'staff') + '">' + u2.role + '</span></td>' +
+        '<td>' + last + '</td>' +
+        '<td></td>';
+      var td = tr.lastElementChild;
+      var btn = document.createElement('button');
+      btn.className = 'pwbtn';
+      btn.textContent = 'Change Password';
+      btn.addEventListener('click', function () { changePassword(u2.username); });
+      td.appendChild(btn);
+      body.appendChild(tr);
+    });
+  };
+  xhr.send(null);
+}
+
+function changePassword(username) {
+  var pw = window.prompt('New password for "' + username + '" (min 8 characters):');
+  if (!pw) return;
+  if (pw.length < 8) { window.alert('Password must be at least 8 characters.'); return; }
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/auth?action=update-password', true);
+  xhr.withCredentials = true;
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function () {
+    var msg = document.getElementById('usersMsg');
+    if (xhr.status === 200) {
+      msg.textContent = 'Password updated for ' + username + '.';
+      msg.className = 'msg ok';
+    } else {
+      var data = {};
+      try { data = JSON.parse(xhr.responseText); } catch (e) {}
+      msg.textContent = data.error || 'Failed to update password.';
+      msg.className = 'msg err';
+    }
+  };
+  xhr.send(JSON.stringify({ target_username: username, new_password: pw }));
+}
 </script>
 </body>
 </html>
