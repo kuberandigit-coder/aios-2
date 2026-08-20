@@ -872,17 +872,15 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <span id="r8cnt" style="margin-left:auto;">&ndash;</span>
   </div>
   <div class="scroll" style="max-height:640px;overflow-y:auto;">
-    <table>
+    <table style="min-width:0;">
       <thead style="position:sticky;top:0;z-index:5;">
         <tr>
-          <th>Order Number</th>
-          <th class="num">Order Value (Excl. Shipping)</th>
-          <th class="num">Order Total (Incl. Shipping)</th>
-          <th>Created At</th>
-          <th>Financial Status</th>
+          <th style="padding:10px 12px;">Order Number</th>
+          <th class="num" style="padding:10px 12px;">Order Value (Excl. Shipping)</th>
+          <th style="padding:10px 12px;">Created At</th>
         </tr>
       </thead>
-      <tbody id="r8tbody"><tr><td colspan="5" class="loading">Loading orders from Shopify&hellip;</td></tr></tbody>
+      <tbody id="r8tbody"><tr><td colspan="3" class="loading">Loading orders from Shopify&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r8empty" style="display:none;"></div>
@@ -2113,7 +2111,7 @@ async function r8Load(force){
   chip.style.display = '';
   chip.textContent = 'Loading live orders from Shopify…';
   chip.className = 'chip live';
-  document.getElementById('r8tbody').innerHTML = '<tr><td colspan="5" class="loading">Loading orders from Shopify…</td></tr>';
+  document.getElementById('r8tbody').innerHTML = '<tr><td colspan="3" class="loading">Loading orders from Shopify…</td></tr>';
   try {
     const url = '/api/requirement?fn=jefri-req8-orders&startDate=' + encodeURIComponent(startDate)
       + '&endDate=' + encodeURIComponent(endDate) + (force ? '&refresh=1' : '');
@@ -2124,7 +2122,7 @@ async function r8Load(force){
     chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString();
     r8Render();
   } catch (e) {
-    document.getElementById('r8tbody').innerHTML = '<tr><td colspan="5" class="empty">Error: ' + esc(e.message) + '</td></tr>';
+    document.getElementById('r8tbody').innerHTML = '<tr><td colspan="3" class="empty">Error: ' + esc(e.message) + '</td></tr>';
     chip.textContent = 'Unable to load — ' + e.message;
     chip.className = 'chip stale';
   } finally {
@@ -2159,11 +2157,9 @@ function r8Render(){
   emptyEl.style.display = 'none';
   tbody.innerHTML = rows.map(function(r){
     return '<tr>' +
-      '<td>' + esc(r.orderNumber) + (r.cancelled ? ' <span class="t1-na">(cancelled)</span>' : '') + '</td>' +
-      '<td class="num">' + eur(r.orderValueExclShipping) + '</td>' +
-      '<td class="num">' + eur(r.totalPrice) + '</td>' +
-      '<td>' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</td>' +
-      '<td>' + esc(r.financialStatus) + '</td>' +
+      '<td style="padding:8px 12px;">' + esc(r.orderNumber) + (r.cancelled ? ' <span class="t1-na">(cancelled)</span>' : '') + '</td>' +
+      '<td class="num" style="padding:8px 12px;">' + eur(r.orderValueExclShipping) + '</td>' +
+      '<td style="padding:8px 12px;">' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</td>' +
       '</tr>';
   }).join('');
   document.getElementById('r8cnt').textContent = rows.length.toLocaleString() + ' of ' + R8_ALL.length.toLocaleString();
