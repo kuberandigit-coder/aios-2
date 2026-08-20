@@ -56,5 +56,34 @@ Entire Google Ads side of this requirement (Transaction ID, Delta, bid adjustmen
 ## Deployment
 **NOT APPLICABLE** — no code exists to deploy.
 
-## Final PASS/FAIL
+## Final PASS/FAIL (as of original discovery)
 **BLOCKED.**
+
+---
+
+# UPDATE — 2026-08-20: built and deployed incrementally, live in production
+
+**Status: PARTIAL PASS.** Built step by step per Kuberan's explicit instruction, using real data Kuberan supplied that the original discovery didn't have access to (Google Ads bid-bonus € values, only available via the Google Ads UI, not Postgres).
+
+## What's live now
+1. **Order Number + Order Value (Excl. Shipping)** — direct from Shopify Admin API, not Postgres.
+2. **Order Summary** — Shopify's own `customerJourneySummary` (Conversion Summary data), classified Google Ads/Meta Ads/Direct/Organic/Other, campaign-matched where UTM tags confidently identify one of the known campaigns.
+3. **Campaign + Attributed Date** — Method 2 (inferred), matching each order's value against `google_ads.product_performance` (`conversions=1` rows) minus real campaign-specific bonus amounts, labeled Matched/Ambiguous/No match. Proven with two independent, exact-to-the-cent real-order matches verified in Postgres before any code was written.
+
+## Real validation (44 real orders, 19-20 Aug 2026)
+20 Matched, 2 Ambiguous, 22 No match. Filters added: Order Summary type, Attribution status, Campaign (dynamic), plus CSV export.
+
+## Files added this update
+`evidence/jefri/req-08-t08-order-summary-discovery.md`, `evidence/jefri/req-08-t08-attribution-discovery.md`
+
+## Known Limitations (updated)
+- Method 1 (Transaction ID) still confirmed unavailable — unchanged from original discovery.
+- Matched `product_performance` rows are NOT necessarily the literal product purchased (verified on a real order) — matching is Campaign+Date+Value only.
+- Steps 8-10 (per-campaign/date row splitting + reconciliation) and Step 12 (Attributed-Date-based filtering) not yet built.
+- "No match" (22 of 44 orders) is an honest inference-method limitation, not a data error.
+
+## Deployment (updated)
+**LIVE** on `dm-dashboard.vintageinterior.co.uk` — `pages/jefri.html` Requirement 8 tab, `api/requirement.js` `jefriReq8HandlerModule`.
+
+## Final PASS/FAIL (current)
+**PARTIAL PASS** — Steps 1-3 implemented, deployed, and validated against real data. Steps 8-10, 12 remain unbuilt. Method 1 remains genuinely unavailable.

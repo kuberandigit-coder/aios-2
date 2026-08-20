@@ -27,5 +27,27 @@ Pick one (or more) of:
 - `reports/jefri/req-08-t08-report.md`
 - `vercel/jefri/req-08-t08-vercel-deployment.md`
 
-## Next step
+## Next step (as of original discovery)
 Awaiting a decision from GPT/Jefri on which unblock path (above) to pursue. No further action will be taken on T-08 until real data becomes available or the requirement is explicitly descoped — per the governing prompt's own instruction not to invent business logic or fabricate data to force a PASS.
+
+---
+
+# UPDATE — 2026-08-20 (same day, later): built incrementally, live in production
+
+Kuberan chose to build this incrementally ("let's do one by one") rather than wait for a full unblock decision, and supplied two pieces of real data the original discovery didn't have: (1) `google_ads.campaigns.customer_acquisition` exists and confirmed these campaigns use Google Ads' "New Customer Acquisition" bidding, and (2) the actual bonus € amounts per campaign, taken directly from the Google Ads UI (not stored anywhere in Postgres).
+
+**Current live status:**
+- **Step 1 (Order Number + Order Value Excl. Shipping):** LIVE, direct from Shopify Admin API.
+- **Step 2 (Order Summary):** LIVE, from Shopify's own `customerJourneySummary` (Conversion Summary data) — a real per-order signal Shopify tracks that the original discovery didn't know to look for (it's not in Postgres, it's a Shopify-side feature).
+- **Step 3 (Campaign + Attributed Date, Method 2):** LIVE — NOT via `Current Update − Last Update` (that source still doesn't exist), but via a different, real mechanism: matching each order's exact value against `google_ads.product_performance` (`conversions=1` rows, much finer grain than `campaign_performance`) minus the real bonus amounts Kuberan supplied. Proven with two independent exact-to-the-cent matches on real orders BEFORE any code was written. Labeled Matched/Ambiguous/No match — never a silent guess.
+
+**Still not built:** Steps 8-10 (one row per campaign/date split, split-sum reconciliation) and Step 12 (filtering by Attributed Date specifically, rather than order created date). Method 1 (Transaction ID) remains genuinely unavailable — that part of the original BLOCKED finding is unchanged and still accurate.
+
+**Files added this update:**
+- `evidence/jefri/req-08-t08-order-summary-discovery.md`
+- `evidence/jefri/req-08-t08-attribution-discovery.md`
+
+**Deployed to:** `pages/jefri.html` (Requirement 8 tab), `api/requirement.js` (`jefriReq8HandlerModule`, `fn=jefri-req8-orders`). Live on `dm-dashboard.vintageinterior.co.uk`, verified via direct API calls matching the two hand-checked real orders exactly.
+
+## Next step (current)
+Ask Kuberan/Jefri whether to build Steps 8-10 (Split row explosion + reconciliation) and Step 12 (Attributed Date filter) next, or consider the current 3-step build sufficient for now.
