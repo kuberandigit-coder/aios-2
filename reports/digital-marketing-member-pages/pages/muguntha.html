@@ -619,13 +619,13 @@ const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan']);
 const MEMBER_MONTH_DATA = {};
 function memberMonthKey(member, year, month){ return member + ':' + year + ':' + month; }
 
-async function fetchGroupSales(year, member, month, force){
+async function fetchGroupSales(year, member, month, force, timeoutMs){
   const isJefri = member === 'jefri';
   const endpoint = isJefri ? (year === '2025' ? 'salesde25' : 'sales') : (year === '2025' ? 'sales25' : 'salesuk');
   const paramName = isJefri ? 'staff' : 'group';
   const paramValue = isJefri ? 'jeffri-ads' : member;
   const url = '/api/' + endpoint + '?' + paramName + '=' + paramValue + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
-  const data = await fetchJsonResilient(url, 12000, 1);
+  const data = await fetchJsonResilient(url, timeoutMs || 12000, 1);
   if (!data || !data.success) return null;
   if (!data.combinedSummary) return 0;
   if (COST_POPUP_MEMBERS.has(member)) {
@@ -642,9 +642,9 @@ async function fetchGroupSales(year, member, month, force){
   return isJefri ? data.combinedSummary.orderTotalSum : data.combinedSummary.netSales;
 }
 
-async function fetchCost(member, month, force){
+async function fetchCost(member, month, force, timeoutMs){
   const url = '/api/muguntha?employee=' + member + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
-  const data = await fetchJsonResilient(url, 12000, 1);
+  const data = await fetchJsonResilient(url, timeoutMs || 12000, 1);
   if (!data || !data.success) return { ownCost: null, dmSonyaProductCost: null, dmTotalCost: null, totalCost: null };
   const dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
   if (COST_POPUP_MEMBERS.has(member)) {
@@ -875,10 +875,14 @@ async function loadAll(member, idSuffix, force){
 
     // Phase 2: live month(s) — runs after the table is already visible, so
     // the 30-90s live Shopify scan no longer blocks the other 19 months.
+    // Uses a much longer timeout (100s + 1 retry) than phase 1's default
+    // 12s — the live month's scan has been confirmed to genuinely take
+    // 36-90s+, so the default 12s+12s timeout was giving up and showing
+    // "N/A" for a real (just slow) number. Fixed 2026-08-20 per Kuberan.
     await Promise.all(LIVE_2026.map(async (m) => {
       const [sales2026, cost2026] = await Promise.all([
-        fetchGroupSales('2026', member, m, force),
-        fetchCost(member, m, force),
+        fetchGroupSales('2026', member, m, force, 100000),
+        fetchCost(member, m, force, 100000),
       ]);
       sales26ByMonth[m] = sales2026;
       cost26[m] = cost2026;
