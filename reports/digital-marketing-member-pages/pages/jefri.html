@@ -863,7 +863,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </header>
 
 <div style="background:#eef3ff;border:1px solid #c7d7ff;border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:12.5px;color:#1a2233;line-height:1.7;">
-  <strong>Building this step by step, per explicit instruction.</strong> Step 1 (LIVE): Order Number + Order Value (Excl. Shipping). Step 2 (LIVE): Order Summary &mdash; where each order's traffic came from, using Shopify's own "Conversion summary" data (<code>customerJourneySummary</code>), matched against Jefri's 5 named Google Ads campaigns where the UTM tags confidently identify one. Both pulled directly from the Shopify Admin API &mdash; NOT Postgres. <strong>Attributed Date and Conv. Value Added (Split?)</strong> stay blocked until a Google Ads transaction-level/delta data source exists &mdash; see the notice further down for exactly what's missing and why.
+  <strong>Building this step by step, per explicit instruction.</strong> Step 1 (LIVE): Order Number + Order Value (Excl. Shipping), from Shopify. Step 2 (LIVE): Order Summary, from Shopify's own Conversion Summary data. Step 3 (LIVE): Campaign + Attributed Date &mdash; matched from PostgreSQL using each order's exact value against <code>google_ads.product_performance</code> (per-product granularity, <code>conversions=1</code> rows only) minus that campaign's known "New Customer"/"High Value Customer" bid bonus, supplied directly for all 16 currently-active campaigns. This is <strong>Method 2, inferred</strong> &mdash; not Transaction ID passthrough (still doesn't exist) &mdash; so results are labeled <strong>Matched</strong> (exactly one candidate), <strong>Ambiguous</strong> (more than one, shown for review), or <strong>No match</strong>. See the notice further down for the full method and its real limitations.
 </div>
 
 <div class="tablebox">
@@ -878,26 +878,24 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
           <th style="padding:10px 12px;">Order Number</th>
           <th class="num" style="padding:10px 12px;">Order Value (Excl. Shipping)</th>
           <th style="padding:10px 12px;">Order Summary</th>
+          <th style="padding:10px 12px;">Campaign (Attribution Match)</th>
+          <th style="padding:10px 12px;">Attributed Date</th>
           <th style="padding:10px 12px;">Created At</th>
         </tr>
       </thead>
-      <tbody id="r8tbody"><tr><td colspan="4" class="loading">Loading orders from Shopify&hellip;</td></tr></tbody>
+      <tbody id="r8tbody"><tr><td colspan="6" class="loading">Loading orders from Shopify&hellip;</td></tr></tbody>
     </table>
   </div>
   <div class="empty" id="r8empty" style="display:none;"></div>
 </div>
 
-<div style="background:#fdecea;border:1px solid #f5c6c6;border-radius:12px;padding:18px 22px;margin:18px 0;">
-  <div style="font-size:14px;font-weight:800;color:#c62828;margin-bottom:8px;">&#9888; The remaining columns (Campaign, Attributed Date, Conv. Value, Split?) cannot be built yet &mdash; required data does not exist in the database</div>
-  <div style="font-size:13px;color:#3a2323;line-height:1.8;">
-    A full read-only PostgreSQL discovery (whole-database search, not just one schema) confirmed that none of the following exist anywhere in the connected database:
-    <ul style="margin:10px 0 10px 20px;padding:0;">
-      <li><strong>Google Ads Transaction ID / order-level conversion data</strong> &mdash; only campaign+date aggregate totals exist (<code>google_ads.campaign_performance</code>), with no per-order breakdown. This is the exact match method the requirement needs and prefers.</li>
-      <li><strong>A historical/versioned conversion snapshot</strong> to compute a "Current Update &minus; Last Update" delta &mdash; the aggregate table is overwritten in place, not historized, so there's no fallback method either.</li>
-      <li><strong>Bid-strategy bonus data</strong> (New Customer bonus, High Value Customer bonus, etc.) &mdash; needed to adjust deltas before matching, if the delta method were ever usable.</li>
-      <li><strong>UTM tracking data</strong> on Shopify orders &mdash; needed for the "Order Summary" column (UTM Term / Direct / Organic / Other), independent of the Google Ads gaps above.</li>
-    </ul>
-    No numbers, deltas, or attribution have been invented or estimated to fill this gap.
+<div style="background:#eef3ff;border:1px solid #c7d7ff;border-radius:12px;padding:18px 22px;margin:18px 0;">
+  <div style="font-size:14px;font-weight:800;color:#1f5eff;margin-bottom:8px;">How Campaign + Attributed Date matching actually works (Method 2, inferred)</div>
+  <div style="font-size:13px;color:#1a2233;line-height:1.8;">
+    <strong>Transaction ID passthrough (Method 1, exact) is still not available</strong> &mdash; confirmed absent from every Google Ads table in this database. This column uses <strong>Method 2</strong> instead: for each order, its exact value (excl. shipping) is compared against <code>google_ads.product_performance</code> rows &mdash; per-campaign, per-date, per-product conversion values &mdash; restricted to rows where <code>conversions = 1</code> (so the value corresponds to exactly one order, not several summed together). A match is counted when that row's <code>conversion_value</code> equals the order's value either exactly, or exactly minus that campaign's known bid-strategy bonus (Google Ads' "New Customer Acquisition" goal adds a bonus on top of the real order value &mdash; confirmed via <code>campaigns.customer_acquisition = 'BID_HIGHER_FOR_NEW_CUSTOMER'</code> on these campaigns; the exact &euro; bonus amounts aren't stored in Postgres, they were supplied directly from the Google Ads UI for all 16 currently-active campaigns).<br><br>
+    <strong>Why not <code>campaign_performance</code> (the campaign+date aggregate table)?</strong> Tested first &mdash; it sums every order that converted in a campaign that day into one number, so exact-value matching against it almost never works (confirmed: searched one real order's exact value across every <code>conversion_value</code> column in the whole account, all-time &mdash; zero matches). Switching to product-level rows with <code>conversions=1</code> is what made real matches possible.<br><br>
+    <strong>Important limitation:</strong> the matched row's product is <em>not necessarily</em> what the customer actually bought &mdash; verified on a real order where the matched product differed from the order's real line item. Google Ads Shopping/PMax can attribute a conversion's value to whichever product ad was last clicked, not what ended up in the cart. So matching is done on <strong>Campaign + Date + Value only</strong>, never on product identity.<br><br>
+    <strong>This is best-fit inference, not proof</strong> (per the requirement's own Step 7) &mdash; <strong>Matched</strong> = exactly one candidate found, shown directly &middot; <strong>Ambiguous</strong> = more than one candidate matched the same value, all shown for manual review rather than silently picking one &middot; <strong>No match</strong> = no campaign/date candidate found for that order's value in the window searched (order date &minus;1 to +3 days). On real data (19&ndash;20 Aug 2026, 44 orders): 20 Matched, 2 Ambiguous, 22 No match.
   </div>
 </div>
 
@@ -2113,7 +2111,7 @@ async function r8Load(force){
   chip.style.display = '';
   chip.textContent = 'Loading live orders from Shopify…';
   chip.className = 'chip live';
-  document.getElementById('r8tbody').innerHTML = '<tr><td colspan="4" class="loading">Loading orders from Shopify…</td></tr>';
+  document.getElementById('r8tbody').innerHTML = '<tr><td colspan="6" class="loading">Loading orders from Shopify…</td></tr>';
   try {
     const url = '/api/requirement?fn=jefri-req8-orders&startDate=' + encodeURIComponent(startDate)
       + '&endDate=' + encodeURIComponent(endDate) + (force ? '&refresh=1' : '');
@@ -2124,7 +2122,7 @@ async function r8Load(force){
     chip.textContent = 'Live · ' + new Date(data.generatedAt).toLocaleString();
     r8Render();
   } catch (e) {
-    document.getElementById('r8tbody').innerHTML = '<tr><td colspan="4" class="empty">Error: ' + esc(e.message) + '</td></tr>';
+    document.getElementById('r8tbody').innerHTML = '<tr><td colspan="6" class="empty">Error: ' + esc(e.message) + '</td></tr>';
     chip.textContent = 'Unable to load — ' + e.message;
     chip.className = 'chip stale';
   } finally {
@@ -2159,6 +2157,30 @@ function r8SummaryPill(r){
   return '<span style="display:inline-block;padding:3px 10px;border-radius:999px;font-weight:600;font-size:11.5px;background:' + b + ';color:' + c + ';" title="' + esc(r.campaignRaw || '') + '">' + esc(r.orderSummaryDisplay || '') + '</span>';
 }
 
+function r8AttributionCell(r){
+  const a = r.attribution;
+  if (!a || a.status === 'No match' || !a.candidates.length) {
+    return '<span class="t1-na">No match</span>';
+  }
+  if (a.status === 'Ambiguous') {
+    return '<span style="color:#b7791f;font-weight:600;">Ambiguous (' + a.candidates.length + ' candidates)</span>' +
+      '<div style="font-size:11px;color:#5b6577;margin-top:2px;">' +
+      a.candidates.map(function(c){ return esc(c.campaignName) + ' (' + eur(c.conversionValue) + ' − ' + eur(c.bonusApplied) + ' bonus)'; }).join('<br>') +
+      '</div>';
+  }
+  const c = a.candidates[0];
+  return '<span title="Conv. value ' + eur(c.conversionValue) + ' − ' + eur(c.bonusApplied) + ' (' + esc(c.bonusType) + ') bonus = order value, exact match">' + esc(c.campaignName) + '</span>';
+}
+
+function r8AttributedDateCell(r){
+  const a = r.attribution;
+  if (!a || !a.candidates.length) return '<span class="t1-na">—</span>';
+  if (a.status === 'Ambiguous') {
+    return a.candidates.map(function(c){ return esc(c.attributedDate); }).join(', ');
+  }
+  return esc(a.candidates[0].attributedDate);
+}
+
 function r8Render(){
   const rows = r8FilteredRows();
   const tbody = document.getElementById('r8tbody');
@@ -2183,6 +2205,8 @@ function r8Render(){
       '<td style="padding:8px 12px;">' + esc(r.orderNumber) + (r.cancelled ? ' <span class="t1-na">(cancelled)</span>' : '') + '</td>' +
       '<td class="num" style="padding:8px 12px;">' + eur(r.orderValueExclShipping) + '</td>' +
       '<td style="padding:8px 12px;">' + r8SummaryPill(r) + '</td>' +
+      '<td style="padding:8px 12px;">' + r8AttributionCell(r) + '</td>' +
+      '<td style="padding:8px 12px;">' + r8AttributedDateCell(r) + '</td>' +
       '<td style="padding:8px 12px;">' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</td>' +
       '</tr>';
   }).join('');
