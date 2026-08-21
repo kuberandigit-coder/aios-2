@@ -86,15 +86,6 @@ table.rt tr:hover td{background:#f9fafc;}
   <div class="card"><div class="l">Top Refund Reason</div><div class="v" id="kpiTopReason" style="font-size:13px;">&hellip;</div></div>
 </div>
 
-<div class="section">
-  <h2>Refund Reason Analysis</h2>
-  <div class="tablewrap">
-  <table class="rt">
-    <thead><tr><th>Refund Reason</th><th>Refunds</th><th>Orders</th><th>Qty</th><th>Amount</th><th>%</th></tr></thead>
-    <tbody id="reasonBody"></tbody>
-  </table>
-  </div>
-</div>
 
 <div class="section">
   <h2>Refund Line Items</h2>
@@ -105,6 +96,16 @@ table.rt tr:hover td{background:#f9fafc;}
     <label class="flabel">Reason
       <select id="reasonSel"><option value="all">All Reasons</option></select>
     </label>
+    <label class="flabel">Category
+      <select id="categorySel">
+        <option value="all">All Categories</option>
+        <option value="Postage Issue">Postage Issue</option>
+        <option value="Out of Stock">Out of Stock</option>
+        <option value="Warehouse Related Issue">Warehouse Related Issue</option>
+        <option value="Website Related Issue">Website Related Issue</option>
+        <option value="Customer Side Issue">Customer Side Issue</option>
+      </select>
+    </label>
   </div>
   <div class="pager">
     <button class="tbtn" id="prevPage">&larr; Prev</button>
@@ -114,7 +115,7 @@ table.rt tr:hover td{background:#f9fafc;}
   <div class="tablewrap">
   <table class="rt">
     <thead><tr>
-      <th>Refund Date</th><th>Order Date</th><th>Order ID</th><th>Product</th><th>Variant</th><th>SKU</th><th>Qty</th><th>Amount</th><th>Financial Status</th><th>Fulfillment Status</th><th>Reason</th>
+      <th>Refund Date</th><th>Order Date</th><th>Order ID</th><th>Product</th><th>Variant</th><th>SKU</th><th>Qty</th><th>Amount</th><th>Financial Status</th><th>Fulfillment Status</th><th>Reason</th><th>Category</th>
     </tr></thead>
     <tbody id="rowsBody"></tbody>
   </table>
@@ -173,8 +174,10 @@ function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, function(c){re
 function applyFilter(){
   var q=(document.getElementById('q').value||'').toLowerCase().trim();
   var reason=document.getElementById('reasonSel').value;
+  var category=document.getElementById('categorySel').value;
   filtered=ROWS.filter(function(r){
     if(reason!=='all' && r.refundReason!==reason) return false;
+    if(category!=='all' && categorizeReason(r.refundReason)!==category) return false;
     if(q){
       var hay=[r.orderName,r.productTitle,r.sku].join(' ').toLowerCase();
       if(hay.indexOf(q)===-1) return false;
@@ -199,8 +202,9 @@ function render(){
       +'<td>'+esc(r.financialStatus)+'</td>'
       +'<td>'+esc(r.fulfillmentStatus)+'</td>'
       +'<td class="reasoncell">'+esc(r.refundReason)+'</td>'
+      +'<td><span class="catbadge" style="color:'+esc(CAT_COLORS[categorizeReason(r.refundReason)])+';font-weight:600;">'+esc(categorizeReason(r.refundReason))+'</span></td>'
       +'</tr>';
-  }).join('') || '<tr><td colspan="11" class="empty">No refunds found for the selected period.</td></tr>';
+  }).join('') || '<tr><td colspan="12" class="empty">No refunds found for the selected period.</td></tr>';
   var info=filtered.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE,filtered.length)+' of '+filtered.length) : '0 rows';
   document.getElementById('pageInfo').textContent=info;
   document.getElementById('pageInfo2').textContent=info;
@@ -228,10 +232,6 @@ function applyLive(data){
   document.getElementById('kpiTopProduct').textContent=data.summary.mostRefundedProduct||'—';
   document.getElementById('kpiTopReason').textContent=data.summary.topRefundReason||'—';
 
-  document.getElementById('reasonBody').innerHTML=(data.reasonSummary||[]).map(function(g){
-    return '<tr><td class="reasoncol">'+esc(g.reason)+'</td><td>'+g.refunds+'</td><td>'+g.orders+'</td><td>'+g.qty+'</td><td>'+fmtMoney(g.amount, data.meta.currency)+'</td><td>'+g.pct+'%</td></tr>';
-  }).join('') || '<tr><td colspan="6" class="empty">No refunds found for the selected period.</td></tr>';
-
   applyFilter();
   chip.textContent=(data.isSnapshot?'Snapshot — generated ':'Live — fetched ')+new Date(data.generatedAt).toLocaleString()+(data.isSnapshot?' · click Refresh for live data':'');
   chip.className='chip live';
@@ -256,6 +256,7 @@ async function reload(force){
 }
 document.getElementById('q').addEventListener('input', applyFilter);
 document.getElementById('reasonSel').addEventListener('change', applyFilter);
+document.getElementById('categorySel').addEventListener('change', applyFilter);
 document.getElementById('prevPage').addEventListener('click', function(){ if(page>0){ page--; render(); } });
 document.getElementById('nextPage').addEventListener('click', function(){ if((page+1)*PAGE_SIZE<filtered.length){ page++; render(); } });
 document.getElementById('prevPage2').addEventListener('click', function(){ if(page>0){ page--; render(); } });
