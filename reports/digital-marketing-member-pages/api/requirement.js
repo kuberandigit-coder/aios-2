@@ -7155,6 +7155,23 @@ module.exports = async (req, res) => {
   if (fn === 'jefri-req3') return jefriProductStatusHandlerModule.jefriReq3Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);
+
+  // REQ-DM-2026-08-MAHI01 — Mahima "Search Term -> Product Mapping" (STPM).
+  //
+  // Thin routing only: every behaviour lives in lib/stpm/. Helpers are under
+  // root-level lib/ rather than api/lib/ because Vercel turns EVERY file under
+  // api/ into its own Serverless Function and this project already deploys
+  // exactly 12 — the Hobby-plan ceiling. lib/ is traced into this function
+  // instead, so no new function is created.
+  //
+  // Distinct from `mahima-search-terms` above, which is an older account-wide
+  // 30-day report with its own thresholds. These routes are group-scoped
+  // (campaigns.group_name = 'Mahima') and implement the approved requirement.
+  // The two are deliberately NOT merged.
+  if (typeof fn === 'string' && fn.startsWith('mahima-stpm-')) {
+    return require('../lib/stpm/router').handle(req, res, fn);
+  }
+
   if (fn === 'check-urls') return checkUrlsHandlerModule(req, res);
   if (fn === 'kamsi-live') return kamsiLiveHandlerModule(req, res);
   if (fn === 'req2-req3') return req2Req3HandlerModule(req, res);

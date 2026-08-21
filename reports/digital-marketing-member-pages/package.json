@@ -6,7 +6,9 @@
     "pg": "^8.13.1"
   },
   "scripts": {
-    "test": "node --test tests/feed/feed.test.js tests/feed/export.test.js tests/feed/dbboundary.test.js",
-    "check": "node --check api/members-api.js && node --check lib/feed/req5.js"
+    "test": "node --test tests/feed/feed.test.js tests/feed/export.test.js tests/feed/dbboundary.test.js tests/feed/gate.test.js tests/feed/ui.test.js tests/feed/cycle.test.js tests/stpm/stpm.test.js tests/stpm/ui.test.js",
+    "check": "node --check api/members-api.js && node --check lib/feed/req5.js && node --check api/requirement.js && node --check lib/stpm/router.js",
+    "stpm:migrate": "node scripts/stpm-migrate.js",
+    "stpm:verify": "node scripts/stpm-migrate.js --verify"
   }
 }
