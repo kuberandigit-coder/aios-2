@@ -4,18 +4,6 @@
 
 const MODELS = [
   {
-    url:    'https://api.groq.com/openai/v1/chat/completions',
-    apiKey: () => process.env.GROQ_API_KEY,
-    id:     'llama-3.3-70b-versatile',
-    extra:  {},
-  },
-  {
-    url:    'https://api.groq.com/openai/v1/chat/completions',
-    apiKey: () => process.env.GROQ_API_KEY,
-    id:     'llama-3.1-8b-instant',
-    extra:  {},
-  },
-  {
     url:    'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     apiKey: () => process.env.GEMINI_API_KEY,
     id:     'gemini-2.0-flash',
@@ -25,6 +13,18 @@ const MODELS = [
     url:    'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     apiKey: () => process.env.GEMINI_API_KEY,
     id:     'gemini-1.5-flash',
+    extra:  {},
+  },
+  {
+    url:    'https://api.groq.com/openai/v1/chat/completions',
+    apiKey: () => process.env.GROQ_API_KEY,
+    id:     'llama3-70b-8192',
+    extra:  {},
+  },
+  {
+    url:    'https://api.groq.com/openai/v1/chat/completions',
+    apiKey: () => process.env.GROQ_API_KEY,
+    id:     'gemma2-9b-it',
     extra:  {},
   },
 ];
