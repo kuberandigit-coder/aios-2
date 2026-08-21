@@ -72,6 +72,7 @@ table.rt tr:hover td{background:#f9fafc;}
     <span class="chip" id="rangeChip"></span>
     <button id="refreshBtn" class="primary" type="button">Refresh (live)</button>
     <button class="primary" type="button" onclick="exportCsv()" style="background:var(--good);border-color:var(--good);">Export CSV</button>
+    <button class="primary" type="button" onclick="openCategoryModal()" style="background:#6a3fd8;border-color:#6a3fd8;">Reason Category Analysis</button>
   </div>
 </div>
 
@@ -96,16 +97,6 @@ table.rt tr:hover td{background:#f9fafc;}
 </div>
 
 <div class="section">
-  <h2>Product Refund Analysis (ranked by refunded quantity)</h2>
-  <div class="tablewrap">
-  <table class="rt">
-    <thead><tr><th>Product ID</th><th>Product Title</th><th>SKU</th><th>Refunded Qty</th><th>Refund Amount</th><th>Refund Count</th><th>Orders Affected</th><th>Top Reason</th></tr></thead>
-    <tbody id="productBody"></tbody>
-  </table>
-  </div>
-</div>
-
-<div class="section">
   <h2>Refund Line Items</h2>
   <div class="toolbar">
     <label class="flabel">Search
@@ -123,7 +114,7 @@ table.rt tr:hover td{background:#f9fafc;}
   <div class="tablewrap">
   <table class="rt">
     <thead><tr>
-      <th>Refund Date</th><th>Order Date</th><th>Order ID</th><th>Order Name</th><th>Product</th><th>Variant</th><th>SKU</th><th>Qty</th><th>Amount</th><th>Financial Status</th><th>Fulfillment Status</th><th>Reason</th>
+      <th>Refund Date</th><th>Order Date</th><th>Order ID</th><th>Product</th><th>Variant</th><th>SKU</th><th>Qty</th><th>Amount</th><th>Financial Status</th><th>Fulfillment Status</th><th>Reason</th>
     </tr></thead>
     <tbody id="rowsBody"></tbody>
   </table>
@@ -147,7 +138,30 @@ table.rt tr:hover td{background:#f9fafc;}
     <strong>Known limitations</strong><br>
     1. Shopify's Refund object doesn't have a dedicated reason enum in this API version &mdash; <code>note</code> is the closest real field and is what's shown; if staff don't type a note when refunding, it will show "Not Provided" (this is expected and accurate, not a bug).<br>
     2. Read-only &mdash; no refunds, orders, or products are created/modified by this page.<br>
-    3. First load serves fast; the "Refresh (live)" button re-queries Shopify directly and can take longer for a full 60-day scan.
+    3. First load serves fast; the "Refresh (live)" button re-queries Shopify directly and can take longer for a full 60-day scan.<br>
+    4. Reason Category Analysis (Website / Customer / Postage / Warehouse) is a keyword-based classification of the free-text Refund Reason, not a field Shopify provides &mdash; every reason is force-fit into one of the 4 categories per the rules shown inside that popup, so treat it as a heuristic grouping, not exact ground truth.
+  </div>
+</div>
+
+<div id="catModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(20,25,40,.45);z-index:50;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;padding:26px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <h2 style="font-size:16px;font-weight:800;">Refund Reason &mdash; Category Analysis</h2>
+      <button onclick="closeCategoryModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">&times;</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Every refund's reason is classified into one of 4 categories by keyword matching (see rules below). Based on Refund Count.</div>
+    <div id="catResults" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;"></div>
+    <div id="catBarWrap" style="margin-bottom:18px;"></div>
+    <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;">
+      <strong>Classification rules (checked in this order; first match wins):</strong>
+      <ol style="margin:8px 0 0 18px;line-height:1.7;">
+        <li><strong>Postage Issue</strong> &mdash; courier, delivery, postage, shipping, parcel, transit, address, lost, delayed, damaged in transit, DPD/Royal Mail/Yodel/Hermes/Evri</li>
+        <li><strong>Out of Stock</strong> &mdash; out of stock, no stock, not in stock, sold out, unavailable, stock issue/shortage</li>
+        <li><strong>Warehouse Related Issue</strong> &mdash; wrong item/product sent, missing part/item, faulty, defective, broken, damaged (not transit-related), doesn't work, picking/warehouse error</li>
+        <li><strong>Website Related Issue</strong> &mdash; website, listing, description, photo/image, looked different on screen, misleading, size chart, colour mismatch</li>
+        <li><strong>Customer Side Issue</strong> &mdash; changed mind, no longer needed, don't want/like, ordered by mistake, duplicate order, not suitable, doesn't fit &mdash; <em>also the default bucket for anything not matched above</em> (e.g. "Not Provided", vague/ambiguous reasons)</li>
+      </ol>
+    </div>
   </div>
 </div>
 
@@ -176,7 +190,6 @@ function render(){
     return '<tr>'
       +'<td>'+new Date(r.refundDate).toLocaleDateString('en-GB')+'</td>'
       +'<td>'+new Date(r.orderDate).toLocaleDateString('en-GB')+'</td>'
-      +'<td>'+esc(r.orderId)+'</td>'
       +'<td>'+esc(r.orderName)+'</td>'
       +'<td>'+esc(r.productTitle||'—')+'</td>'
       +'<td>'+esc(r.variant||'—')+'</td>'
@@ -187,15 +200,15 @@ function render(){
       +'<td>'+esc(r.fulfillmentStatus)+'</td>'
       +'<td class="reasoncell">'+esc(r.refundReason)+'</td>'
       +'</tr>';
-  }).join('') || '<tr><td colspan="12" class="empty">No refunds found for the selected period.</td></tr>';
+  }).join('') || '<tr><td colspan="11" class="empty">No refunds found for the selected period.</td></tr>';
   var info=filtered.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE,filtered.length)+' of '+filtered.length) : '0 rows';
   document.getElementById('pageInfo').textContent=info;
   document.getElementById('pageInfo2').textContent=info;
 }
 function exportCsv(){
-  var header=['Refund Date','Order Date','Order ID','Order Name','Product ID','Product Title','Variant','SKU','Refunded Qty','Refund Amount','Currency','Refund Reason','Financial Status','Fulfillment Status'];
+  var header=['Refund Date','Order Date','Order ID','Product ID','Product Title','Variant','SKU','Refunded Qty','Refund Amount','Currency','Refund Reason','Financial Status','Fulfillment Status'];
   var lines=[header.join(',')].concat(filtered.map(function(r){
-    return [r.refundDate,r.orderDate,r.orderId,r.orderName,r.productId,'"'+(r.productTitle||'').replace(/"/g,'""')+'"',r.variant||'','"'+(r.sku||'')+'"',r.refundedQty,r.refundAmount,r.currency,'"'+r.refundReason.replace(/"/g,'""')+'"',r.financialStatus,r.fulfillmentStatus].join(',');
+    return [r.refundDate,r.orderDate,r.orderName,r.productId,'"'+(r.productTitle||'').replace(/"/g,'""')+'"',r.variant||'','"'+(r.sku||'')+'"',r.refundedQty,r.refundAmount,r.currency,'"'+r.refundReason.replace(/"/g,'""')+'"',r.financialStatus,r.fulfillmentStatus].join(',');
   }));
   var blob=new Blob([lines.join('\n')],{type:'text/csv'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='shopify-uk-refunds-last-60-days.csv'; a.click();
@@ -218,10 +231,6 @@ function applyLive(data){
   document.getElementById('reasonBody').innerHTML=(data.reasonSummary||[]).map(function(g){
     return '<tr><td class="reasoncol">'+esc(g.reason)+'</td><td>'+g.refunds+'</td><td>'+g.orders+'</td><td>'+g.qty+'</td><td>'+fmtMoney(g.amount, data.meta.currency)+'</td><td>'+g.pct+'%</td></tr>';
   }).join('') || '<tr><td colspan="6" class="empty">No refunds found for the selected period.</td></tr>';
-
-  document.getElementById('productBody').innerHTML=(data.productSummary||[]).map(function(p){
-    return '<tr><td>'+esc(p.productId)+'</td><td>'+esc(p.productTitle)+'</td><td>'+esc(p.sku||'—')+'</td><td>'+p.refundedQty+'</td><td>'+fmtMoney(p.refundAmount, data.meta.currency)+'</td><td>'+p.refundCount+'</td><td>'+p.ordersAffected+'</td><td>'+esc(p.topReason)+'</td></tr>';
-  }).join('') || '<tr><td colspan="8" class="empty">No refunds found for the selected period.</td></tr>';
 
   applyFilter();
   chip.textContent=(data.isSnapshot?'Snapshot — generated ':'Live — fetched ')+new Date(data.generatedAt).toLocaleString()+(data.isSnapshot?' · click Refresh for live data':'');
@@ -252,6 +261,53 @@ document.getElementById('nextPage').addEventListener('click', function(){ if((pa
 document.getElementById('prevPage2').addEventListener('click', function(){ if(page>0){ page--; render(); } });
 document.getElementById('nextPage2').addEventListener('click', function(){ if((page+1)*PAGE_SIZE<filtered.length){ page++; render(); } });
 document.getElementById('refreshBtn').addEventListener('click', function(){ reload(true); });
+
+// Reason Category Analysis — keyword classification into 4 fixed buckets.
+// Not a Shopify-provided field; documented heuristic, checked in priority
+// order below. "Customer Side Issue" is the default/catch-all bucket.
+var CAT_RULES = [
+  { name: 'Postage Issue', color: '#1f5eff', kw: ['courier','postage','delivery','deliver','shipping','ship ','parcel','transit','address','lost in','delayed','late arriv','dpd','royal mail','yodel','hermes','evri'] },
+  { name: 'Out of Stock', color: '#e08e0b', kw: ['out of stock','no stock','not in stock','sold out','unavailable','stock issue','insufficient stock','stock shortage'] },
+  { name: 'Warehouse Related Issue', color: '#c62828', kw: ['wrong item','wrong product','wrong tape','missing part','missing item','incomplete','warehouse','pick error','sent wrong','faulty','defective','broken','doesn\'t work','not working','damaged item','damaged on arrival'] },
+  { name: 'Website Related Issue', color: '#0a7d4f', kw: ['website','listing','description','photo','image','looked different','on screen','misleading','size chart','colour','color'] },
+];
+function categorizeReason(reason){
+  var r=(reason||'').toLowerCase();
+  for(var i=0;i<CAT_RULES.length;i++){
+    for(var j=0;j<CAT_RULES[i].kw.length;j++){
+      if(r.indexOf(CAT_RULES[i].kw[j])!==-1) return CAT_RULES[i].name;
+    }
+  }
+  return 'Customer Side Issue';
+}
+var CAT_COLORS={'Postage Issue':'#1f5eff','Out of Stock':'#e08e0b','Warehouse Related Issue':'#c62828','Website Related Issue':'#0a7d4f','Customer Side Issue':'#9b59d0'};
+function openCategoryModal(){
+  var counts={'Postage Issue':0,'Out of Stock':0,'Warehouse Related Issue':0,'Website Related Issue':0,'Customer Side Issue':0};
+  var refundsSeen={};
+  ROWS.forEach(function(r){
+    if(refundsSeen[r.refundId]) return; // count once per refund, not per line item
+    refundsSeen[r.refundId]=true;
+    counts[categorizeReason(r.refundReason)]++;
+  });
+  var total=Object.values(counts).reduce(function(a,b){return a+b;},0) || 1;
+  var order=['Postage Issue','Out of Stock','Warehouse Related Issue','Website Related Issue','Customer Side Issue'];
+  document.getElementById('catResults').innerHTML=order.map(function(name){
+    var pct=Math.round((counts[name]/total)*1000)/10;
+    return '<div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px;">'
+      +'<div style="font-size:11px;font-weight:700;color:'+CAT_COLORS[name]+';text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;">'+name+'</div>'
+      +'<div style="font-size:22px;font-weight:800;">'+pct+'%</div>'
+      +'<div style="font-size:11px;color:var(--muted);">'+counts[name]+' of '+total+' refunds</div>'
+      +'</div>';
+  }).join('');
+  document.getElementById('catBarWrap').innerHTML='<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;">'+order.map(function(name){
+    var pct=(counts[name]/total)*100;
+    return pct>0 ? '<div style="width:'+pct+'%;background:'+CAT_COLORS[name]+';" title="'+name+': '+Math.round(pct*10)/10+'%"></div>' : '';
+  }).join('')+'</div>';
+  document.getElementById('catModalOverlay').style.display='flex';
+}
+function closeCategoryModal(){ document.getElementById('catModalOverlay').style.display='none'; }
+document.getElementById('catModalOverlay').addEventListener('click', function(e){ if(e.target===this) closeCategoryModal(); });
+
 reload(false);
 </script>
 </body>
