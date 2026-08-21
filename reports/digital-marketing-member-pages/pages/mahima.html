@@ -735,10 +735,10 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 
 <div class="toolbar filterbar2">
   <label class="flabel">Search
-    <input id="q6" type="text" placeholder="Product ID&hellip;">
+    <input id="q6" type="text" placeholder="Product ID&hellip;" style="height:38px;padding:8px 10px;border:1px solid #dfe3ec;border-radius:8px;font-size:12.5px;background:#fff;box-sizing:border-box;">
   </label>
   <label class="flabel">Campaign
-    <select id="campsel6"><option value="all">All Campaigns</option></select>
+    <select id="campsel6" style="height:38px;padding:8px 10px;border:1px solid #dfe3ec;border-radius:8px;font-size:12.5px;background:#fff;box-sizing:border-box;"><option value="all">All Campaigns</option></select>
   </label>
 </div>
 
@@ -820,7 +820,7 @@ function r6ApplyLive(data){
   document.getElementById('kpi6Ads').textContent=fmtEur6(adsSales);
   document.getElementById('kpi6Organic').textContent=fmtEur6(organicSales);
   applyFilter6();
-  chip.textContent='Live — fetched '+new Date(data.generatedAt).toLocaleString()+' · '+data.dateRange.start+' to '+data.dateRange.end;
+  chip.textContent=(data.isSnapshot?'Snapshot — generated ':'Live — fetched ')+new Date(data.generatedAt).toLocaleString()+' · '+data.dateRange.start+' to '+data.dateRange.end+(data.isSnapshot?' · click Refresh for live data':'');
   chip.className='chip live';
 }
 async function r6Reload(force){

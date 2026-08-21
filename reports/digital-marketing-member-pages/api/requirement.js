@@ -7090,6 +7090,24 @@ const mahimaReq5bHandlerModule = (function() {
       if (!force && CACHE && (Date.now() - CACHE.at) < CACHE_TTL_MS) {
         return res.status(200).json(CACHE.payload);
       }
+      // Static snapshot fallback (same pattern as Req1/Req2's staticPath) —
+      // a full live Shopify + Postgres fetch across 8 months takes minutes
+      // even with limited concurrency, which is too slow for a normal page
+      // load. Default loads serve this committed snapshot instantly; the
+      // user's explicit Refresh button (?refresh=1) is what triggers the
+      // real live fetch below.
+      if (!force) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const staticPath = path.join(__dirname, 'data', 'mahima-req5b-snapshot.json');
+          const snapshot = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+          snapshot.isSnapshot = true;
+          return res.status(200).json(snapshot);
+        } catch (e) {
+          // No snapshot on disk yet — fall through to a live fetch.
+        }
+      }
       if (!TOKEN) {
         return res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
       }
