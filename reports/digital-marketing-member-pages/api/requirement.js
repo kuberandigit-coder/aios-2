@@ -6933,8 +6933,19 @@ const mahimaReq5bHandlerModule = (function() {
       cursor = monthEndExclusive;
     }
 
-    const results = await Promise.all(months.map((m) => fetchOrdersForRange(m.queryStart, m.queryEnd)));
-    const orders = results.flat();
+    // Limited concurrency (not full Promise.all across every month) — running
+    // all 8 months fully in parallel overwhelmed Shopify's rate limiter and
+    // every month exhausted its 6 retries ("Shopify API: exceeded retries"),
+    // confirmed live 2026-08-21 via the deployed Refresh button. 3-at-a-time
+    // still finishes well under the serial version's timeout while staying
+    // under Shopify's throttle.
+    const CONCURRENCY = 3;
+    const orders = [];
+    for (let i = 0; i < months.length; i += CONCURRENCY) {
+      const batch = months.slice(i, i + CONCURRENCY);
+      const batchResults = await Promise.all(batch.map((m) => fetchOrdersForRange(m.queryStart, m.queryEnd)));
+      for (const r of batchResults) orders.push(...r);
+    }
     return { orders, months: months.length };
   }
 
