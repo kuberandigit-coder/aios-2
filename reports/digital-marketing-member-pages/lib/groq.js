@@ -1,8 +1,20 @@
 // Shared AI caller — used by all staff AI assistants.
-// Try order: Gemini 2.0 Flash → Gemini 1.5 Flash → Groq fallback
+// Try order: Groq llama (reliable) → Gemini (paid)
 // Returns { ok: true, text } or { ok: false, error, detail }
 
 const MODELS = [
+  {
+    url:    'https://api.groq.com/openai/v1/chat/completions',
+    apiKey: () => process.env.GROQ_API_KEY,
+    id:     'llama-3.3-70b-versatile',
+    extra:  {},
+  },
+  {
+    url:    'https://api.groq.com/openai/v1/chat/completions',
+    apiKey: () => process.env.GROQ_API_KEY,
+    id:     'llama-3.1-8b-instant',
+    extra:  {},
+  },
   {
     url:    'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     apiKey: () => process.env.GEMINI_API_KEY,
@@ -15,29 +27,17 @@ const MODELS = [
     id:     'gemini-1.5-flash',
     extra:  {},
   },
-  {
-    url:    'https://api.groq.com/openai/v1/chat/completions',
-    apiKey: () => process.env.GROQ_API_KEY,
-    id:     'qwen/qwen3.6-27b',
-    extra:  { reasoning_effort: 'none' },
-  },
-  {
-    url:    'https://api.groq.com/openai/v1/chat/completions',
-    apiKey: () => process.env.GROQ_API_KEY,
-    id:     'groq/compound',
-    extra:  {},
-  },
 ];
 
 async function callGroqAI(messages, maxTokens = 400) {
-  let lastErr = null;
+  const allErrs = [];
 
   for (const { url, apiKey, id, extra } of MODELS) {
     const key = apiKey();
-    if (!key) { lastErr = `${id} → API key not configured`; continue; }
+    if (!key) { allErrs.push(`${id}→no_key`); continue; }
 
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 25000);
+    const timer = setTimeout(() => abort.abort(), 18000);
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -53,18 +53,18 @@ async function callGroqAI(messages, maxTokens = 400) {
           const text    = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
           return { ok: true, text };
         }
-        lastErr = `${id} → empty content`;
+        allErrs.push(`${id}→empty`);
         continue;
       }
       const errText = await res.text();
-      lastErr = `${id} → ${res.status}: ${errText.slice(0, 200)}`;
+      allErrs.push(`${id}→${res.status}:${errText.slice(0, 120)}`);
     } catch (fetchErr) {
       clearTimeout(timer);
-      lastErr = `${id} → ${fetchErr.name === 'AbortError' ? 'timeout 25s' : fetchErr.message}`;
+      allErrs.push(`${id}→${fetchErr.name === 'AbortError' ? 'timeout' : fetchErr.message}`);
     }
   }
 
-  return { ok: false, error: 'All AI models failed', detail: lastErr };
+  return { ok: false, error: 'All AI models failed', detail: allErrs.join(' | ') };
 }
 
 module.exports = { callGroqAI };
