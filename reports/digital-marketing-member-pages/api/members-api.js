@@ -8,7 +8,8 @@ const https      = require('https');
 // Lives under lib/feed/ (NOT api/lib/) because every file under api/ becomes
 // its own Vercel Function and this project is already at the 12-function
 // Hobby ceiling — see .vercelignore's note about api/scripts/.
-const feedReq5   = require('../lib/feed/req5');
+const feedReq5        = require('../lib/feed/req5');
+const { callGroqAI }  = require('../lib/groq');
 
 // ─── SHARED HELPERS ───────────────────────────────────────────────────────────
 
@@ -1676,7 +1677,665 @@ async function handleHetheeshaR2FixLoad(req, res) {
   }
 }
 
+// ─── SAJEEPAN AI CHAT HISTORY STORAGE ────────────────────────────────────────
+
+async function getSjChatClient() {
+  const connStr = process.env.SJ_CHAT_DB_URL;
+  if (!connStr) throw new Error('SJ_CHAT_DB_URL not configured');
+  const c = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000 });
+  await c.connect();
+  await c.query(`
+    CREATE TABLE IF NOT EXISTS sajeepan_ai_chat (
+      id SERIAL PRIMARY KEY,
+      session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  return c;
+}
+
+async function handleSajeepanChatHistory(req, res) {
+  let c;
+  try {
+    c = await getSjChatClient();
+    const { rows } = await c.query(
+      `SELECT role, content FROM sajeepan_ai_chat WHERE session_date = CURRENT_DATE ORDER BY id ASC`
+    );
+    return res.status(200).json({ ok: true, messages: rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
+
+async function handleSajeepanChatSave(req, res) {
+  const { role, content } = req.body || {};
+  if (!role || !content) return res.status(400).json({ ok: false, error: 'role and content required' });
+  let c;
+  try {
+    c = await getSjChatClient();
+    await c.query(`INSERT INTO sajeepan_ai_chat (role, content) VALUES ($1, $2)`, [role, content]);
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
+
+// ─── DAILY CRON BRIEF (8am UK — pre-generates briefs for all AI staff) ────────
+
+async function handleCronBrief(req, res) {
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.headers['authorization'] !== `Bearer ${secret}`) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+
+  const baseUrl = 'https://dm-dashboard.vintageinterior.co.uk';
+  const results = [];
+
+  // Open single chat DB client — both tables live in same DB
+  let db;
+  try {
+    const connStr = process.env.SJ_CHAT_DB_URL;
+    if (!connStr) throw new Error('SJ_CHAT_DB_URL not configured');
+    db = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000 });
+    await db.connect();
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS sajeepan_ai_chat (
+        id SERIAL PRIMARY KEY, session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        role TEXT NOT NULL, content TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS dilaksi_ai_chat (
+        id SERIAL PRIMARY KEY, session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        role TEXT NOT NULL, content TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS hetheesha_ai_chat (
+        id SERIAL PRIMARY KEY, session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        role TEXT NOT NULL, content TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: 'Chat DB failed: ' + e.message });
+  }
+
+  const hasToday = async (table) => {
+    const { rows } = await db.query(`SELECT 1 FROM ${table} WHERE session_date = CURRENT_DATE LIMIT 1`);
+    return rows.length > 0;
+  };
+
+  // ── Sajeepan ─────────────────────────────────────────────────────────────
+  try {
+    if (await hasToday('sajeepan_ai_chat')) {
+      results.push({ staff: 'sajeepan', skipped: true });
+    } else {
+      const r = await fetch(`${baseUrl}/api/members-api?member=sajeepan&type=ai-chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: [] }),
+      });
+      const data = await r.json();
+      if (data.ok && data.message) {
+        await db.query(`INSERT INTO sajeepan_ai_chat (role, content) VALUES ($1, $2)`, ['assistant', data.message]);
+        results.push({ staff: 'sajeepan', ok: true });
+      } else {
+        results.push({ staff: 'sajeepan', ok: false, error: data.error || 'no message' });
+      }
+    }
+  } catch (e) { results.push({ staff: 'sajeepan', ok: false, error: e.message }); }
+
+  // ── Dilaksi ──────────────────────────────────────────────────────────────
+  try {
+    if (await hasToday('dilaksi_ai_chat')) {
+      results.push({ staff: 'dilaksi', skipped: true });
+    } else {
+      const r = await fetch(`${baseUrl}/api/requirement?fn=dilaksi-ai-chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: [] }),
+      });
+      const data = await r.json();
+      if (data.ok && data.message) {
+        await db.query(`INSERT INTO dilaksi_ai_chat (role, content) VALUES ($1, $2)`, ['assistant', data.message]);
+        results.push({ staff: 'dilaksi', ok: true });
+      } else {
+        results.push({ staff: 'dilaksi', ok: false, error: data.error || 'no message' });
+      }
+    }
+  } catch (e) { results.push({ staff: 'dilaksi', ok: false, error: e.message }); }
+
+  await db.end().catch(() => {});
+  return res.status(200).json({ ok: true, ran_at: new Date().toISOString(), results });
+}
+
+async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom, prevTo) {
+
+  const body = req.body || {};
+  const userMessage = (body.message || '').trim();
+  const history = Array.isArray(body.history) ? body.history : [];
+
+  try {
+    const n = v => Number(v) || 0;
+
+    // ── Run all queries in parallel for speed ────────────────────────────────
+    const [
+      { rows: campRows },
+      { rows: topProdRows },
+      { rows: wasteRows },
+      { rows: negKwRows },
+      { rows: campPrevRows },
+      { rows: oosRows },
+      { rows: campProdRows },
+      { rows: crossPlatRows },
+      { rows: limitedDetailRows },
+    ] = await Promise.all([
+
+      // REQ 1: Campaign performance
+      client.query(`
+        SELECT c.campaign_name, c.campaign_status,
+          ROUND(SUM(cp.cost)::numeric,2) AS cost,
+          ROUND(SUM(cp.conversion_value)::numeric,2) AS cv,
+          ROUND(SUM(cp.conversions)::numeric,2) AS conv,
+          SUM(cp.impressions) AS imp, SUM(cp.clicks) AS clk
+        FROM google_ads.campaign_performance cp
+        JOIN google_ads.campaigns c ON c.campaign_id=cp.campaign_id
+        WHERE cp.campaign_id=ANY($1::bigint[]) AND cp.date BETWEEN $2 AND $3
+        GROUP BY c.campaign_name, c.campaign_status ORDER BY cv DESC
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+
+      // REQ 1: Top products
+      client.query(`
+        SELECT pp.product_item_id, mp.description AS title,
+          ROUND(SUM(pp.conversion_value)::numeric,2) AS cv,
+          ROUND(SUM(pp.cost)::numeric,2) AS cost,
+          ROUND(SUM(pp.conversions)::numeric,2) AS conv
+        FROM google_ads.product_performance pp
+        LEFT JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+        WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3
+          AND pp.product_item_id != ''
+        GROUP BY pp.product_item_id, mp.description
+        ORDER BY cv DESC LIMIT 5
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+
+      // REQ 2: Zero-conv wasteful products
+      client.query(`
+        SELECT pp.product_item_id, mp.description AS title,
+          ROUND(SUM(pp.cost)::numeric,2) AS cost, SUM(pp.clicks) AS clicks
+        FROM google_ads.product_performance pp
+        LEFT JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+        WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3
+          AND pp.product_item_id != ''
+        GROUP BY pp.product_item_id, mp.description
+        HAVING SUM(pp.conversions)=0 AND SUM(pp.cost)>5
+        ORDER BY SUM(pp.cost) DESC LIMIT 8
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+
+      // REQ 2: Negative keyword candidates (correct table)
+      client.query(`
+        SELECT search_term, ROUND(SUM(cost)::numeric,2) AS cost,
+          SUM(clicks) AS clicks
+        FROM google_ads.pmax_campaign_search_term_data
+        WHERE campaign_id=ANY($1::bigint[]) AND date BETWEEN $2 AND $3
+        GROUP BY search_term
+        HAVING SUM(conversions)=0 AND SUM(cost)>2
+        ORDER BY SUM(cost) DESC LIMIT 8
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+
+      // REQ 2/3: Campaign vs previous period (includes imp + conv for drop detection)
+      client.query(`
+        SELECT c.campaign_name,
+          ROUND(SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.cost ELSE 0 END)::numeric,2) AS cost_l,
+          ROUND(SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.conversion_value ELSE 0 END)::numeric,2) AS cv_l,
+          ROUND(SUM(CASE WHEN cp.date BETWEEN $4 AND $5 THEN cp.cost ELSE 0 END)::numeric,2) AS cost_p,
+          ROUND(SUM(CASE WHEN cp.date BETWEEN $4 AND $5 THEN cp.conversion_value ELSE 0 END)::numeric,2) AS cv_p,
+          SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.impressions ELSE 0 END) AS imp_l,
+          SUM(CASE WHEN cp.date BETWEEN $4 AND $5 THEN cp.impressions ELSE 0 END) AS imp_p,
+          ROUND(SUM(CASE WHEN cp.date BETWEEN $2 AND $3 THEN cp.conversions ELSE 0 END)::numeric,2) AS conv_l,
+          ROUND(SUM(CASE WHEN cp.date BETWEEN $4 AND $5 THEN cp.conversions ELSE 0 END)::numeric,2) AS conv_p
+        FROM google_ads.campaign_performance cp
+        JOIN google_ads.campaigns c ON c.campaign_id=cp.campaign_id
+        WHERE cp.campaign_id=ANY($1::bigint[]) AND cp.date BETWEEN $4 AND $3
+        GROUP BY c.campaign_name
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate, prevFrom, prevTo]).catch(() => ({ rows: [] })),
+
+      // REQ 3: OOS products still spending
+      client.query(`
+        SELECT pp.product_item_id, mp.description AS title,
+          ROUND(SUM(pp.conversion_value)::numeric,2) AS cv,
+          ROUND(SUM(pp.cost)::numeric,2) AS cost
+        FROM google_ads.product_performance pp
+        LEFT JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+        WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3
+          AND LOWER(COALESCE(mp.availability,''))='out of stock'
+        GROUP BY pp.product_item_id, mp.description
+        HAVING SUM(pp.conversion_value)>0
+        ORDER BY cv DESC LIMIT 5
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+
+      // PER-CAMPAIGN PRODUCT BREAKDOWN: top 3 by cost per campaign
+      client.query(`
+        SELECT c.campaign_name, mp.description AS title, pp.product_item_id,
+          ROUND(SUM(pp.cost)::numeric,2) AS cost,
+          ROUND(SUM(pp.conversion_value)::numeric,2) AS cv,
+          ROUND(SUM(pp.conversions)::numeric,2) AS conv,
+          ROW_NUMBER() OVER (PARTITION BY pp.campaign_id ORDER BY SUM(pp.cost) DESC) AS rn
+        FROM google_ads.product_performance pp
+        JOIN google_ads.campaigns c ON c.campaign_id=pp.campaign_id
+        LEFT JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+        WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3
+          AND pp.product_item_id != ''
+        GROUP BY pp.campaign_id, c.campaign_name, pp.product_item_id, mp.description
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+
+      // REQ 2: Cross-platform top sellers (Amazon/eBay) with low Google visibility
+      client.query(`
+        WITH amz AS (
+          SELECT oii.item_sku AS sku, COUNT(DISTINCT o.id) AS orders,
+            (SELECT mp.title FROM google_ads.merchant_products mp
+             WHERE LOWER(mp.mpn)=LOWER(oii.item_sku) AND mp.country='GB' LIMIT 1) AS product_title
+          FROM order_management.order_item_info oii
+          JOIN order_management.orders o ON o.id=oii.order_id
+          WHERE o.order_date >= NOW()-INTERVAL '30 days'
+            AND oii.item_sku IS NOT NULL AND oii.item_sku!=''
+          GROUP BY oii.item_sku HAVING COUNT(DISTINCT o.id)>=3
+        ),
+        goog AS (
+          SELECT mp.mpn AS sku, SUM(pp.impressions) AS imps
+          FROM google_ads.product_performance pp
+          JOIN google_ads.merchant_products mp ON LOWER(mp.product_id)=LOWER(pp.product_item_id)
+          WHERE pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3 AND mp.mpn IS NOT NULL
+          GROUP BY mp.mpn
+        )
+        SELECT a.sku, a.orders, a.product_title, COALESCE(g.imps,0) AS google_imps
+        FROM amz a LEFT JOIN goog g ON LOWER(g.sku)=LOWER(a.sku)
+        WHERE COALESCE(g.imps,0) < 500
+        ORDER BY a.orders DESC LIMIT 8
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+
+      // REQ 3: LIMITED campaigns with budget + target_roas
+      client.query(`
+        SELECT c.campaign_name, c.budget, c.target_roas,
+          ROUND(SUM(cp.cost)::numeric,2) AS cost_l,
+          ROUND(SUM(cp.conversion_value)::numeric,2) AS cv_l
+        FROM google_ads.campaigns c
+        LEFT JOIN google_ads.campaign_performance cp
+          ON cp.campaign_id=c.campaign_id AND cp.date BETWEEN $2 AND $3
+        WHERE c.campaign_id=ANY($1::bigint[]) AND c.campaign_primary_status='LIMITED'
+        GROUP BY c.campaign_name, c.budget, c.target_roas
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+
+    ]);
+
+    // Sudden drops: impressions -40%, revenue -30%, conversions -30% vs prev period
+    const dropCamps = campPrevRows.filter(r => {
+      const impDrop  = n(r.imp_p)>0  && n(r.imp_l)  < n(r.imp_p)*0.6;
+      const revDrop  = n(r.cv_p)>0   && n(r.cv_l)   < n(r.cv_p)*0.7;
+      const convDrop = n(r.conv_p)>0 && n(r.conv_l) < n(r.conv_p)*0.7;
+      return impDrop || revDrop || convDrop;
+    });
+
+    // ── REQ 4: Feed optimization — products with feed issues ─────────────────
+    const { rows: feedRows } = await client.query(`
+      SELECT mp.product_id, mp.description AS title, mp.availability,
+        mp.custom_label3 AS label,
+        ROUND(SUM(pp.cost)::numeric,2) AS cost,
+        ROUND(SUM(pp.conversion_value)::numeric,2) AS cv
+      FROM google_ads.merchant_products mp
+      LEFT JOIN google_ads.product_performance pp
+        ON LOWER(pp.product_item_id)=LOWER(mp.product_id)
+        AND pp.campaign_id=ANY($1::bigint[]) AND pp.date BETWEEN $2 AND $3
+      WHERE (mp.description IS NULL OR LENGTH(TRIM(mp.description))<20
+        OR mp.product_category IS NULL)
+        AND LOWER(COALESCE(mp.availability,''))='in stock'
+      GROUP BY mp.product_id, mp.description, mp.availability, mp.custom_label3
+      ORDER BY cv DESC LIMIT 6
+    `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] }));
+
+    // ── Build compact context (keep under token limit) ───────────────────────
+    const totalCost = campRows.reduce((s,r)=>s+n(r.cost),0);
+    const totalCv   = campRows.reduce((s,r)=>s+n(r.cv),0);
+    const totalConv = campRows.reduce((s,r)=>s+n(r.conv),0);
+    const overallRoas = totalCost>0 ? Math.round(totalCv/totalCost*100) : 0;
+    const limited = campRows.filter(r=>(r.campaign_status||'').toUpperCase()==='LIMITED');
+
+    // Compact single-line per item helpers
+    const shortTitle = t => (t||'').slice(0,40) || 'Unknown';
+
+    const campLines = campRows.map(r => {
+      const cost=n(r.cost), cv=n(r.cv), conv=n(r.conv);
+      const roas = cost>0 ? Math.round(cv/cost*100) : 0;
+      const prev = campPrevRows.find(p=>p.campaign_name===r.campaign_name);
+      const roasP = prev && n(prev.cost_p)>0 ? Math.round(n(prev.cv_p)/n(prev.cost_p)*100) : null;
+      const t = roasP ? (roas>=roasP?'▲':'▼')+roasP+'%prev' : '';
+      return `${r.campaign_name}|ROAS:${roas}%${t}|£${cost.toFixed(0)}sp|£${cv.toFixed(0)}rev|${conv}conv|${(r.campaign_status||'').toUpperCase()}`;
+    }).join('\n');
+
+    const wasteLines = wasteRows.slice(0,5).map(r=>
+      `${shortTitle(r.title)}|£${n(r.cost).toFixed(0)}wasted|${r.clicks}clk|0conv`
+    ).join('\n') || 'None';
+
+    const negLines = negKwRows.slice(0,5).map(r=>
+      `"${(r.search_term||'').slice(0,30)}"|£${n(r.cost).toFixed(0)}|${r.clicks}clk`
+    ).join('\n') || 'None';
+
+    const oosLines = oosRows.slice(0,4).map(r=>
+      `${shortTitle(r.title)}|OOS|£${n(r.cost).toFixed(0)}stillspend|£${n(r.cv).toFixed(0)}rev`
+    ).join('\n') || 'None';
+
+    const dropLines = dropCamps.slice(0,4).map(r=>{
+      const alerts = [];
+      if (n(r.imp_p)>0  && n(r.imp_l)  < n(r.imp_p)*0.6)  alerts.push(`imp${Math.round((n(r.imp_l)-n(r.imp_p))/n(r.imp_p)*100)}%`);
+      if (n(r.cv_p)>0   && n(r.cv_l)   < n(r.cv_p)*0.7)   alerts.push(`rev${Math.round((n(r.cv_l)-n(r.cv_p))/n(r.cv_p)*100)}%`);
+      if (n(r.conv_p)>0 && n(r.conv_l) < n(r.conv_p)*0.7) alerts.push(`conv${Math.round((n(r.conv_l)-n(r.conv_p))/n(r.conv_p)*100)}%`);
+      return `${r.campaign_name}|${alerts.join(',')}|rev£${n(r.cv_l).toFixed(0)}(was£${n(r.cv_p).toFixed(0)})`;
+    }).join('\n') || 'None';
+
+    const crossPlatLines = crossPlatRows.slice(0,5).map(r=>
+      `${(r.product_title||r.sku||'').slice(0,35)}|${r.orders}orders|${n(r.google_imps)}Gimps`
+    ).join('\n') || 'None';
+
+    const limitedDetailLines = limitedDetailRows.map(r=>{
+      const roas = n(r.cost_l)>0 ? Math.round(n(r.cv_l)/n(r.cost_l)*100) : 0;
+      return `${r.campaign_name}|budget£${n(r.budget).toFixed(0)}/day|targetROAS:${r.target_roas||'?'}%|actualROAS:${roas}%`;
+    }).join('\n') || 'None';
+
+    const feedLines = feedRows.slice(0,4).map(r=>
+      `${shortTitle(r.title||r.product_id)}|weakfeed|£${n(r.cost).toFixed(0)}sp`
+    ).join('\n') || 'None';
+
+    const topProdLines = topProdRows.slice(0,3).map(r=>{
+      const roas=n(r.cost)>0?Math.round(n(r.cv)/n(r.cost)*100):0;
+      return `${shortTitle(r.title)}|£${n(r.cv).toFixed(0)}rev|ROAS${roas}%`;
+    }).join('\n') || 'None';
+
+    // Per-campaign product breakdown — top 3 by cost per campaign
+    const campProdMap = new Map();
+    for (const r of campProdRows) {
+      if (n(r.rn) > 3) continue;
+      if (!campProdMap.has(r.campaign_name)) campProdMap.set(r.campaign_name, []);
+      const roas = n(r.cost)>0 ? Math.round(n(r.cv)/n(r.cost)*100) : 0;
+      campProdMap.get(r.campaign_name).push(
+        `  #${r.rn} ${shortTitle(r.title)}|£${n(r.cost).toFixed(0)}sp|£${n(r.cv).toFixed(0)}rev|${n(r.conv)}conv|ROAS${roas}%`
+      );
+    }
+    const campProdLines = [...campProdMap.entries()].map(([camp, prods]) =>
+      `${camp}:\n${prods.join('\n')}`
+    ).join('\n') || 'None';
+
+    const systemPrompt = `You are Sajeepan's Google Ads AI at LEDSone UK. Give specific, numbered daily priorities using real data below. No generic advice. Max 400 words.
+
+HOW I WORK:
+- I read live Google Ads data from the database at the moment you open the chat
+- I cover all 4 requirements: (1) campaign ROAS vs targets, (2) waste spend + neg kw candidates + Amazon/eBay sellers not on Google, (3) OOS still spending + LIMITED campaigns + sudden drops, (4) feed issues
+- I can answer per-campaign product questions (e.g. "top cost products in SJ Pendant Klarna")
+- All figures are real numbers from your live data for ${fromDate} to ${toDate}
+- I prioritise: OOS > sudden drops > LIMITED campaigns > waste spend > neg keywords > cross-platform gap > feed fixes
+
+DATA (${fromDate} to ${toDate}):
+Overall: £${totalCost.toFixed(0)}spend|£${totalCv.toFixed(0)}rev|ROAS:${overallRoas}%|${totalConv}conv
+
+CAMPAIGNS:
+${campLines}
+
+TOP PRODUCTS (overall): ${topProdLines}
+
+PRODUCTS BY CAMPAIGN (top 3 by cost each):
+${campProdLines}
+
+WASTE(0conv>£5): ${wasteLines}
+
+NEG KW CANDIDATES(0conv>£2): ${negLines}
+
+OOS STILL SPENDING: ${oosLines}
+
+DROPS vs PREV(imp<-40%,rev<-30%,conv<-30%): ${dropLines}
+
+LIMITED CAMPAIGNS(budget+targetROAS): ${limitedDetailLines}
+
+CROSS-PLATFORM TOP SELLERS(Amazon/eBay≥3orders,low Google imps): ${crossPlatLines}
+
+FEED ISSUES: ${feedLines}
+
+ROAS TARGETS: PENDANT_KLARNA:320%,HIGH_REV_PH:320%,TOP_20:400%,zero_conv2:400%,HERO:380%,ACCESS:380%
+
+INSTRUCTIONS:
+- For daily brief: numbered action items only, no preamble, start with "1."
+- For specific questions (e.g. "top cost products in X campaign"): answer directly using the PRODUCTS BY CAMPAIGN data above
+- Format: "1. [ACTION] — [campaign/product] ([reason with £ or % figure])"
+- All product names: UK English only, ignore German or foreign language titles`;
+
+    // ── Build messages for Groq (OpenAI-compatible format) ──────────────────
+    const isDailyBrief = !userMessage;
+    const firstUserMsg = isDailyBrief
+      ? 'Give me my daily priority briefing. What should I focus on today based on my campaign data? List priorities 1-2-3 clearly.'
+      : userMessage;
+
+    const messages = [{ role: 'system', content: systemPrompt }];
+    for (const h of history) {
+      if (h.role && h.content) {
+        messages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
+      }
+    }
+    messages.push({ role: 'user', content: firstUserMsg });
+
+    // ── Call Groq (shared helper) ────────────────────────────────────────────
+    const groqResult = await callGroqAI(messages);
+    if (!groqResult.ok) return res.status(502).json({ ok: false, error: groqResult.error, detail: groqResult.detail });
+
+    return res.status(200).json({
+      ok: true,
+      message: groqResult.text,
+      is_daily_brief: isDailyBrief,
+      meta: { from: fromDate, to: toDate, campaigns: campRows.length, waste_count: wasteRows.length, oos_count: oosRows.length }
+    });
+
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+}
+
+// ─── HETHEESHA AI CHAT ────────────────────────────────────────────────────────
+
+async function getHetheeeshaChatClient() {
+  const connStr = process.env.SJ_CHAT_DB_URL;
+  if (!connStr) throw new Error('SJ_CHAT_DB_URL not configured');
+  const c = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000 });
+  await c.connect();
+  await c.query(`
+    CREATE TABLE IF NOT EXISTS hetheesha_ai_chat (
+      id SERIAL PRIMARY KEY,
+      session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  return c;
+}
+
+async function handleHetheeeshaChatHistory(req, res) {
+  let c;
+  try {
+    c = await getHetheeeshaChatClient();
+    const { rows } = await c.query(
+      `SELECT role, content FROM hetheesha_ai_chat WHERE session_date = CURRENT_DATE ORDER BY id ASC`
+    );
+    return res.status(200).json({ ok: true, messages: rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
+
+async function handleHetheeeshaChatSave(req, res) {
+  const { role, content } = req.body || {};
+  if (!role || !content) return res.status(400).json({ ok: false, error: 'role and content required' });
+  let c;
+  try {
+    c = await getHetheeeshaChatClient();
+    await c.query(`INSERT INTO hetheesha_ai_chat (role, content) VALUES ($1, $2)`, [role, content]);
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
+
+async function handleHetheeshaAiChat(req, res) {
+  const body        = req.body || {};
+  const userMessage = (body.message || '').trim();
+  const history     = Array.isArray(body.history) ? body.history : [];
+
+  try {
+    const db = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 15000, statement_timeout: 25000,
+    });
+    await db.connect();
+
+    const today = new Date();
+    const from  = new Date(today); from.setDate(from.getDate() - 29);
+    const fromDate = from.toISOString().slice(0, 10);
+    const toDate   = today.toISOString().slice(0, 10);
+
+    // ── Parallel data fetch ──────────────────────────────────────────────────
+    const [
+      { rows: revRows },
+      { rows: gscProductRows },
+      { rows: gscCollRows },
+      { rows: fixRows },
+    ] = await Promise.all([
+
+      // Top 10 revenue products (Shopify FR sub_source=233, rolling 30d)
+      db.query(`
+        SELECT oii.handle,
+          ROUND(SUM(CAST(oii.item_price AS NUMERIC)*CAST(oii.item_quantity AS INTEGER))::numeric,2) AS revenue,
+          COUNT(DISTINCT o.id) AS orders
+        FROM order_management.orders o
+        JOIN order_management.order_item_info oii ON oii.order_id=o.id
+        WHERE o.sub_source_id=233 AND o.status='Completed'
+          AND o.order_date BETWEEN $1 AND $2
+          AND oii.handle IS NOT NULL AND oii.handle!=''
+        GROUP BY oii.handle ORDER BY revenue DESC LIMIT 10
+      `, [fromDate, toDate]),
+
+      // GSC impressions + CTR for those product pages
+      db.query(`
+        SELECT
+          regexp_replace(split_part(regexp_replace(p.page,'^https?://[^/]+',''),'?',1),'^/products/','') AS handle,
+          SUM(p.impressions) AS imp, SUM(p.clicks) AS clicks,
+          ROUND(AVG(p.ctr)*100,2) AS ctr_pct, ROUND(AVG(p.position),1) AS avg_pos
+        FROM google_search_console.page p
+        WHERE p.sub_source=233 AND p.search_type='web' AND p.page LIKE '%/products/%'
+          AND p.date BETWEEN $1 AND $2
+        GROUP BY handle ORDER BY SUM(p.impressions) DESC LIMIT 20
+      `, [fromDate, toDate]),
+
+      // GSC for top collection pages
+      db.query(`
+        SELECT
+          regexp_replace(split_part(regexp_replace(p.page,'^https?://[^/]+',''),'?',1),'^/collections/','') AS handle,
+          SUM(p.impressions) AS imp, SUM(p.clicks) AS clicks,
+          ROUND(AVG(p.ctr)*100,2) AS ctr_pct, ROUND(AVG(p.position),1) AS avg_pos
+        FROM google_search_console.page p
+        WHERE p.sub_source=233 AND p.search_type='web' AND p.page LIKE '%/collections/%'
+          AND p.date BETWEEN $1 AND $2
+        GROUP BY handle ORDER BY SUM(p.impressions) DESC LIMIT 15
+      `, [fromDate, toDate]),
+
+      // Pending SEO fixes from tracker (not yet fixed)
+      db.query(`
+        SELECT handle, field, fix_date
+        FROM public.hetheesha_fix_tracker
+        WHERE fix_date IS NULL
+        ORDER BY handle LIMIT 20
+      `).catch(() => ({ rows: [] })),
+
+    ]);
+
+    await db.end().catch(() => {});
+
+    // ── Build compact context ────────────────────────────────────────────────
+    const shortH = h => (h || '').slice(0, 35);
+
+    const gscProdMap = {};
+    gscProductRows.forEach(r => { gscProdMap[r.handle] = r; });
+
+    const revLines = revRows.map((r, i) => {
+      const g = gscProdMap[r.handle] || {};
+      return `#${i+1} ${shortH(r.handle)}|£${Number(r.revenue).toFixed(0)}rev|${r.orders}orders|${Number(g.imp||0)}imp|${Number(g.ctr_pct||0)}%ctr|pos${Number(g.avg_pos||0)}`;
+    }).join('\n') || 'None';
+
+    const collLines = gscCollRows.slice(0, 10).map(r =>
+      `${shortH(r.handle)}|${Number(r.imp)}imp|${Number(r.clicks)}clk|${Number(r.ctr_pct)}%ctr|pos${Number(r.avg_pos)}`
+    ).join('\n') || 'None';
+
+    const pendingFixes = fixRows.map(r => `${shortH(r.handle)}|missing:${r.field}`).join('\n') || 'None';
+
+    const systemPrompt = `You are Hetheesha's SEO & Content AI at LEDSone FR (ledsone.fr — French Shopify store). Give specific numbered daily priorities using the real data below. No generic advice. Max 400 words.
+
+HOW I WORK:
+- I read live order revenue, Google Search Console impressions/CTR, and SEO fix tracker data
+- I cover: (1) top revenue products needing SEO boost, (2) collection page GSC performance, (3) pending SEO fixes (meta title, meta desc, FAQ schema, alt text)
+- All figures are from the last 30 days (${fromDate} to ${toDate})
+- I prioritise: high-revenue low-impression products > low CTR pages > pending SEO fixes
+
+DATA (${fromDate} to ${toDate}):
+
+TOP 10 REVENUE PRODUCTS (handle|revenue|orders|GSC impressions|CTR|avg position):
+${revLines}
+
+TOP COLLECTION PAGES (GSC):
+${collLines}
+
+PENDING SEO FIXES (not yet done):
+${pendingFixes}
+
+INSTRUCTIONS:
+- For daily brief: numbered action items only, no preamble, start with "1."
+- Format: "1. [ACTION] — [page/product] ([reason with number])"
+- For questions about specific pages or fixes: answer directly using the data above
+- All page handles are French (ledsone.fr) — keep product names in French`;
+
+    const isDailyBrief = !userMessage;
+    const messages = [{ role: 'system', content: systemPrompt }];
+    for (const h of history) {
+      if (h.role && h.content) messages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
+    }
+    messages.push({ role: 'user', content: isDailyBrief
+      ? 'Give me my daily SEO priority briefing. What should I focus on today? List priorities 1-2-3 clearly.'
+      : userMessage });
+
+    const groqResult = await callGroqAI(messages);
+    if (!groqResult.ok) return res.status(502).json({ ok: false, error: groqResult.error, detail: groqResult.detail });
+
+    return res.status(200).json({
+      ok: true,
+      message: groqResult.text,
+      is_daily_brief: isDailyBrief,
+      meta: { from: fromDate, to: toDate, products: revRows.length, pending_fixes: fixRows.length },
+    });
+
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+}
+
 async function handleSajeepan(req, res) {
+  const type = req.query.type || 'req1';
+
+  if (type === 'ai-chat-history') return await handleSajeepanChatHistory(req, res);
+  if (type === 'ai-chat-save')    return await handleSajeepanChatSave(req, res);
+  if (type === 'cron-brief')      return await handleCronBrief(req, res);
+
   const connStr = process.env.DATABASE_URL;
   if (!connStr) return res.status(500).json({ ok: false, error: 'DATABASE_URL not configured' });
 
@@ -1704,8 +2363,6 @@ async function handleSajeepan(req, res) {
     const prevStart= new Date(prevEnd);  prevStart.setDate(prevStart.getDate()-spanDays);
     const fmt = d => d.toISOString().slice(0,10);
     const prevFrom = fmt(prevStart), prevTo = fmt(prevEnd);
-
-    const type = req.query.type || 'req1';
 
     if (type === 'req2') {
       const r2 = await handleSajeepanReq2(client, toDate, fromDate, prevFrom, prevTo);
@@ -1739,6 +2396,10 @@ async function handleSajeepan(req, res) {
       if (!item) return res.status(400).json({ ok:false, error:'item param required' });
       const detail = await handleSajeepanProdDetail(client, item, fromDate, toDate, prevFrom, prevTo);
       return res.status(200).json({ ok:true, meta:{from:fromDate,to:toDate,prev_from:prevFrom,prev_to:prevTo}, ...detail });
+    }
+
+    if (type === 'ai-chat') {
+      return await handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom, prevTo);
     }
 
     // req1 — campaign overview + daily trend + products
@@ -2982,6 +3643,9 @@ module.exports = async function handler(req, res) {
 
   // ── hetheesha ──────────────────────────────────────────────────────────────
   if (member === 'hetheesha') {
+    if (type === 'ai-chat-history') return handleHetheeeshaChatHistory(req, res);
+    if (type === 'ai-chat-save')    return handleHetheeeshaChatSave(req, res);
+    if (type === 'ai-chat')         return handleHetheeshaAiChat(req, res);
     if (type === 'req2') return handleHetheeshaReq2(req, res);
     if (type === 'fix-save') return handleHetheeshaFixSave(req, res);
     if (type === 'fix-detail') return handleHetheeshaFixDetail(req, res);
