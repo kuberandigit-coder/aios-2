@@ -764,7 +764,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 <div class="tablewrap">
 <table class="rt">
 <thead><tr>
-  <th>Product ID</th><th>Image</th><th>Orders</th><th>Quantity</th><th>Total Sales</th><th>Organic Sales</th><th>Ads Sales</th><th>Campaign</th>
+  <th>Product ID</th><th>Orders</th><th>Quantity</th><th>Total Sales</th><th>Organic Sales</th><th>Ads Sales</th><th>Campaign</th>
 </tr></thead>
 <tbody id="tbody6"></tbody>
 </table>
@@ -806,9 +806,9 @@ function render6(){
   var start=page6*PAGE_SIZE6;
   var pageRows=filtered6.slice(start,start+PAGE_SIZE6);
   document.getElementById('tbody6').innerHTML=pageRows.map(function(r){
-    var img=r.image?('<img src="'+r.image+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px;" loading="lazy">'):'<span style="color:#9aa3b2;font-size:11px;">No image</span>';
-    return '<tr><td>'+r.productId+'</td><td>'+img+'</td><td>'+r.orders+'</td><td>'+r.quantity+'</td><td>'+fmtEur6(r.totalSales)+'</td><td>'+fmtEur6(r.organicSales)+'</td><td>'+fmtEur6(r.adsSales)+'</td><td>'+r.campaign+'</td></tr>';
-  }).join('') || '<tr><td colspan="8" style="text-align:center;color:#9aa3b2;padding:24px;">No rows for this filter.</td></tr>';
+    var img=r.image?('<img src="'+r.image+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px;" loading="lazy">'):'';
+    return '<tr><td style="white-space:nowrap;">'+img+'<span style="vertical-align:middle;">'+r.productId+'</span></td><td>'+r.orders+'</td><td>'+r.quantity+'</td><td>'+fmtEur6(r.totalSales)+'</td><td>'+fmtEur6(r.organicSales)+'</td><td>'+fmtEur6(r.adsSales)+'</td><td>'+r.campaign+'</td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:#9aa3b2;padding:24px;">No rows for this filter.</td></tr>';
   document.getElementById('pageInfo6').textContent = filtered6.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE6,filtered6.length)+' of '+filtered6.length) : '0 rows';
 }
 function exportCsv6(){
