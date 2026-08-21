@@ -206,6 +206,12 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-tab="3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Search Terms</span></a></li>
     <li><a href="#" data-tab="5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"></circle><circle cx="15" cy="12" r="6"></circle></svg></span><span class="lbl">Product ID Coverage</span></a></li>
     <li><a href="#" data-tab="6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span class="lbl">Product &times; Campaign Sales</span></a></li>
+    <!-- REQ-DM-2026-08-MAHI01 — opens as a full tool (its own page) rather than
+         an inline tab. This page is already ~14.8 MB because every tab's
+         content is inline; a results grid of thousands of rows would make that
+         worse for every other Mahima tab. Same data-fulltool pattern the EOD
+         and Blog tools already use below. -->
+    <li><a href="mahima/search-term-product-mapping/index.html" data-tool="mahima/search-term-product-mapping/index.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="21" y2="21"></line><line x1="10.5" y1="7.5" x2="10.5" y2="13.5"></line><line x1="7.5" y1="10.5" x2="13.5" y2="10.5"></line></svg></span><span class="lbl">Search Term &rarr; Product Mapping</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -713,6 +719,11 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 
 <div id="tabPanel6" class="tab-panel" style="display:none;">
+<style>
+#tabPanel6 label.flabel{height:auto !important;align-self:flex-start !important;}
+#tabPanel6 #q6, #tabPanel6 #campsel6{height:38px !important;max-height:38px !important;min-height:0 !important;padding:8px 10px !important;border:1px solid #dfe3ec !important;border-radius:8px !important;font-size:12.5px !important;background:#fff !important;box-sizing:border-box !important;align-self:auto !important;}
+#tabPanel6 #campsel6{appearance:auto;}
+</style>
 
 <header class="top">
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 5 &mdash; Product &times; Campaign Sales</div>
