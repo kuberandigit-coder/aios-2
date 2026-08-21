@@ -6786,6 +6786,67 @@ const mahimaReq5bHandlerModule = (function() {
   function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
   function amt(moneySet) { return moneySet ? round2(Number(moneySet.shopMoney.amount)) : 0; }
 
+  // ---------- Scope to Mahima's own products only (added per Kuberan,
+  // 2026-08-21: "need for only mahima products") ----------
+  // Reuses the EXACT same 5 campaign IDs already proven/live in Req1/Req5
+  // above (MAHIMA_CAMPAIGNS, jefriProductStatusHandlerModule) — copied,
+  // not re-derived, since this module is self-contained like every other
+  // handler in this file. Mahima's product universe = every product_item_id
+  // that has ever appeared in google_ads.product_performance for these
+  // campaigns (same "advertised by Mahima" definition Req1/Req5 use).
+  const { Pool: MahimaPool } = require('pg');
+  const MAHIMA_OWN_CAMPAIGN_IDS = ['20763699505', '23684789991', '23053104908', '23431543574', '23926509987'];
+  let mahimaPgPool;
+  function getMahimaPgPool() {
+    if (!mahimaPgPool) {
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString && !process.env.PGHOST) throw new Error('Server not configured: DATABASE_URL missing');
+      mahimaPgPool = new MahimaPool({
+        connectionString: connectionString || undefined,
+        host: connectionString ? undefined : process.env.PGHOST,
+        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
+        database: connectionString ? undefined : process.env.PGDATABASE,
+        user: connectionString ? undefined : process.env.PGUSER,
+        password: connectionString ? undefined : process.env.PGPASSWORD,
+        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+        max: 3,
+      });
+    }
+    return mahimaPgPool;
+  }
+
+  // product_item_id can be a bare numeric Shopify product ID or a
+  // shopify_<country>_<productid>_<variantid> string (same format Req1's
+  // rebuild found and fixed, see evidence/mahima/2026-07-10_mahima_req1_rebuild_evidence.md
+  // section 3) — normalize both forms to the bare numeric product ID.
+  function normalizeProductItemId(raw) {
+    const s = String(raw || '').trim();
+    const m = /^shopify_[A-Za-z]+_(\d+)_(\d+)$/.exec(s);
+    if (m) return m[1];
+    if (/^\d+$/.test(s)) return s;
+    return null;
+  }
+
+  let mahimaProductIdSetCache = null; // { at, set }
+  const MAHIMA_PRODUCTS_TTL_MS = 60 * 60 * 1000; // 1h — this universe changes rarely
+  async function getMahimaOwnedProductIds() {
+    if (mahimaProductIdSetCache && (Date.now() - mahimaProductIdSetCache.at) < MAHIMA_PRODUCTS_TTL_MS) {
+      return mahimaProductIdSetCache.set;
+    }
+    const pool = getMahimaPgPool();
+    const result = await pool.query(
+      'SELECT DISTINCT product_item_id FROM google_ads.product_performance WHERE campaign_id = ANY($1::bigint[]) AND product_item_id IS NOT NULL',
+      [MAHIMA_OWN_CAMPAIGN_IDS]
+    );
+    const set = new Set();
+    for (const row of result.rows) {
+      const norm = normalizeProductItemId(row.product_item_id);
+      if (norm) set.add(norm);
+    }
+    mahimaProductIdSetCache = { at: Date.now(), set };
+    return set;
+  }
+
   async function shopifyGraphQL(query, variables, retryState) {
     for (let attempt = 0; attempt < 6; attempt++) {
       let res;
@@ -6950,10 +7011,10 @@ const mahimaReq5bHandlerModule = (function() {
   }
 
   async function buildReport() {
-    const { orders } = await fetchAllOrders();
+    const [{ orders }, mahimaProductIds] = await Promise.all([fetchAllOrders(), getMahimaOwnedProductIds()]);
     // group key: `${productId}::${campaignKey}`
     const groups = new Map();
-    let excludedTest = 0, excludedCancelled = 0, noJourney = 0;
+    let excludedTest = 0, excludedCancelled = 0, noJourney = 0, excludedNotMahimaProduct = 0;
 
     for (const order of orders) {
       if (order.test) { excludedTest++; continue; }
@@ -6975,6 +7036,7 @@ const mahimaReq5bHandlerModule = (function() {
         const product = variant && variant.product;
         if (!product) continue;
         const productId = String(product.legacyResourceId);
+        if (!mahimaProductIds.has(productId)) { excludedNotMahimaProduct++; continue; }
         const sales = amt(li.discountedTotalSet);
         const groupKey = productId + '::' + campaignKey;
 
@@ -7016,6 +7078,8 @@ const mahimaReq5bHandlerModule = (function() {
         excludedTest,
         excludedCancelled,
         ordersWithNoJourneyData: noJourney,
+        lineItemsExcludedNotMahimaProduct: excludedNotMahimaProduct,
+        mahimaOwnedProductCount: mahimaProductIds.size,
       },
     };
   }
@@ -7034,7 +7098,7 @@ const mahimaReq5bHandlerModule = (function() {
         success: true,
         generatedAt: new Date().toISOString(),
         dateRange: { start: REQ5B_START, end: new Date().toISOString().slice(0, 10) },
-        grain: 'Product ID x Campaign (Organic/Direct is its own campaign bucket)',
+        grain: 'Product ID x Campaign (Organic/Direct is its own campaign bucket), scoped to Mahima\'s own products only',
         rows: report.rows,
         meta: report.meta,
       };
