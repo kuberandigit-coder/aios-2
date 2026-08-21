@@ -17,6 +17,21 @@
 //   more functions and fail the build. Root-level lib/ is traced into the
 //   calling function instead. lib/ must never be added to .vercelignore.
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Driver-level date handling — applied once, for every STPM pool
+// ─────────────────────────────────────────────────────────────────────────────
+// A Postgres `date` has no time zone. By default `pg` turns it into a JS Date
+// at LOCAL midnight, so any later `toISOString()` shifts it backwards in any
+// timezone east of UTC — this machine is UTC+05:30, and a run for
+// 2026-06-01..2026-06-30 was being reported and filenamed as
+// 2026-05-31..2026-06-29.
+//
+// Parsing DATE (oid 1082) as the raw 'YYYY-MM-DD' string Postgres already sent
+// removes the whole class of bug: the value stays a plain date all the way to
+// JSON and to the browser. TIMESTAMPTZ is deliberately left alone — those are
+// real instants and should keep their Date semantics.
+require('pg').types.setTypeParser(1082, (v) => v);
+
 const REQUIREMENT_ID = 'DM-2026-08-MAHI01';
 
 // Versioned so two runs that disagree can be told apart: a rule change looks

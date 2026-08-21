@@ -186,11 +186,17 @@ async function runNow(input, session) {
       }
     }
 
-    // ── 7. Catalogue + targeting, once per run ────────────────────────────
-    const [catalogue, targetingRows, servedProducts] = await Promise.all([
+    // ── 7. Catalogue + targeting + coverage, once per run ─────────────────
+    // Campaign coverage is fetched HERE rather than after the matching loop.
+    // Matching is CPU-bound and can run for well over a minute on a wide date
+    // range (measured ~86 s for one month), and any Ledsone connection left
+    // idle across it may be closed server-side. Reading everything Ledsone
+    // needs up front keeps the database work in one short burst.
+    const [catalogue, targetingRows, servedProducts, coverage] = await Promise.all([
       sql.fetchShopifyCatalogue(),
       sql.fetchTargetingEvidence(campaignIds),
       sql.fetchServedProducts(applied.start, applied.end, campaignIds),
+      sql.fetchCampaignCoverage(applied.start, applied.end, campaignIds),
     ]);
     const productIndex = matching.buildProductIndex(catalogue);
     const targetIndex = targeting.buildTargetingIndex(targetingRows, servedProducts);
@@ -274,7 +280,7 @@ async function runNow(input, session) {
     }
 
     // ── 9. Health + totals ────────────────────────────────────────────────
-    const coverage = await sql.fetchCampaignCoverage(applied.start, applied.end, campaignIds);
+    // `coverage` was read in step 7, before matching — see the note there.
     const health = src.buildSourceHealth({
       freshness, window: applied, requested, fallback: applied, coverage, rowCount: results.length,
     });

@@ -43,21 +43,73 @@ function getPool() {
       connectionString: ledsoneUrl(),
       ssl: process.env.PGSSL === 'disable' ? false : { rejectUnauthorized: false },
       max: 3,
-      idleTimeoutMillis: 30000,
+      // Short, for the same reason as the Neon pool: a run leaves this pool
+      // idle while product matching runs, and a long-idle socket can be closed
+      // server-side without the client noticing.
+      idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 15000,
+      keepAlive: true,
     });
     pool.on('error', () => { /* pool self-heals; never crash the function */ });
   }
   return pool;
 }
 
-async function query(text, params) {
+/**
+ * Check out a client with an error listener attached.
+ * `pool.on('error')` only covers idle clients; a checked-out client that loses
+ * its connection between statements would otherwise emit an unhandled 'error'
+ * and take the process down instead of rejecting the caller.
+ */
+async function connect() {
   const client = await getPool().connect();
-  try {
-    return await client.query(text, params);
-  } finally {
-    client.release();
+  const onError = () => { /* surfaced to the caller via the rejected query */ };
+  client.on('error', onError);
+  const release = client.release.bind(client);
+  client.release = (err) => {
+    client.removeListener('error', onError);
+    return release(err);
+  };
+  return client;
+}
+
+/**
+ * Connection-level failures, as opposed to SQL errors.
+ * These mean "the socket is gone", and the same statement is safe to retry.
+ */
+function isConnectionError(err) {
+  const m = String((err && err.message) || '');
+  return /Connection terminated|Client has encountered a connection error|socket hang up|ECONNRESET|EPIPE|ETIMEDOUT|server closed the connection/i.test(m);
+}
+
+/**
+ * Run a read query, retrying ONCE if the pooled connection turned out to be dead.
+ *
+ * Why this is needed: a run spends a long time matching products in memory
+ * between Ledsone reads — measured at ~86 s for a one-month window. Postgres
+ * (and any proxy in front of it) will close a connection that has been idle
+ * that long, and `pg` has no validation step, so the pool can hand back a
+ * socket that is already gone. Without a retry the whole run fails at the last
+ * read, after all the expensive work has been done.
+ *
+ * Only reads go through here, so a retry cannot duplicate a write.
+ */
+async function query(text, params) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const client = await connect();
+    try {
+      return await client.query(text, params);
+    } catch (err) {
+      // Discard the bad client rather than returning it to the pool.
+      client.release(err);
+      if (attempt === 0 && isConnectionError(err)) continue;
+      throw err;
+    } finally {
+      // release() is idempotent in pg; the catch above may already have run.
+      try { client.release(); } catch { /* already released */ }
+    }
   }
+  throw new Error('Query failed after retry.');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

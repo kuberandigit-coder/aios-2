@@ -152,6 +152,29 @@ const TYPES = Object.freeze({
   opportunity: { build: buildOpportunityExport, name: 'keyword-product-opportunities' },
 });
 
+/**
+ * YYYY-MM-DD from whatever the driver returned.
+ *
+ * `pg` hands back a JS `Date` for a `date` column, not a string. Interpolating
+ * that straight into a filename produced
+ * "…_Sat Aug 08 2026 00:00:00 GMT+0530 (India Standard Time)_….csv" — spaces,
+ * colons and parentheses in a Content-Disposition filename. Normalise here so
+ * the export is named the same way whether the value arrives as a Date, an ISO
+ * string, or already-trimmed text.
+ */
+function ymd(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date) {
+    if (Number.isNaN(v.getTime())) return null;
+    // Use the UTC parts: a `date` column has no time zone, and local
+    // formatting could shift it across midnight.
+    return v.toISOString().slice(0, 10);
+  }
+  const s = String(v);
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+
 /** Build one export by type. Throws 400 on an unknown type. */
 function build(type, rows, runMeta) {
   const t = TYPES[type];
@@ -160,10 +183,13 @@ function build(type, rows, runMeta) {
     e.status = 400; e.code = 'STPM_INVALID_EXPORT_TYPE';
     throw e;
   }
-  const stamp = (runMeta && runMeta.actual_start ? runMeta.actual_start : 'run') +
-                '_' + (runMeta && runMeta.actual_end ? runMeta.actual_end : '');
+  const from = ymd(runMeta && runMeta.actual_start);
+  const to = ymd(runMeta && runMeta.actual_end);
+  const stamp = from && to ? `${from}_${to}` : (from || to || 'run');
+  // Belt and braces: never let anything but the safe filename charset through.
+  const safe = `mahima-${t.name}_${stamp}.csv`.replace(/[^A-Za-z0-9._-]/g, '-');
   return {
-    filename: `mahima-${t.name}_${stamp}.csv`.replace(/_+\.csv$/, '.csv'),
+    filename: safe,
     contentType: 'text/csv; charset=utf-8',
     body: t.build(rows),
   };

@@ -29,21 +29,77 @@ function getPool() {
       connectionString: appUrl(),
       ssl: { rejectUnauthorized: false },
       max: 3,
-      idleTimeoutMillis: 30000,
+      // Kept deliberately short. A run spends minutes matching products between
+      // opening the run row and writing the results, during which any pooled
+      // Neon client sits idle. Neon closes idle server-side connections, so a
+      // long idle window means the pool can hand back a socket that is already
+      // dead. Retiring idle clients quickly is cheaper than discovering that
+      // mid-transaction.
+      idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 15000,
+      keepAlive: true,
     });
-    pool.on('error', () => { /* pool self-heals */ });
+    // Errors raised on IDLE clients. Without this, pg re-emits them as an
+    // unhandled 'error' event and takes the process down.
+    pool.on('error', () => { /* pool self-heals; a dead idle client is discarded */ });
   }
   return pool;
 }
 
-async function query(text, params) {
+/**
+ * Check out a client with an error listener already attached.
+ *
+ * `pool.on('error')` only covers clients sitting IDLE in the pool. A client
+ * that is checked out and loses its connection *between* statements — exactly
+ * what happens during the batched insert below — emits 'error' with no
+ * listener, which crashes the process instead of rejecting the caller's
+ * promise. Attaching a listener here turns that into a normal rejection that
+ * `runNow` can catch and record as a failed run.
+ */
+async function connect() {
   const client = await getPool().connect();
-  try {
-    return await client.query(text, params);
-  } finally {
-    client.release();
+  const onError = () => { /* surfaced to the caller via the rejected query */ };
+  client.on('error', onError);
+  const release = client.release.bind(client);
+  client.release = (err) => {
+    client.removeListener('error', onError);
+    return release(err);
+  };
+  return client;
+}
+
+/**
+ * Connection-level failure, as opposed to a SQL error. Means the socket is
+ * gone and the statement can safely be tried again on a fresh client.
+ */
+function isConnectionError(err) {
+  const m = String((err && err.message) || '');
+  return /Connection terminated|Client has encountered a connection error|socket hang up|ECONNRESET|EPIPE|ETIMEDOUT|server closed the connection/i.test(m);
+}
+
+/**
+ * Run a statement, retrying ONCE if the pooled connection was already dead.
+ *
+ * A run opens its header row, then spends a long time matching products in
+ * memory before writing results — measured at ~89 s for a one-month window.
+ * Neon closes connections idle that long, and `pg` does not validate a pooled
+ * client before handing it back, so the first statement after the matching
+ * phase can hit a dead socket. Retrying once turns that into a non-event.
+ */
+async function query(text, params) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const client = await connect();
+    try {
+      return await client.query(text, params);
+    } catch (err) {
+      client.release(err);
+      if (attempt === 0 && isConnectionError(err)) continue;
+      throw err;
+    } finally {
+      try { client.release(); } catch { /* already released */ }
+    }
   }
+  throw new Error('Query failed after retry.');
 }
 
 /**
@@ -201,10 +257,25 @@ async function insertResults(runId, rows) {
   await assertMigrated();
   if (!rows || rows.length === 0) return 0;
 
+  // Retry the WHOLE transaction once on a connection failure. This is safe
+  // precisely because it is one transaction: if it does not commit, nothing was
+  // written, so a second attempt cannot duplicate rows.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await insertResultsOnce(runId, rows);
+    } catch (err) {
+      if (attempt === 0 && isConnectionError(err)) continue;
+      throw err;
+    }
+  }
+  throw new Error('Insert failed after retry.');
+}
+
+async function insertResultsOnce(runId, rows) {
   const BATCH = 200;
   let inserted = 0;
 
-  const client = await getPool().connect();
+  const client = await connect();
   try {
     await client.query('BEGIN');
     for (let i = 0; i < rows.length; i += BATCH) {
@@ -235,9 +306,10 @@ async function insertResults(runId, rows) {
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
+    client.release(err);
     throw err;
   } finally {
-    client.release();
+    try { client.release(); } catch { /* already released */ }
   }
 
   return inserted;

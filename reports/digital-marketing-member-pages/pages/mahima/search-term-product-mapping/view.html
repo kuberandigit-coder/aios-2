@@ -1,0 +1,180 @@
+<!--
+  view.html — REQ-DM-2026-08-MAHI01
+  Mahima · Search Term → Product Mapping
+
+  This is a FRAGMENT, not a page. It is fetched by stpm.js and injected into
+  the Mahima content area (#tabPanel7 > #mahima-stpm-root), so mahima.html
+  stays the persistent shell: its sidebar, header and tab bar remain in place
+  and there is deliberately no second sidebar, <html> or <body> here.
+
+  Every id is prefixed `stpm` so nothing can collide with the ~14.8 MB of
+  existing markup already in mahima.html.
+-->
+<div class="stpm-head">
+  <h1>Search Term &rarr; Product Mapping</h1>
+  <p>Analyse Google Ads search terms, identify waste and opportunities, and map relevant terms to Shopify products.</p>
+  <span class="stpm-scope" id="stpmScope" hidden>
+    <span>Campaign group</span><b>Mahima</b><span>&middot;</span><b id="stpmStore">ledsone.de</b>
+  </span>
+  <button type="button" class="stpm-limits-trigger" id="stpmLimitsBtn">
+    <span aria-hidden="true">&#9888;</span> Known limitations
+  </button>
+</div>
+
+<!-- 1. Is the source data current? Answered before anything else. -->
+<section class="stpm-card stpm-health" id="stpmHealth" data-state="idle" aria-live="polite">
+  <div class="stpm-health-head">
+    <div class="stpm-health-icon" id="stpmHealthIcon" aria-hidden="true">&bull;</div>
+    <div style="min-width:0">
+      <div class="stpm-health-title" id="stpmHealthTitle">Checking data availability&hellip;</div>
+      <div class="stpm-health-msg" id="stpmHealthMsg">Loading campaigns and source freshness.</div>
+      <div class="stpm-ranges" id="stpmRanges" hidden></div>
+      <details id="stpmHealthDetails" hidden>
+        <summary>View data details</summary>
+        <div class="stpm-health-detail" id="stpmHealthDetail"></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Run controls -->
+<section class="stpm-card stpm-controls" aria-labelledby="stpmRunLabel">
+  <h2 id="stpmRunLabel" class="stpm-sr">Run controls</h2>
+  <div class="stpm-controls-grid">
+
+    <div class="stpm-field">
+      <span class="stpm-lbl" id="stpmCampLbl">Campaigns</span>
+      <div class="stpm-multi" id="stpmCampaignList" role="group" aria-labelledby="stpmCampLbl">
+        <div class="stpm-skel" style="margin:8px 6px"></div>
+        <div class="stpm-skel" style="margin:8px 6px;width:70%"></div>
+      </div>
+      <div class="stpm-camp-summary" id="stpmCampaignSummary">Loading&hellip;</div>
+    </div>
+
+    <div class="stpm-field">
+      <label for="stpmCurrentPreset">Current period</label>
+      <select id="stpmCurrentPreset">
+        <option value="last7" selected>Last 7 Days</option>
+        <option value="last14">Last 14 Days</option>
+        <option value="custom">Custom&hellip;</option>
+      </select>
+      <div class="stpm-range" id="stpmCurrentCustom" hidden>
+        <input type="date" id="stpmCurrentStart" aria-label="Current period start">
+        <span class="stpm-sep">&rarr;</span>
+        <input type="date" id="stpmCurrentEnd" aria-label="Current period end">
+      </div>
+    </div>
+
+    <div class="stpm-field">
+      <label for="stpmHistPreset">Historical comparison</label>
+      <select id="stpmHistPreset">
+        <option value="prev30" selected>Previous 30 Days</option>
+        <option value="prev60">Previous 60 Days</option>
+        <option value="custom">Custom&hellip;</option>
+      </select>
+      <div class="stpm-range" id="stpmHistCustom" hidden>
+        <input type="date" id="stpmHistStart" aria-label="Historical period start">
+        <span class="stpm-sep">&rarr;</span>
+        <input type="date" id="stpmHistEnd" aria-label="Historical period end">
+      </div>
+    </div>
+
+    <div class="stpm-field stpm-run-field">
+      <span class="stpm-lbl">&nbsp;</span>
+      <button class="stpm-btn stpm-btn-primary" id="stpmRunBtn" type="button">
+        <span id="stpmRunBtnLabel">Run now</span>
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<!-- 3. Summary -->
+<section class="stpm-tiles" id="stpmTiles" hidden aria-label="Run summary"></section>
+
+<!-- 4. Results / History -->
+<section class="stpm-card" style="overflow:hidden">
+  <div class="stpm-tabs" role="tablist">
+    <button class="stpm-tab" id="stpmTabResults" role="tab" aria-selected="true"
+            aria-controls="stpmPanelResults" type="button">
+      Results <span class="stpm-badge" id="stpmResultsBadge"></span>
+    </button>
+    <button class="stpm-tab" id="stpmTabHistory" role="tab" aria-selected="false"
+            aria-controls="stpmPanelHistory" type="button">
+      History <span class="stpm-badge" id="stpmHistoryBadge"></span>
+    </button>
+  </div>
+
+  <div id="stpmPanelResults" role="tabpanel" aria-labelledby="stpmTabResults">
+
+    <div class="stpm-filters" id="stpmFilters" hidden>
+      <input type="search" id="stpmFSearch" class="stpm-grow" placeholder="Search term contains&hellip;"
+             aria-label="Filter by search term">
+      <select id="stpmFCampaign" aria-label="Filter by campaign"><option value="">All campaigns</option></select>
+      <select id="stpmFDecision" aria-label="Filter by decision">
+        <option value="">All decisions</option>
+        <option>Negative Keyword</option>
+        <option>Keep</option>
+        <option>Keyword Opportunity</option>
+      </select>
+      <select id="stpmFStatus" aria-label="Filter by performance status">
+        <option value="">All statuses</option>
+        <option>Working</option>
+        <option>Dropped</option>
+        <option>No Conversions</option>
+      </select>
+      <select id="stpmFMapping" aria-label="Filter by mapping status">
+        <option value="">All mappings</option>
+        <option>Auto Matched</option>
+        <option>Manual Review</option>
+        <option>No Match</option>
+      </select>
+      <select id="stpmFReview" aria-label="Filter by review status">
+        <option value="">All reviews</option>
+        <option>Pending</option>
+        <option>Approved</option>
+        <option>Rejected</option>
+      </select>
+      <input type="search" id="stpmFProduct" placeholder="Product&hellip;" aria-label="Filter by product">
+      <span class="stpm-filter-count" id="stpmFilterCount" hidden></span>
+      <button class="stpm-btn stpm-btn-sm" id="stpmClearFilters" type="button" hidden>Reset</button>
+      <div style="flex:1"></div>
+      <button class="stpm-btn stpm-btn-sm" id="stpmDlFull" type="button">Download results</button>
+      <button class="stpm-btn stpm-btn-sm" id="stpmDlNeg" type="button">Negative recommendations</button>
+      <button class="stpm-btn stpm-btn-sm" id="stpmDlOpp" type="button">Opportunities</button>
+    </div>
+
+    <div class="stpm-state" id="stpmResultsState">
+      <h3>No run yet</h3>
+      <p>Choose your campaigns and periods above, then select <strong>Run now</strong> to pull the
+         latest search-term data and map it to Shopify products.</p>
+    </div>
+
+    <!-- The wrapper owns BOTH scroll axes. That is what makes the sticky
+         header stick to the table instead of to the Mahima page. tabindex
+         makes the region keyboard-scrollable. -->
+    <div class="stpm-table-wrap" id="stpmTableWrap" hidden
+         tabindex="0" role="region" aria-label="Search term results">
+      <table class="stpm-grid" id="stpmGrid">
+        <thead><tr id="stpmGridHead"></tr></thead>
+        <tbody id="stpmGridBody"></tbody>
+      </table>
+    </div>
+
+    <div class="stpm-pager" id="stpmPager" hidden>
+      <span id="stpmPagerInfo"></span>
+      <div class="stpm-spacer"></div>
+      <label for="stpmPageSize">Rows</label>
+      <select id="stpmPageSize">
+        <option>25</option><option selected>50</option><option>100</option><option>200</option>
+      </select>
+      <button class="stpm-btn stpm-btn-sm" id="stpmPrevPage" type="button">Previous</button>
+      <button class="stpm-btn stpm-btn-sm" id="stpmNextPage" type="button">Next</button>
+    </div>
+  </div>
+
+  <div id="stpmPanelHistory" role="tabpanel" aria-labelledby="stpmTabHistory" hidden>
+    <div class="stpm-state" id="stpmHistoryState"><p>Loading run history&hellip;</p></div>
+    <div class="stpm-runs" id="stpmRuns" hidden></div>
+  </div>
+</section>

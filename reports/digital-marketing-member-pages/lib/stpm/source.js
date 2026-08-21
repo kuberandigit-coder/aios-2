@@ -74,9 +74,24 @@ function historicalWindow(currentStart, days) {
   return { start: iso(start), end: iso(end) };
 }
 
-/** Validate and normalize the caller's requested current period. */
+/**
+ * Validate and normalize the caller's requested current period.
+ *
+ * Three presets:
+ *   last7  — the approved default. The ONLY window that may auto-widen.
+ *   last14 — an explicit user choice. It asks for fourteen days on purpose, so
+ *            it must never be reported as a fallback: showing
+ *            "Last 7 days data is unavailable" to someone who asked for 14 days
+ *            would be simply untrue.
+ *   custom — exact dates, never altered.
+ */
 function resolveRequestedWindow(input, today) {
   const preset = (input && input.preset) || 'last7';
+
+  if (preset === 'last14') {
+    const w = trailingWindow(today, DATE_RULE.FALLBACK_DAYS);
+    return { preset: 'last14', start: w.start, end: w.end, allowFallback: false };
+  }
 
   if (preset === 'custom') {
     const s = parseDate(input && input.start);

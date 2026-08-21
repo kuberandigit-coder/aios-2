@@ -189,6 +189,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   body.sb-open .ms-main{margin-left:var(--sb-w-collapsed) !important;}
 }
 </style>
+<link rel="stylesheet" href="mahima/search-term-product-mapping/stpm.css">
 </head>
 <body>
 <button class="ms-collapse-btn" id="msCollapseBtn" type="button" title="Toggle sidebar" aria-label="Toggle sidebar">
@@ -211,7 +212,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
          content is inline; a results grid of thousands of rows would make that
          worse for every other Mahima tab. Same data-fulltool pattern the EOD
          and Blog tools already use below. -->
-    <li><a href="mahima/search-term-product-mapping/index.html" data-tool="mahima/search-term-product-mapping/index.html" data-fulltool="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="21" y2="21"></line><line x1="10.5" y1="7.5" x2="10.5" y2="13.5"></line><line x1="7.5" y1="10.5" x2="13.5" y2="10.5"></line></svg></span><span class="lbl">Search Term &rarr; Product Mapping</span></a></li>
+    <li><a href="#" data-tab="7"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="21" y2="21"></line><line x1="10.5" y1="7.5" x2="10.5" y2="13.5"></line><line x1="7.5" y1="10.5" x2="13.5" y2="10.5"></line></svg></span><span class="lbl">Search Term &rarr; Product Mapping</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -246,6 +247,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <button class="tabbtn" id="tabBtn3" onclick="showTab(3)">Tab 3: Search Terms Report</button>
   <button class="tabbtn" id="tabBtn5" onclick="showTab(5)">Tab 5: Product ID Coverage</button>
   <button class="tabbtn" id="tabBtn6" onclick="showTab(6)">Requirement 5: Product &times; Campaign Sales</button>
+  <button class="tabbtn" id="tabBtn7" onclick="showTab(7)">Tab 7: Search Term &rarr; Product Mapping</button>
 </div>
 
 <div id="tabPanel1" class="tab-panel">
@@ -867,11 +869,17 @@ function showTab(n){
   document.getElementById('tabPanel3').style.display = n===3 ? '' : 'none';
   document.getElementById('tabPanel5').style.display = n===5 ? '' : 'none';
   document.getElementById('tabPanel6').style.display = n===6 ? '' : 'none';
+  document.getElementById('tabPanel7').style.display = n===7 ? '' : 'none';
   document.getElementById('tabBtn1').classList.toggle('on', n===1);
   document.getElementById('tabBtn2').classList.toggle('on', n===2);
   document.getElementById('tabBtn3').classList.toggle('on', n===3);
   document.getElementById('tabBtn5').classList.toggle('on', n===5);
   document.getElementById('tabBtn6').classList.toggle('on', n===6);
+  document.getElementById('tabBtn7').classList.toggle('on', n===7);
+  // REQ-DM-2026-08-MAHI01 - mount the Search Term view lazily, the first time
+  // its tab is opened. mount() is idempotent, so returning to the tab does not
+  // refetch. The Mahima shell (sidebar, header, tab bar) stays in place.
+  if (n===7 && window.MahimaSTPM) window.MahimaSTPM.mount(document.getElementById('mahima-stpm-root'));
   try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 window.showTab=showTab;
@@ -1769,6 +1777,13 @@ document.getElementById('r5refreshBtn').addEventListener('click',function(){ r5R
 </script>
 </div>
 </div>
+
+<div id="tabPanel7" class="tab-panel" style="display:none">
+  <!-- REQ-DM-2026-08-MAHI01 - mount point for the Search Term view.
+       Markup lives in mahima/search-term-product-mapping/view.html and is
+       injected here by stpm.js, so it is not duplicated in this file. -->
+  <div id="mahima-stpm-root"></div>
+</div>
 </div>
 
 <div id="msToolFrame" style="display:none;height:calc(100vh - 56px);border-radius:14px;overflow:hidden;border:1px solid #dfe3ec;background:#fff;">
@@ -1826,5 +1841,6 @@ document.querySelectorAll('#msNavList a[data-tab]').forEach(function (a) {
   }
 })();
 </script>
+<script src="mahima/search-term-product-mapping/stpm.js"></script>
 </body>
 </html>
