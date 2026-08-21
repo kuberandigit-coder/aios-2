@@ -5,6 +5,7 @@
 // store=de) — behavior for existing callers is identical.
 const crypto = require('crypto');
 const { Client } = require('pg');
+const { callGroqAI } = require('../lib/groq');
 
 // ===== Merged from jefri/product-status.js (2026-07-22) =====
 const jefriProductStatusHandlerModule = (function() {
@@ -3413,47 +3414,13 @@ INSTRUCTIONS:
     }
     messages.push({ role: 'user', content: isDailyBrief ? 'Give me my daily SEO priority briefing. What should I focus on today?' : userMessage });
 
-    // ── Call Groq ────────────────────────────────────────────────────────────
-    const apiKey = process.env.GROQ_API_KEY;
-    const GROQ_MODELS = [
-      { id: 'qwen/qwen3.6-27b', extra: { reasoning_effort: 'none' } },
-      { id: 'groq/compound',    extra: {} },
-      { id: 'openai/gpt-oss-120b', extra: {} },
-    ];
-    let groqData = null, lastGroqErr = null;
-    for (const { id, extra } of GROQ_MODELS) {
-      const abort = new AbortController();
-      const timer = setTimeout(() => abort.abort(), 20000);
-      try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-          body: JSON.stringify({ model: id, messages, temperature: 0.3, max_tokens: 400, ...extra }),
-          signal: abort.signal,
-        });
-        clearTimeout(timer);
-        if (groqRes.ok) {
-          const candidate = await groqRes.json();
-          if (candidate?.choices?.[0]?.message?.content) { groqData = candidate; break; }
-          lastGroqErr = `${id} → empty content`;
-          continue;
-        }
-        const errText = await groqRes.text();
-        lastGroqErr = `${id} → ${groqRes.status}: ${errText.slice(0, 200)}`;
-      } catch (fetchErr) {
-        clearTimeout(timer);
-        lastGroqErr = `${id} → ${fetchErr.name === 'AbortError' ? 'timeout 20s' : fetchErr.message}`;
-      }
-    }
-
-    if (!groqData) return res.status(502).json({ ok: false, error: 'All Groq models failed', detail: lastGroqErr });
-
-    const rawText = groqData?.choices?.[0]?.message?.content || '';
-    const aiText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    // ── Call Groq (shared helper) ────────────────────────────────────────────
+    const groqResult = await callGroqAI(messages);
+    if (!groqResult.ok) return res.status(502).json({ ok: false, error: groqResult.error, detail: groqResult.detail });
 
     return res.status(200).json({
       ok: true,
-      message: aiText,
+      message: groqResult.text,
       is_daily_brief: isDailyBrief,
       meta: { totalSessions, totalPages: allPages.length },
     });
@@ -7411,6 +7378,22 @@ const mugunthaUkRefundsHandlerModule = (function() {
       const force = req.query && req.query.refresh === '1';
       if (!force && CACHE && (Date.now() - CACHE.at) < CACHE_TTL_MS) {
         return res.status(200).json(CACHE.payload);
+      }
+      // Static snapshot fallback (same pattern as Mahima Req5b) — a full
+      // live 60-day Shopify UK refund scan takes minutes, too slow for a
+      // normal page load. Default loads serve this committed snapshot
+      // instantly; the user's Refresh button (?refresh=1) does the live fetch.
+      if (!force) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const staticPath = path.join(__dirname, 'data', 'muguntha-uk-refunds-snapshot.json');
+          const snapshot = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+          snapshot.isSnapshot = true;
+          return res.status(200).json(snapshot);
+        } catch (e) {
+          // No snapshot on disk yet — fall through to a live fetch.
+        }
       }
       if (!TOKEN) {
         return res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing' });
