@@ -747,6 +747,26 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 
 <div class="toolbar filterbar2">
+  <label class="flabel">Date Range
+    <select id="rangesel6" style="height:38px;padding:8px 10px;border:1px solid #dfe3ec;border-radius:8px;font-size:12.5px;background:#fff;box-sizing:border-box;">
+      <option value="year">Yearly (2026 to date)</option>
+      <option value="quarter">Quarterly (this quarter to date)</option>
+      <option value="month">Monthly (this month to date)</option>
+      <option value="week">Weekly (this week to date)</option>
+      <option value="day">Daily (today)</option>
+      <option value="last7">Last 7 days</option>
+      <option value="last30">Last 30 days</option>
+      <option value="lastmonth">Last month</option>
+      <option value="samemonthlastyear">Same month last year</option>
+      <option value="custom">Custom date range&hellip;</option>
+    </select>
+  </label>
+  <label class="flabel" id="customRangeWrap6" style="display:none;">Custom Start &ndash; End
+    <span style="display:flex;gap:6px;">
+      <input id="customStart6" type="date" style="height:38px;padding:8px 10px;border:1px solid #dfe3ec;border-radius:8px;font-size:12.5px;background:#fff;box-sizing:border-box;flex:1;">
+      <input id="customEnd6" type="date" style="height:38px;padding:8px 10px;border:1px solid #dfe3ec;border-radius:8px;font-size:12.5px;background:#fff;box-sizing:border-box;flex:1;">
+    </span>
+  </label>
   <label class="flabel">Search
     <input id="q6" type="text" placeholder="Product ID&hellip;" style="height:38px;padding:8px 10px;border:1px solid #dfe3ec;border-radius:8px;font-size:12.5px;background:#fff;box-sizing:border-box;">
   </label>
@@ -754,6 +774,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <select id="campsel6" style="height:38px;padding:8px 10px;border:1px solid #dfe3ec;border-radius:8px;font-size:12.5px;background:#fff;box-sizing:border-box;"><option value="all">All Campaigns</option></select>
   </label>
 </div>
+<div class="chip" id="rangeInfo6" style="margin-bottom:10px;display:inline-block;"></div>
 
 <div class="pager">
   <button class="tbtn" id="prevPage6">&larr; Prev</button>
@@ -783,15 +804,99 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <strong>Known limitations</strong><br>
   1. Attribution is first-session-based (same mechanism as the existing Ads-cost split elsewhere in this project) &mdash; it is Shopify's own marketing-attribution signal, not a live pull from the Google Ads API itself.<br>
   2. A product appears exactly once (one row) &mdash; if it sold through multiple campaigns, all of them are listed together in the Campaign column rather than getting separate rows.<br>
-  3. Live full-range fetch (2026-01-01&ndash;today) can take longer to refresh than the other tabs since it re-reads all Shopify orders in range; results are cached server-side for 15 minutes between refreshes.<br>
-  4. Read-only &mdash; no orders, campaigns, or products were changed.
+  3. Live full-range fetch (2026-01-01&ndash;today) can take longer to refresh than the other tabs since it re-reads all Shopify orders in range; results are cached server-side for 15 minutes between refreshes. Date-range presets (Daily/Weekly/.../Custom) apply instantly to already-fetched data with no re-fetch.<br>
+  4. Underlying data only exists from 2026-01-01 onward &mdash; "Same month last year" (e.g. Aug 2025) will correctly show no rows, since Shopify data for that period was never fetched by this tab.<br>
+  5. Read-only &mdash; no orders, campaigns, or products were changed.
 </div>
 
 </div>
 <script>
-var ROWS6=[], filtered6=[], page6=0;
+var EVENTS6=[], PRODUCT_IMAGES6={}, ROWS6=[], filtered6=[], page6=0;
 var PAGE_SIZE6=50;
+var LAST_DATA6=null;
 function fmtEur6(n){ return '€'+Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pad2(n){ return n<10?'0'+n:''+n; }
+function d2s(d){ return d.getUTCFullYear()+'-'+pad2(d.getUTCMonth()+1)+'-'+pad2(d.getUTCDate()); }
+// Resolves the selected preset into [startDateStr, endDateStr] (inclusive,
+// UTC, YYYY-MM-DD) — computed client-side from "today" so presets always
+// stay current without a re-deploy. Data only exists from 2026-01-01
+// onward (REQ5B_START on the server), so "Same month last year" (Aug 2025)
+// will correctly show zero rows — that's a real data-availability limit,
+// not a bug.
+function resolveDateRange6(preset){
+  var now=new Date();
+  var today=new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  var start, end=today;
+  if(preset==='day'){ start=today; }
+  else if(preset==='week'){ var dow=today.getUTCDay()||7; start=new Date(today); start.setUTCDate(today.getUTCDate()-(dow-1)); }
+  else if(preset==='month'){ start=new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)); }
+  else if(preset==='quarter'){ var q=Math.floor(today.getUTCMonth()/3); start=new Date(Date.UTC(today.getUTCFullYear(), q*3, 1)); }
+  else if(preset==='year'){ start=new Date(Date.UTC(today.getUTCFullYear(), 0, 1)); }
+  else if(preset==='last7'){ start=new Date(today); start.setUTCDate(today.getUTCDate()-6); }
+  else if(preset==='last30'){ start=new Date(today); start.setUTCDate(today.getUTCDate()-29); }
+  else if(preset==='lastmonth'){ start=new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth()-1, 1)); end=new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0)); }
+  else if(preset==='samemonthlastyear'){ start=new Date(Date.UTC(today.getUTCFullYear()-1, today.getUTCMonth(), 1)); end=new Date(Date.UTC(today.getUTCFullYear()-1, today.getUTCMonth()+1, 0)); }
+  else if(preset==='custom'){
+    var cs=document.getElementById('customStart6').value, ce=document.getElementById('customEnd6').value;
+    return [cs||'2026-01-01', ce||d2s(today)];
+  }
+  else { start=new Date(Date.UTC(2026,0,1)); } // fallback: full range
+  return [d2s(start), d2s(end)];
+}
+// Rebuilds ROWS6 (one row per product) from EVENTS6 filtered to [start,end]
+// inclusive — same aggregation logic the server used to do, now done
+// client-side so any date range is instant, no re-query to Shopify.
+function aggregateRange6(startStr, endStr){
+  var groups={};
+  for(var i=0;i<EVENTS6.length;i++){
+    var e=EVENTS6[i];
+    if(e.d<startStr || e.d>endStr) continue;
+    var g=groups[e.pid];
+    if(!g){ g=groups[e.pid]={ productId:e.pid, image:PRODUCT_IMAGES6[e.pid]||null, campaigns:{}, orderIds:{}, quantity:0, organicSales:0, adsSales:0 }; groups[e.pid]=g; }
+    g.orderIds[e.oid]=1;
+    g.quantity+=e.qty;
+    if(e.paid){ g.adsSales=Math.round((g.adsSales+e.amt)*100)/100; if(e.camp) g.campaigns[e.camp]=1; }
+    else { g.organicSales=Math.round((g.organicSales+e.amt)*100)/100; }
+  }
+  var rows=Object.keys(groups).map(function(pid){
+    var g=groups[pid];
+    var camps=Object.keys(g.campaigns).sort();
+    return {
+      productId: g.productId,
+      image: g.image,
+      orders: Object.keys(g.orderIds).length,
+      quantity: g.quantity,
+      totalSales: Math.round((g.organicSales+g.adsSales)*100)/100,
+      organicSales: g.organicSales,
+      adsSales: g.adsSales,
+      campaign: camps.length ? camps.join(', ') : 'Organic/Direct only',
+    };
+  });
+  rows.sort(function(a,b){ return b.totalSales-a.totalSales; });
+  return rows;
+}
+function applyDateRange6(){
+  var preset=document.getElementById('rangesel6').value;
+  document.getElementById('customRangeWrap6').style.display = preset==='custom' ? '' : 'none';
+  var range=resolveDateRange6(preset);
+  document.getElementById('rangeInfo6').textContent='Showing: '+range[0]+' to '+range[1];
+  ROWS6=aggregateRange6(range[0], range[1]);
+  var campSet=new Set();
+  ROWS6.forEach(function(r){ r.campaign.split(', ').forEach(function(c){ if(c!=='Organic/Direct only') campSet.add(c); }); });
+  var camps=Array.from(campSet).sort();
+  var prevCamp=document.getElementById('campsel6').value;
+  document.getElementById('campsel6').innerHTML='<option value="all">All Campaigns</option>'+camps.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
+  if(camps.indexOf(prevCamp)!==-1) document.getElementById('campsel6').value=prevCamp;
+  var totalSales=ROWS6.reduce(function(s,r){return s+r.totalSales;},0);
+  var adsSales=ROWS6.reduce(function(s,r){return s+r.adsSales;},0);
+  var organicSales=ROWS6.reduce(function(s,r){return s+r.organicSales;},0);
+  document.getElementById('kpi6Rows').textContent=ROWS6.length.toLocaleString();
+  document.getElementById('kpi6Products').textContent=new Set(ROWS6.map(function(r){return r.productId;})).size.toLocaleString();
+  document.getElementById('kpi6Total').textContent=fmtEur6(totalSales);
+  document.getElementById('kpi6Ads').textContent=fmtEur6(adsSales);
+  document.getElementById('kpi6Organic').textContent=fmtEur6(organicSales);
+  applyFilter6();
+}
 function applyFilter6(){
   var q=(document.getElementById('q6').value||'').toLowerCase().trim();
   var camp=document.getElementById('campsel6').value;
@@ -808,7 +913,7 @@ function render6(){
   document.getElementById('tbody6').innerHTML=pageRows.map(function(r){
     var img=r.image?('<img src="'+r.image+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px;" loading="lazy">'):'';
     return '<tr><td style="white-space:nowrap;">'+img+'<span style="vertical-align:middle;">'+r.productId+'</span></td><td>'+r.orders+'</td><td>'+r.quantity+'</td><td>'+fmtEur6(r.totalSales)+'</td><td>'+fmtEur6(r.organicSales)+'</td><td>'+fmtEur6(r.adsSales)+'</td><td>'+r.campaign+'</td></tr>';
-  }).join('') || '<tr><td colspan="7" style="text-align:center;color:#9aa3b2;padding:24px;">No rows for this filter.</td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:#9aa3b2;padding:24px;">No rows for this filter/date range.</td></tr>';
   document.getElementById('pageInfo6').textContent = filtered6.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE6,filtered6.length)+' of '+filtered6.length) : '0 rows';
 }
 function exportCsv6(){
@@ -821,21 +926,11 @@ function exportCsv6(){
 }
 function r6ApplyLive(data){
   var chip=document.getElementById('r6liveChip');
-  ROWS6=data.rows;
-  var campSet=new Set();
-  ROWS6.forEach(function(r){ r.campaign.split(', ').forEach(function(c){ if(c!=='Organic/Direct only') campSet.add(c); }); });
-  var camps=Array.from(campSet).sort();
-  document.getElementById('campsel6').innerHTML='<option value="all">All Campaigns</option>'+camps.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
-  var totalSales=ROWS6.reduce(function(s,r){return s+r.totalSales;},0);
-  var adsSales=ROWS6.reduce(function(s,r){return s+r.adsSales;},0);
-  var organicSales=ROWS6.reduce(function(s,r){return s+r.organicSales;},0);
-  document.getElementById('kpi6Rows').textContent=ROWS6.length.toLocaleString();
-  document.getElementById('kpi6Products').textContent=new Set(ROWS6.map(function(r){return r.productId;})).size.toLocaleString();
-  document.getElementById('kpi6Total').textContent=fmtEur6(totalSales);
-  document.getElementById('kpi6Ads').textContent=fmtEur6(adsSales);
-  document.getElementById('kpi6Organic').textContent=fmtEur6(organicSales);
-  applyFilter6();
-  chip.textContent=(data.isSnapshot?'Snapshot — generated ':'Live — fetched ')+new Date(data.generatedAt).toLocaleString()+' · '+data.dateRange.start+' to '+data.dateRange.end+(data.isSnapshot?' · click Refresh for live data':'');
+  LAST_DATA6=data;
+  EVENTS6=data.events||[];
+  PRODUCT_IMAGES6=data.productImages||{};
+  applyDateRange6();
+  chip.textContent=(data.isSnapshot?'Snapshot — generated ':'Live — fetched ')+new Date(data.generatedAt).toLocaleString()+' · full fetch window '+data.dateRange.start+' to '+data.dateRange.end+(data.isSnapshot?' · click Refresh for live data':'');
   chip.className='chip live';
 }
 async function r6Reload(force){
@@ -858,9 +953,13 @@ async function r6Reload(force){
 }
 document.getElementById('q6').addEventListener('input', function(){ applyFilter6(); });
 document.getElementById('campsel6').addEventListener('change', applyFilter6);
+document.getElementById('rangesel6').addEventListener('change', applyDateRange6);
+document.getElementById('customStart6').addEventListener('change', applyDateRange6);
+document.getElementById('customEnd6').addEventListener('change', applyDateRange6);
 document.getElementById('prevPage6').addEventListener('click', function(){ if(page6>0){ page6--; render6(); } });
 document.getElementById('nextPage6').addEventListener('click', function(){ if((page6+1)*PAGE_SIZE6<filtered6.length){ page6++; render6(); } });
 document.getElementById('r6refreshBtn').addEventListener('click', function(){ r6Reload(true); });
+document.getElementById('rangesel6').value='year';
 r6Reload(false);
 </script>
 

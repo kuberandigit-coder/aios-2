@@ -6977,13 +6977,15 @@ const mahimaReq5bHandlerModule = (function() {
     return { orders, months: months.length };
   }
 
+  // Emits per-order-line events (not pre-aggregated rows) so the frontend
+  // can recompute any date-range preset (Daily/Weekly/.../Custom) instantly
+  // client-side, with zero re-query to Shopify — same pattern already used
+  // by Req1's embedded daily dataset for its date-range picker. Added
+  // 2026-08-21 per Kuberan's request for date-range filters on this tab.
   async function buildReport() {
     const [{ orders }, mahimaProductIds] = await Promise.all([fetchAllOrders(), getMahimaOwnedProductIds()]);
-    // group key: productId ONLY (changed 2026-08-21 per Kuberan — one row
-    // per product, Organic + Ads combined in the same row, campaigns that
-    // contributed Ads Sales listed together, instead of a separate row per
-    // Product x Campaign where one of the two sales columns was always 0).
-    const groups = new Map();
+    const events = [];
+    const productImages = {};
     let excludedTest = 0, excludedCancelled = 0, noJourney = 0, excludedNotMahimaProduct = 0;
 
     for (const order of orders) {
@@ -6998,6 +7000,7 @@ const mahimaReq5bHandlerModule = (function() {
       const isPaid = !!paidEvidence;
       const utmCampaign = firstVisit && firstVisit.utmParameters ? firstVisit.utmParameters.campaign : null;
       const campaignKey = isPaid ? (utmCampaign || 'Paid — Campaign Unknown') : null;
+      const dateStr = order.createdAt.slice(0, 10);
 
       for (const edge of (order.lineItems && order.lineItems.edges) || []) {
         const li = edge.node;
@@ -7006,44 +7009,23 @@ const mahimaReq5bHandlerModule = (function() {
         if (!product) continue;
         const productId = String(product.legacyResourceId);
         if (!mahimaProductIds.has(productId)) { excludedNotMahimaProduct++; continue; }
+        if (!productImages[productId] && product.featuredImage) productImages[productId] = product.featuredImage.url;
         const sales = amt(li.discountedTotalSet);
-
-        if (!groups.has(productId)) {
-          groups.set(productId, {
-            productId,
-            image: product.featuredImage ? product.featuredImage.url : null,
-            campaigns: new Set(),
-            orderIds: new Set(),
-            quantity: 0,
-            organicSales: 0,
-            adsSales: 0,
-          });
-        }
-        const g = groups.get(productId);
-        g.orderIds.add(order.id);
-        g.quantity += li.quantity;
-        if (isPaid) {
-          g.adsSales = round2(g.adsSales + sales);
-          g.campaigns.add(campaignKey);
-        } else {
-          g.organicSales = round2(g.organicSales + sales);
-        }
+        events.push({
+          d: dateStr,
+          pid: productId,
+          camp: campaignKey,
+          paid: isPaid ? 1 : 0,
+          amt: sales,
+          qty: li.quantity,
+          oid: order.legacyResourceId || order.id,
+        });
       }
     }
 
-    const rows = Array.from(groups.values()).map((g) => ({
-      productId: g.productId,
-      image: g.image,
-      orders: g.orderIds.size,
-      quantity: g.quantity,
-      totalSales: round2(g.organicSales + g.adsSales),
-      organicSales: g.organicSales,
-      adsSales: g.adsSales,
-      campaign: g.campaigns.size ? Array.from(g.campaigns).sort().join(', ') : 'Organic/Direct only',
-    })).sort((a, b) => b.totalSales - a.totalSales);
-
     return {
-      rows,
+      events,
+      productImages,
       meta: {
         ordersFetched: orders.length,
         excludedTest,
@@ -7087,8 +7069,9 @@ const mahimaReq5bHandlerModule = (function() {
         success: true,
         generatedAt: new Date().toISOString(),
         dateRange: { start: REQ5B_START, end: new Date().toISOString().slice(0, 10) },
-        grain: 'One row per Product ID. Organic Sales and Ads Sales are both shown on the same row (combined, not split by campaign); Campaign lists every campaign that contributed Ads Sales for that product. Scoped to Mahima\'s own products only.',
-        rows: report.rows,
+        grain: 'One row per Product ID within the selected date range. Organic Sales and Ads Sales are both shown on the same row (combined, not split by campaign); Campaign lists every campaign that contributed Ads Sales for that product. Scoped to Mahima\'s own products only.',
+        events: report.events,
+        productImages: report.productImages,
         meta: report.meta,
       };
       CACHE = { at: Date.now(), payload };
