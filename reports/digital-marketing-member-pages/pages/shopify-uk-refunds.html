@@ -158,9 +158,9 @@ table.rt tr:hover td{background:#f9fafc;}
       <ol style="margin:8px 0 0 18px;line-height:1.7;">
         <li><strong>Postage Issue</strong> &mdash; courier, delivery, postage, shipping, parcel, transit, address, lost, delayed, damaged in transit, DPD/Royal Mail/Yodel/Hermes/Evri</li>
         <li><strong>Out of Stock</strong> &mdash; out of stock, no stock, not in stock, sold out, unavailable, stock issue/shortage</li>
-        <li><strong>Warehouse Related Issue</strong> &mdash; wrong item/product sent, missing part/item, faulty, defective, broken, damaged (not transit-related), doesn't work, picking/warehouse error</li>
-        <li><strong>Website Related Issue</strong> &mdash; website, listing, description, photo/image, looked different on screen, misleading, size chart, colour mismatch</li>
-        <li><strong>Customer Side Issue</strong> &mdash; changed mind, no longer needed, don't want/like, ordered by mistake, duplicate order, not suitable, doesn't fit &mdash; <em>also the default bucket for anything not matched above</em> (e.g. "Not Provided", vague/ambiguous reasons)</li>
+        <li><strong>Warehouse Related Issue</strong> &mdash; item arrived damaged/scratched/broken, we sent/shipped the wrong item, missing part/item, faulty, defective, doesn't work, picking/warehouse error</li>
+        <li><strong>Website Related Issue</strong> &mdash; website, listing, description, photo/image, looked different on screen, misleading, size chart</li>
+        <li><strong>Customer Side Issue</strong> &mdash; changed mind, no longer needed, don't want/like, ordered/purchased the wrong item themselves, duplicate order, not suitable, doesn't fit, colour/style preference &mdash; <em>also the default bucket for anything not matched above</em> (e.g. "Not Provided", vague/ambiguous reasons)</li>
       </ol>
     </div>
   </div>
@@ -269,8 +269,8 @@ document.getElementById('refreshBtn').addEventListener('click', function(){ relo
 var CAT_RULES = [
   { name: 'Postage Issue', color: '#1f5eff', kw: ['courier','postage','delivery','deliver','shipping','ship ','parcel','transit','address','lost in','delayed','late arriv','dpd','royal mail','yodel','hermes','evri'] },
   { name: 'Out of Stock', color: '#e08e0b', kw: ['out of stock','no stock','not in stock','sold out','unavailable','stock issue','insufficient stock','stock shortage'] },
-  { name: 'Warehouse Related Issue', color: '#c62828', kw: ['wrong item','wrong product','wrong tape','missing part','missing item','incomplete','warehouse','pick error','sent wrong','faulty','defective','broken','doesn\'t work','not working','damaged item','damaged on arrival'] },
-  { name: 'Website Related Issue', color: '#0a7d4f', kw: ['website','listing','description','photo','image','looked different','on screen','misleading','size chart','colour','color'] },
+  { name: 'Warehouse Related Issue', color: '#c62828', kw: ['sent wrong','wrong item sent','wrong item received','shipped wrong','wrong tape','missing part','missing item','incomplete','warehouse','pick error','faulty','defective','doesn\'t work','not working','damaged item','damaged on arrival','arrived damaged','arrived broken','scratches on it','scratched on arrival'] },
+  { name: 'Website Related Issue', color: '#0a7d4f', kw: ['website','listing','description','photo','image','looked different','on screen','misleading','size chart'] },
 ];
 function categorizeReason(reason){
   var r=(reason||'').toLowerCase();
