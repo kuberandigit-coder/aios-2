@@ -6891,11 +6891,10 @@ const mahimaReq5bHandlerModule = (function() {
   let CACHE = null; // { at, payload }
   const CACHE_TTL_MS = 15 * 60 * 1000;
 
-  async function fetchAllOrders() {
+  // Fetches one calendar month's orders (paginated, serial within the month).
+  async function fetchOrdersForRange(queryStart, queryEndExclusive) {
     const retryState = { throttleRetries: 0 };
-    const endExclusive = new Date();
-    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1); // include "today"
-    const q = `created_at:>=${REQ5B_START} AND created_at:<${endExclusive.toISOString().slice(0, 10)}`;
+    const q = `created_at:>=${queryStart} AND created_at:<${queryEndExclusive}`;
     const orders = [];
     let after = null;
     let hasNext = true;
@@ -6906,9 +6905,37 @@ const mahimaReq5bHandlerModule = (function() {
       hasNext = data.orders.pageInfo.hasNextPage;
       after = data.orders.pageInfo.endCursor;
       pages++;
-      if (pages > 800) break; // safety cap (~40,000 orders)
+      if (pages > 400) break; // safety cap per month (~20,000 orders/month)
     }
-    return { orders, pages };
+    return orders;
+  }
+
+  // Splits the full report range into calendar months and fetches all of
+  // them in PARALLEL (not serially) — a single serial fetch of the full
+  // Jan-current range timed out in production testing (2026-08-21, ran
+  // past the 300s maxDuration on api/requirement.js). Per-month parallel
+  // fetching matches the pattern already used elsewhere in this codebase
+  // (api/salesde25.js's monthConfig architecture) and finishes in roughly
+  // (slowest single month's time) instead of (sum of all months' time).
+  async function fetchAllOrders() {
+    const start = new Date(REQ5B_START + 'T00:00:00Z');
+    const endExclusive = new Date();
+    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1); // include "today"
+
+    const months = [];
+    let cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+    while (cursor < endExclusive) {
+      const monthStart = new Date(cursor);
+      const monthEndExclusive = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1));
+      const queryStart = (monthStart < start ? start : monthStart).toISOString().slice(0, 10);
+      const queryEnd = (monthEndExclusive < endExclusive ? monthEndExclusive : endExclusive).toISOString().slice(0, 10);
+      months.push({ queryStart, queryEnd });
+      cursor = monthEndExclusive;
+    }
+
+    const results = await Promise.all(months.map((m) => fetchOrdersForRange(m.queryStart, m.queryEnd)));
+    const orders = results.flat();
+    return { orders, months: months.length };
   }
 
   async function buildReport() {
