@@ -6547,6 +6547,254 @@ const jefriReq8HandlerModule = (function() {
   return { handleJefriReq8Orders };
 })();
 
+// Mahima Requirement 5 (Product x Campaign Sales) — added 2026-08-20.
+// NOTE: this is intentionally NOT the same as the earlier "mahima-req5"
+// (Product ID Coverage) tab above — per Kuberan's explicit instruction,
+// the existing Req5 tab was left untouched and this ships as a separate
+// tab ("Tab 6" in mahima.html) rather than renumbering anything.
+// Reuses the exact proven Shopify Admin API + customerJourneySummary/UTM
+// first-session paid-vs-organic classification logic already validated
+// in api/salesde25.js (ledsone-de.myshopify.com, SHOPIFY_ADMIN_TOKEN,
+// PAID_UTM_MEDIUMS/PAID_UTM_SOURCES/PAID_CLICK_IDS/PAID_SOURCE_TYPES,
+// hasPaidEvidence/classifySession) — copied here (not imported) because
+// salesde25.js only exports its top-level request handler, consistent
+// with how every other handler in this codebase self-contains its own
+// copy of these helpers (see salesde25.js itself, which redefines
+// shopifyGraphQL 5 separate times across its own merged handlers).
+const mahimaReq5bHandlerModule = (function() {
+  const STORE_DOMAIN = 'ledsone-de.myshopify.com';
+  const API_VERSION = '2024-10';
+  const TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
+
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+  function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+  function amt(moneySet) { return moneySet ? round2(Number(moneySet.shopMoney.amount)) : 0; }
+
+  async function shopifyGraphQL(query, variables, retryState) {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      let res;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+        res = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': TOKEN },
+          body: JSON.stringify({ query, variables }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+      } catch (e) {
+        retryState.throttleRetries++;
+        await sleep(500 * Math.pow(2, attempt) + Math.random() * 250);
+        continue;
+      }
+      if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
+        retryState.throttleRetries++;
+        await sleep(500 * Math.pow(2, attempt) + Math.random() * 250);
+        continue;
+      }
+      if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+      const json = await res.json();
+      const throttled = json.errors && Array.isArray(json.errors) && json.errors.some(e => e.extensions && e.extensions.code === 'THROTTLED');
+      if (throttled) {
+        retryState.throttleRetries++;
+        await sleep(1000 * Math.pow(2, attempt));
+        continue;
+      }
+      if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+      return json.data;
+    }
+    throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
+  }
+
+  // ---------- Paid vs Organic first-session classification ----------
+  // Copied verbatim from api/salesde25.js's proven, live-verified logic
+  // (see that file's comments: PAID_UTM_MEDIUMS/PAID_UTM_SOURCES/PAID_SOURCE_TYPES
+  // were each tuned against real production orders that were initially
+  // misclassified — pmax/demandgen mediums, utm_source=Google_Ads,
+  // sourceType=AD — not re-derived here, reused exactly).
+  const PAID_UTM_MEDIUMS = ['cpc', 'ppc', 'paid', 'paid_search', 'paidsearch', 'display', 'shopping', 'paid_social', 'cpv', 'cpm', 'cpa', 'pmax', 'performance_max', 'demandgen', 'demand_gen', 'discovery'];
+  const PAID_CLICK_IDS = ['gclid', 'gbraid', 'wbraid', 'msclkid', 'dclid'];
+  const PAID_UTM_SOURCES = ['google_ads', 'googleads', 'google ads', 'bing_ads', 'bingads', 'facebook_ads', 'meta_ads'];
+  const PAID_SOURCE_TYPES = ['ad'];
+  function lower(s) { return (s || '').toString().toLowerCase(); }
+
+  function hasPaidEvidence(visit) {
+    const utm = visit.utmParameters || {};
+    const medium = lower(utm.medium);
+    if (PAID_UTM_MEDIUMS.includes(medium)) return `paid utm_medium=${medium}`;
+    const utmSource = lower(utm.source);
+    if (PAID_UTM_SOURCES.some(s => utmSource.includes(s))) return `paid utm_source=${utm.source}`;
+    const urlFields = [visit.referrerUrl, visit.landingPage].filter(Boolean).join(' ').toLowerCase();
+    for (const id of PAID_CLICK_IDS) {
+      if (urlFields.includes(id + '=')) return `paid click id present: ${id}`;
+    }
+    const sourceType = lower(visit.sourceType);
+    if (PAID_SOURCE_TYPES.includes(sourceType)) return `sourceType=${visit.sourceType}`;
+    return null;
+  }
+
+  const ORDERS_QUERY = `
+  query MahimaReq5bOrders($cursor: String, $query: String!) {
+    orders(first: 50, after: $cursor, sortKey: CREATED_AT, query: $query) {
+      edges {
+        node {
+          id
+          legacyResourceId
+          name
+          createdAt
+          cancelledAt
+          test
+          customerJourneySummary {
+            ready
+            firstVisit {
+              landingPage referrerUrl source sourceDescription sourceType
+              utmParameters { source medium campaign term content }
+            }
+          }
+          lineItems(first: 100) {
+            edges {
+              node {
+                quantity
+                discountedTotalSet { shopMoney { amount currencyCode } }
+                variant {
+                  legacyResourceId
+                  product { legacyResourceId title featuredImage { url } }
+                }
+              }
+            }
+            pageInfo { hasNextPage endCursor }
+          }
+        }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }`;
+
+  const REQ5B_START = '2026-01-01';
+  let CACHE = null; // { at, payload }
+  const CACHE_TTL_MS = 15 * 60 * 1000;
+
+  async function fetchAllOrders() {
+    const retryState = { throttleRetries: 0 };
+    const endExclusive = new Date();
+    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1); // include "today"
+    const q = `created_at:>=${REQ5B_START} AND created_at:<${endExclusive.toISOString().slice(0, 10)}`;
+    const orders = [];
+    let after = null;
+    let hasNext = true;
+    let pages = 0;
+    while (hasNext) {
+      const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState);
+      for (const edge of data.orders.edges) orders.push(edge.node);
+      hasNext = data.orders.pageInfo.hasNextPage;
+      after = data.orders.pageInfo.endCursor;
+      pages++;
+      if (pages > 800) break; // safety cap (~40,000 orders)
+    }
+    return { orders, pages };
+  }
+
+  async function buildReport() {
+    const { orders } = await fetchAllOrders();
+    // group key: `${productId}::${campaignKey}`
+    const groups = new Map();
+    let excludedTest = 0, excludedCancelled = 0, noJourney = 0;
+
+    for (const order of orders) {
+      if (order.test) { excludedTest++; continue; }
+      if (order.cancelledAt) { excludedCancelled++; continue; }
+
+      const cjs = order.customerJourneySummary;
+      const firstVisit = cjs && cjs.ready ? cjs.firstVisit : null;
+      if (!firstVisit) noJourney++;
+
+      const paidEvidence = firstVisit ? hasPaidEvidence(firstVisit) : null;
+      const isPaid = !!paidEvidence;
+      const utmCampaign = firstVisit && firstVisit.utmParameters ? firstVisit.utmParameters.campaign : null;
+      const campaignKey = isPaid ? (utmCampaign || 'Paid — Campaign Unknown') : 'Organic/Direct';
+
+      const seenProductsThisOrder = new Set(); // for Orders-count-per-group (1 per product per order)
+      for (const edge of (order.lineItems && order.lineItems.edges) || []) {
+        const li = edge.node;
+        const variant = li.variant;
+        const product = variant && variant.product;
+        if (!product) continue;
+        const productId = String(product.legacyResourceId);
+        const sales = amt(li.discountedTotalSet);
+        const groupKey = productId + '::' + campaignKey;
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, {
+            productId,
+            image: product.featuredImage ? product.featuredImage.url : null,
+            campaign: campaignKey,
+            isPaid,
+            orderIds: new Set(),
+            quantity: 0,
+            organicSales: 0,
+            adsSales: 0,
+          });
+        }
+        const g = groups.get(groupKey);
+        g.orderIds.add(order.id);
+        g.quantity += li.quantity;
+        if (isPaid) g.adsSales = round2(g.adsSales + sales);
+        else g.organicSales = round2(g.organicSales + sales);
+      }
+    }
+
+    const rows = Array.from(groups.values()).map((g) => ({
+      productId: g.productId,
+      image: g.image,
+      orders: g.orderIds.size,
+      quantity: g.quantity,
+      totalSales: round2(g.organicSales + g.adsSales),
+      organicSales: g.organicSales,
+      adsSales: g.adsSales,
+      campaign: g.campaign,
+    })).sort((a, b) => b.totalSales - a.totalSales);
+
+    return {
+      rows,
+      meta: {
+        ordersFetched: orders.length,
+        excludedTest,
+        excludedCancelled,
+        ordersWithNoJourneyData: noJourney,
+      },
+    };
+  }
+
+  async function mahimaReq5bHandler(req, res) {
+    try {
+      const force = req.query && req.query.refresh === '1';
+      if (!force && CACHE && (Date.now() - CACHE.at) < CACHE_TTL_MS) {
+        return res.status(200).json(CACHE.payload);
+      }
+      if (!TOKEN) {
+        return res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_ADMIN_TOKEN missing' });
+      }
+      const report = await buildReport();
+      const payload = {
+        success: true,
+        generatedAt: new Date().toISOString(),
+        dateRange: { start: REQ5B_START, end: new Date().toISOString().slice(0, 10) },
+        grain: 'Product ID x Campaign (Organic/Direct is its own campaign bucket)',
+        rows: report.rows,
+        meta: report.meta,
+      };
+      CACHE = { at: Date.now(), payload };
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[mahima/req5b] error:', err && err.message);
+      res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+    }
+  }
+
+  return { mahimaReq5bHandler };
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
@@ -6567,6 +6815,7 @@ module.exports = async (req, res) => {
   if (fn === 'mahima-req1') return jefriProductStatusHandlerModule.mahimaReq1Handler(req, res);
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
   if (fn === 'mahima-req5') return jefriProductStatusHandlerModule.mahimaReq5Handler(req, res);
+  if (fn === 'mahima-req5b') return mahimaReq5bHandlerModule.mahimaReq5bHandler(req, res);
   if (fn === 'jefri-req3') return jefriProductStatusHandlerModule.jefriReq3Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);

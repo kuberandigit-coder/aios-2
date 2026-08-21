@@ -205,6 +205,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-tab="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></span><span class="lbl">Stock Management</span></a></li>
     <li><a href="#" data-tab="3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Search Terms</span></a></li>
     <li><a href="#" data-tab="5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"></circle><circle cx="15" cy="12" r="6"></circle></svg></span><span class="lbl">Product ID Coverage</span></a></li>
+    <li><a href="#" data-tab="6"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span class="lbl">Product &times; Campaign Sales</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -238,6 +239,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <button class="tabbtn" id="tabBtn2" onclick="showTab(2)">Tab 2: Stock Management</button>
   <button class="tabbtn" id="tabBtn3" onclick="showTab(3)">Tab 3: Search Terms Report</button>
   <button class="tabbtn" id="tabBtn5" onclick="showTab(5)">Tab 5: Product ID Coverage</button>
+  <button class="tabbtn" id="tabBtn6" onclick="showTab(6)">Requirement 5: Product &times; Campaign Sales</button>
 </div>
 
 <div id="tabPanel1" class="tab-panel">
@@ -709,16 +711,155 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </div>
 
 </div>
+
+<div id="tabPanel6" class="tab-panel" style="display:none;">
+
+<header class="top">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 5 &mdash; Product &times; Campaign Sales</div>
+  <h1>Mahima - Product &times; Campaign Sales</h1>
+  <div class="sub">Product-level Google Ads sales analysis &middot; Account: <strong>ledsone.de</strong> &middot; grain: <strong>Product ID &times; Campaign</strong> (an "Organic/Direct" bucket is its own campaign row per product) &middot; date range: <strong>Jan 1, 2026 &ndash; today, live</strong>.</div>
+  <div class="chips">
+    <span class="chip" id="r6liveChip">Loading live data&hellip;</span>
+    <button id="r6refreshBtn" class="primary" type="button">Refresh</button>
+    <button class="primary" type="button" onclick="exportCsv6()" style="background:#0a7d4f;border-color:#0a7d4f;">Export CSV</button>
+  </div>
+</header>
+
+<div class="cards" id="kpiCards6">
+  <div class="card"><div class="l">Rows (Product &times; Campaign)</div><div class="v" id="kpi6Rows">&hellip;</div></div>
+  <div class="card"><div class="l">Distinct Products</div><div class="v" id="kpi6Products">&hellip;</div></div>
+  <div class="card"><div class="l">Total Sales</div><div class="v" id="kpi6Total">&hellip;</div></div>
+  <div class="card"><div class="l">Ads Sales</div><div class="v" id="kpi6Ads" style="color:#1f5eff">&hellip;</div></div>
+  <div class="card"><div class="l">Organic Sales</div><div class="v" id="kpi6Organic" style="color:#0a7d4f">&hellip;</div></div>
+</div>
+
+<div class="toolbar filterbar2">
+  <label class="flabel">Search
+    <input id="q6" type="text" placeholder="Product ID&hellip;">
+  </label>
+  <label class="flabel">Campaign
+    <select id="campsel6"><option value="all">All Campaigns</option></select>
+  </label>
+</div>
+
+<div class="pager">
+  <button class="tbtn" id="prevPage6">&larr; Prev</button>
+  <span class="info" id="pageInfo6"></span>
+  <button class="tbtn" id="nextPage6">Next &rarr;</button>
+</div>
+
+<div class="tablewrap">
+<table class="rt">
+<thead><tr>
+  <th>Product ID</th><th>Image</th><th>Orders</th><th>Quantity</th><th>Total Sales</th><th>Organic Sales</th><th>Ads Sales</th><th>Campaign</th>
+</tr></thead>
+<tbody id="tbody6"></tbody>
+</table>
+</div>
+
+<div class="sources">
+  <strong>Data Sources &amp; Calculation Rules</strong><br>
+  <strong>Source:</strong> Shopify Admin API (ledsone.de) &mdash; <code>orders</code> (excludes test/cancelled orders) with <code>lineItems</code> (Product ID, Quantity, <code>discountedTotalSet</code> as line-item Sales) and <code>customerJourneySummary.firstVisit.utmParameters</code>.<br>
+  <strong>Ads vs Organic:</strong> an order's <em>first session</em> is classified Paid if its UTM medium/source, click-ID, or Shopify <code>sourceType=AD</code> matches known ad signals (same rule set already validated in Sonya's/Sajeepan's Ads-cost split, see <code>api/salesde25.js</code>) &mdash; if Paid, that order's line-item sales count as <strong>Ads Sales</strong> and the row's Campaign = <code>utm_campaign</code> from that first session; otherwise sales count as <strong>Organic Sales</strong> and the row's Campaign = "Organic/Direct".<br>
+  <strong>Grain:</strong> rows are grouped by (Product ID, Campaign) &mdash; a product can have multiple rows if it sold via multiple campaigns and/or organically in this date range. <strong>Total Sales = Organic Sales + Ads Sales</strong> for that row (each row is either entirely a campaign's orders or entirely organic orders, not a blend).<br>
+  <strong>Image:</strong> Shopify's own <code>product.featuredImage.url</code> (native source, not scraped/hard-coded).
+</div>
+
+<div class="limits">
+  <strong>Known limitations</strong><br>
+  1. Attribution is first-session-based (same mechanism as the existing Ads-cost split elsewhere in this project) &mdash; it is Shopify's own marketing-attribution signal, not a live pull from the Google Ads API itself.<br>
+  2. A product only ever appears once per Campaign value per load &mdash; if you expected to see the exact repeated-campaign example rows from the original spec, that was illustrative sample data only (explicitly marked "for understanding output structure" in the request), not a literal live-data shape; this implementation's real grouping is (Product ID, Campaign) with no further split.<br>
+  3. Live full-range fetch (2026-01-01&ndash;today) can take longer to refresh than the other tabs since it re-reads all Shopify orders in range; results are cached server-side for 15 minutes between refreshes.<br>
+  4. Read-only &mdash; no orders, campaigns, or products were changed.
+</div>
+
+</div>
+<script>
+var ROWS6=[], filtered6=[], page6=0;
+var PAGE_SIZE6=50;
+function fmtEur6(n){ return '€'+Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function applyFilter6(){
+  var q=(document.getElementById('q6').value||'').toLowerCase().trim();
+  var camp=document.getElementById('campsel6').value;
+  filtered6=ROWS6.filter(function(r){
+    if(camp!=='all' && r.campaign!==camp) return false;
+    if(q && r.productId.toLowerCase().indexOf(q)===-1) return false;
+    return true;
+  });
+  page6=0; render6();
+}
+function render6(){
+  var start=page6*PAGE_SIZE6;
+  var pageRows=filtered6.slice(start,start+PAGE_SIZE6);
+  document.getElementById('tbody6').innerHTML=pageRows.map(function(r){
+    var img=r.image?('<img src="'+r.image+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px;" loading="lazy">'):'<span style="color:#9aa3b2;font-size:11px;">No image</span>';
+    return '<tr><td>'+r.productId+'</td><td>'+img+'</td><td>'+r.orders+'</td><td>'+r.quantity+'</td><td>'+fmtEur6(r.totalSales)+'</td><td>'+fmtEur6(r.organicSales)+'</td><td>'+fmtEur6(r.adsSales)+'</td><td>'+r.campaign+'</td></tr>';
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:#9aa3b2;padding:24px;">No rows for this filter.</td></tr>';
+  document.getElementById('pageInfo6').textContent = filtered6.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE6,filtered6.length)+' of '+filtered6.length) : '0 rows';
+}
+function exportCsv6(){
+  var header=['Product ID','Orders','Quantity','Total Sales','Organic Sales','Ads Sales','Campaign'];
+  var lines=[header.join(',')].concat(filtered6.map(function(r){
+    return [r.productId,r.orders,r.quantity,r.totalSales,r.organicSales,r.adsSales,'"'+r.campaign.replace(/"/g,'""')+'"'].join(',');
+  }));
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mahima-req5b-product-campaign-sales.csv'; a.click();
+}
+function r6ApplyLive(data){
+  var chip=document.getElementById('r6liveChip');
+  ROWS6=data.rows;
+  var camps=Array.from(new Set(ROWS6.map(function(r){return r.campaign;}))).sort();
+  document.getElementById('campsel6').innerHTML='<option value="all">All Campaigns</option>'+camps.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
+  var totalSales=ROWS6.reduce(function(s,r){return s+r.totalSales;},0);
+  var adsSales=ROWS6.reduce(function(s,r){return s+r.adsSales;},0);
+  var organicSales=ROWS6.reduce(function(s,r){return s+r.organicSales;},0);
+  document.getElementById('kpi6Rows').textContent=ROWS6.length.toLocaleString();
+  document.getElementById('kpi6Products').textContent=new Set(ROWS6.map(function(r){return r.productId;})).size.toLocaleString();
+  document.getElementById('kpi6Total').textContent=fmtEur6(totalSales);
+  document.getElementById('kpi6Ads').textContent=fmtEur6(adsSales);
+  document.getElementById('kpi6Organic').textContent=fmtEur6(organicSales);
+  applyFilter6();
+  chip.textContent='Live — fetched '+new Date(data.generatedAt).toLocaleString()+' · '+data.dateRange.start+' to '+data.dateRange.end;
+  chip.className='chip live';
+}
+async function r6Reload(force){
+  var chip=document.getElementById('r6liveChip');
+  var btn=document.getElementById('r6refreshBtn');
+  btn.disabled=true; btn.textContent='Refreshing…';
+  chip.textContent='Fetching live data from Shopify…';
+  chip.className='chip';
+  try{
+    var res=await fetch('/api/requirement?fn=mahima-req5b'+(force?'&refresh=1':''));
+    var data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.error||('HTTP '+res.status));
+    r6ApplyLive(data);
+  }catch(e){
+    chip.textContent='Failed to load: '+e.message;
+    chip.className='chip stale';
+  }finally{
+    btn.disabled=false; btn.textContent='Refresh';
+  }
+}
+document.getElementById('q6').addEventListener('input', function(){ applyFilter6(); });
+document.getElementById('campsel6').addEventListener('change', applyFilter6);
+document.getElementById('prevPage6').addEventListener('click', function(){ if(page6>0){ page6--; render6(); } });
+document.getElementById('nextPage6').addEventListener('click', function(){ if((page6+1)*PAGE_SIZE6<filtered6.length){ page6++; render6(); } });
+document.getElementById('r6refreshBtn').addEventListener('click', function(){ r6Reload(true); });
+r6Reload(false);
+</script>
+
 <script>
 function showTab(n){
   document.getElementById('tabPanel1').style.display = n===1 ? '' : 'none';
   document.getElementById('tabPanel2').style.display = n===2 ? '' : 'none';
   document.getElementById('tabPanel3').style.display = n===3 ? '' : 'none';
   document.getElementById('tabPanel5').style.display = n===5 ? '' : 'none';
+  document.getElementById('tabPanel6').style.display = n===6 ? '' : 'none';
   document.getElementById('tabBtn1').classList.toggle('on', n===1);
   document.getElementById('tabBtn2').classList.toggle('on', n===2);
   document.getElementById('tabBtn3').classList.toggle('on', n===3);
   document.getElementById('tabBtn5').classList.toggle('on', n===5);
+  document.getElementById('tabBtn6').classList.toggle('on', n===6);
   try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 window.showTab=showTab;
