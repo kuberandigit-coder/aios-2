@@ -6979,7 +6979,10 @@ const mahimaReq5bHandlerModule = (function() {
 
   async function buildReport() {
     const [{ orders }, mahimaProductIds] = await Promise.all([fetchAllOrders(), getMahimaOwnedProductIds()]);
-    // group key: `${productId}::${campaignKey}`
+    // group key: productId ONLY (changed 2026-08-21 per Kuberan — one row
+    // per product, Organic + Ads combined in the same row, campaigns that
+    // contributed Ads Sales listed together, instead of a separate row per
+    // Product x Campaign where one of the two sales columns was always 0).
     const groups = new Map();
     let excludedTest = 0, excludedCancelled = 0, noJourney = 0, excludedNotMahimaProduct = 0;
 
@@ -6994,9 +6997,8 @@ const mahimaReq5bHandlerModule = (function() {
       const paidEvidence = firstVisit ? hasPaidEvidence(firstVisit) : null;
       const isPaid = !!paidEvidence;
       const utmCampaign = firstVisit && firstVisit.utmParameters ? firstVisit.utmParameters.campaign : null;
-      const campaignKey = isPaid ? (utmCampaign || 'Paid — Campaign Unknown') : 'Organic/Direct';
+      const campaignKey = isPaid ? (utmCampaign || 'Paid — Campaign Unknown') : null;
 
-      const seenProductsThisOrder = new Set(); // for Orders-count-per-group (1 per product per order)
       for (const edge of (order.lineItems && order.lineItems.edges) || []) {
         const li = edge.node;
         const variant = li.variant;
@@ -7005,25 +7007,27 @@ const mahimaReq5bHandlerModule = (function() {
         const productId = String(product.legacyResourceId);
         if (!mahimaProductIds.has(productId)) { excludedNotMahimaProduct++; continue; }
         const sales = amt(li.discountedTotalSet);
-        const groupKey = productId + '::' + campaignKey;
 
-        if (!groups.has(groupKey)) {
-          groups.set(groupKey, {
+        if (!groups.has(productId)) {
+          groups.set(productId, {
             productId,
             image: product.featuredImage ? product.featuredImage.url : null,
-            campaign: campaignKey,
-            isPaid,
+            campaigns: new Set(),
             orderIds: new Set(),
             quantity: 0,
             organicSales: 0,
             adsSales: 0,
           });
         }
-        const g = groups.get(groupKey);
+        const g = groups.get(productId);
         g.orderIds.add(order.id);
         g.quantity += li.quantity;
-        if (isPaid) g.adsSales = round2(g.adsSales + sales);
-        else g.organicSales = round2(g.organicSales + sales);
+        if (isPaid) {
+          g.adsSales = round2(g.adsSales + sales);
+          g.campaigns.add(campaignKey);
+        } else {
+          g.organicSales = round2(g.organicSales + sales);
+        }
       }
     }
 
@@ -7035,7 +7039,7 @@ const mahimaReq5bHandlerModule = (function() {
       totalSales: round2(g.organicSales + g.adsSales),
       organicSales: g.organicSales,
       adsSales: g.adsSales,
-      campaign: g.campaign,
+      campaign: g.campaigns.size ? Array.from(g.campaigns).sort().join(', ') : 'Organic/Direct only',
     })).sort((a, b) => b.totalSales - a.totalSales);
 
     return {
@@ -7083,7 +7087,7 @@ const mahimaReq5bHandlerModule = (function() {
         success: true,
         generatedAt: new Date().toISOString(),
         dateRange: { start: REQ5B_START, end: new Date().toISOString().slice(0, 10) },
-        grain: 'Product ID x Campaign (Organic/Direct is its own campaign bucket), scoped to Mahima\'s own products only',
+        grain: 'One row per Product ID. Organic Sales and Ads Sales are both shown on the same row (combined, not split by campaign); Campaign lists every campaign that contributed Ads Sales for that product. Scoped to Mahima\'s own products only.',
         rows: report.rows,
         meta: report.meta,
       };

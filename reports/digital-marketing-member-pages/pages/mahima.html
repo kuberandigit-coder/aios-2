@@ -730,7 +730,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 <header class="top">
   <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 5 &mdash; Product &times; Campaign Sales</div>
   <h1>Mahima - Product &times; Campaign Sales</h1>
-  <div class="sub">Product-level Google Ads sales analysis &middot; Account: <strong>ledsone.de</strong> &middot; grain: <strong>Product ID &times; Campaign</strong> (an "Organic/Direct" bucket is its own campaign row per product) &middot; date range: <strong>Jan 1, 2026 &ndash; today, live</strong>.</div>
+  <div class="sub">Product-level Google Ads sales analysis &middot; Account: <strong>ledsone.de</strong> &middot; grain: <strong>one row per Product ID</strong>, Organic + Ads Sales combined on the same row, contributing campaigns listed together &middot; date range: <strong>Jan 1, 2026 &ndash; today, live</strong>.</div>
   <div class="chips">
     <span class="chip" id="r6liveChip">Loading live data&hellip;</span>
     <button id="r6refreshBtn" class="primary" type="button">Refresh</button>
@@ -739,7 +739,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
 </header>
 
 <div class="cards" id="kpiCards6">
-  <div class="card"><div class="l">Rows (Product &times; Campaign)</div><div class="v" id="kpi6Rows">&hellip;</div></div>
+  <div class="card"><div class="l">Rows (Products)</div><div class="v" id="kpi6Rows">&hellip;</div></div>
   <div class="card"><div class="l">Distinct Products</div><div class="v" id="kpi6Products">&hellip;</div></div>
   <div class="card"><div class="l">Total Sales</div><div class="v" id="kpi6Total">&hellip;</div></div>
   <div class="card"><div class="l">Ads Sales</div><div class="v" id="kpi6Ads" style="color:#1f5eff">&hellip;</div></div>
@@ -775,14 +775,14 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   <strong>Source:</strong> Shopify Admin API (ledsone.de) &mdash; <code>orders</code> (excludes test/cancelled orders) with <code>lineItems</code> (Product ID, Quantity, <code>discountedTotalSet</code> as line-item Sales) and <code>customerJourneySummary.firstVisit.utmParameters</code>.<br>
   <strong>Scope:</strong> Mahima's own products only &mdash; line items are filtered to the product ID universe from <code>google_ads.product_performance</code> for her 5 campaigns (the same universe Req1/Req5 use), so products belonging to other team members are excluded even if sold in the same order.<br>
   <strong>Ads vs Organic:</strong> an order's <em>first session</em> is classified Paid if its UTM medium/source, click-ID, or Shopify <code>sourceType=AD</code> matches known ad signals (same rule set already validated in Sonya's/Sajeepan's Ads-cost split, see <code>api/salesde25.js</code>) &mdash; if Paid, that order's line-item sales count as <strong>Ads Sales</strong> and the row's Campaign = <code>utm_campaign</code> from that first session; otherwise sales count as <strong>Organic Sales</strong> and the row's Campaign = "Organic/Direct".<br>
-  <strong>Grain:</strong> rows are grouped by (Product ID, Campaign) &mdash; a product can have multiple rows if it sold via multiple campaigns and/or organically in this date range. <strong>Total Sales = Organic Sales + Ads Sales</strong> for that row (each row is either entirely a campaign's orders or entirely organic orders, not a blend).<br>
+  <strong>Grain:</strong> one row per Product ID (changed 2026-08-21 per Kuberan) &mdash; Organic Sales and Ads Sales are both shown together on the same row. <strong>Total Sales = Organic Sales + Ads Sales.</strong> The Campaign column lists every campaign whose first-session-attributed orders contributed to that product's Ads Sales (comma-separated if more than one); "Organic/Direct only" means no ads-attributed orders in this window.<br>
   <strong>Image:</strong> Shopify's own <code>product.featuredImage.url</code> (native source, not scraped/hard-coded).
 </div>
 
 <div class="limits">
   <strong>Known limitations</strong><br>
   1. Attribution is first-session-based (same mechanism as the existing Ads-cost split elsewhere in this project) &mdash; it is Shopify's own marketing-attribution signal, not a live pull from the Google Ads API itself.<br>
-  2. A product only ever appears once per Campaign value per load &mdash; if you expected to see the exact repeated-campaign example rows from the original spec, that was illustrative sample data only (explicitly marked "for understanding output structure" in the request), not a literal live-data shape; this implementation's real grouping is (Product ID, Campaign) with no further split.<br>
+  2. A product appears exactly once (one row) &mdash; if it sold through multiple campaigns, all of them are listed together in the Campaign column rather than getting separate rows.<br>
   3. Live full-range fetch (2026-01-01&ndash;today) can take longer to refresh than the other tabs since it re-reads all Shopify orders in range; results are cached server-side for 15 minutes between refreshes.<br>
   4. Read-only &mdash; no orders, campaigns, or products were changed.
 </div>
@@ -796,7 +796,7 @@ function applyFilter6(){
   var q=(document.getElementById('q6').value||'').toLowerCase().trim();
   var camp=document.getElementById('campsel6').value;
   filtered6=ROWS6.filter(function(r){
-    if(camp!=='all' && r.campaign!==camp) return false;
+    if(camp!=='all' && r.campaign.indexOf(camp)===-1) return false;
     if(q && r.productId.toLowerCase().indexOf(q)===-1) return false;
     return true;
   });
@@ -822,7 +822,9 @@ function exportCsv6(){
 function r6ApplyLive(data){
   var chip=document.getElementById('r6liveChip');
   ROWS6=data.rows;
-  var camps=Array.from(new Set(ROWS6.map(function(r){return r.campaign;}))).sort();
+  var campSet=new Set();
+  ROWS6.forEach(function(r){ r.campaign.split(', ').forEach(function(c){ if(c!=='Organic/Direct only') campSet.add(c); }); });
+  var camps=Array.from(campSet).sort();
   document.getElementById('campsel6').innerHTML='<option value="all">All Campaigns</option>'+camps.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
   var totalSales=ROWS6.reduce(function(s,r){return s+r.totalSales;},0);
   var adsSales=ROWS6.reduce(function(s,r){return s+r.adsSales;},0);

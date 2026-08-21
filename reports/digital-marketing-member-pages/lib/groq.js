@@ -1,30 +1,23 @@
 // Shared AI caller — used by all staff AI assistants.
-// Try order: Groq llama (reliable) → Gemini (paid)
 // Returns { ok: true, text } or { ok: false, error, detail }
 
 const MODELS = [
   {
-    url:    'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    apiKey: () => process.env.GEMINI_API_KEY,
-    id:     'gemini-2.0-flash',
-    extra:  {},
+    url:    'https://api.groq.com/openai/v1/chat/completions',
+    apiKey: () => process.env.GROQ_API_KEY,
+    id:     'qwen/qwen3.6-27b',
+    extra:  { reasoning_effort: 'none' },
   },
   {
-    url:    'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    apiKey: () => process.env.GEMINI_API_KEY,
-    id:     'gemini-1.5-flash',
+    url:    'https://api.groq.com/openai/v1/chat/completions',
+    apiKey: () => process.env.GROQ_API_KEY,
+    id:     'llama-3.1-70b-versatile',
     extra:  {},
   },
   {
     url:    'https://api.groq.com/openai/v1/chat/completions',
     apiKey: () => process.env.GROQ_API_KEY,
-    id:     'llama3-70b-8192',
-    extra:  {},
-  },
-  {
-    url:    'https://api.groq.com/openai/v1/chat/completions',
-    apiKey: () => process.env.GROQ_API_KEY,
-    id:     'gemma2-9b-it',
+    id:     'llama-3.1-8b-instant',
     extra:  {},
   },
 ];
@@ -37,7 +30,7 @@ async function callGroqAI(messages, maxTokens = 400) {
     if (!key) { allErrs.push(`${id}→no_key`); continue; }
 
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 18000);
+    const timer = setTimeout(() => abort.abort(), 20000);
     try {
       const res = await fetch(url, {
         method: 'POST',

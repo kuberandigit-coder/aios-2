@@ -1822,6 +1822,9 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
   try {
     const n = v => Number(v) || 0;
 
+    // AI chat needs more time than the default 30s — complex cross-platform CTE
+    await client.query('SET statement_timeout = 55000').catch(() => {});
+
     // ── Run all queries in parallel for speed ────────────────────────────────
     const [
       { rows: campRows },
@@ -1846,7 +1849,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
         JOIN google_ads.campaigns c ON c.campaign_id=cp.campaign_id
         WHERE cp.campaign_id=ANY($1::bigint[]) AND cp.date BETWEEN $2 AND $3
         GROUP BY c.campaign_name, c.campaign_status ORDER BY cv DESC
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
 
       // REQ 1: Top products
       client.query(`
@@ -1860,7 +1863,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
           AND pp.product_item_id != ''
         GROUP BY pp.product_item_id, mp.description
         ORDER BY cv DESC LIMIT 5
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
 
       // REQ 2: Zero-conv wasteful products
       client.query(`
@@ -1873,7 +1876,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
         GROUP BY pp.product_item_id, mp.description
         HAVING SUM(pp.conversions)=0 AND SUM(pp.cost)>5
         ORDER BY SUM(pp.cost) DESC LIMIT 8
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
 
       // REQ 2: Negative keyword candidates (correct table)
       client.query(`
@@ -1915,7 +1918,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
         GROUP BY pp.product_item_id, mp.description
         HAVING SUM(pp.conversion_value)>0
         ORDER BY cv DESC LIMIT 5
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
 
       // PER-CAMPAIGN PRODUCT BREAKDOWN: top 3 by cost per campaign
       client.query(`
@@ -1995,6 +1998,23 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
       GROUP BY mp.product_id, mp.description, mp.availability, mp.custom_label3
       ORDER BY cv DESC LIMIT 6
     `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] }));
+
+    // Tracker stats via same main client (already connected, no extra connection needed)
+    let trackerStats = { total: 0, started: 0, sale: 0, pending: 0 };
+    try {
+      const { rows: tr } = await client.query(`
+        SELECT COUNT(*) AS total,
+          COUNT(CASE WHEN optimization_started=true THEN 1 END) AS started,
+          COUNT(CASE WHEN sale_received=true THEN 1 END) AS sale
+        FROM public.feed_optimization_tracker
+      `);
+      if (tr[0]) {
+        trackerStats.total   = Number(tr[0].total)   || 0;
+        trackerStats.started = Number(tr[0].started) || 0;
+        trackerStats.sale    = Number(tr[0].sale)    || 0;
+        trackerStats.pending = trackerStats.total - trackerStats.started;
+      }
+    } catch (_) {}
 
     // ── Build compact context (keep under token limit) ───────────────────────
     const totalCost = campRows.reduce((s,r)=>s+n(r.cost),0);
@@ -2100,6 +2120,8 @@ LIMITED CAMPAIGNS(budget+targetROAS): ${limitedDetailLines}
 CROSS-PLATFORM TOP SELLERS(Amazon/eBay≥3orders,low Google imps): ${crossPlatLines}
 
 FEED ISSUES: ${feedLines}
+
+FEED OPTIMIZATION TRACKER(Req4): total:${trackerStats.total}|optimization_started:${trackerStats.started}|sale_received:${trackerStats.sale}|not_started_yet:${trackerStats.pending}
 
 ROAS TARGETS: PENDANT_KLARNA:320%,HIGH_REV_PH:320%,TOP_20:400%,zero_conv2:400%,HERO:380%,ACCESS:380%
 
