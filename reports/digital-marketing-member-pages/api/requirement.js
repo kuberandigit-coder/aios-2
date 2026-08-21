@@ -4,6 +4,7 @@
 // endpoints this replaces (gsc-low-ctr.js store=uk, gsc-sukirtha-low-ctr.js
 // store=de) — behavior for existing callers is identical.
 const crypto = require('crypto');
+const { Client } = require('pg');
 
 // ===== Merged from jefri/product-status.js (2026-07-22) =====
 const jefriProductStatusHandlerModule = (function() {
@@ -3296,6 +3297,172 @@ async function handleDilaksiReq2Live(req, res) {
   }
 }
 
+// ─── DILAKSI AI CHAT (inside IIFE — accesses fetchDilaksiGA4, GSC, Shopify helpers) ─
+
+async function handleDilaksiAiChat(req, res) {
+  if (!process.env.GROQ_API_KEY) return res.status(500).json({ ok: false, error: 'GROQ_API_KEY not configured' });
+  if (!process.env.GA4_SERVICE_ACCOUNT_JSON) return res.status(500).json({ ok: false, error: 'GA4_SERVICE_ACCOUNT_JSON not configured' });
+
+  const body = req.body || {};
+  const userMessage = (body.message || '').trim();
+  const history = Array.isArray(body.history) ? body.history : [];
+
+  try {
+    const accessToken = await getAccessToken();
+
+    // Fetch GA4, GSC, Shopify catalog+sales all in parallel (single GA4 call shared)
+    const [ga4Rows, gscRows, catalog, salesByProduct] = await Promise.all([
+      fetchDilaksiGA4(accessToken, 30),
+      fetchDilaksiGSC(accessToken),
+      process.env.SHOPIFY_UK_ADMIN_TOKEN ? fetchDilaksiCatalogLive().catch(() => []) : Promise.resolve([]),
+      process.env.SHOPIFY_UK_ADMIN_TOKEN ? fetchDilaksiSalesLive().catch(() => new Map()) : Promise.resolve(new Map()),
+    ]);
+
+    // ── REQ 1: build page-level data ────────────────────────────────────────
+    const gscByPage = new Map();
+    for (const r of gscRows) {
+      const [pageUrl, query] = r.keys;
+      const path = dilaksiPathFromUrl(pageUrl);
+      if (!gscByPage.has(path)) gscByPage.set(path, []);
+      gscByPage.get(path).push({ query, clicks: r.clicks });
+    }
+
+    const organicByHandle = new Map();
+    const byPath = new Map();
+    for (const r of ga4Rows) {
+      const path = dilaksiPathFromUrl(r.dimensionValues[0].value);
+      const sessions = Number(r.metricValues[0].value) || 0;
+      const engRate  = Number(r.metricValues[2].value) || 0;
+      const purchases = Number(r.metricValues[5].value) || 0;
+      const revenue  = Number(r.metricValues[6].value) || 0;
+      if (!byPath.has(path)) byPath.set(path, { path, sessions: 0, engRateW: 0, purchases: 0, revenue: 0 });
+      const a = byPath.get(path);
+      a.sessions += sessions; a.engRateW += engRate * sessions;
+      a.purchases += purchases; a.revenue += revenue;
+      // also track organic by product handle for Req 2
+      const m = /\/products\/([^/]+)$/.exec(path);
+      if (m) organicByHandle.set(m[1], (organicByHandle.get(m[1]) || 0) + sessions);
+    }
+
+    const allPages = [...byPath.values()].map(a => ({
+      path: a.path,
+      sessions: a.sessions,
+      engRate: a.sessions > 0 ? a.engRateW / a.sessions : 0,
+      purchases: a.purchases,
+      revenue: a.revenue,
+      topQuery: (gscByPage.get(a.path) || []).sort((x, y) => y.clicks - x.clicks)[0]?.query || '',
+    })).sort((a, b) => b.sessions - a.sessions);
+
+    const totalSessions = allPages.reduce((s, r) => s + r.sessions, 0);
+    const top10 = allPages.slice(0, 10);
+    const lowEng = allPages.filter(r => r.sessions > 20 && r.engRate < 0.3).slice(0, 5);
+
+    // ── REQ 2: product priority summary ─────────────────────────────────────
+    let req2Line = 'Not available (Shopify token missing)';
+    if (catalog.length > 0) {
+      const demandMap = loadDilaksiR2FrozenDemand();
+      let high = 0, medium = 0, low = 0, lowFlag = 0, totalSales = 0;
+      for (const p of catalog) {
+        const s = salesByProduct.get(p.productId) || { sales: 0 };
+        const organic = organicByHandle.get(p.handle) || 0;
+        const demand = Object.prototype.hasOwnProperty.call(demandMap, p.productId) ? demandMap[p.productId] : null;
+        totalSales += s.sales;
+        const pri = dilaksiSeoPriority(demand, s.sales, organic);
+        if (pri === 'High') high++;
+        else if (pri === 'Medium') medium++;
+        else if (pri === 'Low — flag for review') lowFlag++;
+        else low++;
+      }
+      req2Line = `${catalog.length}products|£${Math.round(totalSales)}sales30d|High:${high}|Medium:${medium}|Low:${low}|FlagReview:${lowFlag}`;
+    }
+
+    // ── Build compact prompt ─────────────────────────────────────────────────
+    const shortPath = p => p.length > 50 ? p.slice(0, 47) + '…' : p;
+    const top10Lines = top10.map(r =>
+      `${shortPath(r.path)}|${r.sessions}sess|eng${Math.round(r.engRate * 100)}%|${r.purchases}orders|£${Math.round(r.revenue)}|kw:"${r.topQuery.slice(0, 30)}"`
+    ).join('\n');
+    const lowEngLines = lowEng.map(r =>
+      `${shortPath(r.path)}|${r.sessions}sess|eng${Math.round(r.engRate * 100)}%`
+    ).join('\n') || 'None';
+
+    const systemPrompt = `You are Dilaksi's SEO AI at LEDSone UK (ledsone.co.uk). Give specific numbered daily priorities using real data. No generic advice. Max 350 words.
+
+DATA (last 30 days, ${totalSessions} total organic sessions):
+
+TOP 10 LANDING PAGES (sessions|engagement|orders|revenue|top keyword):
+${top10Lines}
+
+LOW ENGAGEMENT PAGES (sessions>20, eng rate<30%):
+${lowEngLines}
+
+PRODUCT SEO PRIORITY (Req 2 summary):
+${req2Line}
+
+PAGES FOR REMOVAL (Req 3): Dilaksi reviews this manually in her dashboard. Remind her to check if she hasn't this week.
+
+INSTRUCTIONS:
+- Output ONLY numbered action items. No preamble. Start directly with "1."
+- Format: "1. [ACTION] — [page/product] ([reason with number])"
+- Priority order: low-engagement pages > high-priority products needing SEO boost > pages for removal check
+- Max 8 items. UK English only.`;
+
+    const isDailyBrief = !userMessage;
+    const messages = [{ role: 'system', content: systemPrompt }];
+    for (const h of history) {
+      if (h.role && h.content) messages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
+    }
+    messages.push({ role: 'user', content: isDailyBrief ? 'Give me my daily SEO priority briefing. What should I focus on today?' : userMessage });
+
+    // ── Call Groq ────────────────────────────────────────────────────────────
+    const apiKey = process.env.GROQ_API_KEY;
+    const GROQ_MODELS = [
+      { id: 'qwen/qwen3.6-27b', extra: { reasoning_effort: 'none' } },
+      { id: 'groq/compound',    extra: {} },
+      { id: 'openai/gpt-oss-120b', extra: {} },
+    ];
+    let groqData = null, lastGroqErr = null;
+    for (const { id, extra } of GROQ_MODELS) {
+      const abort = new AbortController();
+      const timer = setTimeout(() => abort.abort(), 20000);
+      try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({ model: id, messages, temperature: 0.3, max_tokens: 400, ...extra }),
+          signal: abort.signal,
+        });
+        clearTimeout(timer);
+        if (groqRes.ok) {
+          const candidate = await groqRes.json();
+          if (candidate?.choices?.[0]?.message?.content) { groqData = candidate; break; }
+          lastGroqErr = `${id} → empty content`;
+          continue;
+        }
+        const errText = await groqRes.text();
+        lastGroqErr = `${id} → ${groqRes.status}: ${errText.slice(0, 200)}`;
+      } catch (fetchErr) {
+        clearTimeout(timer);
+        lastGroqErr = `${id} → ${fetchErr.name === 'AbortError' ? 'timeout 20s' : fetchErr.message}`;
+      }
+    }
+
+    if (!groqData) return res.status(502).json({ ok: false, error: 'All Groq models failed', detail: lastGroqErr });
+
+    const rawText = groqData?.choices?.[0]?.message?.content || '';
+    const aiText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+    return res.status(200).json({
+      ok: true,
+      message: aiText,
+      is_daily_brief: isDailyBrief,
+      meta: { totalSessions, totalPages: allPages.length },
+    });
+
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+}
+
 async function req4Handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   try {
@@ -3409,9 +3576,59 @@ async function req4Handler(req, res) {
 }
 
   req4Handler.handleDilaksiReq2Live = handleDilaksiReq2Live;
+  req4Handler.handleDilaksiAiChat   = handleDilaksiAiChat;
   return req4Handler;
 })();
 
+
+// ─── DILAKSI CHAT HISTORY (outside IIFE — uses Client from top-level require) ──
+
+async function getDilaksiChatClient() {
+  const connStr = process.env.SJ_CHAT_DB_URL;
+  if (!connStr) throw new Error('SJ_CHAT_DB_URL not configured');
+  const c = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000 });
+  await c.connect();
+  await c.query(`
+    CREATE TABLE IF NOT EXISTS dilaksi_ai_chat (
+      id SERIAL PRIMARY KEY,
+      session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  return c;
+}
+
+async function handleDilaksiChatHistory(req, res) {
+  let c;
+  try {
+    c = await getDilaksiChatClient();
+    const { rows } = await c.query(
+      `SELECT role, content FROM dilaksi_ai_chat WHERE session_date = CURRENT_DATE ORDER BY id ASC`
+    );
+    return res.status(200).json({ ok: true, messages: rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
+
+async function handleDilaksiChatSave(req, res) {
+  const { role, content } = req.body || {};
+  if (!role || !content) return res.status(400).json({ ok: false, error: 'role and content required' });
+  let c;
+  try {
+    c = await getDilaksiChatClient();
+    await c.query(`INSERT INTO dilaksi_ai_chat (role, content) VALUES ($1, $2)`, [role, content]);
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
 
 const STORE_CONFIG = {
   uk: {
@@ -6546,7 +6763,6 @@ const jefriReq8HandlerModule = (function() {
 
   return { handleJefriReq8Orders };
 })();
-
 // Mahima Requirement 5 (Product x Campaign Sales) — added 2026-08-20.
 // NOTE: this is intentionally NOT the same as the earlier "mahima-req5"
 // (Product ID Coverage) tab above — per Kuberan's explicit instruction,
@@ -6824,6 +7040,9 @@ module.exports = async (req, res) => {
   if (fn === 'req2-req3') return req2Req3HandlerModule(req, res);
   if (fn === 'req4-ga4-seo') return req4HandlerModule(req, res);
   if (fn === 'dilaksi-req2-live') return req4HandlerModule.handleDilaksiReq2Live(req, res);
+  if (fn === 'dilaksi-ai-chat') return req4HandlerModule.handleDilaksiAiChat(req, res);
+  if (fn === 'dilaksi-chat-history') return handleDilaksiChatHistory(req, res);
+  if (fn === 'dilaksi-chat-save') return handleDilaksiChatSave(req, res);
 
   try {
     const store = (req.query.store === 'de') ? 'de' : 'uk';
