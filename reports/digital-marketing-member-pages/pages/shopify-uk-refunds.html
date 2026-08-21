@@ -49,6 +49,7 @@ h1{font-size:22px;font-weight:800;margin-bottom:4px;}
 table.rt{width:100%;border-collapse:collapse;font-size:12.5px;}
 table.rt th{text-align:left;padding:8px 10px;background:#f0f3f8;color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;position:sticky;top:0;}
 table.rt td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+table.rt td.reasoncell, table.rt td.reasoncol{white-space:normal;max-width:280px;min-width:160px;}
 table.rt tr:hover td{background:#f9fafc;}
 .pager{display:flex;justify-content:space-between;align-items:center;margin:12px 0;font-size:12.5px;color:var(--muted);}
 .tbtn{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 14px;font-size:12.5px;cursor:pointer;}
@@ -122,7 +123,7 @@ table.rt tr:hover td{background:#f9fafc;}
   <div class="tablewrap">
   <table class="rt">
     <thead><tr>
-      <th>Refund Date</th><th>Order Date</th><th>Order</th><th>Product</th><th>Variant</th><th>SKU</th><th>Qty</th><th>Amount</th><th>Reason</th><th>Financial Status</th><th>Fulfillment Status</th>
+      <th>Refund Date</th><th>Order Date</th><th>Order ID</th><th>Order Name</th><th>Product</th><th>Variant</th><th>SKU</th><th>Qty</th><th>Amount</th><th>Financial Status</th><th>Fulfillment Status</th><th>Reason</th>
     </tr></thead>
     <tbody id="rowsBody"></tbody>
   </table>
@@ -175,17 +176,18 @@ function render(){
     return '<tr>'
       +'<td>'+new Date(r.refundDate).toLocaleDateString('en-GB')+'</td>'
       +'<td>'+new Date(r.orderDate).toLocaleDateString('en-GB')+'</td>'
+      +'<td>'+esc(r.orderId)+'</td>'
       +'<td>'+esc(r.orderName)+'</td>'
       +'<td>'+esc(r.productTitle||'—')+'</td>'
       +'<td>'+esc(r.variant||'—')+'</td>'
       +'<td>'+esc(r.sku||'—')+'</td>'
       +'<td>'+r.refundedQty+'</td>'
       +'<td>'+fmtMoney(r.refundAmount, r.currency)+'</td>'
-      +'<td>'+esc(r.refundReason)+'</td>'
       +'<td>'+esc(r.financialStatus)+'</td>'
       +'<td>'+esc(r.fulfillmentStatus)+'</td>'
+      +'<td class="reasoncell">'+esc(r.refundReason)+'</td>'
       +'</tr>';
-  }).join('') || '<tr><td colspan="11" class="empty">No refunds found for the selected period.</td></tr>';
+  }).join('') || '<tr><td colspan="12" class="empty">No refunds found for the selected period.</td></tr>';
   var info=filtered.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE,filtered.length)+' of '+filtered.length) : '0 rows';
   document.getElementById('pageInfo').textContent=info;
   document.getElementById('pageInfo2').textContent=info;
@@ -214,7 +216,7 @@ function applyLive(data){
   document.getElementById('kpiTopReason').textContent=data.summary.topRefundReason||'—';
 
   document.getElementById('reasonBody').innerHTML=(data.reasonSummary||[]).map(function(g){
-    return '<tr><td>'+esc(g.reason)+'</td><td>'+g.refunds+'</td><td>'+g.orders+'</td><td>'+g.qty+'</td><td>'+fmtMoney(g.amount, data.meta.currency)+'</td><td>'+g.pct+'%</td></tr>';
+    return '<tr><td class="reasoncol">'+esc(g.reason)+'</td><td>'+g.refunds+'</td><td>'+g.orders+'</td><td>'+g.qty+'</td><td>'+fmtMoney(g.amount, data.meta.currency)+'</td><td>'+g.pct+'%</td></tr>';
   }).join('') || '<tr><td colspan="6" class="empty">No refunds found for the selected period.</td></tr>';
 
   document.getElementById('productBody').innerHTML=(data.productSummary||[]).map(function(p){
