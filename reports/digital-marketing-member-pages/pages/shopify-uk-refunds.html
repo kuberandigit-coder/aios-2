@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muguntha - Shopify UK Refunds (Last 60 Days)</title>
+<style>html{visibility:hidden;opacity:0;}html.dm-ready{opacity:1;transition:opacity .16s ease;}</style>
+<script>
+(function () {
+  fetch('/api/auth?action=session', { credentials: 'same-origin' }).then(function (r) {
+    if (r.status !== 200) { window.location.replace('../login.html'); return; }
+    return r.json();
+  }).then(function (data) {
+    if (!data) return;
+    if (data && data.success && data.user && (data.user.staff_key === 'muguntha' || data.user.role === 'admin')) {
+      document.documentElement.style.visibility = 'visible';
+      requestAnimationFrame(function () { document.documentElement.classList.add('dm-ready'); });
+      return;
+    }
+    window.location.replace('../login.html');
+  }).catch(function () { window.location.replace('../login.html'); });
+})();
+</script>
+<style>
+:root{--ink:#1a2233;--muted:#5b6577;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--accent:#1f5eff;--accent-soft:#eaf0ff;--good:#0a7d4f;--bad:#c62828;--na:#9aa3b2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:28px 16px;}
+.wrap{max-width:1500px;margin:0 auto;}
+.top{margin-bottom:18px;}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.8px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+h1{font-size:22px;font-weight:800;margin-bottom:4px;}
+.sub{color:var(--muted);font-size:13px;max-width:900px;}
+.chips{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+.chip{background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;}
+.chip.live{background:#e6f6ee;color:var(--good);}
+.chip.stale{background:#fdeaea;color:var(--bad);}
+.primary{background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+.primary:disabled{opacity:.6;cursor:default;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:18px 0;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+.card .l{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.card .v{font-size:20px;font-weight:800;}
+.section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px;}
+.section h2{font-size:15px;font-weight:800;margin-bottom:12px;}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+.flabel{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#42506a;text-transform:uppercase;letter-spacing:.4px;flex:1;min-width:180px;}
+.flabel input, .flabel select{height:38px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;text-transform:none;letter-spacing:normal;font-weight:normal;box-sizing:border-box;}
+.tablewrap{overflow-x:auto;}
+table.rt{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.rt th{text-align:left;padding:8px 10px;background:#f0f3f8;color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;position:sticky;top:0;}
+table.rt td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+table.rt tr:hover td{background:#f9fafc;}
+.pager{display:flex;justify-content:space-between;align-items:center;margin:12px 0;font-size:12.5px;color:var(--muted);}
+.tbtn{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 14px;font-size:12.5px;cursor:pointer;}
+.tbtn:disabled{opacity:.5;cursor:default;}
+.sources{font-size:12px;color:var(--muted);line-height:1.6;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+.sources code{background:#f0f3f8;padding:1px 5px;border-radius:4px;}
+.limits{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px;}
+.empty{text-align:center;color:var(--na);padding:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <div class="eyebrow">Muguntha &middot; Shopify UK</div>
+  <h1>Shopify UK Refund Report &mdash; Last 60 Days</h1>
+  <div class="sub">All Shopify UK (ledsone.myshopify.com) refunds in the trailing 60-day window, refund-line-item grain, with the actual Shopify-recorded refund reason (never inferred). Read-only &mdash; no Shopify data is modified.</div>
+  <div class="chips">
+    <span class="chip" id="liveChip">Loading&hellip;</span>
+    <span class="chip" id="rangeChip"></span>
+    <button id="refreshBtn" class="primary" type="button">Refresh (live)</button>
+    <button class="primary" type="button" onclick="exportCsv()" style="background:var(--good);border-color:var(--good);">Export CSV</button>
+  </div>
+</div>
+
+<div class="cards" id="kpiCards">
+  <div class="card"><div class="l">Total Refunds</div><div class="v" id="kpiRefunds">&hellip;</div></div>
+  <div class="card"><div class="l">Refunded Orders</div><div class="v" id="kpiOrders">&hellip;</div></div>
+  <div class="card"><div class="l">Refunded Qty</div><div class="v" id="kpiQty">&hellip;</div></div>
+  <div class="card"><div class="l">Total Refund Amount</div><div class="v" id="kpiAmount">&hellip;</div></div>
+  <div class="card"><div class="l">Average Refund</div><div class="v" id="kpiAvg">&hellip;</div></div>
+  <div class="card"><div class="l">Most Refunded Product</div><div class="v" id="kpiTopProduct" style="font-size:13px;">&hellip;</div></div>
+  <div class="card"><div class="l">Top Refund Reason</div><div class="v" id="kpiTopReason" style="font-size:13px;">&hellip;</div></div>
+</div>
+
+<div class="section">
+  <h2>Refund Reason Analysis</h2>
+  <div class="tablewrap">
+  <table class="rt">
+    <thead><tr><th>Refund Reason</th><th>Refunds</th><th>Orders</th><th>Qty</th><th>Amount</th><th>%</th></tr></thead>
+    <tbody id="reasonBody"></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Product Refund Analysis (ranked by refunded quantity)</h2>
+  <div class="tablewrap">
+  <table class="rt">
+    <thead><tr><th>Product ID</th><th>Product Title</th><th>SKU</th><th>Refunded Qty</th><th>Refund Amount</th><th>Refund Count</th><th>Orders Affected</th><th>Top Reason</th></tr></thead>
+    <tbody id="productBody"></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Refund Line Items</h2>
+  <div class="toolbar">
+    <label class="flabel">Search
+      <input id="q" type="text" placeholder="Order name, product, SKU&hellip;">
+    </label>
+    <label class="flabel">Reason
+      <select id="reasonSel"><option value="all">All Reasons</option></select>
+    </label>
+  </div>
+  <div class="pager">
+    <button class="tbtn" id="prevPage">&larr; Prev</button>
+    <span id="pageInfo"></span>
+    <button class="tbtn" id="nextPage">Next &rarr;</button>
+  </div>
+  <div class="tablewrap">
+  <table class="rt">
+    <thead><tr>
+      <th>Refund Date</th><th>Order Date</th><th>Order</th><th>Product</th><th>Variant</th><th>SKU</th><th>Qty</th><th>Amount</th><th>Reason</th><th>Financial Status</th><th>Fulfillment Status</th>
+    </tr></thead>
+    <tbody id="rowsBody"></tbody>
+  </table>
+  </div>
+  <div class="pager">
+    <button class="tbtn" id="prevPage2">&larr; Prev</button>
+    <span id="pageInfo2"></span>
+    <button class="tbtn" id="nextPage2">Next &rarr;</button>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sources">
+    <strong>Source:</strong> Shopify UK Admin API (<code>ledsone.myshopify.com</code>, API version reused from the existing <code>api/salesuk.js</code> integration &mdash; no second Shopify auth system created). Orders queried by <code>updated_at</code> over a wide window, then precisely filtered to refunds whose own <code>createdAt</code> falls in the last 60 days (so refunds on older orders aren't missed).<br>
+    <strong>Grain:</strong> one row = one refund &times; one refunded line item. A refund with no line item (e.g. shipping-only) still gets one summary row, flagged as such, so it isn't silently dropped.<br>
+    <strong>Refund Amount:</strong> Shopify's own <code>RefundLineItem.subtotalSet</code> (the line's actual refunded amount as recorded by Shopify) &mdash; not recalculated from price &times; quantity.<br>
+    <strong>Refund Reason:</strong> Shopify's Admin API has no structured "reason" field on a Refund &mdash; the actual text Shopify stores when a refund is created is the <code>Refund.note</code> field. That is what is shown here. If empty, shown as <strong>"Not Provided"</strong> &mdash; never inferred from product, order notes, or anything else.<br>
+    <strong>Pagination:</strong> full <code>hasNextPage</code>/<code>endCursor</code> pagination, no page limit other than a high safety cap.
+  </div>
+  <div class="limits">
+    <strong>Known limitations</strong><br>
+    1. Shopify's Refund object doesn't have a dedicated reason enum in this API version &mdash; <code>note</code> is the closest real field and is what's shown; if staff don't type a note when refunding, it will show "Not Provided" (this is expected and accurate, not a bug).<br>
+    2. Read-only &mdash; no refunds, orders, or products are created/modified by this page.<br>
+    3. First load serves fast; the "Refresh (live)" button re-queries Shopify directly and can take longer for a full 60-day scan.
+  </div>
+</div>
+
+</div>
+<script>
+var ROWS=[], filtered=[], page=0, PAGE_SIZE=50;
+function fmtMoney(n, ccyCode){ return (ccyCode==='GBP'?'£':(ccyCode||'')+' ')+Number(n||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function applyFilter(){
+  var q=(document.getElementById('q').value||'').toLowerCase().trim();
+  var reason=document.getElementById('reasonSel').value;
+  filtered=ROWS.filter(function(r){
+    if(reason!=='all' && r.refundReason!==reason) return false;
+    if(q){
+      var hay=[r.orderName,r.productTitle,r.sku].join(' ').toLowerCase();
+      if(hay.indexOf(q)===-1) return false;
+    }
+    return true;
+  });
+  page=0; render();
+}
+function render(){
+  var start=page*PAGE_SIZE;
+  var pageRows=filtered.slice(start,start+PAGE_SIZE);
+  document.getElementById('rowsBody').innerHTML=pageRows.map(function(r){
+    return '<tr>'
+      +'<td>'+new Date(r.refundDate).toLocaleDateString('en-GB')+'</td>'
+      +'<td>'+new Date(r.orderDate).toLocaleDateString('en-GB')+'</td>'
+      +'<td>'+esc(r.orderName)+'</td>'
+      +'<td>'+esc(r.productTitle||'—')+'</td>'
+      +'<td>'+esc(r.variant||'—')+'</td>'
+      +'<td>'+esc(r.sku||'—')+'</td>'
+      +'<td>'+r.refundedQty+'</td>'
+      +'<td>'+fmtMoney(r.refundAmount, r.currency)+'</td>'
+      +'<td>'+esc(r.refundReason)+'</td>'
+      +'<td>'+esc(r.financialStatus)+'</td>'
+      +'<td>'+esc(r.fulfillmentStatus)+'</td>'
+      +'</tr>';
+  }).join('') || '<tr><td colspan="11" class="empty">No refunds found for the selected period.</td></tr>';
+  var info=filtered.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE,filtered.length)+' of '+filtered.length) : '0 rows';
+  document.getElementById('pageInfo').textContent=info;
+  document.getElementById('pageInfo2').textContent=info;
+}
+function exportCsv(){
+  var header=['Refund Date','Order Date','Order ID','Order Name','Product ID','Product Title','Variant','SKU','Refunded Qty','Refund Amount','Currency','Refund Reason','Financial Status','Fulfillment Status'];
+  var lines=[header.join(',')].concat(filtered.map(function(r){
+    return [r.refundDate,r.orderDate,r.orderId,r.orderName,r.productId,'"'+(r.productTitle||'').replace(/"/g,'""')+'"',r.variant||'','"'+(r.sku||'')+'"',r.refundedQty,r.refundAmount,r.currency,'"'+r.refundReason.replace(/"/g,'""')+'"',r.financialStatus,r.fulfillmentStatus].join(',');
+  }));
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='shopify-uk-refunds-last-60-days.csv'; a.click();
+}
+function applyLive(data){
+  var chip=document.getElementById('liveChip');
+  ROWS=data.rows;
+  document.getElementById('rangeChip').textContent=data.dateRange.start+' to '+data.dateRange.end+' ('+data.dateRange.days+' days)';
+  var reasons=Array.from(new Set(ROWS.map(function(r){return r.refundReason;}))).sort();
+  document.getElementById('reasonSel').innerHTML='<option value="all">All Reasons</option>'+reasons.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join('');
+
+  document.getElementById('kpiRefunds').textContent=data.summary.totalRefunds.toLocaleString();
+  document.getElementById('kpiOrders').textContent=data.summary.refundedOrders.toLocaleString();
+  document.getElementById('kpiQty').textContent=data.summary.refundedQty.toLocaleString();
+  document.getElementById('kpiAmount').textContent=fmtMoney(data.summary.totalRefundAmount, data.meta.currency);
+  document.getElementById('kpiAvg').textContent=fmtMoney(data.summary.averageRefundAmount, data.meta.currency);
+  document.getElementById('kpiTopProduct').textContent=data.summary.mostRefundedProduct||'—';
+  document.getElementById('kpiTopReason').textContent=data.summary.topRefundReason||'—';
+
+  document.getElementById('reasonBody').innerHTML=(data.reasonSummary||[]).map(function(g){
+    return '<tr><td>'+esc(g.reason)+'</td><td>'+g.refunds+'</td><td>'+g.orders+'</td><td>'+g.qty+'</td><td>'+fmtMoney(g.amount, data.meta.currency)+'</td><td>'+g.pct+'%</td></tr>';
+  }).join('') || '<tr><td colspan="6" class="empty">No refunds found for the selected period.</td></tr>';
+
+  document.getElementById('productBody').innerHTML=(data.productSummary||[]).map(function(p){
+    return '<tr><td>'+esc(p.productId)+'</td><td>'+esc(p.productTitle)+'</td><td>'+esc(p.sku||'—')+'</td><td>'+p.refundedQty+'</td><td>'+fmtMoney(p.refundAmount, data.meta.currency)+'</td><td>'+p.refundCount+'</td><td>'+p.ordersAffected+'</td><td>'+esc(p.topReason)+'</td></tr>';
+  }).join('') || '<tr><td colspan="8" class="empty">No refunds found for the selected period.</td></tr>';
+
+  applyFilter();
+  chip.textContent=(data.isSnapshot?'Snapshot — generated ':'Live — fetched ')+new Date(data.generatedAt).toLocaleString()+(data.isSnapshot?' · click Refresh for live data':'');
+  chip.className='chip live';
+}
+async function reload(force){
+  var chip=document.getElementById('liveChip');
+  var btn=document.getElementById('refreshBtn');
+  btn.disabled=true; btn.textContent='Refreshing…';
+  chip.textContent='Fetching live data from Shopify UK…';
+  chip.className='chip';
+  try{
+    var res=await fetch('/api/requirement?fn=muguntha-uk-refunds'+(force?'&refresh=1':''));
+    var data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.error||('HTTP '+res.status));
+    applyLive(data);
+  }catch(e){
+    chip.textContent='Failed to load: '+e.message;
+    chip.className='chip stale';
+  }finally{
+    btn.disabled=false; btn.textContent='Refresh (live)';
+  }
+}
+document.getElementById('q').addEventListener('input', applyFilter);
+document.getElementById('reasonSel').addEventListener('change', applyFilter);
+document.getElementById('prevPage').addEventListener('click', function(){ if(page>0){ page--; render(); } });
+document.getElementById('nextPage').addEventListener('click', function(){ if((page+1)*PAGE_SIZE<filtered.length){ page++; render(); } });
+document.getElementById('prevPage2').addEventListener('click', function(){ if(page>0){ page--; render(); } });
+document.getElementById('nextPage2').addEventListener('click', function(){ if((page+1)*PAGE_SIZE<filtered.length){ page++; render(); } });
+document.getElementById('refreshBtn').addEventListener('click', function(){ reload(true); });
+reload(false);
+</script>
+</body>
+</html>

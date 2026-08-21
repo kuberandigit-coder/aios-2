@@ -7131,6 +7131,316 @@ const mahimaReq5bHandlerModule = (function() {
   return { mahimaReq5bHandler };
 })();
 
+// Muguntha — Shopify UK Last 60 Days Refund Report — added 2026-08-21.
+// Reuses the exact same Shopify UK Admin API credentials/domain/version
+// already proven in api/salesuk.js (STORE_DOMAIN_UK, TOKEN_UK, API_VERSION_UK)
+// — no second Shopify auth system created, per the requirement's explicit
+// instruction. Self-contained module, consistent with every other handler
+// in this file.
+const mugunthaUkRefundsHandlerModule = (function() {
+  const STORE_DOMAIN = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
+  const API_VERSION = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
+  const TOKEN = process.env.SHOPIFY_UK_ADMIN_TOKEN;
+
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+  function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+  function amt(moneySet) { return moneySet ? round2(Number(moneySet.shopMoney.amount)) : 0; }
+  function ccy(moneySet) { return moneySet ? moneySet.shopMoney.currencyCode : null; }
+
+  async function shopifyGraphQL(query, variables, retryState) {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      let res;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+        res = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': TOKEN },
+          body: JSON.stringify({ query, variables }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+      } catch (e) {
+        retryState.throttleRetries++;
+        await sleep(500 * Math.pow(2, attempt) + Math.random() * 250);
+        continue;
+      }
+      if (res.status === 429 || (res.status >= 500 && res.status <= 504)) {
+        retryState.throttleRetries++;
+        await sleep(500 * Math.pow(2, attempt) + Math.random() * 250);
+        continue;
+      }
+      if (!res.ok) throw new Error(`Shopify API error ${res.status}`);
+      const json = await res.json();
+      const throttled = json.errors && Array.isArray(json.errors) && json.errors.some(e => e.extensions && e.extensions.code === 'THROTTLED');
+      if (throttled) {
+        retryState.throttleRetries++;
+        await sleep(1000 * Math.pow(2, attempt));
+        continue;
+      }
+      if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+      return json.data;
+    }
+    throw new Error('Shopify API: exceeded retries (throttling / transient errors)');
+  }
+
+  // Queried by updated_at (not created_at) so refunds on ORDERS PLACED
+  // BEFORE the 60-day window are still caught — an order can be refunded
+  // long after it was placed. The window filter for "last 60 days" is then
+  // applied to each REFUND's own createdAt below, which is the field that
+  // actually matters per the requirement (Refund Date, not Order Date).
+  //
+  // Refund reason field: Shopify's Admin GraphQL Refund object has no
+  // structured "reason" enum — the actual text staff/system record when a
+  // refund is created is stored in Refund.note. That is what this report
+  // displays as "Refund Reason" (documented, not invented — see evidence).
+  const ORDERS_QUERY = `
+  query MugunthaUkRefundsOrders($cursor: String, $query: String!) {
+    orders(first: 50, after: $cursor, sortKey: UPDATED_AT, query: $query) {
+      edges {
+        node {
+          id
+          legacyResourceId
+          name
+          createdAt
+          displayFinancialStatus
+          displayFulfillmentStatus
+          currentTotalPriceSet { shopMoney { amount currencyCode } }
+          refunds {
+            id
+            createdAt
+            note
+            refundLineItems(first: 100) {
+              edges {
+                node {
+                  quantity
+                  priceSet { shopMoney { amount currencyCode } }
+                  subtotalSet { shopMoney { amount currencyCode } }
+                  lineItem {
+                    id
+                    title
+                    sku
+                    variant {
+                      id
+                      title
+                      product { legacyResourceId title }
+                    }
+                  }
+                }
+              }
+            }
+            transactions(first: 10) {
+              edges { node { id amountSet { shopMoney { amount currencyCode } } kind status } }
+            }
+          }
+        }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }`;
+
+  const WINDOW_DAYS = 60;
+  let CACHE = null; // { at, payload }
+  const CACHE_TTL_MS = 15 * 60 * 1000;
+
+  async function fetchOrdersWithRefunds(sinceISO) {
+    const retryState = { throttleRetries: 0 };
+    const q = `updated_at:>=${sinceISO}`;
+    const orders = [];
+    let after = null, hasNext = true, pages = 0;
+    while (hasNext) {
+      const data = await shopifyGraphQL(ORDERS_QUERY, { cursor: after, query: q }, retryState);
+      for (const edge of data.orders.edges) {
+        if (edge.node.refunds && edge.node.refunds.length) orders.push(edge.node);
+      }
+      hasNext = data.orders.pageInfo.hasNextPage;
+      after = data.orders.pageInfo.endCursor;
+      pages++;
+      if (pages > 600) break; // safety cap
+    }
+    return orders;
+  }
+
+  // Grain: one row = one refund x one refund line item. If a single refund
+  // has no refundLineItems (e.g. a shipping-only refund with no product
+  // line attached), one summary row is still emitted so the refund isn't
+  // silently dropped — flagged via lineItem: null.
+  function buildRows(orders, windowStartMs, windowEndMs) {
+    const rows = [];
+    for (const order of orders) {
+      for (const refund of order.refunds) {
+        const refundMs = new Date(refund.createdAt).getTime();
+        if (refundMs < windowStartMs || refundMs >= windowEndMs) continue; // outside the 60-day refund window
+
+        const reason = (refund.note && refund.note.trim()) ? refund.note.trim() : 'Not Provided';
+        const edges = (refund.refundLineItems && refund.refundLineItems.edges) || [];
+
+        if (!edges.length) {
+          rows.push({
+            refundDate: refund.createdAt,
+            orderDate: order.createdAt,
+            orderId: order.legacyResourceId,
+            orderName: order.name,
+            productId: null,
+            productTitle: null,
+            variant: null,
+            sku: null,
+            refundedQty: 0,
+            refundAmount: 0,
+            currency: ccy(order.currentTotalPriceSet),
+            refundReason: reason,
+            refundId: refund.id,
+            financialStatus: order.displayFinancialStatus,
+            fulfillmentStatus: order.displayFulfillmentStatus,
+            note: '(no line item — e.g. shipping-only refund)',
+          });
+          continue;
+        }
+
+        for (const e of edges) {
+          const li = e.node;
+          const variant = li.lineItem.variant;
+          const product = variant && variant.product;
+          rows.push({
+            refundDate: refund.createdAt,
+            orderDate: order.createdAt,
+            orderId: order.legacyResourceId,
+            orderName: order.name,
+            productId: product ? product.legacyResourceId : null,
+            productTitle: product ? product.title : li.lineItem.title,
+            variant: variant ? variant.title : null,
+            sku: li.lineItem.sku || null,
+            refundedQty: li.quantity,
+            refundAmount: amt(li.subtotalSet),
+            currency: ccy(li.subtotalSet) || ccy(order.currentTotalPriceSet),
+            refundReason: reason,
+            refundId: refund.id,
+            financialStatus: order.displayFinancialStatus,
+            fulfillmentStatus: order.displayFulfillmentStatus,
+          });
+        }
+      }
+    }
+    return rows;
+  }
+
+  async function buildReport() {
+    const now = new Date();
+    const windowEndMs = now.getTime();
+    const windowStart = new Date(now);
+    windowStart.setUTCDate(windowStart.getUTCDate() - WINDOW_DAYS);
+    const windowStartMs = windowStart.getTime();
+    // Fetch window is intentionally wider than the refund window (order
+    // could be updated for reasons other than the refund itself, so we
+    // over-fetch on updated_at and precisely filter on refund.createdAt).
+    const sinceISO = windowStart.toISOString().slice(0, 10);
+
+    const orders = await fetchOrdersWithRefunds(sinceISO);
+    const rows = buildRows(orders, windowStartMs, windowEndMs).sort((a, b) => new Date(b.refundDate) - new Date(a.refundDate));
+
+    const refundIds = new Set(rows.map(r => r.refundId));
+    const orderIds = new Set(rows.map(r => r.orderId));
+    const totalQty = rows.reduce((s, r) => s + r.refundedQty, 0);
+    const totalAmount = round2(rows.reduce((s, r) => s + r.refundAmount, 0));
+
+    const productAgg = new Map();
+    for (const r of rows) {
+      if (!r.productId) continue;
+      if (!productAgg.has(r.productId)) {
+        productAgg.set(r.productId, { productId: r.productId, productTitle: r.productTitle, sku: r.sku, qty: 0, amount: 0, refundIds: new Set(), orderIds: new Set(), reasons: {} });
+      }
+      const p = productAgg.get(r.productId);
+      p.qty += r.refundedQty;
+      p.amount = round2(p.amount + r.refundAmount);
+      p.refundIds.add(r.refundId);
+      p.orderIds.add(r.orderId);
+      p.reasons[r.refundReason] = (p.reasons[r.refundReason] || 0) + 1;
+    }
+    const productSummary = Array.from(productAgg.values()).map(p => ({
+      productId: p.productId,
+      productTitle: p.productTitle,
+      sku: p.sku,
+      refundedQty: p.qty,
+      refundAmount: p.amount,
+      refundCount: p.refundIds.size,
+      ordersAffected: p.orderIds.size,
+      topReason: Object.entries(p.reasons).sort((a, b) => b[1] - a[1])[0][0],
+    })).sort((a, b) => b.refundedQty - a.refundedQty);
+
+    const reasonAgg = new Map();
+    for (const r of rows) {
+      if (!reasonAgg.has(r.refundReason)) reasonAgg.set(r.refundReason, { reason: r.refundReason, count: 0, orderIds: new Set(), qty: 0, amount: 0 });
+      const g = reasonAgg.get(r.refundReason);
+      g.count++;
+      g.orderIds.add(r.orderId);
+      g.qty += r.refundedQty;
+      g.amount = round2(g.amount + r.refundAmount);
+    }
+    const reasonSummary = Array.from(reasonAgg.values()).map(g => ({
+      reason: g.reason,
+      refunds: g.count,
+      orders: g.orderIds.size,
+      qty: g.qty,
+      amount: g.amount,
+      pct: rows.length ? round2((g.count / rows.length) * 100) : 0,
+    })).sort((a, b) => b.count - a.count);
+
+    return {
+      rows,
+      summary: {
+        totalRefunds: refundIds.size,
+        refundedOrders: orderIds.size,
+        refundedLineItems: rows.filter(r => r.productId).length,
+        refundedQty: totalQty,
+        totalRefundAmount: totalAmount,
+        averageRefundAmount: refundIds.size ? round2(totalAmount / refundIds.size) : 0,
+        mostRefundedProduct: productSummary.length ? productSummary[0].productTitle : null,
+        topRefundReason: reasonSummary.length ? reasonSummary[0].reason : null,
+      },
+      productSummary,
+      reasonSummary,
+      meta: {
+        ordersScanned: orders.length,
+        currency: rows.length ? rows[0].currency : null,
+      },
+    };
+  }
+
+  async function mugunthaUkRefundsHandler(req, res) {
+    try {
+      const force = req.query && req.query.refresh === '1';
+      if (!force && CACHE && (Date.now() - CACHE.at) < CACHE_TTL_MS) {
+        return res.status(200).json(CACHE.payload);
+      }
+      if (!TOKEN) {
+        return res.status(500).json({ success: false, error: 'Server not configured: SHOPIFY_UK_ADMIN_TOKEN missing' });
+      }
+      const now = new Date();
+      const start = new Date(now); start.setUTCDate(start.getUTCDate() - WINDOW_DAYS);
+      const report = await buildReport();
+      const payload = {
+        success: true,
+        generatedAt: now.toISOString(),
+        dateRange: { start: start.toISOString().slice(0, 10), end: now.toISOString().slice(0, 10), days: WINDOW_DAYS },
+        store: 'Shopify UK (ledsone.myshopify.com)',
+        grain: 'One row = one refund x one refunded line item (refunds with no line item, e.g. shipping-only, get one summary row)',
+        rows: report.rows,
+        summary: report.summary,
+        productSummary: report.productSummary,
+        reasonSummary: report.reasonSummary,
+        meta: report.meta,
+      };
+      CACHE = { at: Date.now(), payload };
+      res.status(200).json(payload);
+    } catch (err) {
+      console.error('[muguntha/uk-refunds] error:', err && err.message);
+      res.status(500).json({ success: false, error: err.message || 'Unknown error' });
+    }
+  }
+
+  return { mugunthaUkRefundsHandler };
+})();
+
 module.exports = async (req, res) => {
   const fn = ((req.query && req.query.fn) || '').toString().toLowerCase();
   if (fn === 'jefri-req5') return jefriReq5HandlerModule(req, res);
@@ -7152,6 +7462,7 @@ module.exports = async (req, res) => {
   if (fn === 'mahima-req2') return jefriProductStatusHandlerModule.mahimaReq2Handler(req, res);
   if (fn === 'mahima-req5') return jefriProductStatusHandlerModule.mahimaReq5Handler(req, res);
   if (fn === 'mahima-req5b') return mahimaReq5bHandlerModule.mahimaReq5bHandler(req, res);
+  if (fn === 'muguntha-uk-refunds') return mugunthaUkRefundsHandlerModule.mugunthaUkRefundsHandler(req, res);
   if (fn === 'jefri-req3') return jefriProductStatusHandlerModule.jefriReq3Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);
