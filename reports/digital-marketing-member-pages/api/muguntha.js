@@ -275,6 +275,21 @@ const EMPLOYEES = {
   // Sajeepan, just on the DE account instead of the UK one. Verified: Jan
   // 2025 cost via this query = €1,894.73, matching the Google Ads UI's
   // "Custom Jan 1-31, 2025" campaign-group total (€1.89K) exactly.
+  // Mahima runs Google Ads on the DE store (ledsone.de), same account as
+  // Jefri/Thasitha (9031058245), group_name='Mahima' — confirmed via DB
+  // (`SELECT account_id, group_name, count(*) FROM google_ads.campaigns
+  // WHERE group_name ILIKE '%mahima%'` -> account_id=9031058245, 16
+  // campaigns). Real ad spend exists across the full 2023-2026 history
+  // (unlike Sukirtha), so she gets the "Ads Cost" treatment like Jefri, not
+  // the AI-tools-cost treatment like Kamsi/Dilaksi/Sukirtha. No DM-46
+  // concept (UK-account-only construct). Added 2026-08-24.
+  mahima: {
+    isJefri: true,
+    groupName: 'Mahima',
+    accountId: 9031058245,
+    productIds: new Set(),
+    snapshotSlug: 'mahima',
+  },
   jefri: {
     isJefri: true,
     groupName: 'Jefri',

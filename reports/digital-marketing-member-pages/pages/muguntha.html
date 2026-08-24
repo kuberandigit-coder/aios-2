@@ -263,6 +263,11 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
       <button class="primary" id="refreshBtn-sukirtha">Refresh (live)</button>
       <button class="primary" id="exportBtn-sukirtha" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
     </div>
+    <div class="filters" id="mahimaFilters" style="display:none;">
+      <span class="chip live" id="statusChip-mahima">Loading&hellip;</span>
+      <button class="primary" id="refreshBtn-mahima">Refresh (live)</button>
+      <button class="primary" id="exportBtn-mahima" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
+    </div>
     <div class="filters" id="thasithaFilters" style="display:none;">
       <span class="chip live" id="statusChip-thasitha">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-thasitha">Refresh (live)</button>
@@ -466,6 +471,40 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
         2025/2026 Total Cost (added 2026-08-24) &mdash; Sukirtha has no Google Ads campaign group in either account (confirmed: <code>group_name ILIKE '%suki%'</code> returns 0 rows) and no DM 46 product-share, so Google Ads spend is always &pound;0.00. Cost here is her share of the shared SEO tool subscriptions (Semrush + Arrow AI), same formula as Kamsi/Dilaksi: $358.95 + $149.00 per month, split 4 ways, converted to &pound; at the 2026-08-19 mid-market rate &mdash; same for both years. She was already accounted for in this split's original design (see Dilaksi tab's footnote) but never had her own dashboard row until now. Click any Total Cost figure for the full breakdown.<br>
         Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month (e.g. Jan 2025 Net &pound;50k, Jan 2026 Net &pound;58k &rarr; +16.00%). Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
         Status (redefined 2026-08-24, replaces the old Target Achievement column and the old Not-Archived/Archived meaning): <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month (missing a year's Net, or 2025 Net &le; &pound;0).
+      </div>
+    </div>
+
+    <div id="panel-mahima" class="member-panel" style="display:none;">
+      <div class="cards" id="kpiCards-mahima"></div>
+
+      <div class="tablebox">
+        <div class="tbar">
+          <strong>Month-by-Month &mdash; Mahima</strong>
+          <span id="rowCount-mahima"></span>
+        </div>
+        <div class="scroll">
+          <table id="mainTable-mahima">
+            <thead>
+              <tr>
+                <th>Month</th><th>Name</th>
+                <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
+                <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
+                <th class="num">YoY Growth %</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tblBody-mahima"><tr><td colspan="12" class="loading">Loading Mahima's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnotes">
+        <strong>Data sources.</strong><br>
+        Mahima runs <strong>Google Ads on the DE store (ledsone.de)</strong> &mdash; same account as Jefri/Thasitha/Sukirtha (9031058245), <code>group_name='Mahima'</code> (16 campaigns, DB-confirmed 2026-08-24).<br>
+        Sales &mdash; <code>combinedSummary.netSales</code> from her existing "Total" endpoint (<code>/api/sales25?staff=mahima-total&amp;month=YYYY-MM</code> for 2025, <code>/api/sales?staff=mahima-total&amp;month=YYYY-MM</code> for 2026), product-scoped to her 678 owned product IDs (<code>MAHIMA_EXCLUDED_PRODUCT_IDS</code>, updated 2026-08-24). Every order containing one of her products counts regardless of Organic/Paid/Direct/Referral/Other channel, <strong>except Social and Email</strong> (confirmed not hers, permanently excluded 2026-07-21). No new attribution logic written &mdash; reuses her already-established Sales algorithm exactly as-is.<br>
+        <strong>2025 coverage limit:</strong> the 2025 DE endpoint only supports Jan&ndash;Jun 2025 (never backfilled past June, same limit as Jefri's/Sukirtha's tabs) &mdash; Jul&ndash;Dec 2025 show as N/A rather than guessing.<br>
+        2025/2026 Total Cost &mdash; her own campaign cost (<code>SUM(google_ads.campaign_performance.cost)</code> for <code>group_name='Mahima'</code>, <code>account_id=9031058245</code>) <strong>plus</strong> real Discount and Refund from her DE-store orders. No DM 46 product-share (UK-account-only construct). No Transaction Fee line (not computed by the DE endpoint) and no Shopify Subscription Fee line (that's the separate UK-store (ledsone.co.uk) Advanced-plan bill split among the 4 UK staff who share it) &mdash; neither fabricated for a different store's billing. Click any Total Cost figure for the full breakdown.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month. Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
+        Status: <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month.
       </div>
     </div>
 
@@ -675,7 +714,11 @@ async function fetchJsonResilient(url, timeoutMs, retries){
 // runs the DE store (ledsone.de), a separate Shopify account with its own
 // (currently untracked) subscription cost, so folding in the UK figure
 // would be wrong, not just approximate.
-const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan', 'kamsi', 'dilaksi', 'jefri', 'sukirtha']);
+const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan', 'kamsi', 'dilaksi', 'jefri', 'sukirtha', 'mahima']);
+// DE-store members who have REAL Google Ads spend (get the "Ads Cost" row
+// in the popup, not the "AI Tools Cost" split) — Jefri and Mahima. Sukirtha
+// has no ad spend, so stays on the AI-tools branch alongside Kamsi/Dilaksi.
+const DE_ADS_ROLE_MEMBERS = new Set(['jefri', 'mahima']);
 const MEMBER_MONTH_DATA = {};
 function memberMonthKey(member, year, month){ return member + ':' + year + ':' + month; }
 
@@ -723,6 +766,11 @@ function stripDmFromCombinedSummary(data){
 const DE_STAFF_ROUTING = {
   jefri: { staffValue: 'jeffri-ads' },
   sukirtha: { staffValue: 'sukirtha' },
+  // Mahima (added 2026-08-24): uses the existing ?staff=mahima-total
+  // endpoint — her established "Total" tab, product-scoped to her owned
+  // product IDs, every channel EXCEPT Social/Email (confirmed not hers,
+  // permanently excluded 2026-07-21). Not a new attribution rule.
+  mahima: { staffValue: 'mahima-total' },
 };
 async function fetchGroupSales(year, member, month, force, timeoutMs){
   const deRoute = DE_STAFF_ROUTING[member];
@@ -1235,6 +1283,7 @@ const BUILT_MEMBERS = {
   jefri: { idSuffix: '-jefri', panelId: 'panel-jefri', filtersId: 'jefriFilters' },
   dilaksi: { idSuffix: '-dilaksi', panelId: 'panel-dilaksi', filtersId: 'dilaksiFilters' },
   sukirtha: { idSuffix: '-sukirtha', panelId: 'panel-sukirtha', filtersId: 'sukirthaFilters' },
+  mahima: { idSuffix: '-mahima', panelId: 'panel-mahima', filtersId: 'mahimaFilters' },
 };
 
 document.getElementById('refreshBtn').addEventListener('click', () => loadAll('sonya', '', true));
@@ -1243,6 +1292,7 @@ document.getElementById('refreshBtn-kamsi').addEventListener('click', () => load
 document.getElementById('refreshBtn-jefri').addEventListener('click', () => loadAll('jefri', '-jefri', true));
 document.getElementById('refreshBtn-dilaksi').addEventListener('click', () => loadAll('dilaksi', '-dilaksi', true));
 document.getElementById('refreshBtn-sukirtha').addEventListener('click', () => loadAll('sukirtha', '-sukirtha', true));
+document.getElementById('refreshBtn-mahima').addEventListener('click', () => loadAll('mahima', '-mahima', true));
 document.getElementById('refreshBtn-thasitha').addEventListener('click', () => loadThasitha(true));
 
 // Export CSV (added 2026-08-24) — downloads whatever's currently rendered
@@ -1299,6 +1349,7 @@ document.getElementById('exportBtn-kamsi').addEventListener('click', () => expor
 document.getElementById('exportBtn-jefri').addEventListener('click', () => exportPerfCsv('-jefri'));
 document.getElementById('exportBtn-dilaksi').addEventListener('click', () => exportPerfCsv('-dilaksi'));
 document.getElementById('exportBtn-sukirtha').addEventListener('click', () => exportPerfCsv('-sukirtha'));
+document.getElementById('exportBtn-mahima').addEventListener('click', () => exportPerfCsv('-mahima'));
 document.getElementById('exportBtn-thasitha').addEventListener('click', () => exportPerfCsv('-thasitha'));
 // Lazy-load: only fetch the tab that's actually visible. Each loadAll()
 // fires 20 months x 2 (sales+cost) = 40 requests; loading all 3 built
@@ -1316,8 +1367,8 @@ const pageTitle = document.getElementById('pageTitle');
 const pageSub = document.getElementById('pageSub');
 const csAvatar = document.getElementById('csAvatar');
 const csName = document.getElementById('csName');
-const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters', 'dilaksiFilters', 'sukirthaFilters', 'thasithaFilters'];
-const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-sukirtha', 'panel-thasitha', 'panel-placeholder'];
+const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters', 'dilaksiFilters', 'sukirthaFilters', 'mahimaFilters', 'thasithaFilters'];
+const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-sukirtha', 'panel-mahima', 'panel-thasitha', 'panel-placeholder'];
 
 function selectMember(key){
   mgShowView('performance');
@@ -1789,7 +1840,7 @@ async function openCostPopup(member, year, month, monthLabel){
     // ÷4 split, same for both years) so these two lines always sum to the
     // backend's returned ownCost for these members. Jefri is DE but DOES
     // have real ad spend, so he still gets the "Ads Cost" row.
-    const isAdsRole = HAS_DM.has(member) || member === 'jefri';
+    const isAdsRole = HAS_DM.has(member) || DE_ADS_ROLE_MEMBERS.has(member);
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
     let baseCostRows;
     if (isAdsRole) {
