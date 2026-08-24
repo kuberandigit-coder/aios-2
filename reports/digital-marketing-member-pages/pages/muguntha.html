@@ -236,26 +236,37 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
     <div class="filters" id="sonyaFilters">
       <span class="chip live" id="statusChip">Loading&hellip;</span>
       <button class="primary" id="refreshBtn">Refresh (live)</button>
+      <button class="primary" id="exportBtn" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
     </div>
     <div class="filters" id="sajeepanFilters" style="display:none;">
       <span class="chip live" id="statusChip-sajeepan">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-sajeepan">Refresh (live)</button>
+      <button class="primary" id="exportBtn-sajeepan" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
     </div>
     <div class="filters" id="kamsiFilters" style="display:none;">
       <span class="chip live" id="statusChip-kamsi">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-kamsi">Refresh (live)</button>
+      <button class="primary" id="exportBtn-kamsi" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
     </div>
     <div class="filters" id="jefriFilters" style="display:none;">
       <span class="chip live" id="statusChip-jefri">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-jefri">Refresh (live)</button>
+      <button class="primary" id="exportBtn-jefri" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
     </div>
     <div class="filters" id="dilaksiFilters" style="display:none;">
       <span class="chip live" id="statusChip-dilaksi">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-dilaksi">Refresh (live)</button>
+      <button class="primary" id="exportBtn-dilaksi" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
+    </div>
+    <div class="filters" id="sukirthaFilters" style="display:none;">
+      <span class="chip live" id="statusChip-sukirtha">Loading&hellip;</span>
+      <button class="primary" id="refreshBtn-sukirtha">Refresh (live)</button>
+      <button class="primary" id="exportBtn-sukirtha" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
     </div>
     <div class="filters" id="thasithaFilters" style="display:none;">
       <span class="chip live" id="statusChip-thasitha">Loading&hellip;</span>
       <button class="primary" id="refreshBtn-thasitha">Refresh (live)</button>
+      <button class="primary" id="exportBtn-thasitha" style="background:var(--good,#0a7d4f);border-color:var(--good,#0a7d4f);">Export CSV</button>
     </div>
   </div>
 
@@ -275,10 +286,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody"><tr><td colspan="13" class="loading">Loading Sonya's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody"><tr><td colspan="12" class="loading">Loading Sonya's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -287,8 +298,9 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
         <strong>Data sources.</strong><br>
         Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Sonya, fetched via the existing <code>/api/sales25?group=sonya&amp;month=YYYY-MM</code> (2025, Jan&ndash;Jun) and <code>/api/salesuk?group=sonya&amp;month=YYYY-MM</code> (2026, Jun&ndash;Aug) endpoints &mdash; the same attribution logic already used on the Sonya tab of the UK sales pages, no new order logic written.<br>
         2025 Total Cost and 2026 Total Cost &mdash; identical formula for both years: Sonya's own campaign cost (sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "Sonya" campaign group, <code>group_name='Sonya'</code>, <code>account_id=4503486236</code>) <strong>plus</strong> her product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sonya credit for any DM 46 order containing one of her owned products, so her share of that campaign's cost is folded into this single Total Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to her owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only her share is. (Updated 2026-08-04 &mdash; 2025 previously excluded DM cost entirely; now matches 2026's treatment.)<br>
-        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement (redefined 2026-08-10) = 2026 Net &divide; (2025 Net &times; 1.30) &mdash; i.e. this month's 2026 Net measured against a 30% year-on-year growth target on the SAME calendar month's 2025 Net (e.g. Jan 2025 Net &pound;50k &rarr; Jan 2026 target &pound;65k). 100% = exactly hit the 30% growth target; below 100% = fell short. Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
-        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+        <strong>Jan&ndash;Jun 2025 exception (2026-08-24):</strong> DM 46 campaign-attributed Sales and its product-share Cost are removed from Sonya's and Sajeepan's Sales/Total Cost/Net/ROAS for these 6 months <strong>on this Performance tab display only</strong> &mdash; a post-processing step in <code>api/muguntha.js</code>'s perf-batch endpoint that filters out rows already tagged "(product-owned, moved from DM Campaigns)" by the existing <code>salesuk.js</code>/<code>sales25.js</code> attribution, and zeroes the corresponding <code>dmProductCost</code>. No attribution logic was changed and no other page/report is affected &mdash; Sonya's own sales dashboard and every other consumer of the same order/cost data still shows DM included, exactly as before.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month (e.g. Jan 2025 Net &pound;50k, Jan 2026 Net &pound;58k &rarr; +16.00%). Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
+        Status (redefined 2026-08-24, replaces the old Target Achievement column and the old Not-Archived/Archived meaning): <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month (missing a year's Net, or 2025 Net &le; &pound;0).
       </div>
     </div>
 
@@ -307,10 +319,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-sajeepan"><tr><td colspan="13" class="loading">Loading Sajeepan's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-sajeepan"><tr><td colspan="12" class="loading">Loading Sajeepan's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -319,8 +331,9 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
         <strong>Data sources.</strong><br>
         Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Sajeepan, fetched via the existing <code>/api/sales25?group=sajeepan&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=sajeepan&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Sajeepan tab of the UK sales pages, no new order logic written.<br>
         2025 Total Cost and 2026 Total Cost &mdash; identical formula for both years: Sajeepan's own campaign cost (sum of <code>google_ads.campaign_performance.cost</code> for campaigns in the LEDSone Google Ads account's "SAJEEPAN" campaign group, <code>group_name='SAJEEPAN'</code>, <code>account_id=4503486236</code>) <strong>plus</strong> his product-share of the "DM 46" campaign's spend (<code>Pmax UK | Muguntha | Shoptimised | GB | DM 46 All | MCV | UK</code>): the Sales-side attribution already gives Sajeepan credit for any DM 46 order containing one of his owned products, so his share of that campaign's cost is folded into this single Total Cost figure &mdash; <code>SUM(google_ads.product_performance.cost)</code> for that campaign, filtered to his owned product IDs (same list <code>salesuk.js</code> uses for Sales attribution). The DM campaign's full spend (across all staff's products) is not shown here and is not what drives Net/ROAS &mdash; only his share is.<br>
-        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement (redefined 2026-08-10) = 2026 Net &divide; (2025 Net &times; 1.30) &mdash; i.e. this month's 2026 Net measured against a 30% year-on-year growth target on the SAME calendar month's 2025 Net (e.g. Jan 2025 Net &pound;50k &rarr; Jan 2026 target &pound;65k). 100% = exactly hit the 30% growth target; below 100% = fell short. Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
-        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+        <strong>Jan&ndash;Jun 2025 exception (2026-08-24):</strong> DM 46 campaign-attributed Sales and its product-share Cost are removed from Sonya's and Sajeepan's Sales/Total Cost/Net/ROAS for these 6 months <strong>on this Performance tab display only</strong> &mdash; a post-processing step in <code>api/muguntha.js</code>'s perf-batch endpoint that filters out rows already tagged "(product-owned, moved from DM Campaigns)" by the existing <code>salesuk.js</code>/<code>sales25.js</code> attribution, and zeroes the corresponding <code>dmProductCost</code>. No attribution logic was changed and no other page/report is affected &mdash; Sajeepan's own sales dashboard and every other consumer of the same order/cost data still shows DM included, exactly as before.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month (e.g. Jan 2025 Net &pound;50k, Jan 2026 Net &pound;58k &rarr; +16.00%). Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
+        Status (redefined 2026-08-24, replaces the old Target Achievement column and the old Not-Archived/Archived meaning): <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month (missing a year's Net, or 2025 Net &le; &pound;0).
       </div>
     </div>
 
@@ -339,10 +352,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-kamsi"><tr><td colspan="13" class="loading">Loading Kamsi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-kamsi"><tr><td colspan="12" class="loading">Loading Kamsi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -350,9 +363,9 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
       <div class="footnotes">
         <strong>Data sources.</strong><br>
         Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Kamsi, fetched via the existing <code>/api/sales25?group=kamsi&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=kamsi&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Kamsi tab of the UK sales pages, no new order logic written.<br>
-        2025 Total Cost and 2026 Total Cost &mdash; Kamsi is <strong>SEO &amp; Organic</strong> (department "Organic (product-scoped)" in the attribution rules), not a paid-ads role like Sonya/Sajeepan &mdash; she has no Google Ads campaign group in this account and no DM 46 product-share (her Sales attribution never routes an order to her through that shared paid campaign), so Google Ads spend is always &pound;0.00. Cost here is instead her share of the shared SEO tool subscriptions (added 2026-08-07): <strong>2025</strong> &mdash; Semrush &pound;265.62/mo total, split 50% ledsone.de / 50% ledsone UK; the UK 50% share (&pound;132.81/mo) is split 3-way between Kamsi/Dilaksi/Sukirtha Jan&ndash;Oct 2025 (&pound;44.27/mo each), then 4-way once Hetheesha joins the split Nov&ndash;Dec 2025 (&pound;33.20/mo each) &mdash; only Kamsi's and Dilaksi's shares appear on this dashboard, Sukirtha/Hetheesha have no cost row here yet. <strong>2026</strong> &mdash; Semrush + Arrow AI combined &pound;149/mo total, split 40% UK / 40% DE / 20% FR; the UK 40% share (&pound;59.60/mo) is split evenly between Kamsi and Dilaksi only (&pound;29.80/mo each).<br>
-        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement (redefined 2026-08-10) = 2026 Net &divide; (2025 Net &times; 1.30) &mdash; i.e. this month's 2026 Net measured against a 30% year-on-year growth target on the SAME calendar month's 2025 Net (e.g. Jan 2025 Net &pound;50k &rarr; Jan 2026 target &pound;65k). 100% = exactly hit the 30% growth target; below 100% = fell short. Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
-        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+        2025 Total Cost and 2026 Total Cost &mdash; Kamsi is <strong>SEO &amp; Organic</strong> (department "Organic (product-scoped)" in the attribution rules), not a paid-ads role like Sonya/Sajeepan &mdash; she has no Google Ads campaign group in this account and no DM 46 product-share (her Sales attribution never routes an order to her through that shared paid campaign), so Google Ads spend is always &pound;0.00. Cost here is instead her share of the shared SEO tool subscriptions (added 2026-08-07): <strong>2025</strong> &mdash; Semrush &pound;265.62/mo total, split 50% ledsone.de / 50% ledsone UK; the UK 50% share (&pound;132.81/mo) is split 3-way between Kamsi/Dilaksi/Sukirtha Jan&ndash;Oct 2025 (&pound;44.27/mo each), then 4-way once Hetheesha joins the split Nov&ndash;Dec 2025 (&pound;33.20/mo each) &mdash; only Kamsi's and Dilaksi's shares appeared on this dashboard historically — Sukirtha now has her own tab (added 2026-08-24, same current tool-cost formula); Hetheesha still has no cost row here yet. <strong>2026</strong> &mdash; Semrush + Arrow AI combined &pound;149/mo total, split 40% UK / 40% DE / 20% FR; the UK 40% share (&pound;59.60/mo) is split evenly between Kamsi and Dilaksi only (&pound;29.80/mo each).<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month (e.g. Jan 2025 Net &pound;50k, Jan 2026 Net &pound;58k &rarr; +16.00%). Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
+        Status (redefined 2026-08-24, replaces the old Target Achievement column and the old Not-Archived/Archived meaning): <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month (missing a year's Net, or 2025 Net &le; &pound;0).
       </div>
     </div>
 
@@ -371,10 +384,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-jefri"><tr><td colspan="13" class="loading">Loading Jefri's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-jefri"><tr><td colspan="12" class="loading">Loading Jefri's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -384,9 +397,9 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
         Jefri runs Google Ads on the <strong>DE store (ledsone.de)</strong>, a separate Shopify store and separate Google Ads account (account_id 9031058245) from Sonya/Sajeepan/Kamsi's UK account &mdash; his Sales/Cost figures come from entirely different endpoints, not the UK sales25/salesuk/muguntha pipeline the other three tabs share.<br>
         Sales (incl. tax + shipping) &mdash; <code>combinedSummary.orderTotalSum</code>, the order total for every order whose first-session <code>utm_term</code> matches "jeff"/"Jeichitom_Maara" (or, with no utm_term, <code>utm_medium=SMARKETER_sale</code>) &mdash; the same confirmed rule already used on the Jefri Ads tab of sales.html (2026, live <code>/api/sales?staff=jeffri-ads</code>) and 2025DE.html (2025, <code>/api/salesde25?staff=jeffri-ads</code>). Store-wide, not product-scoped.<br>
         <strong>2025 coverage limit:</strong> the 2025 DE endpoint only supports Jan&ndash;Jun 2025 (<code>salesde25.js</code> was never backfilled past June) &mdash; Jul&ndash;Dec 2025 show as N/A rather than guessing.<br>
-        2025/2026 Total Cost &mdash; <code>SUM(google_ads.campaign_performance.cost)</code> for Jefri's 5 named DE campaigns (<code>account_id=9031058245</code>, the same 5 campaigns used on jefri.html's Product Status/Req3 tabs), for the month. No DM-style shared-campaign product-share concept applies here &mdash; that's a UK-account-only construct.<br>
-        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement (redefined 2026-08-10) = 2026 Net &divide; (2025 Net &times; 1.30) &mdash; i.e. this month's 2026 Net measured against a 30% year-on-year growth target on the SAME calendar month's 2025 Net (e.g. Jan 2025 Net &pound;50k &rarr; Jan 2026 target &pound;65k). 100% = exactly hit the 30% growth target; below 100% = fell short. Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
-        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+        2025/2026 Total Cost (updated 2026-08-24, same clickable cost-breakdown popup as Sonya/Sajeepan/Kamsi/Dilaksi) &mdash; Ads Cost (<code>SUM(google_ads.campaign_performance.cost)</code> for Jefri's 5 named DE campaigns, <code>account_id=9031058245</code>, the same 5 campaigns used on jefri.html's Product Status/Req3 tabs) <strong>plus</strong> Discount and Refund (real amounts from that month's DE-store orders, <code>salesde25.js</code>/<code>sales.js</code>'s <code>jeffri-ads</code> combinedSummary). No DM-style shared-campaign product-share concept applies here &mdash; that's a UK-account-only construct. No Transaction Fee line either (not computed by the DE endpoint &mdash; left out rather than shown as a fake £0.00), and no Shopify Subscription Fee share (that's the separate UK store's, ledsone.co.uk, Advanced-plan bill, split only among the 4 UK staff who actually share it &mdash; folding it into a different Shopify account's DE cost would be wrong, not approximate). Click any Total Cost figure for the full breakdown.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month (e.g. Jan 2025 Net &pound;50k, Jan 2026 Net &pound;58k &rarr; +16.00%). Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
+        Status (redefined 2026-08-24, replaces the old Target Achievement column and the old Not-Archived/Archived meaning): <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month (missing a year's Net, or 2025 Net &le; &pound;0).
       </div>
     </div>
 
@@ -405,10 +418,10 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
                 <th>Month</th><th>Name</th>
                 <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
                 <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
-                <th class="num">YoY Growth %</th><th class="num">Target Achievement</th><th>Status</th>
+                <th class="num">YoY Growth %</th><th>Status</th>
               </tr>
             </thead>
-            <tbody id="tblBody-dilaksi"><tr><td colspan="13" class="loading">Loading Dilaksi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+            <tbody id="tblBody-dilaksi"><tr><td colspan="12" class="loading">Loading Dilaksi's 2025 vs 2026 performance&hellip;</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -416,9 +429,43 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
       <div class="footnotes">
         <strong>Data sources.</strong><br>
         Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> (gross sales minus discounts minus refunds, tax-excluded) for every order Shopify's customer-journey data attributes to Dilaksi, fetched via the existing <code>/api/sales25?group=dilaksi&amp;month=YYYY-MM</code> (2025) and <code>/api/salesuk?group=dilaksi&amp;month=YYYY-MM</code> (2026) endpoints &mdash; the same attribution logic already used on the Dilaksi tab of the UK sales pages, no new order logic written.<br>
-        2025 Total Cost and 2026 Total Cost &mdash; Dilaksi is <strong>SEO &amp; Organic</strong> (product-scoped), same as Kamsi &mdash; she has no Google Ads campaign group in this account and no DM 46 product-share (her Sales attribution never routes an order to her through that shared paid campaign), so Google Ads spend is always &pound;0.00. Cost here is instead her share of the shared SEO tool subscriptions (added 2026-08-07): <strong>2025</strong> &mdash; Semrush &pound;265.62/mo total, split 50% ledsone.de / 50% ledsone UK; the UK 50% share (&pound;132.81/mo) is split 3-way between Kamsi/Dilaksi/Sukirtha Jan&ndash;Oct 2025 (&pound;44.27/mo each), then 4-way once Hetheesha joins the split Nov&ndash;Dec 2025 (&pound;33.20/mo each) &mdash; only Kamsi's and Dilaksi's shares appear on this dashboard, Sukirtha/Hetheesha have no cost row here yet. <strong>2026</strong> &mdash; Semrush + Arrow AI combined &pound;149/mo total, split 40% UK / 40% DE / 20% FR; the UK 40% share (&pound;59.60/mo) is split evenly between Kamsi and Dilaksi only (&pound;29.80/mo each).<br>
-        Net = Sales &minus; Cost. ROAS = Sales / Cost. Target Achievement (redefined 2026-08-10) = 2026 Net &divide; (2025 Net &times; 1.30) &mdash; i.e. this month's 2026 Net measured against a 30% year-on-year growth target on the SAME calendar month's 2025 Net (e.g. Jan 2025 Net &pound;50k &rarr; Jan 2026 target &pound;65k). 100% = exactly hit the 30% growth target; below 100% = fell short. Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
-        Status: <span class="pill notarchived">Not-Archived</span> = 2026 live/current month (month-to-date) &middot; <span class="pill archived">Archived</span> = closed historical month.
+        2025 Total Cost and 2026 Total Cost &mdash; Dilaksi is <strong>SEO &amp; Organic</strong> (product-scoped), same as Kamsi &mdash; she has no Google Ads campaign group in this account and no DM 46 product-share (her Sales attribution never routes an order to her through that shared paid campaign), so Google Ads spend is always &pound;0.00. Cost here is instead her share of the shared SEO tool subscriptions (added 2026-08-07): <strong>2025</strong> &mdash; Semrush &pound;265.62/mo total, split 50% ledsone.de / 50% ledsone UK; the UK 50% share (&pound;132.81/mo) is split 3-way between Kamsi/Dilaksi/Sukirtha Jan&ndash;Oct 2025 (&pound;44.27/mo each), then 4-way once Hetheesha joins the split Nov&ndash;Dec 2025 (&pound;33.20/mo each) &mdash; only Kamsi's and Dilaksi's shares appeared on this dashboard historically — Sukirtha now has her own tab (added 2026-08-24, same current tool-cost formula); Hetheesha still has no cost row here yet. <strong>2026</strong> &mdash; Semrush + Arrow AI combined &pound;149/mo total, split 40% UK / 40% DE / 20% FR; the UK 40% share (&pound;59.60/mo) is split evenly between Kamsi and Dilaksi only (&pound;29.80/mo each).<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month (e.g. Jan 2025 Net &pound;50k, Jan 2026 Net &pound;58k &rarr; +16.00%). Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
+        Status (redefined 2026-08-24, replaces the old Target Achievement column and the old Not-Archived/Archived meaning): <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month (missing a year's Net, or 2025 Net &le; &pound;0).
+      </div>
+    </div>
+
+    <div id="panel-sukirtha" class="member-panel" style="display:none;">
+      <div class="cards" id="kpiCards-sukirtha"></div>
+
+      <div class="tablebox">
+        <div class="tbar">
+          <strong>Month-by-Month &mdash; Sukirtha</strong>
+          <span id="rowCount-sukirtha"></span>
+        </div>
+        <div class="scroll">
+          <table id="mainTable-sukirtha">
+            <thead>
+              <tr>
+                <th>Month</th><th>Name</th>
+                <th class="num">2025 Sales</th><th class="num">2025 Total Cost</th><th class="num">2025 Net</th><th class="num">2025 ROAS</th>
+                <th class="num">2026 Sales</th><th class="num">2026 Total Cost</th><th class="num">2026 Net</th><th class="num">2026 ROAS</th>
+                <th class="num">YoY Growth %</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tblBody-sukirtha"><tr><td colspan="12" class="loading">Loading Sukirtha's 2025 vs 2026 performance&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnotes">
+        <strong>Data sources.</strong><br>
+        Sukirtha runs <strong>SEO/Organic Search on the DE store (ledsone.de)</strong> &mdash; a completely separate Shopify store and Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi/Dilaksi's UK data, same store as Jefri (Google Ads) and Thasitha.<br>
+        Sales (net &mdash; excl. tax, shipping, discounts &amp; refunds) &mdash; <code>combinedSummary.netSales</code> for every DE-store order Shopify's customer-journey data classifies as Organic (Fully Organic, First-Session Organic, Direct, Referral, No Journey Data, or AI Tools channel) &mdash; store-wide, not product-scoped (mirrors the UK Sukirtha Organic tab's definition), via the existing <code>/api/sales25?staff=sukirtha&amp;month=YYYY-MM</code> (2025) and <code>/api/sales?staff=sukirtha&amp;month=YYYY-MM</code> (2026) endpoints. No new attribution logic written.<br>
+        <strong>2025 coverage limit:</strong> the 2025 DE endpoint only supports Jan&ndash;Jun 2025 (never backfilled past June, same limit as Jefri's tab) &mdash; Jul&ndash;Dec 2025 show as N/A rather than guessing.<br>
+        2025/2026 Total Cost (added 2026-08-24) &mdash; Sukirtha has no Google Ads campaign group in either account (confirmed: <code>group_name ILIKE '%suki%'</code> returns 0 rows) and no DM 46 product-share, so Google Ads spend is always &pound;0.00. Cost here is her share of the shared SEO tool subscriptions (Semrush + Arrow AI), same formula as Kamsi/Dilaksi: $358.95 + $149.00 per month, split 4 ways, converted to &pound; at the 2026-08-19 mid-market rate &mdash; same for both years. She was already accounted for in this split's original design (see Dilaksi tab's footnote) but never had her own dashboard row until now. Click any Total Cost figure for the full breakdown.<br>
+        Net = Sales &minus; Cost. ROAS = Sales / Cost. YoY Growth % = (2026 Net &minus; 2025 Net) &divide; 2025 Net for the SAME calendar month (e.g. Jan 2025 Net &pound;50k, Jan 2026 Net &pound;58k &rarr; +16.00%). Requires both years' Net for that month with 2025 Net &gt; &pound;0, otherwise N/A.<br>
+        Status (redefined 2026-08-24, replaces the old Target Achievement column and the old Not-Archived/Archived meaning): <span class="pill notarchived">Achieved</span> = YoY Growth &ge; 30% &middot; <span class="pill archived">Not Achieved</span> = YoY Growth &lt; 30% &middot; <span class="pill archived">N/A</span> = YoY Growth can't be computed for that month (missing a year's Net, or 2025 Net &le; &pound;0).
       </div>
     </div>
 
@@ -445,7 +492,7 @@ document.getElementById('signOutBtn').addEventListener('click', function (e) {
 
       <div class="footnotes">
         <strong>Data sources.</strong><br>
-        Thasitha joined Google Ads (Paid Search) on the <strong>DE store (ledsone.de)</strong> in April 2026 (first campaign start date 2026-04-20, confirmed via <code>google_ads.campaigns</code>) &mdash; unlike Sonya/Sajeepan/Kamsi/Jefri/Dilaksi, there is no 2025 data for her at all, so this panel shows a single continuous timeline (<strong>May 2026 onward</strong> &mdash; her first full calendar month &mdash; through the current live month) instead of a 2025-vs-2026 comparison. No Target Achievement / YoY Growth % columns, since there's no prior-year baseline to measure against.<br>
+        Thasitha joined Google Ads (Paid Search) on the <strong>DE store (ledsone.de)</strong> in April 2026 (first campaign start date 2026-04-20, confirmed via <code>google_ads.campaigns</code>) &mdash; unlike Sonya/Sajeepan/Kamsi/Jefri/Dilaksi, there is no 2025 data for her at all, so this panel shows a single continuous timeline (<strong>May 2026 onward</strong> &mdash; her first full calendar month &mdash; through the current live month) instead of a 2025-vs-2026 comparison. No YoY Growth % column (and no Achieved/Not Achieved Status derived from it), since there's no prior-year baseline to measure against.<br>
         Sales (incl. tax + shipping) &mdash; <code>combinedSummary.orderTotalSum</code>, the order total for every order whose first-session <code>utm_term</code> exactly matches "thasi" (case-insensitive) &mdash; the same confirmed rule already used on the Thasitha Ads tab of sales.html, live <code>/api/sales?staff=thasitha-ads</code>. Store-wide, not product-scoped.<br>
         Total Cost &mdash; <code>SUM(google_ads.campaign_performance.cost)</code> for Thasitha's campaigns (<code>google_ads.campaigns WHERE group_name='Thasi' AND account_id=9031058245</code>, the same campaigns used on thasitha.html's Requirement tabs), for the month. No DM-style shared-campaign product-share concept applies here (DE account, not the UK account that construct is specific to).<br>
         Net = Sales &minus; Cost. ROAS = Sales / Cost, shown as N/A when Cost is &euro;0.<br>
@@ -616,19 +663,77 @@ async function fetchJsonResilient(url, timeoutMs, retries){
 // endpoint (see fetchJsonResilient above) — the popup becomes an instant
 // read of already-loaded data instead of a fresh fetch. Sonya added
 // 2026-08-19, Sajeepan added same day — both use COST_POPUP_MEMBERS below.
-const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan', 'kamsi', 'dilaksi']);
+// Jefri added 2026-08-24 — same clickable-popup/cost-breakdown treatment as
+// Sonya/Sajeepan/Kamsi/Dilaksi, but only for the cost components his DE
+// order data actually supports (see memberExtraCost() and openCostPopup()
+// below): Discount + Refund are real (salesde25.js's jeffri-ads
+// combinedSummary already computes them). Transaction Fee is NOT available
+// for the DE store (no sumTransactionFees()-equivalent exists there) — left
+// out rather than shown as a fake £0.00. Shopify Subscription Fee is also
+// left out: that's the UK store's (ledsone.co.uk) Advanced-plan invoice,
+// split only among the 4 UK-store staff who share that actual bill — Jefri
+// runs the DE store (ledsone.de), a separate Shopify account with its own
+// (currently untracked) subscription cost, so folding in the UK figure
+// would be wrong, not just approximate.
+const COST_POPUP_MEMBERS = new Set(['sonya', 'sajeepan', 'kamsi', 'dilaksi', 'jefri', 'sukirtha']);
 const MEMBER_MONTH_DATA = {};
 function memberMonthKey(member, year, month){ return member + ':' + year + ':' + month; }
 
+// Jan-Jun 2025 DM-46 display exclusion for Sonya/Sajeepan (2026-08-24).
+// fetchGroupSales()/fetchCost() below call the RAW /api/sales25, /api/salesuk
+// and /api/muguntha endpoints directly (the perf-batch server route that
+// originally carried this filter is not actually wired into loadAll() —
+// PERF_BATCH_MEMBERS is empty below), so the filter has to live here instead,
+// applied client-side to those raw responses before they're used anywhere
+// on this page. Same marker string salesuk.js/sales25.js's Sonya/Sajeepan
+// group.matchValue() already appends to DM-46-plus-owned-product orders —
+// no new attribution logic, just filtering rows already tagged by it.
+const DM_DISPLAY_EXCLUDE_MEMBERS = new Set(['sonya', 'sajeepan']);
+const DM_DISPLAY_EXCLUDE_MONTHS = new Set(['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06']);
+const DM_ATTRIBUTION_MARKER = '(product-owned, moved from DM Campaigns)';
+function round2Mg(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
+function shouldStripDm(member, month){ return DM_DISPLAY_EXCLUDE_MEMBERS.has(member) && DM_DISPLAY_EXCLUDE_MONTHS.has(month); }
+function stripDmFromCombinedSummary(data){
+  if (!data || !Array.isArray(data.campaignSummary) || !data.combinedSummary) return data;
+  const dmRows = data.campaignSummary.filter(function(c){ return c.campaign && c.campaign.indexOf(DM_ATTRIBUTION_MARKER) !== -1; });
+  if (!dmRows.length) return data;
+  function sum(field){ return dmRows.reduce(function(a, c){ return a + (c[field] || 0); }, 0); }
+  const cs = data.combinedSummary;
+  const ordersCount = cs.ordersCount - sum('ordersCount');
+  const netSales = round2Mg(cs.netSales - sum('netSales'));
+  return Object.assign({}, data, {
+    combinedSummary: Object.assign({}, cs, {
+      ordersCount: ordersCount,
+      grossSales: round2Mg(cs.grossSales - sum('grossSales')),
+      discounts: round2Mg(cs.discounts - sum('discounts')),
+      refunds: round2Mg(cs.refunds - sum('refunds')),
+      netSales: netSales,
+      orderTotalSum: round2Mg(cs.orderTotalSum - sum('orderTotalSum')),
+      vat: round2Mg(cs.vat - sum('vat')),
+      averageRevenuePerOrder: ordersCount ? round2Mg(netSales / ordersCount) : 0,
+    }),
+  });
+}
+
+// DE-store-routed members (added Sukirtha 2026-08-24): use salesde25.js/
+// sales.js via ?staff= instead of sales25.js/salesuk.js via ?group=. Only
+// Jefri uses orderTotalSum (incl. tax+shipping, per his explicit user
+// request) — everyone else, including Sukirtha, uses netSales like the UK
+// members.
+const DE_STAFF_ROUTING = {
+  jefri: { staffValue: 'jeffri-ads' },
+  sukirtha: { staffValue: 'sukirtha' },
+};
 async function fetchGroupSales(year, member, month, force, timeoutMs){
-  const isJefri = member === 'jefri';
-  const endpoint = isJefri ? (year === '2025' ? 'salesde25' : 'sales') : (year === '2025' ? 'sales25' : 'salesuk');
-  const paramName = isJefri ? 'staff' : 'group';
-  const paramValue = isJefri ? 'jeffri-ads' : member;
+  const deRoute = DE_STAFF_ROUTING[member];
+  const endpoint = deRoute ? (year === '2025' ? 'salesde25' : 'sales') : (year === '2025' ? 'sales25' : 'salesuk');
+  const paramName = deRoute ? 'staff' : 'group';
+  const paramValue = deRoute ? deRoute.staffValue : member;
   const url = '/api/' + endpoint + '?' + paramName + '=' + paramValue + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
-  const data = await fetchJsonResilient(url, timeoutMs || 12000, 1);
+  let data = await fetchJsonResilient(url, timeoutMs || 12000, 1);
   if (!data || !data.success) return null;
   if (!data.combinedSummary) return 0;
+  if (shouldStripDm(member, month)) data = stripDmFromCombinedSummary(data);
   if (COST_POPUP_MEMBERS.has(member)) {
     const s = data.combinedSummary;
     const key = memberMonthKey(member, year, month);
@@ -637,17 +742,23 @@ async function fetchGroupSales(year, member, month, force, timeoutMs){
       refunds: s.refunds || 0, transactionFee: s.transactionFee || 0,
     });
   }
-  // netSales (excl. tax/shipping/discounts/refunds) for Sonya/Sajeepan/Kamsi
-  // — matches the "Net Sales" figure already shown on salesuk.html. Jefri
-  // keeps orderTotalSum (incl. tax+shipping) per explicit user request.
-  return isJefri ? data.combinedSummary.orderTotalSum : data.combinedSummary.netSales;
+  // netSales (excl. tax/shipping/discounts/refunds) for Sonya/Sajeepan/Kamsi/
+  // Dilaksi/Sukirtha — matches the "Net Sales" figure already shown on
+  // salesuk.html. Jefri keeps orderTotalSum (incl. tax+shipping) per
+  // explicit user request.
+  return member === 'jefri' ? data.combinedSummary.orderTotalSum : data.combinedSummary.netSales;
 }
 
 async function fetchCost(member, month, force, timeoutMs){
   const url = '/api/muguntha?employee=' + member + '&month=' + encodeURIComponent(month) + (force ? '&refresh=1' : '');
   const data = await fetchJsonResilient(url, timeoutMs || 12000, 1);
   if (!data || !data.success) return { ownCost: null, dmSonyaProductCost: null, dmTotalCost: null, totalCost: null };
-  const dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
+  let dmProductCost = data.dmProductCost != null ? data.dmProductCost : (data.dmSonyaProductCost || 0);
+  let totalCost = data.totalCost != null ? data.totalCost : data.cost;
+  if (shouldStripDm(member, month) && dmProductCost) {
+    totalCost = round2Mg(totalCost - dmProductCost);
+    dmProductCost = 0;
+  }
   if (COST_POPUP_MEMBERS.has(member)) {
     const key = memberMonthKey(member, month.slice(0, 4), month);
     MEMBER_MONTH_DATA[key] = Object.assign({}, MEMBER_MONTH_DATA[key], {
@@ -658,7 +769,7 @@ async function fetchCost(member, month, force, timeoutMs){
     ownCost: data.cost,
     dmSonyaProductCost: dmProductCost,
     dmTotalCost: data.dmTotalCost || 0,
-    totalCost: data.totalCost != null ? data.totalCost : data.cost,
+    totalCost: totalCost,
   };
 }
 
@@ -746,9 +857,17 @@ async function mapLimit(items, limit, fn) {
 // feed into Total Cost.
 function memberExtraCost(member, year, month, netSales){
   const d = MEMBER_MONTH_DATA[memberMonthKey(member, year, month)] || {};
-  const transactionFee = d.transactionFee || 0;
   const discounts = d.discounts || 0;
   const refunds = d.refunds || 0;
+  // DE-store members (Jefri, Sukirtha — added 2026-08-24): only Discount +
+  // Refund are real for them (from salesde25.js's combinedSummary). No
+  // Transaction Fee (not computed by the DE endpoint) and no Shopify
+  // Subscription Fee share (that's the separate UK-store bill split among
+  // the 4 UK staff — see COST_POPUP_MEMBERS comment above) — neither is
+  // fabricated here. Sukirtha's Ads Cost already includes her tool-cost
+  // share via getToolCost() server-side, same as Kamsi/Dilaksi.
+  if (DE_STAFF_ROUTING[member]) return Math.round((discounts + refunds) * 100) / 100;
+  const transactionFee = d.transactionFee || 0;
   const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
   const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
   // VAT removed 2026-08-19, Product Cost removed 2026-08-19, both per Kuberan.
@@ -796,18 +915,13 @@ function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonth
     const net2026 = pending ? undefined : (sales2026 != null ? sales2026 - costVal2026 : null);
     const roas2026 = pending ? undefined : (sales2026 != null && costVal2026 > 0 ? sales2026 / costVal2026 : null);
     const monthLabel = MONTH_NAME[mm];
-    // Target Achievement = 2026 Net vs. a 30%-YoY-growth target on 2025
-    // Net for the SAME calendar month (e.g. Jan 2025 Net £50k -> Jan 2026
-    // target £65k). Redefined 2026-08-10, then corrected same day to use
-    // Net (Sales - Cost) instead of raw Sales per explicit instruction.
-    // Requires both years' Net for that month, with 2025 Net > 0;
-    // otherwise N/A.
-    const targetAch = pending ? undefined : ((net2025 != null && net2026 != null && net2025 > 0)
-      ? net2026 / (net2025 * (1 + TARGET_ROAS))
-      : null);
-    // Raw actual YoY change — separate from Target Achievement, which
-    // measures actual-vs-target. This is just (2026 Net - 2025 Net) /
-    // 2025 Net, e.g. -7.10% if Net fell. Added 2026-08-10.
+    // Target Achievement column removed 2026-08-24 per explicit instruction
+    // — Status is now derived directly from YoY Growth (>=30% = Achieved,
+    // below 30% = Not Achieved), so a separate target-ratio figure is no
+    // longer needed.
+    // Raw actual YoY change: (2026 Net - 2025 Net) / 2025 Net, e.g. -7.10%
+    // if Net fell. Added 2026-08-10. Requires both years' Net for that
+    // month, with 2025 Net > 0; otherwise N/A.
     const yoyGrowth = pending ? undefined : ((net2025 != null && net2026 != null && net2025 > 0)
       ? (net2026 - net2025) / net2025
       : null);
@@ -816,7 +930,7 @@ function buildPerfRows(sales25ByMonth, sales26ByMonth, cost25, cost26, liveMonth
       monthLabel, m25, m26,
       sales2025, costVal2025, ownCost2025, dmSonya2025, net2025, roas2025,
       sales2026, costVal2026, ownCost2026, dmSonya2026, net2026, roas2026,
-      targetAch, yoyGrowth, isLive, liveLoading: !!pending,
+      yoyGrowth, isLive, liveLoading: !!pending,
     });
   }
   return rows;
@@ -838,7 +952,7 @@ async function loadAll(member, idSuffix, force){
   const memberLabel = MEMBER_NAMES[member] || member;
   refreshBtn.disabled = true;
   statusChip.textContent = 'Loading…';
-  tbody.innerHTML = '<tr><td colspan="13" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="12" class="loading">Loading ' + memberLabel + '\'s 2025 vs 2026 performance…</td></tr>';
 
   const nonLiveMonths2026 = MONTHS_2026.filter((m) => !LIVE_2026.includes(m));
   const liveMonthsPending = new Set(LIVE_2026);
@@ -895,7 +1009,7 @@ async function loadAll(member, idSuffix, force){
     renderCards(finalRows, idSuffix);
     statusChip.textContent = 'Live · updated ' + new Date().toLocaleString();
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="13" class="empty">Error: ' + (err.message || err) + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty">Error: ' + (err.message || err) + '</td></tr>';
     statusChip.textContent = 'Error';
   } finally {
     refreshBtn.disabled = false;
@@ -908,20 +1022,21 @@ async function loadAll(member, idSuffix, force){
 // mention DM at all, not even as "£0.00". 2026-08-05.
 const HAS_DM = new Set(['sonya', 'sajeepan']);
 
+// Latest rendered rows per panel, keyed by idSuffix (e.g. '', '-sajeepan') —
+// lets the Export CSV button reuse whatever's already on screen instead of
+// re-fetching (added 2026-08-24).
+const LATEST_PERF_ROWS = {};
+
 function renderTable(rows, memberLabel, idSuffix, member){
+  LATEST_PERF_ROWS[idSuffix] = { rows, member };
   const tbody = document.getElementById('tblBody' + idSuffix);
   document.getElementById('rowCount' + idSuffix).textContent = rows.length + ' months';
-  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="13" class="empty">No data</td></tr>'; return; }
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No data</td></tr>'; return; }
   const showDm = HAS_DM.has(member);
   const netCell = (v) => v != null ? ('<span class="' + (v >= 0 ? 'up' : 'down') + '">' + fmtMoney(v) + '</span>') : 'N/A';
   const roasCell = (v) => {
     if (v == null) return 'N/A';
     const cls = v >= TARGET_ROAS ? 'up' : (v >= TARGET_ROAS * 0.7 ? 'roas-warn' : 'down');
-    return '<span class="' + cls + '">' + fmtPct(v) + '</span>';
-  };
-  const targetCell = (v) => {
-    if (v == null) return 'N/A';
-    const cls = v >= 1 ? 'up' : (v >= 0.7 ? 'roas-warn' : 'down');
     return '<span class="' + cls + '">' + fmtPct(v) + '</span>';
   };
   const growthCell = (v) => {
@@ -935,13 +1050,26 @@ function renderTable(rows, memberLabel, idSuffix, member){
   const costPopupEnabled = COST_POPUP_MEMBERS.has(member);
   const costCell = (val, own, dm, year, m, monthLabel) => {
     if (val == null) return 'N/A';
-    const base = fmtMoney(val) + (showDm && own != null && dm != null ? ' <span class="costnote">(Own: ' + fmtMoney(own) + ', DM: ' + fmtMoney(dm) + ')</span>' : '');
+    // Jan-Jun 2025 (Sonya/Sajeepan): don't mention DM at all, not even as
+    // "£0.00" — per explicit instruction 2026-08-24, the DM line should be
+    // fully absent for these months, not just zeroed.
+    const showDmHere = showDm && !shouldStripDm(member, m);
+    const base = fmtMoney(val) + (showDmHere && own != null && dm != null ? ' <span class="costnote">(Own: ' + fmtMoney(own) + ', DM: ' + fmtMoney(dm) + ')</span>' : '');
     if (!costPopupEnabled || !m) return base;
     return '<span class="cost-clickable" onclick="openCostPopup(\'' + member + '\',\'' + year + '\',\'' + m + '\',\'' + monthLabel + '\')">' + base + '</span>';
   };
 
+  // Status (redefined 2026-08-24, replacing the old Not-Archived/Archived
+  // pill and the removed Target Achievement column): Achieved if YoY
+  // Growth >= 30%, Not Achieved if below 30% — per explicit instruction.
+  // N/A when YoY Growth can't be computed (missing a year's Net, or 2025
+  // Net <= £0).
+  const statusPillFor = (yoyGrowth, liveLoading) => {
+    if (liveLoading) return '<span class="costnote">Loading…</span>';
+    if (yoyGrowth == null) return '<span class="pill archived">N/A</span>';
+    return yoyGrowth >= 0.30 ? '<span class="pill notarchived">Achieved</span>' : '<span class="pill archived">Not Achieved</span>';
+  };
   tbody.innerHTML = rows.map((r) => {
-    const statusPill = r.isLive ? '<span class="pill notarchived">Not-Archived</span>' : '<span class="pill archived">Archived</span>';
     const loadingCell = '<span class="costnote">Loading…</span>';
     return '<tr>' +
       '<td>' + r.monthLabel + '</td>' +
@@ -955,8 +1083,7 @@ function renderTable(rows, memberLabel, idSuffix, member){
       '<td class="num">' + (r.liveLoading ? loadingCell : netCell(r.net2026)) + '</td>' +
       '<td class="num">' + (r.liveLoading ? loadingCell : roasCell(r.roas2026)) + '</td>' +
       '<td class="num">' + (r.liveLoading ? loadingCell : growthCell(r.yoyGrowth)) + '</td>' +
-      '<td class="num">' + (r.liveLoading ? loadingCell : targetCell(r.targetAch)) + '</td>' +
-      '<td>' + statusPill + '</td>' +
+      '<td>' + statusPillFor(r.yoyGrowth, r.liveLoading) + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -988,8 +1115,9 @@ function renderCards(rows, idSuffix){
 // ---------- Thasitha: single-timeline panel (joined April 2026, no 2025
 // data — does NOT reuse the shared loadAll()/renderTable()/renderCards()
 // machinery above, which is hardcoded around a 2025-vs-2026 dual-year row
-// shape with YoY Growth %/Target Achievement columns that don't apply to
-// her. Added 2026-08-11, per explicit instruction: data from May 2026
+// shape with a YoY Growth % column (and the Achieved/Not-Achieved Status
+// derived from it) that don't apply to her, with no prior-year baseline.
+// Added 2026-08-11, per explicit instruction: data from May 2026
 // (her first full calendar month) through the current live month only. ----------
 const THASITHA_START_MONTH = '2026-05';
 
@@ -1051,6 +1179,7 @@ async function loadThasitha(force){
 }
 
 function renderThasithaTable(rows){
+  LATEST_PERF_ROWS['-thasitha'] = { rows, member: 'thasitha' };
   const tbody = document.getElementById('tblBody-thasitha');
   document.getElementById('rowCount-thasitha').textContent = rows.length + ' months';
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">No data</td></tr>'; return; }
@@ -1105,6 +1234,7 @@ const BUILT_MEMBERS = {
   kamsi: { idSuffix: '-kamsi', panelId: 'panel-kamsi', filtersId: 'kamsiFilters' },
   jefri: { idSuffix: '-jefri', panelId: 'panel-jefri', filtersId: 'jefriFilters' },
   dilaksi: { idSuffix: '-dilaksi', panelId: 'panel-dilaksi', filtersId: 'dilaksiFilters' },
+  sukirtha: { idSuffix: '-sukirtha', panelId: 'panel-sukirtha', filtersId: 'sukirthaFilters' },
 };
 
 document.getElementById('refreshBtn').addEventListener('click', () => loadAll('sonya', '', true));
@@ -1112,7 +1242,64 @@ document.getElementById('refreshBtn-sajeepan').addEventListener('click', () => l
 document.getElementById('refreshBtn-kamsi').addEventListener('click', () => loadAll('kamsi', '-kamsi', true));
 document.getElementById('refreshBtn-jefri').addEventListener('click', () => loadAll('jefri', '-jefri', true));
 document.getElementById('refreshBtn-dilaksi').addEventListener('click', () => loadAll('dilaksi', '-dilaksi', true));
+document.getElementById('refreshBtn-sukirtha').addEventListener('click', () => loadAll('sukirtha', '-sukirtha', true));
 document.getElementById('refreshBtn-thasitha').addEventListener('click', () => loadThasitha(true));
+
+// Export CSV (added 2026-08-24) — downloads whatever's currently rendered
+// on screen for that member's panel, no re-fetch. Two row shapes: the
+// standard 2025-vs-2026 shape (Sonya/Sajeepan/Kamsi/Dilaksi/Jefri) and
+// Thasitha's simpler single-year shape (see renderThasithaTable).
+function csvEscape(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+function downloadCsv(filename, lines){
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+function exportPerfCsv(idSuffix){
+  const entry = LATEST_PERF_ROWS[idSuffix];
+  if (!entry || !entry.rows || !entry.rows.length) { alert('No data loaded yet for this tab — wait for it to finish loading, then try again.'); return; }
+  const { rows, member } = entry;
+  const memberLabel = MEMBER_NAMES[member] || member;
+  let lines;
+  if (member === 'thasitha') {
+    const header = ['Month', 'Sales (EUR)', 'Total Cost (EUR)', 'Net (EUR)', 'ROAS', 'Status'];
+    lines = [header.map(csvEscape).join(',')].concat(rows.map((r) => [
+      r.monthLabel,
+      r.sales != null ? r.sales.toFixed(2) : '',
+      r.costVal != null ? r.costVal.toFixed(2) : '',
+      r.net != null ? r.net.toFixed(2) : '',
+      r.roas != null ? (r.roas * 100).toFixed(2) + '%' : 'N/A',
+      r.isLive ? 'Not-Archived' : 'Archived',
+    ].map(csvEscape).join(',')));
+  } else {
+    const currencySymbol = member === 'jefri' ? '' : '£';
+    const header = ['Month', '2025 Sales', '2025 Total Cost', '2025 Net', '2025 ROAS', '2026 Sales', '2026 Total Cost', '2026 Net', '2026 ROAS', 'YoY Growth', 'Status'];
+    lines = [header.map(csvEscape).join(',')].concat(rows.map((r) => [
+      r.monthLabel,
+      r.sales2025 != null ? r.sales2025.toFixed(2) : '',
+      r.costVal2025 != null ? r.costVal2025.toFixed(2) : '',
+      r.net2025 != null ? r.net2025.toFixed(2) : '',
+      r.roas2025 != null ? (r.roas2025 * 100).toFixed(2) + '%' : 'N/A',
+      r.sales2026 != null ? r.sales2026.toFixed(2) : '',
+      r.costVal2026 != null ? r.costVal2026.toFixed(2) : '',
+      r.net2026 != null ? r.net2026.toFixed(2) : '',
+      r.roas2026 != null ? (r.roas2026 * 100).toFixed(2) + '%' : 'N/A',
+      r.yoyGrowth != null ? (r.yoyGrowth * 100).toFixed(2) + '%' : 'N/A',
+      r.yoyGrowth == null ? 'N/A' : (r.yoyGrowth >= 0.30 ? 'Achieved' : 'Not Achieved'),
+    ].map(csvEscape).join(',')));
+  }
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  downloadCsv('muguntha-performance-' + member + '-' + dateStamp + '.csv', lines);
+}
+document.getElementById('exportBtn').addEventListener('click', () => exportPerfCsv(''));
+document.getElementById('exportBtn-sajeepan').addEventListener('click', () => exportPerfCsv('-sajeepan'));
+document.getElementById('exportBtn-kamsi').addEventListener('click', () => exportPerfCsv('-kamsi'));
+document.getElementById('exportBtn-jefri').addEventListener('click', () => exportPerfCsv('-jefri'));
+document.getElementById('exportBtn-dilaksi').addEventListener('click', () => exportPerfCsv('-dilaksi'));
+document.getElementById('exportBtn-sukirtha').addEventListener('click', () => exportPerfCsv('-sukirtha'));
+document.getElementById('exportBtn-thasitha').addEventListener('click', () => exportPerfCsv('-thasitha'));
 // Lazy-load: only fetch the tab that's actually visible. Each loadAll()
 // fires 20 months x 2 (sales+cost) = 40 requests; loading all 3 built
 // members on every page load (120 requests) was the real cause of slow
@@ -1129,8 +1316,8 @@ const pageTitle = document.getElementById('pageTitle');
 const pageSub = document.getElementById('pageSub');
 const csAvatar = document.getElementById('csAvatar');
 const csName = document.getElementById('csName');
-const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters', 'dilaksiFilters', 'thasithaFilters'];
-const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-thasitha', 'panel-placeholder'];
+const allFilterIds = ['sonyaFilters', 'sajeepanFilters', 'kamsiFilters', 'jefriFilters', 'dilaksiFilters', 'sukirthaFilters', 'thasithaFilters'];
+const allPanelIds = ['panel-sonya', 'panel-sajeepan', 'panel-kamsi', 'panel-jefri', 'panel-dilaksi', 'panel-sukirtha', 'panel-thasitha', 'panel-placeholder'];
 
 function selectMember(key){
   mgShowView('performance');
@@ -1161,7 +1348,7 @@ function selectMember(key){
     pageTitle.textContent = 'Employee Performance — ' + name;
     // Kamsi/Dilaksi are SEO/Organic (£0 ad spend) — their Cost column is a
     // shared SEO tool-cost share (Semrush/Arrow AI), not Google Ads spend.
-    const costNote = (key === 'kamsi' || key === 'dilaksi')
+    const costNote = (key === 'kamsi' || key === 'dilaksi' || key === 'sukirtha')
       ? 'Cost is ' + name + '\'s share of shared SEO tool subscriptions (Semrush/Arrow AI) — no Google Ads spend (SEO/Organic role)'
       : 'ADS Cost is Google Ads spend on ' + name + '\'s campaigns';
     pageSub.innerHTML = 'Requested by Muguntha &middot; currently scoped to <strong>' + name + '</strong> &middot; Sales excludes tax, shipping, discounts & refunds (net sales) &middot; ' + costNote + ' &middot; Target ROAS 30%';
@@ -1561,37 +1748,55 @@ async function openCostPopup(member, year, month, monthLabel){
   try {
     let d = MEMBER_MONTH_DATA[memberMonthKey(member, year, month)];
     if (!d || d.netSales == null || d.ownCost == null) {
-      const endpoint = year === '2025' ? 'sales25' : 'salesuk';
-      const [salesData, costData] = await Promise.all([
-        fetchJsonResilient('/api/' + endpoint + '?group=' + member + '&month=' + encodeURIComponent(month), 12000, 1),
+      const deRoute = DE_STAFF_ROUTING[member];
+      const endpoint = deRoute ? (year === '2025' ? 'salesde25' : 'sales') : (year === '2025' ? 'sales25' : 'salesuk');
+      const paramName = deRoute ? 'staff' : 'group';
+      const paramValue = deRoute ? deRoute.staffValue : member;
+      let [salesData, costData] = await Promise.all([
+        fetchJsonResilient('/api/' + endpoint + '?' + paramName + '=' + paramValue + '&month=' + encodeURIComponent(month), 12000, 1),
         fetchJsonResilient('/api/muguntha?employee=' + member + '&month=' + encodeURIComponent(month), 12000, 1),
       ]);
       if (!salesData || !salesData.success || !salesData.combinedSummary) throw new Error('No data for this month');
+      if (shouldStripDm(member, month)) salesData = stripDmFromCombinedSummary(salesData);
       const s = salesData.combinedSummary;
+      let dmProductCost = costData ? (costData.dmProductCost != null ? costData.dmProductCost : costData.dmSonyaProductCost) : null;
+      let ownCostVal = costData ? costData.cost : null;
+      if (shouldStripDm(member, month) && dmProductCost) dmProductCost = 0;
       d = {
         netSales: s.netSales || 0, vat: s.vat || 0, discounts: s.discounts || 0,
         refunds: s.refunds || 0, transactionFee: s.transactionFee || 0,
-        ownCost: costData ? costData.cost : null,
-        dmProductCost: costData ? (costData.dmProductCost != null ? costData.dmProductCost : costData.dmSonyaProductCost) : null,
+        ownCost: ownCostVal,
+        dmProductCost: dmProductCost,
       };
     }
     const netSales = d.netSales || 0;
     const adsCost = (d.ownCost || 0) + (d.dmProductCost || 0);
     const splitBy = SHOPIFY_SUBSCRIPTION_SPLIT[year] || 4;
     const subscriptionFee = Math.round((SHOPIFY_SUBSCRIPTION_GBP / splitBy) * 100) / 100;
+    const isDeMember = !!DE_STAFF_ROUTING[member];
+    // DE-store members (Jefri, Sukirtha — 2026-08-24): Total = Ads Cost +
+    // Discount + Refund only — no Transaction Fee (not computed by the DE
+    // endpoint) and no Shopify Subscription Fee (that's the UK store's
+    // separate bill; see COST_POPUP_MEMBERS comment). Everyone else unchanged.
     // VAT removed 2026-08-19, Product Cost removed 2026-08-19, both per Kuberan.
-    const total = Math.round((adsCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
-    // Kamsi/Dilaksi (SEO/Organic, added 2026-08-20) have no ad spend — their
-    // base cost is a shared AI tool-cost split (Semrush + Arrow), shown as
-    // two separate lines instead of one combined "Ads Cost" row. Mirrors
+    const total = isDeMember
+      ? Math.round((adsCost + d.discounts + d.refunds) * 100) / 100
+      : Math.round((adsCost + d.transactionFee + d.discounts + d.refunds + subscriptionFee) * 100) / 100;
+    // Kamsi/Dilaksi/Sukirtha (SEO/Organic) have no ad spend — their base
+    // cost is a shared AI tool-cost split (Semrush + Arrow), shown as two
+    // separate lines instead of one combined "Ads Cost" row. Mirrors
     // api/muguntha.js's getToolCost() exactly (same USD->GBP rate, same
     // ÷4 split, same for both years) so these two lines always sum to the
-    // backend's returned ownCost for these members.
-    const isAdsRole = HAS_DM.has(member);
+    // backend's returned ownCost for these members. Jefri is DE but DOES
+    // have real ad spend, so he still gets the "Ads Cost" row.
+    const isAdsRole = HAS_DM.has(member) || member === 'jefri';
     const row = (label, value, note) => '<div class="cb-row"><span class="cb-label">' + label + '</span><span class="cb-value">' + fmtMoney(value) + (note ? ' <span class="costnote">' + note + '</span>' : '') + '</span></div>';
     let baseCostRows;
     if (isAdsRole) {
-      baseCostRows = row('Ads Cost', adsCost, '(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')');
+      // Jan-Jun 2025 (Sonya/Sajeepan): DM not mentioned at all, not even as
+      // "£0.00" — per explicit instruction 2026-08-24.
+      const showDmNote = HAS_DM.has(member) && !shouldStripDm(member, month);
+      baseCostRows = row('Ads Cost', adsCost, showDmNote ? ('(Own: ' + fmtMoney(d.ownCost || 0) + ', DM: ' + fmtMoney(d.dmProductCost || 0) + ')') : null);
     } else {
       const semrushCost = Math.round((SEMRUSH_MONTHLY_USD * USD_TO_GBP_RATE / TOOL_COST_SPLIT_BY) * 100) / 100;
       const arrowCost = Math.round((ARROW_MONTHLY_USD * USD_TO_GBP_RATE / TOOL_COST_SPLIT_BY) * 100) / 100;
@@ -1601,14 +1806,19 @@ async function openCostPopup(member, year, month, monthLabel){
         row('— Arrow ($' + ARROW_MONTHLY_USD.toFixed(2) + ' ÷ ' + TOOL_COST_SPLIT_BY + ')', arrowCost);
     }
 
-    document.getElementById('cbBody').innerHTML =
-      baseCostRows +
-      row('Transaction Fee', d.transactionFee) +
-      row('Discount', d.discounts) +
-      row('Refund', d.refunds) +
-      row('Shopify Subscription Fee', subscriptionFee, '£' + SHOPIFY_SUBSCRIPTION_GBP.toFixed(2) + ' ÷ ' + splitBy + ' people') +
-      '<div class="cb-row cb-total"><span class="cb-label">Total Cost</span><span class="cb-value">' + fmtMoney(total) + '</span></div>' +
-      '<div class="cb-note">Discount and Refund are the actual amounts from that month\'s orders. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>';
+    document.getElementById('cbBody').innerHTML = isDeMember
+      ? (baseCostRows +
+        row('Discount', d.discounts) +
+        row('Refund', d.refunds) +
+        '<div class="cb-row cb-total"><span class="cb-label">Total Cost</span><span class="cb-value">' + fmtMoney(total) + '</span></div>' +
+        '<div class="cb-note">Discount and Refund are the actual amounts from that month\'s DE-store orders (salesde25.js/sales.js). No Transaction Fee line (not computed for the DE store) and no Shopify Subscription Fee line (that\'s the separate UK-store (ledsone.co.uk) Advanced-plan bill split among the 4 UK staff who share it) &mdash; not fabricated for a different store\'s billing.</div>')
+      : (baseCostRows +
+        row('Transaction Fee', d.transactionFee) +
+        row('Discount', d.discounts) +
+        row('Refund', d.refunds) +
+        row('Shopify Subscription Fee', subscriptionFee, '£' + SHOPIFY_SUBSCRIPTION_GBP.toFixed(2) + ' ÷ ' + splitBy + ' people') +
+        '<div class="cb-row cb-total"><span class="cb-label">Total Cost</span><span class="cb-value">' + fmtMoney(total) + '</span></div>' +
+        '<div class="cb-note">Discount and Refund are the actual amounts from that month\'s orders. Shopify Subscription Fee is the Advanced plan ($399/mo, converted to £ at the 2026-08-19 mid-market rate) split evenly among the team members sharing it.</div>');
   } catch (err) {
     document.getElementById('cbBody').innerHTML = '<div class="cb-loading">Error: ' + (err.message || err) + '</div>';
   }

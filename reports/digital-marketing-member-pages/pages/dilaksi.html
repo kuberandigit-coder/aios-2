@@ -299,6 +299,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-tab="1" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><span class="lbl">GA4 SEO Organic</span></a></li>
     <li><a href="#" data-tab="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span><span class="lbl">Product Priority</span></a></li>
     <li><a href="#" data-tab="3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></span><span class="lbl">Pages for Removal</span></a></li>
+    <li><a href="#" data-tab="4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Content Gap (AI Search)</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -4812,6 +4813,57 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <strong>Data files:</strong> <code>reports/dilaksi/data/2026-07-03_req3-allcol-*.csv</code> · Builder: <code>2026-07-03_req3-allcol-page-builder.py</code> (rerun to regenerate this page).
   </div>
 </div>
+
+<div id="tab-panel-4" class="tab-panel">
+  <header>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;color:#1f5eff;text-transform:uppercase;margin-bottom:6px;">Requirement 4 — Live</div>
+    <h1>SEO Content Gap &amp; AI Search Opportunity Analysis</h1>
+    <div class="sub">Website: <strong>https://ledsone.co.uk/</strong> &nbsp;·&nbsp; Requested by: <strong>Dilaksi</strong> (SEO team) &nbsp;·&nbsp; Sources: Semrush API (UK database) · LEDSone site search · Google PAA/AI Overview (see limitation note)</div>
+  </header>
+
+  <div style="background:#fff;border:1px solid #e6e9f0;border-radius:14px;padding:20px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+    <div style="flex:1;min-width:260px;">
+      <label style="display:block;font-size:12px;font-weight:600;color:#5b6577;margin-bottom:6px;">Topic / Seed Keyword</label>
+      <input id="r4Keyword" type="text" placeholder="e.g. LED pendant lights" style="width:100%;padding:10px 12px;border:1px solid #d8dce6;border-radius:8px;font-size:14px;">
+    </div>
+    <button id="r4Btn" class="tab-btn active" style="padding:10px 22px;">Find / Analyse</button>
+  </div>
+
+  <div id="r4Loading" style="display:none;color:#5b6577;font-size:13px;margin-bottom:14px;">Analysing SEMrush, Google and LEDsone content...</div>
+  <div id="r4Error" style="display:none;color:#c62828;font-size:13px;margin-bottom:14px;background:#fdecea;border:1px solid #f5c6c2;border-radius:8px;padding:10px 14px;"></div>
+
+  <div id="r4ResultWrap" style="display:none;">
+    <div style="overflow-x:auto;">
+    <table class="rt" style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="background:#f5f7fb;">
+          <th style="padding:8px;text-align:left;">Topic / Seed Keyword</th>
+          <th style="padding:8px;text-align:left;">Semrush Search Volume</th>
+          <th style="padding:8px;text-align:left;">Semrush Related Questions</th>
+          <th style="padding:8px;text-align:left;">PAA Question (Google)</th>
+          <th style="padding:8px;text-align:left;">AI Overview Present</th>
+          <th style="padding:8px;text-align:left;">Prompt Phrasing (LLM-style)</th>
+          <th style="padding:8px;text-align:left;">Existing Content Match</th>
+          <th style="padding:8px;text-align:left;">Recommended Action</th>
+        </tr>
+      </thead>
+      <tbody id="r4Tbody"></tbody>
+    </table>
+    </div>
+    <div id="r4Limitation" style="margin-top:12px;font-size:12px;color:#8a6d00;background:#fff8e1;border:1px solid #ffe58f;border-radius:8px;padding:10px 14px;"></div>
+  </div>
+
+  <div class="footnotes">
+    <h3>Notes &amp; Methodology</h3>
+    <strong>Search Volume &amp; Related Questions:</strong> live Semrush API (<code>api.semrush.com</code>), UK keyword database — <code>type=phrase_this</code> (Keyword Overview) for volume, <code>type=phrase_questions</code> (Keyword Magic — Questions) for related questions. Called fresh per keyword you enter; nothing pre-computed or hardcoded. <strong>Known limitation (documented, confirmed 2026-08-24):</strong> the connected Semrush account's plan does not include Standard API units (Subscription info page shows API Units: 0; purchasing units requires the Business plan) — Search Volume and Related Questions will show "Unavailable" with this explanation until the account is upgraded. The connection, API key, and request logic are confirmed working; this is an account plan limitation, not a bug.<br>
+    <strong>Prompt Phrasing:</strong> derived from the top Semrush related question for the entered keyword (or a generic buying-consideration phrasing if Semrush returns none) — not a separate Semrush field, since Semrush has no dedicated "LLM prompt" report.<br>
+    <strong>Existing Content Match:</strong> live query against LEDSone's own first-party predictive search endpoint (<code>ledsone.co.uk/search/suggest.json</code>) across products, collections, blog articles and pages — the real site, checked live, not a cached index.<br>
+    <strong>PAA Question / AI Overview:</strong> this project has no configured SERP-retrieval API (e.g. SERPAPI_KEY) to reliably read live Google search results. Per the Requirement 4 spec's own fallback rule, both are returned as <strong>"Unable to verify"</strong> rather than fabricated or unreliably scraped. See the limitation box under each result.<br>
+    <strong>Recommended Action:</strong> the 6 approved conditions are evaluated in their given order (1→6); the first matching condition determines the Recommended Action (deterministic — the given order is the priority). All matching condition numbers are available via the API response for audit.<br>
+    <strong>API key security:</strong> the Semrush API key is read server-side only from <code>SEMRUSH_API_KEY</code> and never appears in this page, browser network requests, or any file in this repository.
+  </div>
+</div>
+
 <script>
 function showTab(n){
   document.querySelectorAll('.tab-panel').forEach((el,idx)=>el.classList.toggle('active', idx===n-1));
@@ -5134,6 +5186,66 @@ window.flt = flt; window.rst = rst; if (typeof srt === 'function') window.srt = 
 
 })();
 </script>
+<script>
+(function(){
+  var btn = document.getElementById('r4Btn');
+  var input = document.getElementById('r4Keyword');
+  var loading = document.getElementById('r4Loading');
+  var errBox = document.getElementById('r4Error');
+  var resultWrap = document.getElementById('r4ResultWrap');
+  var tbody = document.getElementById('r4Tbody');
+  var limBox = document.getElementById('r4Limitation');
+  if (!btn) return;
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function runAnalysis() {
+    var keyword = (input.value || '').trim();
+    errBox.style.display = 'none';
+    resultWrap.style.display = 'none';
+    if (!keyword) { errBox.textContent = 'Enter a topic / seed keyword first.'; errBox.style.display = 'block'; return; }
+    loading.style.display = 'block';
+    btn.disabled = true;
+    try {
+      var resp = await fetch('/api/requirement?fn=dilaksi-req4-content-gap&keyword=' + encodeURIComponent(keyword));
+      var data = await resp.json();
+      if (!resp.ok || !data.success) throw new Error(data.error || ('Request failed (' + resp.status + ')'));
+
+      var volCell = data.semrush.searchVolume != null ? data.semrush.searchVolume.toLocaleString('en-GB') : ('Unavailable' + (data.semrush.searchVolumeError ? ' — ' + escHtml(data.semrush.searchVolumeError) : ''));
+      var qList = data.semrush.relatedQuestions || [];
+      var qCell = qList.length ? qList.map(function(q){ return escHtml(q.phrase) + (q.volume != null ? ' (' + q.volume.toLocaleString('en-GB') + ')' : ''); }).join('<br>') : ('None' + (data.semrush.relatedQuestionsError ? ' — ' + escHtml(data.semrush.relatedQuestionsError) : ''));
+      var urlsCell = (data.existingContent.urls || []).map(function(u){ return '<a href="' + escHtml(u) + '" target="_blank" rel="noopener">' + escHtml(u) + '</a>'; }).join('<br>');
+
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="padding:8px;vertical-align:top;">' + escHtml(data.keyword) + '</td>' +
+        '<td style="padding:8px;vertical-align:top;">' + volCell + '</td>' +
+        '<td style="padding:8px;vertical-align:top;">' + qCell + '</td>' +
+        '<td style="padding:8px;vertical-align:top;">' + escHtml(data.google.paaQuestion) + '</td>' +
+        '<td style="padding:8px;vertical-align:top;">' + escHtml(data.google.aiOverviewPresent) + '</td>' +
+        '<td style="padding:8px;vertical-align:top;">' + escHtml(data.promptPhrasing) + '</td>' +
+        '<td style="padding:8px;vertical-align:top;">' + escHtml(data.existingContent.match) + (urlsCell ? '<div style="margin-top:4px;font-size:11px;">' + urlsCell + '</div>' : '') + '</td>' +
+        '<td style="padding:8px;vertical-align:top;">' + escHtml(data.recommendedAction) + (data.matchedConditions && data.matchedConditions.length ? '<div style="margin-top:4px;font-size:11px;color:#5b6577;">Matched condition(s): ' + data.matchedConditions.join(', ') + '</div>' : '') + '</td>';
+      tbody.insertBefore(tr, tbody.firstChild);
+
+      limBox.textContent = data.google.limitation || '';
+      limBox.style.display = data.google.limitation ? 'block' : 'none';
+      resultWrap.style.display = 'block';
+    } catch (e) {
+      errBox.textContent = 'Analysis failed: ' + e.message;
+      errBox.style.display = 'block';
+    } finally {
+      loading.style.display = 'none';
+      btn.disabled = false;
+    }
+  }
+
+  btn.addEventListener('click', runAnalysis);
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter') runAnalysis(); });
+})();
+</script>
 </div>
 </div>
 </div>
@@ -5192,6 +5304,246 @@ document.querySelectorAll('#msNavList a[data-tab]').forEach(function (a) {
     var link = document.querySelector('a[data-tab="' + m[1] + '"]');
     if (link) link.click();
   }
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     DILAKSI AI ASSISTANT — floating chat widget
+════════════════════════════════════════════════════════════════════════════ -->
+<style>
+#aiBtn{position:fixed;bottom:28px;right:28px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#1a73e8,#0d47a1);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(26,115,232,.45);display:flex;align-items:center;justify-content:center;z-index:9000;transition:transform .2s,box-shadow .2s;}
+#aiBtn:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(26,115,232,.6);}
+#aiBtn svg{width:26px;height:26px;fill:#fff;}
+#aiBadge{position:absolute;top:-4px;right:-4px;background:#ea4335;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
+#aiPanel{position:fixed;bottom:96px;right:28px;width:420px;max-width:calc(100vw - 40px);background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9001;display:flex;flex-direction:column;overflow:hidden;transition:opacity .2s,transform .2s;opacity:0;transform:translateY(16px) scale(.97);pointer-events:none;max-height:calc(100vh - 130px);}
+#aiPanel.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}
+#aiPanelHead{background:linear-gradient(135deg,#1a73e8,#0d47a1);padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+#aiPanelHead .ai-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+#aiPanelHead .ai-title{flex:1;}
+#aiPanelHead .ai-title b{display:block;color:#fff;font-size:14px;}
+#aiPanelHead .ai-title span{display:block;color:rgba(255,255,255,.75);font-size:11px;}
+#aiCloseBtn{background:none;border:none;color:rgba(255,255,255,.8);font-size:20px;cursor:pointer;padding:4px;line-height:1;border-radius:6px;}
+#aiCloseBtn:hover{background:rgba(255,255,255,.15);color:#fff;}
+#aiMessages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;}
+.ai-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.55;}
+.ai-msg.bot{background:#f0f4ff;color:#1a2233;align-self:flex-start;border-bottom-left-radius:4px;}
+.ai-msg.user{background:#1a73e8;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.ai-thinking{display:flex;gap:5px;padding:10px 14px;align-self:flex-start;}
+.ai-thinking span{width:7px;height:7px;background:#c0c9db;border-radius:50%;animation:aiBounce 1.2s infinite;}.ai-thinking span:nth-child(2){animation-delay:.2s;}.ai-thinking span:nth-child(3){animation-delay:.4s;}
+@keyframes aiBounce{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-8px);}}
+#aiInputBar{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #e3e7ee;flex-shrink:0;background:#fff;}
+#aiInput{flex:1;border:1px solid #e3e7ee;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;resize:none;font-family:inherit;color:#1a2233;background:#fff;transition:border .15s;max-height:80px;}
+#aiInput:focus{border-color:#1a73e8;}
+#aiSendBtn{width:38px;height:38px;border-radius:10px;background:#1a73e8;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+#aiSendBtn:hover{background:#0d47a1;}
+#aiSendBtn:disabled{background:#b0c4e8;cursor:default;}
+#aiSendBtn svg{width:18px;height:18px;fill:#fff;}
+#aiRefreshBtn{background:none;border:1px solid rgba(255,255,255,.4);border-radius:8px;color:rgba(255,255,255,.85);font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;transition:background .15s;}
+#aiRefreshBtn:hover{background:rgba(255,255,255,.15);}
+</style>
+
+<button id="aiBtn" title="AI Daily Brief">
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+  <span id="aiBadge">AI</span>
+</button>
+
+<div id="aiPanel">
+  <div id="aiPanelHead">
+    <div class="ai-avatar">🔍</div>
+    <div class="ai-title">
+      <b>Dilaksi's SEO Assistant</b>
+      <span>Daily SEO priority briefing</span>
+    </div>
+    <button id="aiRefreshBtn" onclick="aiLoadBrief()" title="Refresh daily brief">↻ Refresh</button>
+    <button id="aiCloseBtn" onclick="aiToggle()">✕</button>
+  </div>
+  <div id="aiMessages"></div>
+  <div id="aiInputBar">
+    <textarea id="aiInput" rows="1" placeholder="Ask a follow-up question…" onkeydown="aiHandleKey(event)"></textarea>
+    <button id="aiSendBtn" onclick="aiSend()" disabled>
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var panel    = document.getElementById('aiPanel');
+  var messages = document.getElementById('aiMessages');
+  var input    = document.getElementById('aiInput');
+  var sendBtn  = document.getElementById('aiSendBtn');
+  var isOpen = false, isLoading = false, briefLoaded = false;
+  var chatHistory = [];
+
+  function saveMsg(role, content) {
+    fetch('/api/requirement?fn=dilaksi-chat-save', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: role, content: content })
+    }).catch(function(){});
+  }
+
+  window.aiToggle = function() {
+    isOpen = !isOpen;
+    panel.classList.toggle('open', isOpen);
+    if (isOpen && !briefLoaded) aiLoadBrief();
+    if (isOpen) setTimeout(function(){ input.focus(); }, 300);
+  };
+
+  function prefetchHistory() {
+    fetch('/api/requirement?fn=dilaksi-chat-history', { method: 'GET', credentials: 'same-origin' })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (briefLoaded) return;
+      if (data.ok && data.messages && data.messages.length > 0) {
+        messages.innerHTML = '';
+        chatHistory = [];
+        data.messages.forEach(function(m){
+          addMsg(m.role === 'user' ? 'user' : 'bot', m.role === 'user'
+            ? m.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            : formatAiText(m.content));
+          chatHistory.push({ role: m.role, content: m.content });
+        });
+        briefLoaded = true;
+        isLoading = false;
+        sendBtn.disabled = false;
+        addMsg('bot', '💬 <em style="color:#5b6577;font-size:12px;">Session restored. Ask me anything.</em>');
+      }
+    }).catch(function(){});
+  }
+
+  document.getElementById('aiBtn').addEventListener('click', aiToggle);
+
+  input.addEventListener('input', function(){
+    sendBtn.disabled = !input.value.trim() || isLoading;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 80) + 'px';
+  });
+
+  window.aiHandleKey = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) aiSend(); }
+  };
+
+  function addMsg(role, html) {
+    var div = document.createElement('div');
+    div.className = 'ai-msg ' + (role === 'bot' ? 'bot' : 'user');
+    div.innerHTML = html;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+  }
+
+  function addThinking() {
+    var div = document.createElement('div');
+    div.className = 'ai-thinking'; div.id = 'aiThinking';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(div); messages.scrollTop = messages.scrollHeight;
+  }
+
+  function removeThinking() { var t = document.getElementById('aiThinking'); if (t) t.remove(); }
+
+  function formatAiText(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^### (.*)/gm, '<strong style="font-size:12px;color:#0d47a1;text-transform:uppercase;letter-spacing:.4px;">$1</strong>')
+      .replace(/^## (.*)/gm, '<strong style="font-size:13px;color:#0d47a1;">$1</strong>')
+      .replace(/^# (.*)/gm, '<strong style="font-size:14px;color:#0d47a1;">$1</strong>')
+      .replace(/^[\-\•] (.*)/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+  }
+
+  window.aiLoadBrief = function() {
+    if (isLoading) return;
+    isLoading = true; briefLoaded = false; chatHistory = [];
+    messages.innerHTML = ''; sendBtn.disabled = true;
+
+    prefetchHistory();
+
+    addMsg('bot', '👋 <strong>Good morning, Dilaksi!</strong><br>Fetching your live SEO data…');
+    addThinking();
+
+    var briefTimeout = setTimeout(function(){
+      if (briefLoaded) return;
+      removeThinking();
+      messages.querySelectorAll('.ai-msg').forEach(function(el){ el.remove(); });
+      addMsg('bot', '⏱️ <strong>Taking longer than usual.</strong> GA4 data is slow. Please click ↻ Refresh to try again.');
+      isLoading = false; briefLoaded = false;
+    }, 90000);
+
+    fetch('/api/requirement?fn=dilaksi-ai-chat', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ history: [] })
+    })
+    .then(function(r){
+      if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP ' + r.status + ': ' + t.slice(0,200)); });
+      return r.json();
+    })
+    .then(function(data){
+      clearTimeout(briefTimeout);
+      if (briefLoaded) return;
+      removeThinking();
+      messages.querySelectorAll('.ai-msg').forEach(function(el){ el.remove(); });
+      if (!data.ok) {
+        addMsg('bot', '❌ <strong>Error:</strong> ' + (data.error || 'Unknown error') + (data.detail ? '<br><code style="font-size:10px;word-break:break-all;">' + data.detail + '</code>' : ''));
+      } else {
+        chatHistory.push({ role: 'assistant', content: data.message });
+        addMsg('bot', formatAiText(data.message));
+        saveMsg('assistant', data.message);
+        briefLoaded = true; sendBtn.disabled = false;
+        addMsg('bot', '💬 <em style="color:#5b6577;font-size:12px;">Ask me anything — e.g. "which pages need better content?" or "what should I optimise first?"</em>');
+      }
+    })
+    .catch(function(e){
+      clearTimeout(briefTimeout);
+      if (briefLoaded) return;
+      removeThinking();
+      messages.querySelectorAll('.ai-msg').forEach(function(el){ el.remove(); });
+      addMsg('bot', '❌ <strong>Error:</strong> ' + e.message);
+    })
+    .finally(function(){ isLoading = false; });
+  };
+
+  window.aiSend = function() {
+    var msg = input.value.trim();
+    if (!msg || isLoading) return;
+    addMsg('user', msg.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+    input.value = ''; input.style.height = 'auto';
+    sendBtn.disabled = true; isLoading = true;
+    addThinking();
+
+    var historyToSend = chatHistory.slice(-6);
+
+    fetch('/api/requirement?fn=dilaksi-ai-chat', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: historyToSend })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      removeThinking();
+      if (!data.ok) {
+        addMsg('bot', '❌ ' + (data.error || 'Error getting response'));
+      } else {
+        chatHistory.push({ role: 'user', content: msg });
+        chatHistory.push({ role: 'assistant', content: data.message });
+        saveMsg('user', msg);
+        saveMsg('assistant', data.message);
+        addMsg('bot', formatAiText(data.message));
+      }
+    })
+    .catch(function(){
+      removeThinking();
+      addMsg('bot', '❌ Network error. Please try again.');
+    })
+    .finally(function(){
+      isLoading = false;
+      sendBtn.disabled = input.value.trim() === '';
+    });
+  };
 })();
 </script>
 </body>

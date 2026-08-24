@@ -7091,6 +7091,392 @@ const mahimaReq5bHandlerModule = (function() {
 // — no second Shopify auth system created, per the requirement's explicit
 // instruction. Self-contained module, consistent with every other handler
 // in this file.
+// Ad-hoc, one-off check: August (created_at) UK orders whose FIRST session
+// was a paid TikTok ad click. Paid evidence = ttclid on landing/referrer URL,
+// OR utm_medium in a paid-like set, OR sourceType === 'ad' (Shopify's own
+// paid-ad tactic classification) — same evidence tiers used elsewhere in
+// this file for paid-vs-organic attribution. Read-only, no snapshot/cache.
+async function tiktokAugUkCheckModule(req, res) {
+  try {
+    const STORE_DOMAIN = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
+    const API_VERSION = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
+    const TOKEN = process.env.SHOPIFY_UK_ADMIN_TOKEN;
+    if (!TOKEN) return res.status(500).json({ success: false, error: 'SHOPIFY_UK_ADMIN_TOKEN missing' });
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function shopifyGraphQL(query, variables) {
+      for (let attempt = 0; attempt < 6; attempt++) {
+        let resp;
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 20000);
+          resp = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': TOKEN },
+            body: JSON.stringify({ query, variables }),
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+        } catch (e) { await sleep(500 * Math.pow(2, attempt)); continue; }
+        if (resp.status === 429 || (resp.status >= 500 && resp.status <= 504)) { await sleep(500 * Math.pow(2, attempt)); continue; }
+        if (!resp.ok) throw new Error(`Shopify API error ${resp.status}`);
+        const json = await resp.json();
+        if (json.errors && json.errors.some(e => e.extensions && e.extensions.code === 'THROTTLED')) { await sleep(1000 * Math.pow(2, attempt)); continue; }
+        if (json.errors) throw new Error('Shopify GraphQL error: ' + JSON.stringify(json.errors));
+        return json.data;
+      }
+      throw new Error('Shopify API: exceeded retries');
+    }
+
+    const ORDERS_QUERY = `
+    query($cursor: String, $q: String!) {
+      orders(first: 100, after: $cursor, query: $q) {
+        edges {
+          node {
+            id
+            name
+            createdAt
+            test
+            cancelledAt
+            currentTotalPriceSet { shopMoney { amount currencyCode } }
+            customerJourneySummary {
+              ready
+              firstVisit { source sourceType referrerUrl landingPage utmParameters { source medium campaign content term } }
+            }
+          }
+        }
+        pageInfo { hasNextPage endCursor }
+      }
+    }`;
+
+    const q = 'created_at:>=2026-08-01 AND created_at:<2026-09-01';
+    let cursor = null, hasNext = true, orders = [], pages = 0;
+    while (hasNext) {
+      const data = await shopifyGraphQL(ORDERS_QUERY, { cursor, q });
+      orders = orders.concat(data.orders.edges.map(e => e.node));
+      hasNext = data.orders.pageInfo.hasNextPage;
+      cursor = data.orders.pageInfo.endCursor;
+      pages++;
+      if (pages > 100) break;
+    }
+
+    function isTikTokPaid(visit) {
+      if (!visit) return { isTikTok: false, paid: false };
+      const source = (visit.source || '').toLowerCase();
+      const referrer = (visit.referrerUrl || '').toLowerCase();
+      const landing = (visit.landingPage || '').toLowerCase();
+      const utm = visit.utmParameters || {};
+      const utmSource = (utm.source || '').toLowerCase();
+      const utmMedium = (utm.medium || '').toLowerCase();
+      const sourceType = (visit.sourceType || '').toLowerCase();
+      const isTikTok = source.includes('tiktok') || referrer.includes('tiktok') || utmSource.includes('tiktok');
+      if (!isTikTok) return { isTikTok: false, paid: false };
+      const hasTtclid = landing.includes('ttclid=') || referrer.includes('ttclid=');
+      const paidMedium = ['cpc', 'ppc', 'paid', 'paid_social', 'cpm', 'cpv'].includes(utmMedium);
+      const paidSourceType = sourceType === 'ad';
+      const paid = hasTtclid || paidMedium || paidSourceType;
+      return { isTikTok: true, paid, evidence: hasTtclid ? 'ttclid' : paidMedium ? `utm_medium=${utmMedium}` : paidSourceType ? 'sourceType=ad' : 'no paid evidence' };
+    }
+
+    let totalValid = 0, tiktokAnyOrders = 0, tiktokAnySales = 0, tiktokPaidOrders = 0, tiktokPaidSales = 0;
+    let noJourney = 0, rawTiktokMentions = 0;
+    const paidDetails = [];
+    const rawHits = [];
+    for (const o of orders) {
+      if (o.test || o.cancelledAt) continue;
+      totalValid++;
+      const cjs = o.customerJourneySummary;
+      const firstVisit = cjs && cjs.ready ? cjs.firstVisit : null;
+      if (!firstVisit) noJourney++;
+
+      // Raw scan: does ANY field of firstVisit contain "tiktok" as a plain
+      // substring, regardless of our paid/organic classifier logic above?
+      if (firstVisit) {
+        const blob = JSON.stringify(firstVisit).toLowerCase();
+        if (blob.includes('tiktok')) {
+          rawTiktokMentions++;
+          rawHits.push({ name: o.name, createdAt: o.createdAt, firstVisit });
+        }
+      }
+
+      const result = isTikTokPaid(firstVisit);
+      const amount = parseFloat(o.currentTotalPriceSet.shopMoney.amount);
+      if (result.isTikTok) {
+        tiktokAnyOrders++;
+        tiktokAnySales += amount;
+        if (result.paid) {
+          tiktokPaidOrders++;
+          tiktokPaidSales += amount;
+          paidDetails.push({ name: o.name, createdAt: o.createdAt, amount, currency: o.currentTotalPriceSet.shopMoney.currencyCode, evidence: result.evidence, utm: firstVisit.utmParameters });
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      store: STORE_DOMAIN,
+      range: '2026-08-01 to 2026-08-31 (created_at)',
+      totalValidOrders: totalValid,
+      ordersWithNoJourneyData: noJourney,
+      rawTiktokMentionsInFirstVisit: rawTiktokMentions,
+      rawHits,
+      tiktokAnyFirstSession: { orders: tiktokAnyOrders, sales: Math.round(tiktokAnySales * 100) / 100 },
+      tiktokPaidAdsFirstSession: { orders: tiktokPaidOrders, sales: Math.round(tiktokPaidSales * 100) / 100 },
+      paidDetails,
+    });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+}
+
+// Dilaksi Requirement 4 — SEO Content Gap / AI Search Opportunity Analysis.
+// SEMRUSH_API_KEY is read server-side only and never returned to the client.
+// Live SEMrush "Keyword Overview" (phrase_this) + "Questions" (phrase_questions)
+// reports are queried for the exact user-entered keyword — nothing hardcoded.
+// Existing-content matching uses ledsone.co.uk's own first-party predictive
+// search endpoint (/search/suggest.json), no scraping. Google PAA / AI
+// Overview have no configured reliable retrieval method in this project (no
+// SERP API key present) — both are explicitly returned as "Unable to verify"
+// per the requirement's own documented fallback, never fabricated.
+const dilaksiReq4ContentGapModule = (function() {
+  const SEMRUSH_KEY = process.env.SEMRUSH_API_KEY;
+  const SEMRUSH_DB = 'uk'; // LEDSone UK website -> Semrush UK keyword database
+  const SITE_DOMAIN = 'ledsone.co.uk';
+
+  function parseSemrushCsv(text) {
+    // Semrush API returns ';'-delimited text with a header row, or a single
+    // line starting with "ERROR" when the report/type/field is unavailable.
+    const trimmed = (text || '').trim();
+    if (!trimmed) return { rows: [], error: 'Empty response from Semrush API' };
+    if (trimmed.toUpperCase().startsWith('ERROR')) return { rows: [], error: trimmed };
+    const lines = trimmed.split('\n').filter(Boolean);
+    if (lines.length < 1) return { rows: [], error: 'No data rows returned' };
+    const header = lines[0].split(';');
+    const rows = lines.slice(1).map(line => {
+      const cols = line.split(';');
+      const obj = {};
+      header.forEach((h, i) => { obj[h.trim()] = (cols[i] || '').trim(); });
+      return obj;
+    });
+    return { rows, error: null };
+  }
+
+  async function semrushRequest(params) {
+    const url = 'https://api.semrush.com/?' + new URLSearchParams(Object.assign({ key: SEMRUSH_KEY }, params)).toString();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const resp = await fetch(url, { signal: controller.signal });
+      const text = await resp.text();
+      return parseSemrushCsv(text);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  // ERROR 132 = "API UNITS BALANCE IS ZERO" — a real, checked-live limitation
+  // of the connected Semrush account's plan tier (Standard API units are a
+  // Business-plan-only feature; confirmed via the account's own Subscription
+  // info page, 2026-08-24: API Units: 0, "purchase API units is only
+  // available for Business users"). Documented here rather than left as a
+  // raw passthrough error, per Kuberan's instruction to leave this
+  // unavailable and document the limitation instead of upgrading the plan.
+  const PLAN_LIMITATION_MSG = 'Unavailable — Semrush account plan does not include Standard API units (confirmed 2026-08-24: API Units = 0; purchasing units requires the Business plan). Not a code/integration fault — the connection, key, and request are all working.';
+  function translateSemrushError(raw) {
+    if (raw && /ERROR\s*132/i.test(raw)) return PLAN_LIMITATION_MSG;
+    return raw;
+  }
+
+  async function fetchSearchVolume(keyword) {
+    const { rows, error } = await semrushRequest({
+      type: 'phrase_this',
+      phrase: keyword,
+      database: SEMRUSH_DB,
+      export_columns: 'Ph,Nq,Cp,Co',
+    });
+    if (error) return { volume: null, cpc: null, competition: null, apiError: translateSemrushError(error) };
+    if (!rows.length) return { volume: null, cpc: null, competition: null, apiError: null, note: 'No Semrush data for this exact phrase in the UK database' };
+    const r = rows[0];
+    const volume = r.Nq !== undefined && r.Nq !== '' ? Number(r.Nq) : null;
+    return { volume, cpc: r.Cp || null, competition: r.Co || null, apiError: volume === null ? PLAN_LIMITATION_MSG : null };
+  }
+
+  async function fetchRelatedQuestions(keyword) {
+    const { rows, error } = await semrushRequest({
+      type: 'phrase_questions',
+      phrase: keyword,
+      database: SEMRUSH_DB,
+      export_columns: 'Ph,Nq',
+      display_limit: '10',
+    });
+    if (error) return { questions: [], apiError: translateSemrushError(error) };
+    if (!rows.length) return { questions: [], apiError: null, note: 'Semrush returned no question-phrases for this keyword' };
+    return { questions: rows.map(r => ({ phrase: r.Ph, volume: r.Nq ? Number(r.Nq) : null })), apiError: null };
+  }
+
+  async function fetchExistingContentMatch(keyword) {
+    const url = `https://${SITE_DOMAIN}/search/suggest.json?` + new URLSearchParams({
+      q: keyword,
+      'resources[type]': 'product,page,article,collection',
+      'resources[limit]': '5',
+    }).toString();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    let data;
+    try {
+      const resp = await fetch(url, { signal: controller.signal });
+      if (!resp.ok) return { match: 'No', urls: [], apiError: `LEDSone site search HTTP ${resp.status}` };
+      data = await resp.json();
+    } catch (e) {
+      return { match: 'No', urls: [], apiError: 'LEDSone site search unreachable: ' + e.message };
+    } finally {
+      clearTimeout(timeout);
+    }
+    const results = (data.resources && data.resources.results) || {};
+    const articles = results.articles || [];
+    const pages = results.pages || [];
+    const collections = results.collections || [];
+    const products = results.products || [];
+
+    const kwWords = keyword.toLowerCase().split(/\s+/).filter(Boolean);
+    function titleOverlap(title) {
+      const t = (title || '').toLowerCase();
+      const hit = kwWords.filter(w => t.includes(w)).length;
+      return kwWords.length ? hit / kwWords.length : 0;
+    }
+    function strongTitleMatch(list) { return list.find(it => titleOverlap(it.title) >= 0.6); }
+
+    let match = 'No';
+    const urls = [];
+    const faqPage = pages.find(p => /faq/i.test(p.title || '') || /faq/i.test(p.url || ''));
+    if (faqPage) { match = 'Yes — FAQ'; urls.push(`https://${SITE_DOMAIN}${faqPage.url}`); }
+    else if (strongTitleMatch(articles)) { match = 'Yes — Blog'; urls.push(`https://${SITE_DOMAIN}${strongTitleMatch(articles).url}`); }
+    else if (strongTitleMatch(products)) { match = 'Yes — Product Page'; urls.push(`https://${SITE_DOMAIN}${strongTitleMatch(products).url}`); }
+    else if (strongTitleMatch(collections)) { match = 'Yes — Collection Page'; urls.push(`https://${SITE_DOMAIN}${strongTitleMatch(collections).url}`); }
+    else if (articles.length || pages.length || collections.length || products.length) {
+      match = 'Partial';
+      [...articles, ...products, ...collections, ...pages].slice(0, 3).forEach(it => urls.push(`https://${SITE_DOMAIN}${it.url}`));
+    }
+    return { match, urls, apiError: null };
+  }
+
+  // Conditions evaluated in the exact approved order; ALL matching
+  // conditions are recorded, and the FIRST match (lowest condition number)
+  // is used as the deterministic Recommended Action — the order given in
+  // the requirement IS the priority, nothing invented.
+  const CONDITIONS = [
+    {
+      n: 1,
+      test: (ctx) => ctx.hasPAA && ctx.contentMatch === 'No',
+      action: 'New blog post targeting that question as H2/FAQ',
+    },
+    {
+      n: 2,
+      test: (ctx) => ctx.relatedQuestions.length > 0 && ctx.contentMatch === 'Yes — Blog',
+      action: 'Add as new FAQ block + FAQPage schema to existing post',
+    },
+    {
+      n: 3,
+      test: (ctx) => ctx.aiOverview === 'Yes' && ctx.contentMatch !== 'Yes — Blog',
+      action: 'Priority — rewrite intro/FAQ in direct-answer format for LLM extraction',
+    },
+    {
+      n: 4,
+      test: (ctx) => ctx.volume !== null && ctx.volume >= 500 && !ctx.hasPAA,
+      action: 'Monitor — log prompt, revisit next SEMrush pull',
+    },
+    {
+      n: 5,
+      test: (ctx) => ctx.volume !== null && ctx.volume < 100 && ctx.aiOverview !== 'Yes',
+      action: 'Deprioritize — batch into a broader post instead of standalone',
+    },
+    {
+      n: 6,
+      test: (ctx) => (ctx.contentMatch === 'Yes — Collection Page' || ctx.contentMatch === 'Yes — Product Page'),
+      action: 'Add FAQ block directly to that page instead of new blog',
+    },
+  ];
+
+  function evaluateConditions(ctx) {
+    const matched = CONDITIONS.filter(c => c.test(ctx));
+    return {
+      matchedConditions: matched.map(c => c.n),
+      recommendedAction: matched.length ? matched[0].action : 'No approved condition matched — manual review required (documented, not invented)',
+    };
+  }
+
+  function buildPromptPhrasing(keyword, relatedQuestions) {
+    if (relatedQuestions.length) return relatedQuestions[0].phrase.charAt(0).toUpperCase() + relatedQuestions[0].phrase.slice(1) + '?';
+    return `What should I look for when buying ${keyword}?`;
+  }
+
+  async function dilaksiReq4ContentGapHandler(req, res) {
+    try {
+      if (!SEMRUSH_KEY) {
+        return res.status(500).json({ success: false, error: 'Server not configured: SEMRUSH_API_KEY missing. STOP condition per Requirement 4 spec — configuration required before this feature can run.' });
+      }
+      const keyword = ((req.query && req.query.keyword) || '').trim();
+      if (!keyword) return res.status(400).json({ success: false, error: 'keyword is required' });
+
+      const [volumeRes, questionsRes, contentRes] = await Promise.all([
+        fetchSearchVolume(keyword),
+        fetchRelatedQuestions(keyword),
+        fetchExistingContentMatch(keyword),
+      ]);
+
+      // Google PAA / AI Overview: no SERP-retrieval API is configured in this
+      // project (no SERPAPI_KEY / equivalent env var). Per the requirement's
+      // own explicit fallback rule, both are reported as unverifiable rather
+      // than fabricated or scraped unreliably from Google directly.
+      const paaQuestion = 'Unable to verify';
+      const aiOverview = 'Unable to verify';
+      const limitation = 'Google PAA and AI Overview require a configured SERP-retrieval API (e.g. SERPAPI_KEY) which is not present in this project\'s environment. Live, unauthenticated scraping of Google search results is unreliable and not implemented per the STOP/fallback rule in the Requirement 4 spec. SEMrush-sourced related questions are shown instead as the closest available real signal.';
+
+      const ctx = {
+        volume: volumeRes.volume,
+        relatedQuestions: questionsRes.questions,
+        hasPAA: false, // cannot be true — PAA is unverifiable, never assumed present
+        aiOverview,
+        contentMatch: contentRes.match,
+      };
+      const { matchedConditions, recommendedAction } = evaluateConditions(ctx);
+
+      return res.status(200).json({
+        success: true,
+        keyword,
+        retrievedAt: new Date().toISOString(),
+        semrush: {
+          database: SEMRUSH_DB,
+          endpoint: 'https://api.semrush.com/ (type=phrase_this, type=phrase_questions)',
+          searchVolume: volumeRes.volume,
+          searchVolumeError: volumeRes.apiError || volumeRes.note || null,
+          relatedQuestions: questionsRes.questions,
+          relatedQuestionsError: questionsRes.apiError || questionsRes.note || null,
+        },
+        google: {
+          paaQuestion,
+          aiOverviewPresent: aiOverview,
+          limitation,
+        },
+        existingContent: {
+          match: contentRes.match,
+          urls: contentRes.urls,
+          source: `https://${SITE_DOMAIN}/search/suggest.json`,
+          apiError: contentRes.apiError,
+        },
+        promptPhrasing: buildPromptPhrasing(keyword, questionsRes.questions),
+        matchedConditions,
+        recommendedAction,
+      });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: e.message });
+    }
+  }
+
+  return { dilaksiReq4ContentGapHandler };
+})();
+
 const mugunthaUkRefundsHandlerModule = (function() {
   const STORE_DOMAIN = process.env.SHOPIFY_UK_STORE_DOMAIN || 'ledsone.myshopify.com';
   const API_VERSION = process.env.SHOPIFY_UK_API_VERSION || '2024-10';
@@ -7433,6 +7819,8 @@ module.exports = async (req, res) => {
   if (fn === 'mahima-req5') return jefriProductStatusHandlerModule.mahimaReq5Handler(req, res);
   if (fn === 'mahima-req5b') return mahimaReq5bHandlerModule.mahimaReq5bHandler(req, res);
   if (fn === 'muguntha-uk-refunds') return mugunthaUkRefundsHandlerModule.mugunthaUkRefundsHandler(req, res);
+  if (fn === 'tiktok-aug-uk-check') return tiktokAugUkCheckModule(req, res);
+  if (fn === 'dilaksi-req4-content-gap') return dilaksiReq4ContentGapModule.dilaksiReq4ContentGapHandler(req, res);
   if (fn === 'jefri-req3') return jefriProductStatusHandlerModule.jefriReq3Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);

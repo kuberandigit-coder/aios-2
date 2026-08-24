@@ -240,6 +240,26 @@ const EMPLOYEES = {
     hasDm: false,
     toolCost: true,
   },
+  // Sukirtha — SEO/Organic on the DE store (ledsone.de), added 2026-08-24.
+  // Confirmed no "Sukirtha" (or similar) group_name exists in EITHER Google
+  // Ads account (`SELECT DISTINCT group_name FROM google_ads.campaigns
+  // WHERE group_name ILIKE '%suki%'` returns 0 rows) — she has no ad spend,
+  // same shape as Kamsi/Dilaksi (groupName '' + empty productIds naturally
+  // return £0 ad cost; toolCost: true gives her the same shared Semrush/
+  // Arrow AI share via getToolCost() below). She was already accounted for
+  // in the tool-cost split's historical documentation (see the
+  // TOOL_COST_SPLIT_BY comment) but never had her own dashboard entry until
+  // now. Her Sales come from the DE store's default/catch-all organic
+  // handler (salesde25.js/sales.js, ?staff=sukirtha, department "Organic
+  // Search (SEO)") — same DE-routing as Jefri, but netSales basis (organic
+  // role convention) instead of Jefri's orderTotalSum.
+  sukirtha: {
+    groupName: '',
+    productIds: new Set(),
+    snapshotSlug: 'sukirtha',
+    hasDm: false,
+    toolCost: true,
+  },
   // Jefri runs Google Ads on the DE store (ledsone.de), a completely
   // separate Google Ads account (9031058245) from Sonya/Sajeepan/Kamsi's UK
   // account (4503486236). No DM-46-style shared-campaign product-share
@@ -518,6 +538,67 @@ const MONTHS_2026 = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '202
 // side this replaces for each member's tab.
 const PERF_BATCH_MEMBERS = new Set(['sonya', 'sajeepan']);
 
+function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+// Display-only removal of DM 46 campaign-attributed sales/cost from the
+// Performance tab for Sonya and Sajeepan, Jan-Jun 2025 (per explicit
+// instruction, 2026-08-24). This does NOT touch salesuk.js/sales25.js's
+// attribution logic or api/data snapshots — every other page/dashboard that
+// reads the same underlying data (Sonya's/Sajeepan's own sales tabs, any
+// other report) is unaffected. The marker string below is the exact one
+// salesuk.js/sales25.js's Sonya/Sajeepan group.matchValue() already appends
+// to orders it routed via the DM-46-plus-owned-product rule (see
+// "moved from DM Campaigns" in both files) — no new attribution guesswork,
+// just filtering out rows already tagged by the existing logic.
+const DM_DISPLAY_EXCLUDE_MONTHS = new Set(['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06']);
+const DM_ATTRIBUTION_MARKER = '(product-owned, moved from DM Campaigns)';
+
+function stripDmFromSalesPayload(salesPayload) {
+  if (!salesPayload || !salesPayload.success || !Array.isArray(salesPayload.campaignSummary) || !salesPayload.combinedSummary) return salesPayload;
+  const dmRows = salesPayload.campaignSummary.filter(c => c.campaign && c.campaign.endsWith(DM_ATTRIBUTION_MARKER));
+  if (!dmRows.length) return salesPayload;
+  const sum = (field) => dmRows.reduce((a, c) => a + (c[field] || 0), 0);
+  const cs = salesPayload.combinedSummary;
+  const ordersCount = cs.ordersCount - sum('ordersCount');
+  const netSales = round2(cs.netSales - sum('netSales'));
+  const combinedSummary = {
+    ...cs,
+    ordersCount,
+    grossSales: round2(cs.grossSales - sum('grossSales')),
+    discounts: round2(cs.discounts - sum('discounts')),
+    refunds: round2(cs.refunds - sum('refunds')),
+    netSales,
+    orderTotalSum: round2(cs.orderTotalSum - sum('orderTotalSum')),
+    vat: round2(cs.vat - sum('vat')),
+    averageRevenuePerOrder: ordersCount ? round2(netSales / ordersCount) : 0,
+  };
+  return {
+    ...salesPayload,
+    combinedSummary,
+    campaignSummary: salesPayload.campaignSummary.filter(c => !(c.campaign && c.campaign.endsWith(DM_ATTRIBUTION_MARKER))),
+    dmExcludedForDisplay: {
+      removedCampaigns: dmRows.map(c => c.campaign),
+      removedNetSales: round2(sum('netSales')),
+      note: 'DM 46 campaign-attributed sales removed from this Performance tab display only (Jan-Jun 2025, per explicit instruction 2026-08-24). Underlying salesuk.js/sales25.js attribution and every other page using the same order data are unaffected.',
+    },
+  };
+}
+
+function stripDmFromCostPayload(costPayload) {
+  if (!costPayload || !costPayload.success || !costPayload.dmProductCost) return costPayload;
+  const removedDmCost = costPayload.dmProductCost;
+  return {
+    ...costPayload,
+    dmProductCost: 0,
+    dmSonyaProductCost: costPayload.dmSonyaProductCost != null ? 0 : undefined,
+    totalCost: round2(costPayload.totalCost - removedDmCost),
+    dmExcludedForDisplay: {
+      removedDmCost,
+      note: 'DM 46 product-share cost removed from this Performance tab display only (Jan-Jun 2025, per explicit instruction 2026-08-24). getCostPayload()\'s underlying value and every other consumer of it are unaffected — this strips it only in the perf-batch response.',
+    },
+  };
+}
+
 async function handlePerfBatch(req, res) {
   const member = req.query && req.query.member ? String(req.query.member).toLowerCase() : 'sonya';
   if (!PERF_BATCH_MEMBERS.has(member)) {
@@ -537,7 +618,13 @@ async function handlePerfBatch(req, res) {
     ]);
 
     const byMonth = {};
-    MONTHS_2025.forEach((m, i) => { byMonth[m] = { sales: sales25Arr[i], cost: cost25Arr[i] }; });
+    MONTHS_2025.forEach((m, i) => {
+      const exclude = DM_DISPLAY_EXCLUDE_MONTHS.has(m);
+      byMonth[m] = {
+        sales: exclude ? stripDmFromSalesPayload(sales25Arr[i]) : sales25Arr[i],
+        cost: exclude ? stripDmFromCostPayload(cost25Arr[i]) : cost25Arr[i],
+      };
+    });
     MONTHS_2026.forEach((m, i) => { byMonth[m] = { sales: sales26Arr[i], cost: cost26Arr[i] }; });
 
     res.status(200).json({ success: true, member, months: byMonth, meta: { generatedAt: new Date().toISOString() } });

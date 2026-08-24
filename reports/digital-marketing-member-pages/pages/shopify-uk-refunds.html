@@ -177,7 +177,7 @@ function applyFilter(){
   var category=document.getElementById('categorySel').value;
   filtered=ROWS.filter(function(r){
     if(reason!=='all' && r.refundReason!==reason) return false;
-    if(category!=='all' && categorizeReason(r.refundReason)!==category) return false;
+    if(category!=='all' && categorizeReason(r.refundReason, r.orderName)!==category) return false;
     if(q){
       var hay=[r.orderName,r.productTitle,r.sku].join(' ').toLowerCase();
       if(hay.indexOf(q)===-1) return false;
@@ -202,7 +202,7 @@ function render(){
       +'<td>'+esc(r.financialStatus)+'</td>'
       +'<td>'+esc(r.fulfillmentStatus)+'</td>'
       +'<td class="reasoncell">'+esc(r.refundReason)+'</td>'
-      +'<td><span class="catbadge" style="color:'+esc(CAT_COLORS[categorizeReason(r.refundReason)])+';font-weight:600;">'+esc(categorizeReason(r.refundReason))+'</span></td>'
+      +'<td><span class="catbadge" style="color:'+esc(CAT_COLORS[categorizeReason(r.refundReason, r.orderName)])+';font-weight:600;">'+esc(categorizeReason(r.refundReason, r.orderName))+'</span></td>'
       +'</tr>';
   }).join('') || '<tr><td colspan="12" class="empty">No refunds found for the selected period.</td></tr>';
   var info=filtered.length ? ('Showing '+(start+1)+'-'+Math.min(start+PAGE_SIZE,filtered.length)+' of '+filtered.length) : '0 rows';
@@ -269,10 +269,19 @@ document.getElementById('refreshBtn').addEventListener('click', function(){ relo
 var CAT_RULES = [
   { name: 'Postage Issue', color: '#1f5eff', kw: ['courier','postage','delivery','deliver','shipping','ship ','parcel','transit','address','lost in','delayed','late arriv','dpd','royal mail','yodel','hermes','evri'] },
   { name: 'Out of Stock', color: '#e08e0b', kw: ['out of stock','no stock','not in stock','sold out','unavailable','stock issue','insufficient stock','stock shortage'] },
-  { name: 'Warehouse Related Issue', color: '#c62828', kw: ['sent wrong','wrong item sent','wrong item received','shipped wrong','wrong tape','missing part','missing item','incomplete','warehouse','pick error','faulty','defective','doesn\'t work','not working','damaged item','damaged on arrival','arrived damaged','arrived broken','scratch','scuff'] },
+  { name: 'Warehouse Related Issue', color: '#c62828', kw: ['sent wrong','wrong item sent','wrong item received','shipped wrong','wrong tape','missing part','missing item','incomplete','warehouse','pick error','faulty','defective','doesn\'t work','not working','damaged item','damaged on arrival','scratch','scuff'] },
   { name: 'Website Related Issue', color: '#0a7d4f', kw: ['website','listing','description','photo','image','looked different','on screen','misleading','size chart'] },
 ];
-function categorizeReason(reason){
+// Manual per-order overrides — Kuberan/team reviewed these specific orders'
+// refund reasons and assigned the category directly (source: refund-report
+// review sheets, 2026-08-24). These take priority over the keyword rules
+// above for exactly these order names; every other order still uses the
+// keyword classifier unchanged.
+var CAT_OVERRIDES = {
+  '#LED59879':'Customer Side Issue','#LED59242':'Customer Side Issue','#LED58149':'Customer Side Issue','#LED60699':'Customer Side Issue','#LED59955':'Customer Side Issue','#LED59772':'Customer Side Issue','#LED59600':'Customer Side Issue','#LED59588':'Customer Side Issue','#LED56278':'Customer Side Issue','#LED58924':'Website Related Issue','#LED58170':'Customer Side Issue','#LED58899':'Customer Side Issue','#LED60181':'Customer Side Issue','#LED59891':'Customer Side Issue','#LED59189':'Customer Side Issue','#LED57195':'Customer Side Issue','#LED60385':'Customer Side Issue','#LED60333':'Customer Side Issue','#LED54628':'Postage Issue','#LED55946':'Customer Side Issue','#LED51585':'Customer Side Issue','#LED56882':'Customer Side Issue','#LED58681':'Customer Side Issue','#LED58339':'Postage Issue','#LED59064':'Customer Side Issue','#LED58196':'Warehouse Related Issue','#LED56694':'Website Related Issue','#LED58156':'Postage Issue','#LED58552':'Customer Side Issue','#LED57880':'Postage Issue','#LED59639':'Customer Side Issue','#LED57361':'Customer Side Issue','#LED57294':'Customer Side Issue','#LED57947':'Customer Side Issue','#LED57934':'Customer Side Issue','#LED56319':'Website Related Issue','#LED49559':'Warehouse Related Issue','#LED58614':'Postage Issue','#LED59228':'Customer Side Issue','#LED58305':'Postage Issue','#LED57328':'Postage Issue','#LED59045':'Customer Side Issue','#LED58771':'Customer Side Issue','#LED57508':'Customer Side Issue','#LED57569':'Customer Side Issue','#LED57567':'Customer Side Issue','#LED57509':'Customer Side Issue','#LED57531':'Customer Side Issue','#LED56606':'Customer Side Issue','#LED57149':'Customer Side Issue','#LED55760':'Customer Side Issue','#LED56285':'Customer Side Issue','#LED58038':'Customer Side Issue','#LED55168':'Customer Side Issue','#LED57736':'Customer Side Issue','#LED52966':'Customer Side Issue','#LED56404':'Customer Side Issue','#LED56625':'Customer Side Issue','#LED57179':'Customer Side Issue','#LED57267':'Customer Side Issue','#LED54758':'Customer Side Issue','#LED56174':'Customer Side Issue','#LED57552':'Customer Side Issue','#LED55131':'Customer Side Issue','#LED55484':'Customer Side Issue','#LED56062':'Customer Side Issue','#LED56164':'Customer Side Issue','#LED56582':'Customer Side Issue','#LED55447':'Customer Side Issue','#LED53787':'Postage Issue','#LED54686':'Customer Side Issue','#LED55918':'Postage Issue','#LED57148':'Customer Side Issue','#LED56265':'Postage Issue','#LED56013':'Customer Side Issue','#LED56663':'Customer Side Issue','#LED56723':'Customer Side Issue','#LED56342':'Customer Side Issue','#LED56652':'Customer Side Issue','#LED56755':'Customer Side Issue','#LED55202':'Customer Side Issue','#LED55520':'Customer Side Issue','#LED55189':'Customer Side Issue','#LED54827':'Customer Side Issue','#LED55590':'Customer Side Issue','#LED55762':'Customer Side Issue','#LED55444':'Customer Side Issue','#LED55066':'Customer Side Issue','#LED54996':'Customer Side Issue','#LED55833':'Customer Side Issue','#LED55980':'Customer Side Issue','#LED56180':'Customer Side Issue','#XR49QYQ8C3':'Customer Side Issue','#LED54126':'Postage Issue','#LED53780':'Customer Side Issue','#LED54183':'Postage Issue','#LED58180':'Postage Issue','#LED58619':'Warehouse Related Issue','#LED58620':'Warehouse Related Issue','#LED58332':'Warehouse Related Issue','#LED56826':'Warehouse Related Issue','#LED57848':'Warehouse Related Issue','#LED57568':'Warehouse Related Issue','#LED57394':'Warehouse Related Issue','#LED56332':'Warehouse Related Issue','#LED55698':'Warehouse Related Issue','#LED56140':'Warehouse Related Issue'
+};
+function categorizeReason(reason, orderName){
+  if(orderName && CAT_OVERRIDES[orderName]) return CAT_OVERRIDES[orderName];
   var r=(reason||'').toLowerCase();
   for(var i=0;i<CAT_RULES.length;i++){
     for(var j=0;j<CAT_RULES[i].kw.length;j++){
@@ -288,7 +297,7 @@ function openCategoryModal(){
   ROWS.forEach(function(r){
     if(refundsSeen[r.refundId]) return; // count once per refund, not per line item
     refundsSeen[r.refundId]=true;
-    counts[categorizeReason(r.refundReason)]++;
+    counts[categorizeReason(r.refundReason, r.orderName)]++;
   });
   var total=Object.values(counts).reduce(function(a,b){return a+b;},0) || 1;
   var order=['Postage Issue','Out of Stock','Warehouse Related Issue','Website Related Issue','Customer Side Issue'];
