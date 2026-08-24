@@ -6755,61 +6755,22 @@ const mahimaReq5bHandlerModule = (function() {
 
   // ---------- Scope to Mahima's own products only (added per Kuberan,
   // 2026-08-21: "need for only mahima products") ----------
-  // Reuses the EXACT same 5 campaign IDs already proven/live in Req1/Req5
-  // above (MAHIMA_CAMPAIGNS, jefriProductStatusHandlerModule) — copied,
-  // not re-derived, since this module is self-contained like every other
-  // handler in this file. Mahima's product universe = every product_item_id
-  // that has ever appeared in google_ads.product_performance for these
-  // campaigns (same "advertised by Mahima" definition Req1/Req5 use).
-  const { Pool: MahimaPool } = require('pg');
-  const MAHIMA_OWN_CAMPAIGN_IDS = ['20763699505', '23684789991', '23053104908', '23431543574', '23926509987'];
-  let mahimaPgPool;
-  function getMahimaPgPool() {
-    if (!mahimaPgPool) {
-      const connectionString = process.env.DATABASE_URL;
-      if (!connectionString && !process.env.PGHOST) throw new Error('Server not configured: DATABASE_URL missing');
-      mahimaPgPool = new MahimaPool({
-        connectionString: connectionString || undefined,
-        host: connectionString ? undefined : process.env.PGHOST,
-        port: connectionString ? undefined : (process.env.PGPORT ? Number(process.env.PGPORT) : 5432),
-        database: connectionString ? undefined : process.env.PGDATABASE,
-        user: connectionString ? undefined : process.env.PGUSER,
-        password: connectionString ? undefined : process.env.PGPASSWORD,
-        ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
-        max: 3,
-      });
-    }
-    return mahimaPgPool;
-  }
-
-  // product_item_id can be a bare numeric Shopify product ID or a
-  // shopify_<country>_<productid>_<variantid> string (same format Req1's
-  // rebuild found and fixed, see evidence/mahima/2026-07-10_mahima_req1_rebuild_evidence.md
-  // section 3) — normalize both forms to the bare numeric product ID.
-  function normalizeProductItemId(raw) {
-    const s = String(raw || '').trim();
-    const m = /^shopify_[A-Za-z]+_(\d+)_(\d+)$/.exec(s);
-    if (m) return m[1];
-    if (/^\d+$/.test(s)) return s;
-    return null;
-  }
-
   let mahimaProductIdSetCache = null; // { at, set }
-  const MAHIMA_PRODUCTS_TTL_MS = 60 * 60 * 1000; // 1h — this universe changes rarely
+  // REVISED 2026-08-24 per Kuberan ("reconcile with the 678 list"): this
+  // used to derive her product universe dynamically from
+  // google_ads.product_performance history for her 5 campaigns (1,313
+  // IDs) - compared against her curated, authoritative 678-ID list
+  // (data/staff-ids.js's `mahima` array, same list as
+  // MAHIMA_EXCLUDED_PRODUCT_IDS in api/sales.js/api/salesde25.js) and found
+  // real divergence: only 475 overlapped, 203 of her real products were
+  // never in the campaign-history derivation (never advertised, or
+  // advertised under a campaign outside these 5), and 838 dynamic IDs
+  // weren't actually hers. The static list is now the single source of
+  // truth here - no more DB query for this.
+  const { STAFF_IDS: MAHIMA_STAFF_IDS } = require('../data/staff-ids');
   async function getMahimaOwnedProductIds() {
-    if (mahimaProductIdSetCache && (Date.now() - mahimaProductIdSetCache.at) < MAHIMA_PRODUCTS_TTL_MS) {
-      return mahimaProductIdSetCache.set;
-    }
-    const pool = getMahimaPgPool();
-    const result = await pool.query(
-      'SELECT DISTINCT product_item_id FROM google_ads.product_performance WHERE campaign_id = ANY($1::bigint[]) AND product_item_id IS NOT NULL',
-      [MAHIMA_OWN_CAMPAIGN_IDS]
-    );
-    const set = new Set();
-    for (const row of result.rows) {
-      const norm = normalizeProductItemId(row.product_item_id);
-      if (norm) set.add(norm);
-    }
+    if (mahimaProductIdSetCache) return mahimaProductIdSetCache.set;
+    const set = new Set(MAHIMA_STAFF_IDS.mahima || []);
     mahimaProductIdSetCache = { at: Date.now(), set };
     return set;
   }
@@ -7239,6 +7200,107 @@ async function tiktokAugUkCheckModule(req, res) {
 // Overview have no configured reliable retrieval method in this project (no
 // SERP API key present) — both are explicitly returned as "Unable to verify"
 // per the requirement's own documented fallback, never fabricated.
+// One-off bulk-insert endpoint for populating public.staff_order_attribution
+// (Neon AUTH_DATABASE_URL) — the Organic/Ads split table
+// api/staff-id-performance.js already reads from (fully wired to the
+// frontend already, just empty). Used once to load Mahima's precomputed
+// organic/ads split (from her already-cached mahima-total monthly
+// snapshots, classified via the exact "hasMahi" rule already used on her
+// mahima-ads tab). POST only, admin-session-gated. Left in place afterward
+// as a reusable bulk-loader for any future staff attribution backfill.
+async function bulkInsertStaffAttributionHandler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'POST only' });
+  const crypto = require('crypto');
+  const COOKIE_NAME = 'dm_session';
+  function parseCookies() {
+    const out = {};
+    (req.headers.cookie || '').split(';').forEach((p) => {
+      const i = p.indexOf('=');
+      if (i === -1) return;
+      out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+    });
+    return out;
+  }
+  function verifySession() {
+    const secret = process.env.SESSION_SECRET;
+    if (!secret) return null;
+    const token = parseCookies()[COOKIE_NAME];
+    if (!token || !token.includes('.')) return null;
+    const [payload, sig] = token.split('.');
+    try {
+      const expected = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
+      if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+      const d = JSON.parse(Buffer.from(payload, 'base64url').toString());
+      return (!d.exp || Date.now() > d.exp) ? null : d;
+    } catch { return null; }
+  }
+  const session = verifySession();
+  if (!session || session.role !== 'admin') return res.status(401).json({ success: false, error: 'Unauthorised (admin only)' });
+
+  const { Pool } = require('pg');
+  const neon = new Pool({ connectionString: process.env.AUTH_DATABASE_URL, max: 2, connectionTimeoutMillis: 10000 });
+  try {
+    // Reads from a file deployed with the code (api/data/mahima-attribution-
+    // rows.json, ~5500 rows) rather than requiring a large POST body — lets
+    // this be triggered with a simple empty POST from an authenticated
+    // browser session, no payload to construct. A ?source= param could be
+    // added later to point at a different file for other staff.
+    const fsMod = require('fs');
+    const pathMod = require('path');
+    const dataPath = pathMod.join(__dirname, 'data', 'mahima-attribution-rows.json');
+    if (!fsMod.existsSync(dataPath)) return res.status(400).json({ success: false, error: 'No data file found at api/data/mahima-attribution-rows.json' });
+    const rows = JSON.parse(fsMod.readFileSync(dataPath, 'utf8'));
+    if (!Array.isArray(rows) || !rows.length) return res.status(400).json({ success: false, error: 'Data file is empty' });
+
+    await neon.query(`
+      CREATE TABLE IF NOT EXISTS public.staff_order_attribution (
+        product_id     TEXT          NOT NULL,
+        order_id       TEXT          NOT NULL,
+        classification TEXT          NOT NULL,
+        qty            INTEGER       NOT NULL DEFAULT 0,
+        revenue        NUMERIC(12,2) NOT NULL DEFAULT 0,
+        order_date     DATE,
+        processed_at   TIMESTAMPTZ   DEFAULT NOW(),
+        PRIMARY KEY (product_id, order_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_soa_pid  ON public.staff_order_attribution(product_id);
+      CREATE INDEX IF NOT EXISTS idx_soa_cls  ON public.staff_order_attribution(classification);
+      CREATE INDEX IF NOT EXISTS idx_soa_date ON public.staff_order_attribution(order_date);
+    `);
+
+    // Bulk insert via unnest() — one round trip per batch instead of one
+    // per row (5000+ individual awaited INSERTs risked the function's
+    // 300s timeout).
+    const BATCH = 1000;
+    let inserted = 0;
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const batch = rows.slice(i, i + BATCH);
+      await neon.query(
+        `INSERT INTO public.staff_order_attribution (product_id, order_id, classification, qty, revenue, order_date, processed_at)
+         SELECT * , NOW() FROM UNNEST(
+           $1::text[], $2::text[], $3::text[], $4::int[], $5::numeric[], $6::date[]
+         )
+         ON CONFLICT (product_id, order_id) DO UPDATE SET
+           classification = EXCLUDED.classification, qty = EXCLUDED.qty, revenue = EXCLUDED.revenue, processed_at = NOW()`,
+        [
+          batch.map((r) => r.product_id),
+          batch.map((r) => r.order_id),
+          batch.map((r) => r.classification),
+          batch.map((r) => r.qty),
+          batch.map((r) => r.revenue),
+          batch.map((r) => r.order_date || null),
+        ]
+      );
+      inserted += batch.length;
+    }
+    return res.status(200).json({ success: true, inserted });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  } finally {
+    await neon.end();
+  }
+}
+
 const dilaksiReq4ContentGapModule = (function() {
   const SEMRUSH_KEY = process.env.SEMRUSH_API_KEY;
   const SEMRUSH_DB = 'uk'; // LEDSone UK website -> Semrush UK keyword database
@@ -7821,6 +7883,7 @@ module.exports = async (req, res) => {
   if (fn === 'muguntha-uk-refunds') return mugunthaUkRefundsHandlerModule.mugunthaUkRefundsHandler(req, res);
   if (fn === 'tiktok-aug-uk-check') return tiktokAugUkCheckModule(req, res);
   if (fn === 'dilaksi-req4-content-gap') return dilaksiReq4ContentGapModule.dilaksiReq4ContentGapHandler(req, res);
+  if (fn === 'bulk-insert-staff-attribution') return bulkInsertStaffAttributionHandler(req, res);
   if (fn === 'jefri-req3') return jefriProductStatusHandlerModule.jefriReq3Handler(req, res);
   if (fn === 'jefri-search-terms') return jefriSearchTermsHandlerModule(req, res);
   if (fn === 'mahima-search-terms') return mahimaSearchTermsHandlerModule(req, res);
