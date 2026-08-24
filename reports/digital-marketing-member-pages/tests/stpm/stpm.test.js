@@ -605,3 +605,65 @@ test('The canonical source rule excludes PMax insight rows', () => {
   assert.match(cfg.CANONICAL_SOURCE_RULE, /insight_id IS NULL/);
   assert.ok(!/campaign_search_term_insights/.test(cfg.CANONICAL_SOURCE_RULE));
 });
+
+// ── Current-period presets (UI correction pass) ─────────────────────────────
+//
+// Three presets with deliberately different fallback semantics. The important
+// one is `last14`: the user asked for fourteen days on purpose, so telling them
+// "Last 7 days data is unavailable" would be untrue.
+
+test('Last 7 Days is the default and is the only window that may auto-widen', () => {
+  const w = source.resolveRequestedWindow({}, TODAY);          // no preset supplied
+  assert.strictEqual(w.preset, 'last7');
+  assert.strictEqual(w.start, '2026-08-15');
+  assert.strictEqual(w.end, '2026-08-21');
+  assert.strictEqual(w.allowFallback, true);
+});
+
+test('Last 14 Days resolves to a real 14-day window', () => {
+  const w = source.resolveRequestedWindow({ preset: 'last14' }, TODAY);
+  assert.strictEqual(w.preset, 'last14');
+  assert.strictEqual(w.start, '2026-08-08');
+  assert.strictEqual(w.end, '2026-08-21');
+});
+
+test('An explicit Last 14 Days request never reports a fallback', async () => {
+  const w = source.resolveRequestedWindow({ preset: 'last14' }, TODAY);
+  assert.strictEqual(w.allowFallback, false);
+
+  const withRows = await source.applyDateFallback(w, TODAY, async () => 287);
+  assert.strictEqual(withRows.fallback_used, false);
+  assert.strictEqual(withRows.start, '2026-08-08');
+
+  // Even with no rows it must not claim the 7-day window failed.
+  const empty = await source.applyDateFallback(w, TODAY, async () => 0);
+  assert.strictEqual(empty.fallback_used, false);
+});
+
+test('The fallback banner is not shown for an explicit Last 14 Days request', () => {
+  const w = source.resolveRequestedWindow({ preset: 'last14' }, TODAY);
+  const h = source.buildSourceHealth({
+    freshness: { campaign_perf: '2026-08-21', latest_search_term: '2026-08-14' },
+    window: w, requested: w, fallback: { fallback_used: false },
+    coverage: [], rowCount: 287,
+  });
+  assert.ok(!h.warnings.some((x) => x.code === 'date_fallback_used'),
+    'a user who asked for 14 days must not be told the 7-day window was unavailable');
+});
+
+test('Last 7 Days still falls back to 14 and preserves both ranges', async () => {
+  const w = source.resolveRequestedWindow({ preset: 'last7' }, TODAY);
+  const r = await source.applyDateFallback(w, TODAY, async (s) => (s === '2026-08-15' ? 0 : 287));
+  assert.strictEqual(r.fallback_used, true);
+  assert.strictEqual(r.fallback_days, 14);
+  assert.strictEqual(w.start, '2026-08-15');   // requested preserved
+  assert.strictEqual(r.start, '2026-08-08');   // actual widened
+});
+
+test('A custom current range is never auto-widened', async () => {
+  const w = source.resolveRequestedWindow({ preset: 'custom', start: '2026-06-01', end: '2026-06-30' }, TODAY);
+  const r = await source.applyDateFallback(w, TODAY, async () => 0);
+  assert.strictEqual(r.fallback_used, false);
+  assert.strictEqual(r.start, '2026-06-01');
+  assert.strictEqual(r.end, '2026-06-30');
+});

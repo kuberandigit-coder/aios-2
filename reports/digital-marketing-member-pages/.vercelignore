@@ -2,3 +2,9 @@
 # deploy it as a serverless function (it has no module.exports handler and
 # would either break the build or count toward the 12-function Hobby limit).
 api/scripts/
+
+# Test suite and SQL migrations are not runtime code — excluded from the
+# function bundle. NOTE: lib/feed/** is deliberately NOT ignored; api/members-api.js
+# requires it at runtime and Vercel traces it into the bundle.
+tests/
+db/

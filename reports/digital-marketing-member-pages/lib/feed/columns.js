@@ -15,6 +15,8 @@
 
 'use strict';
 
+const gate = require('./gate');
+
 /**
  * Every exportable column. `get(row)` receives the assembled export row:
  *   { product, generation, variant, baseline, selection, monitoring }
@@ -68,7 +70,8 @@ const COLUMNS = [
   { key: 'selected_date',       group: 'Audit', label: 'Selected Date',        def: false, get: (r) => isoDay(r.selection?.selected_at) },
   { key: 'provider',            group: 'Audit', label: 'Provider',             def: false, get: (r) => r.attempt?.provider_alias },
   { key: 'model',               group: 'Audit', label: 'Model',                def: false, get: (r) => r.attempt?.model },
-  { key: 'eligibility_status',  group: 'Audit', label: 'Feed Eligible Status', def: true,  get: (r) => r.generation?.feed_eligible_status || 'UNKNOWN' },
+  // Staff-facing wording, never the raw internal token (requirement section 9).
+  { key: 'eligibility_status',  group: 'Audit', label: 'Feed Gate',             def: true,  get: (r) => gate.fromLegacy({ status: r.generation?.feed_eligible_status }).display },
   { key: 'draft_status',        group: 'Audit', label: 'Draft Status',         def: true,  get: (r) => (r.generation?.is_draft_only ? 'DRAFT ONLY' : 'APPROVED') },
   { key: 'monitoring_start_date', group: 'Audit', label: 'Monitoring Start Date', def: true, get: (r) => r.monitoring?.monitoring_start_date || r.monitoringStartDate },
 ];

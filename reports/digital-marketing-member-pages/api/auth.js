@@ -372,6 +372,26 @@ async function handleCreateUser(req, res) {
   return res.status(200).json({ success: true, username, staff_key: staffKey, role });
 }
 
+async function handleEodDates(req, res) {
+  // Returns sorted list of EOD dates for a given member — used by team log pages.
+  // Uses server-side EOD_GITHUB_TOKEN so browser rate limits don't apply.
+  const member = (req.query && req.query.member) || '';
+  if (!member) return res.status(400).json({ success: false, error: 'member param required' });
+  const dirUrl = `https://api.github.com/repos/${EOD_GITHUB_OWNER}/${EOD_GITHUB_REPO}/contents/eods/${encodeURIComponent(member)}`;
+  const r = await fetch(dirUrl, { headers: eodGithubHeaders() });
+  if (r.status === 404) return res.status(200).json({ success: true, member, dates: [] });
+  if (!r.ok) {
+    const b = await r.json().catch(() => ({}));
+    return res.status(502).json({ success: false, error: `GitHub ${r.status}: ${b.message || r.statusText}` });
+  }
+  const list = await r.json();
+  const dates = (Array.isArray(list) ? list : [])
+    .filter(f => f.type === 'file' && f.name.endsWith('.md'))
+    .map(f => f.name.replace(/\.md$/, ''))
+    .sort();
+  return res.status(200).json({ success: true, member, dates });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const action = (req.query && req.query.action) || '';
@@ -385,6 +405,7 @@ module.exports = async function handler(req, res) {
     if (action === 'eod-submit' && req.method === 'POST') return await handleEodSubmit(req, res);
     if (action === 'eod-leave' && req.method === 'POST') return await handleEodLeave(req, res);
     if (action === 'eod-list' && req.method === 'GET') return await handleEodList(req, res);
+    if (action === 'eod-dates' && req.method === 'GET') return await handleEodDates(req, res);
     return res.status(400).json({ success: false, error: 'Unknown action or wrong HTTP method.' });
   } catch (err) {
     console.error('auth.js error:', err);

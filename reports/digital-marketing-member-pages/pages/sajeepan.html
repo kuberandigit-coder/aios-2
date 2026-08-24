@@ -370,6 +370,13 @@ body.sb-open .ms-collapse-btn svg{transform:rotate(180deg);}
 .ms-signout svg{width:16px;height:16px;flex-shrink:0;}
 .ms-main{margin-left:var(--sb-w-collapsed) !important;min-width:0;transition:margin-left .18s ease;position:relative;z-index:1;}
 body.sb-open .ms-main{margin-left:var(--sb-w) !important;}
+/* Requirement 5 (Automation Keyword Finder) was rendering flush against the
+   left edge, hidden under the fixed sidebar — its content wasn't inheriting
+   .ms-main's margin. Applied the same sidebar-aware margin directly so it
+   stays correctly positioned regardless of sidebar state. Fixed 2026-08-24. */
+#req5Panel{margin-left:var(--sb-w-collapsed);padding:28px 24px 40px;box-sizing:border-box;transition:margin-left .18s ease;}
+body.sb-open #req5Panel{margin-left:var(--sb-w);}
+@media(max-width:900px){ body.sb-open #req5Panel{margin-left:var(--sb-w-collapsed);} }
 .ms-topcontent{padding:28px 24px 40px;}
 body.tool-open .ms-topcontent{padding:0;max-width:none;}
 #msToolFrame{position:relative;z-index:2;width:calc(100% - var(--sb-w-collapsed));margin-left:var(--sb-w-collapsed);box-sizing:border-box;transition:margin-left .18s ease,width .18s ease;}
@@ -383,6 +390,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
   body.sb-open .ms-main{margin-left:var(--sb-w-collapsed) !important;}
 }
 </style>
+<link rel="stylesheet" href="sajeepan/google-lens-keywords/lens.css">
 </head>
 <body>
 
@@ -401,6 +409,7 @@ body.sb-open.tool-open .ms-sidebar{box-shadow:4px 0 24px rgba(0,0,0,.35);}
     <li><a href="#" data-tab="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="lbl">Stop Waste &amp; Intel</span></a></li>
     <li><a href="#" data-tab="3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span class="lbl">Revenue Protection &amp; PPC Actions</span></a></li>
     <li><a href="#" data-tab="4"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span><span class="lbl">Feed Optimization</span></a></li>
+    <li><a href="#" data-tab="5" id="tab-req5"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="21" y2="21"></line><path d="M10.5 7.5v2M9.5 8.5h2"></path></svg></span><span class="lbl">Automation Keyword Finder</span></a></li>
   </ul>
   <div class="ms-navlabel">Sales</div>
   <ul class="ms-navlist">
@@ -2236,12 +2245,16 @@ function switchReqTab(n){
   document.getElementById('req2Panel').style.display = n===2?'':'none';
   var r3 = document.getElementById('req3Panel'); if(r3) r3.style.display = n===3?'':'none';
   var r4 = document.getElementById('req4Panel'); if(r4) r4.style.display = n===4?'':'none';
+  var r5 = document.getElementById('req5Panel'); if(r5) r5.style.display = n===5?'':'none';
   var t1 = document.getElementById('tab-req1'); if (t1) { t1.classList.toggle('on', n===1); }
   var t2 = document.getElementById('tab-req2'); if (t2) { t2.classList.toggle('on', n===2); }
   var t3 = document.getElementById('tab-req3'); if (t3) { t3.classList.toggle('on', n===3); }
+  var t5 = document.getElementById('tab-req5'); if (t5) { t5.classList.toggle('on', n===5); }
   if(n===2 && !r2Loaded) r2SetPreset(30);
   if(n===3 && !r3Loaded) r3SetPreset(30);
   if(n===4 && !r4Loaded) r4SetPreset(30);
+  // Automation Keyword Finder mounts lazily, same pattern as MahimaSTPM.mount().
+  if(n===5 && window.SajeepanLensKeywords) window.SajeepanLensKeywords.mount(document.getElementById('sajeepan-lens-root'));
   try { history.replaceState(null, '', location.pathname + '#t' + n); } catch (e) {}
 }
 
@@ -3328,5 +3341,294 @@ document.getElementById('msSignOutBtn').addEventListener('click', function (e) {
     .finally(function () { document.documentElement.classList.remove('dm-ready'); setTimeout(function () { window.location.href = '../login.html'; }, 160); });
 });
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     AI ASSISTANT WIDGET
+════════════════════════════════════════════════════════════════════════════ -->
+<style>
+#aiBtn{position:fixed;bottom:28px;right:28px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#1a73e8,#0d47a1);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(26,115,232,.45);display:flex;align-items:center;justify-content:center;z-index:9000;transition:transform .2s,box-shadow .2s;}
+#aiBtn:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(26,115,232,.6);}
+#aiBtn svg{width:26px;height:26px;fill:#fff;}
+#aiBadge{position:absolute;top:-4px;right:-4px;background:#ea4335;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
+
+#aiPanel{position:fixed;bottom:96px;right:28px;width:420px;max-width:calc(100vw - 40px);background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9001;display:flex;flex-direction:column;overflow:hidden;transition:opacity .2s,transform .2s;opacity:0;transform:translateY(16px) scale(.97);pointer-events:none;max-height:calc(100vh - 130px);}
+#aiPanel.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}
+
+#aiPanelHead{background:linear-gradient(135deg,#1a73e8,#0d47a1);padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+#aiPanelHead .ai-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+#aiPanelHead .ai-title{flex:1;}
+#aiPanelHead .ai-title b{display:block;color:#fff;font-size:14px;}
+#aiPanelHead .ai-title span{display:block;color:rgba(255,255,255,.75);font-size:11px;}
+#aiCloseBtn{background:none;border:none;color:rgba(255,255,255,.8);font-size:20px;cursor:pointer;padding:4px;line-height:1;border-radius:6px;}
+#aiCloseBtn:hover{background:rgba(255,255,255,.15);color:#fff;}
+
+#aiMessages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:180px;}
+.ai-msg{max-width:88%;border-radius:14px;padding:11px 14px;font-size:13px;line-height:1.55;}
+.ai-msg.bot{background:#f0f4ff;color:#1a2233;border-bottom-left-radius:4px;align-self:flex-start;}
+.ai-msg.user{background:#1a73e8;color:#fff;border-bottom-right-radius:4px;align-self:flex-end;}
+.ai-msg.bot strong{color:#0d47a1;}
+.ai-msg.bot ul{padding-left:16px;margin:6px 0;}
+.ai-msg.bot li{margin-bottom:4px;}
+.ai-thinking{display:flex;gap:5px;align-items:center;padding:12px 14px;background:#f0f4ff;border-radius:14px;border-bottom-left-radius:4px;align-self:flex-start;}
+.ai-thinking span{width:8px;height:8px;border-radius:50%;background:#1a73e8;animation:aiPulse 1.2s infinite;}
+.ai-thinking span:nth-child(2){animation-delay:.2s;}
+.ai-thinking span:nth-child(3){animation-delay:.4s;}
+@keyframes aiPulse{0%,80%,100%{opacity:.25;transform:scale(.8);}40%{opacity:1;transform:scale(1);}}
+
+#aiInputBar{border-top:1px solid #e3e7ee;padding:12px 14px;display:flex;gap:8px;flex-shrink:0;background:#fafbfc;}
+#aiInput{flex:1;border:1px solid #e3e7ee;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;resize:none;font-family:inherit;color:#1a2233;background:#fff;transition:border .15s;max-height:80px;}
+#aiInput:focus{border-color:#1a73e8;}
+#aiSendBtn{width:38px;height:38px;border-radius:10px;background:#1a73e8;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+#aiSendBtn:hover{background:#0d47a1;}
+#aiSendBtn:disabled{background:#b0c4e8;cursor:default;}
+#aiSendBtn svg{width:18px;height:18px;fill:#fff;}
+
+#aiRefreshBtn{background:none;border:1px solid rgba(255,255,255,.4);border-radius:8px;color:rgba(255,255,255,.85);font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;transition:background .15s;}
+#aiRefreshBtn:hover{background:rgba(255,255,255,.15);}
+</style>
+
+<!-- Floating AI button -->
+<button id="aiBtn" title="AI Daily Assistant" aria-label="Open AI Assistant">
+  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/><circle cx="12" cy="12" r="10" fill="none"/><path d="M9 9h2v6H9zm4 0h2v6h-2z" style="fill:#fff"/><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z" style="fill:rgba(255,255,255,0)"/></svg>
+  <div id="aiBadge">AI</div>
+</button>
+
+<!-- Chat panel -->
+<div id="aiPanel">
+  <div id="aiPanelHead">
+    <div class="ai-avatar">🤖</div>
+    <div class="ai-title">
+      <b>Sajeepan's AI Assistant</b>
+      <span>Daily Google Ads priority briefing</span>
+    </div>
+    <button id="aiRefreshBtn" onclick="aiLoadBrief()" title="Refresh daily brief">↻ Refresh</button>
+    <button id="aiCloseBtn" onclick="aiToggle()">✕</button>
+  </div>
+  <div id="aiMessages"></div>
+  <div id="aiInputBar">
+    <textarea id="aiInput" rows="1" placeholder="Ask a follow-up question…" onkeydown="aiHandleKey(event)"></textarea>
+    <button id="aiSendBtn" onclick="aiSend()" disabled>
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var panel     = document.getElementById('aiPanel');
+  var messages  = document.getElementById('aiMessages');
+  var input     = document.getElementById('aiInput');
+  var sendBtn   = document.getElementById('aiSendBtn');
+  var isOpen    = false;
+  var isLoading = false;
+  var briefLoaded = false;
+  var chatHistory = [];
+
+  function saveMsg(role, content) {
+    fetch('/api/members-api?member=sajeepan&type=ai-chat-save', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: role, content: content })
+    }).catch(function(){});
+  }
+
+  window.aiToggle = function() {
+    isOpen = !isOpen;
+    panel.classList.toggle('open', isOpen);
+    if (isOpen && !briefLoaded) aiLoadBrief();
+    if (isOpen) setTimeout(function(){ input.focus(); }, 300);
+  };
+
+  // Check today's DB history in background — restore if available, no blocking
+  function prefetchHistory() {
+    fetch('/api/members-api?member=sajeepan&type=ai-chat-history', {
+      method: 'GET',
+      credentials: 'same-origin'
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (briefLoaded) return; // brief already shown — don't overwrite
+      if (data.ok && data.messages && data.messages.length > 0) {
+        messages.innerHTML = '';
+        chatHistory = [];
+        data.messages.forEach(function(m){
+          addMsg(m.role === 'user' ? 'user' : 'bot', m.role === 'user'
+            ? m.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            : formatAiText(m.content));
+          chatHistory.push({ role: m.role, content: m.content });
+        });
+        briefLoaded = true;
+        isLoading = false;
+        sendBtn.disabled = false;
+        addMsg('bot', '💬 <em style="color:#5b6577;font-size:12px;">Session restored. Ask me anything.</em>');
+      }
+    })
+    .catch(function(){}); // silent — brief will load normally if this fails
+  }
+
+  document.getElementById('aiBtn').addEventListener('click', aiToggle);
+
+  input.addEventListener('input', function(){
+    sendBtn.disabled = !input.value.trim() || isLoading;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 80) + 'px';
+  });
+
+  window.aiHandleKey = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) aiSend(); }
+  };
+
+  function addMsg(role, html) {
+    var div = document.createElement('div');
+    div.className = 'ai-msg ' + (role === 'bot' ? 'bot' : 'user');
+    div.innerHTML = html;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+  }
+
+  function addThinking() {
+    var div = document.createElement('div');
+    div.className = 'ai-thinking';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    div.id = 'aiThinking';
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function removeThinking() {
+    var t = document.getElementById('aiThinking');
+    if (t) t.remove();
+  }
+
+  function formatAiText(text) {
+    // Convert markdown-like formatting to HTML
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^### (.*)/gm, '<strong style="font-size:12px;color:#0d47a1;text-transform:uppercase;letter-spacing:.4px;">$1</strong>')
+      .replace(/^## (.*)/gm, '<strong style="font-size:13px;color:#0d47a1;">$1</strong>')
+      .replace(/^# (.*)/gm, '<strong style="font-size:14px;color:#0d47a1;">$1</strong>')
+      .replace(/^[\-\•] (.*)/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+  }
+
+  window.aiLoadBrief = function() {
+    if (isLoading) return;
+    isLoading = true;
+    briefLoaded = false;
+    chatHistory = [];
+    messages.innerHTML = '';
+    sendBtn.disabled = true;
+
+    prefetchHistory(); // parallel — restore today's session if brief is slow
+
+    addMsg('bot', '👋 <strong>Good morning, Sajeepan!</strong><br>Fetching your live campaign data…');
+    addThinking();
+
+    var briefTimeout = setTimeout(function(){
+      if (briefLoaded) return; // history prefetch already showed session
+      removeThinking();
+      var first = messages.querySelector('.ai-msg');
+      if (first) first.remove();
+      addMsg('bot', '⏱️ <strong>Taking longer than usual.</strong> The database query is slow. Please click ↻ Refresh to try again.');
+      isLoading = false;
+      briefLoaded = false;
+    }, 90000);
+
+    fetch('/api/members-api?member=sajeepan&type=ai-chat', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ history: [] })
+    })
+    .then(function(r){
+      if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP ' + r.status + ': ' + t.slice(0,200)); });
+      return r.json();
+    })
+    .then(function(data){
+      clearTimeout(briefTimeout);
+      if (briefLoaded) return; // history prefetch already restored session
+      removeThinking();
+      messages.querySelectorAll('.ai-msg').forEach(function(el){ el.remove(); });
+
+      if (!data.ok) {
+        addMsg('bot', '❌ <strong>Error:</strong> ' + (data.error || 'Unknown error') + (data.detail ? '<br><code style="font-size:10px;word-break:break-all;">' + data.detail + '</code>' : ''));
+      } else {
+        chatHistory.push({ role: 'assistant', content: data.message });
+        addMsg('bot', formatAiText(data.message));
+        saveMsg('assistant', data.message);
+        briefLoaded = true;
+        sendBtn.disabled = false;
+        addMsg('bot', '💬 <em style="color:#5b6577;font-size:12px;">Ask me anything — e.g. "which campaign should I pause?" or "what search terms should I negate?"</em>');
+      }
+    })
+    .catch(function(e){
+      clearTimeout(briefTimeout);
+      removeThinking();
+      var first = messages.querySelector('.ai-msg');
+      if (first) first.remove();
+      addMsg('bot', '❌ <strong>Error:</strong> ' + e.message);
+    })
+    .finally(function(){
+      isLoading = false;
+    });
+  };
+
+  window.aiSend = function() {
+    var msg = input.value.trim();
+    if (!msg || isLoading) return;
+
+    addMsg('user', msg.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.disabled = true;
+    isLoading = true;
+    addThinking();
+
+    var historyToSend = chatHistory.slice(-6); // last 3 exchanges
+
+    fetch('/api/members-api?member=sajeepan&type=ai-chat', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: historyToSend })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      removeThinking();
+      if (!data.ok) {
+        addMsg('bot', '❌ ' + (data.error || 'Error getting response'));
+      } else {
+        chatHistory.push({ role: 'user', content: msg });
+        chatHistory.push({ role: 'assistant', content: data.message });
+        saveMsg('user', msg);
+        saveMsg('assistant', data.message);
+        addMsg('bot', formatAiText(data.message));
+      }
+    })
+    .catch(function(){
+      removeThinking();
+      addMsg('bot', '❌ Network error. Please try again.');
+    })
+    .finally(function(){
+      isLoading = false;
+      sendBtn.disabled = input.value.trim() === '';
+    });
+  };
+})();
+</script>
+
+<!-- Requirement 5 — Automation Keyword Finder (Google Lens Search Keywords).
+     Markup lives in sajeepan/google-lens-keywords/index.html and is injected
+     by lens.js on mount — same pattern as Mahima's Search Term -> Product
+     Mapping tab (window.MahimaSTPM.mount). Req1-Req4 above are untouched. -->
+<div id="req5Panel" style="display:none">
+  <div id="sajeepan-lens-root"></div>
+</div>
+<script src="sajeepan/google-lens-keywords/lens.js"></script>
 </body>
 </html>

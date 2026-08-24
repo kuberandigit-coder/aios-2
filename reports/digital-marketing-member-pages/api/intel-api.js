@@ -1,10 +1,11 @@
 // Intel API — routes by ?service=seo|germany|organic
-// ?service=seo     → SEO Intelligence (?module=exec|products|keywords|landing|actions|technical|semrush|geo)
+// ?service=seo     → SEO Intelligence (?module=exec|products|keywords|landing|actions|technical|semrush|geo|ai)
 // ?service=germany → Germany dashboard (?type=marketplace-gap|uk-bundle|listing-log-save|listing-log-load)
 // ?service=organic → Organic revenue (?type=overview|by-page|trend|by-type)
 
 const { Client } = require('pg');
 const https = require('https');
+const { callGroqAI } = require('../lib/groq');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SEO SERVICE — full seo.js
@@ -996,6 +997,213 @@ async function handleGeo(type, query, res) {
   }
 }
 
+/* ─── SEO AI CHAT ──────────────────────────────────────────────── */
+
+async function getSeoAiChatClient() {
+  const connStr = process.env.SJ_CHAT_DB_URL;
+  if (!connStr) throw new Error('SJ_CHAT_DB_URL not configured');
+  const c = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000 });
+  await c.connect();
+  await c.query(`
+    CREATE TABLE IF NOT EXISTS seo_ai_chat (
+      id SERIAL PRIMARY KEY,
+      session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  return c;
+}
+
+async function handleSeoAi(type, req, res) {
+  if (type === 'chat-history') {
+    let c;
+    try {
+      c = await getSeoAiChatClient();
+      const { rows } = await c.query(
+        `SELECT role, content FROM seo_ai_chat WHERE session_date = CURRENT_DATE ORDER BY id ASC`
+      );
+      return res.status(200).json({ ok: true, messages: rows });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    } finally {
+      if (c) await c.end().catch(() => {});
+    }
+  }
+
+  if (type === 'chat-save') {
+    const { role, content } = req.body || {};
+    if (!role || !content) return res.status(400).json({ ok: false, error: 'role and content required' });
+    let c;
+    try {
+      c = await getSeoAiChatClient();
+      await c.query(`INSERT INTO seo_ai_chat (role, content) VALUES ($1, $2)`, [role, content]);
+      return res.status(200).json({ ok: true });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    } finally {
+      if (c) await c.end().catch(() => {});
+    }
+  }
+
+  if (type === 'chat') {
+    const body        = req.body || {};
+    const userMessage = (body.message || '').trim();
+    const history     = Array.isArray(body.history) ? body.history : [];
+
+    try {
+      const db = new Client({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 15000,
+        statement_timeout: 55000,
+      });
+      await db.connect();
+
+      const { rows: dateRows } = await db.query(
+        `SELECT MAX(date) AS latest FROM google_search_console.overview WHERE sub_source = $1`, [GSC_SUB_SOURCE]
+      );
+      const latest  = new Date(dateRows[0].latest);
+      const toStr   = latest.toISOString().slice(0, 10);
+      const from30  = new Date(latest); from30.setDate(from30.getDate() - 29);
+      const fromStr = from30.toISOString().slice(0, 10);
+      const prv30   = new Date(from30); prv30.setDate(prv30.getDate() - 1);
+      const prvFrom = new Date(prv30);  prvFrom.setDate(prvFrom.getDate() - 29);
+      const prvFromStr = prvFrom.toISOString().slice(0, 10);
+      const prvToStr   = prv30.toISOString().slice(0, 10);
+
+      const [
+        { rows: overviewRows },
+        { rows: posDist },
+        { rows: topKwRows },
+        { rows: oppRows },
+        { rows: decRows },
+        { rows: topPagesRows },
+      ] = await Promise.all([
+        db.query(`
+          SELECT DATE_TRUNC('month', date)::date AS month,
+            SUM(clicks)::int AS clicks, SUM(impressions)::int AS impressions,
+            ROUND((SUM(clicks)::numeric/NULLIF(SUM(impressions),0))*100,2) AS ctr_pct,
+            ROUND(AVG(position)::numeric,1) AS avg_pos
+          FROM google_search_console.overview
+          WHERE sub_source=$1 AND search_type='web' AND date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'
+          GROUP BY 1 ORDER BY 1
+        `, [GSC_SUB_SOURCE]),
+        db.query(`
+          SELECT CASE WHEN position<=3 THEN 'top3' WHEN position<=10 THEN 'top10'
+            WHEN position<=20 THEN 'top20' ELSE 'beyond20' END AS bucket,
+            COUNT(DISTINCT query)::int AS queries, SUM(clicks)::int AS clicks
+          FROM google_search_console.query
+          WHERE sub_source=$1 AND search_type='web' AND date >= DATE_TRUNC('month', CURRENT_DATE)
+          GROUP BY 1 ORDER BY MIN(position)
+        `, [GSC_SUB_SOURCE]),
+        db.query(`
+          SELECT query, SUM(clicks)::int AS clicks, SUM(impressions)::int AS impressions,
+            ROUND((SUM(clicks)::numeric/NULLIF(SUM(impressions),0))*100,1) AS ctr_pct,
+            ROUND(AVG(position)::numeric,1) AS avg_pos
+          FROM google_search_console.query
+          WHERE sub_source=$1 AND search_type='web' AND date BETWEEN $2 AND $3
+          GROUP BY query ORDER BY clicks DESC LIMIT 15
+        `, [GSC_SUB_SOURCE, fromStr, toStr]),
+        db.query(`
+          SELECT query, SUM(impressions)::int AS impressions, SUM(clicks)::int AS clicks,
+            ROUND(AVG(position)::numeric,1) AS avg_pos,
+            ROUND((SUM(clicks)::numeric/NULLIF(SUM(impressions),0))*100,1) AS ctr_pct
+          FROM google_search_console.query
+          WHERE sub_source=$1 AND search_type='web' AND date BETWEEN $2 AND $3
+          GROUP BY query HAVING AVG(position) BETWEEN 4 AND 20 AND SUM(impressions)>=100
+          ORDER BY SUM(impressions) DESC LIMIT 10
+        `, [GSC_SUB_SOURCE, fromStr, toStr]),
+        db.query(`
+          WITH cur AS (
+            SELECT query, ROUND(AVG(position)::numeric,1) AS pos, SUM(clicks)::int AS clk
+            FROM google_search_console.query
+            WHERE sub_source=$1 AND search_type='web' AND date BETWEEN $2 AND $3
+            GROUP BY query HAVING SUM(impressions)>=20
+          ), prv AS (
+            SELECT query, ROUND(AVG(position)::numeric,1) AS pos
+            FROM google_search_console.query
+            WHERE sub_source=$1 AND search_type='web' AND date BETWEEN $4 AND $5
+            GROUP BY query HAVING SUM(impressions)>=20
+          )
+          SELECT c.query, c.pos AS cur_pos, p.pos AS prv_pos,
+            ROUND((p.pos-c.pos)::numeric,1) AS drop, c.clk
+          FROM cur c JOIN prv p ON p.query=c.query
+          WHERE (p.pos-c.pos) < -2
+          ORDER BY (p.pos-c.pos) ASC LIMIT 10
+        `, [GSC_SUB_SOURCE, fromStr, toStr, prvFromStr, prvToStr]),
+        db.query(`
+          SELECT regexp_replace(split_part(regexp_replace(page,'^https?://[^/]+',''),'?',1),'/$','') AS path,
+            SUM(clicks)::int AS clicks, SUM(impressions)::int AS impressions,
+            ROUND(AVG(position)::numeric,1) AS avg_pos,
+            ROUND((SUM(clicks)::numeric/NULLIF(SUM(impressions),0))*100,1) AS ctr_pct
+          FROM google_search_console.page
+          WHERE sub_source=$1 AND search_type='web' AND date BETWEEN $2 AND $3
+          GROUP BY 1 ORDER BY clicks DESC LIMIT 10
+        `, [GSC_SUB_SOURCE, fromStr, toStr]),
+      ]);
+
+      await db.end().catch(() => {});
+
+      const ovLines    = overviewRows.map(r => `${String(r.month).slice(0,7)}|clicks:${r.clicks}|imp:${r.impressions}|CTR:${r.ctr_pct}%|pos:${r.avg_pos}`).join('\n') || 'No data';
+      const posLines   = posDist.map(r => `${r.bucket}|${r.queries}queries|${r.clicks}clicks`).join('  ') || 'No data';
+      const kwLines    = topKwRows.map((r,i) => `#${i+1} "${r.query}"|${r.clicks}clk|${r.impressions}imp|${r.ctr_pct}%CTR|pos${r.avg_pos}`).join('\n') || 'None';
+      const oppLines   = oppRows.map(r => `"${r.query}"|${r.impressions}imp|${r.clicks}clk|${r.ctr_pct}%CTR|pos${r.avg_pos}`).join('\n') || 'None';
+      const decLines   = decRows.map(r => `"${r.query}"|pos:${r.prv_pos}→${r.cur_pos}(drop:${r.drop})|${r.clk}clk`).join('\n') || 'None';
+      const pageLines  = topPagesRows.map((r,i) => `#${i+1} ${r.path.slice(0,50)}|${r.clicks}clk|${r.impressions}imp|${r.ctr_pct}%CTR|pos${r.avg_pos}`).join('\n') || 'None';
+
+      const systemPrompt = `You are the SEO Intelligence AI for ledsone.co.uk. Analyze real Google Search Console data and give specific, actionable SEO recommendations. No generic advice. Max 400 words.
+
+HOW I WORK:
+- Live GSC data: monthly trends, position distribution, top keywords, opportunities (pos 4-20), declining keywords, top landing pages
+- I prioritise: quick wins (pos 4-10, high impressions) > declining keywords to recover > CTR improvements for page-1 keywords
+- Date range: ${fromStr} to ${toStr}. Sub_source=104 (ledsone.co.uk web search)
+
+DATA (${fromStr} to ${toStr}):
+MONTHLY GSC TREND:
+${ovLines}
+POSITION DISTRIBUTION (this month):
+${posLines}
+TOP 15 KEYWORDS BY CLICKS:
+${kwLines}
+OPPORTUNITY KEYWORDS (pos 4-20, high impressions):
+${oppLines}
+DECLINING KEYWORDS (pos dropped >2 vs prior 30d):
+${decLines}
+TOP 10 LANDING PAGES BY CLICKS:
+${pageLines}
+
+INSTRUCTIONS:
+- For daily brief: numbered action items only, no preamble, start with "1."
+- Format: "1. [ACTION] — [keyword/page] ([reason with number])"
+- For questions: answer directly using the data above — name the actual keyword or page`;
+
+      const isDailyBrief = !userMessage;
+      const messages = [{ role: 'system', content: systemPrompt }];
+      for (const h of history) {
+        if (h.role && h.content) messages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
+      }
+      messages.push({ role: 'user', content: isDailyBrief
+        ? "Give me today's SEO priority briefing for ledsone.co.uk. Top 3 actions — be specific with keyword names and numbers."
+        : userMessage });
+
+      const groqResult = await callGroqAI(messages);
+      if (!groqResult.ok) return res.status(502).json({ ok: false, error: groqResult.error, detail: groqResult.detail });
+
+      return res.status(200).json({
+        ok: true, message: groqResult.text, is_daily_brief: isDailyBrief,
+        meta: { from: fromStr, to: toStr, top_keywords: topKwRows.length, opportunities: oppRows.length },
+      });
+
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  return res.status(400).json({ ok: false, error: `Unknown ai type "${type}". Valid: chat, chat-history, chat-save` });
+}
+
 /* ─── SEO main sub-handler ──────────────────────────────────── */
 
 async function handleSEO(req, res) {
@@ -1063,8 +1271,11 @@ async function handleSEO(req, res) {
       case 'geo':
         await client.end();
         return await handleGeo(type, req.query, res);
+      case 'ai':
+        await client.end();
+        return await handleSeoAi(type, req, res);
       default:
-        return res.status(400).json({ ok:false, error:`Unknown module "${module_}". Valid: exec, products, keywords, landing, actions, technical, semrush, geo` });
+        return res.status(400).json({ ok:false, error:`Unknown module "${module_}". Valid: exec, products, keywords, landing, actions, technical, semrush, geo, ai` });
     }
   } catch (err) {
     return errResponse(res, err);

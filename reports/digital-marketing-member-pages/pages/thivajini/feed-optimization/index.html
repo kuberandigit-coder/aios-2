@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed Optimization — Ledsone France</title>
+<link rel="stylesheet" href="feed.css">
+<script src="feed.js"></script>
+<script>FO.guard();</script>
+</head>
+<body>
+
+<header class="fo-top">
+  <div class="fo-top-in">
+    <div class="fo-brand">Feed Optimization<small>Ledsone France · Digital Marketing</small></div>
+    <nav class="fo-nav" aria-label="Feed Optimization">
+      <a href="./" aria-current="page">Workspace</a>
+      <a href="monitoring.html">Monitoring</a>
+      <a href="history.html">History</a>
+      <a href="#" id="fo-diag-open">Diagnostics</a>
+    </nav>
+    <a class="fo-back" href="../../thivajini.html">&larr; Back to dashboard</a>
+  </div>
+</header>
+
+<main>
+  <h1>Feed Optimization &mdash; Ledsone France</h1>
+  <p class="fo-sub">Generate and monitor improved Merchant feed copy using verified product and search evidence.</p>
+
+  <div id="fo-msg" class="msg"></div>
+
+  <!-- ═══════════ A. SETUP VIEW ═══════════ -->
+  <section id="fo-view-setup">
+    <div class="fo-stats" id="fo-stats">
+      <div class="fo-stat"><div class="v"><span class="skel" style="display:block;width:52px;height:22px"></span></div><div class="k">Products available</div></div>
+      <div class="fo-stat"><div class="v"><span class="skel" style="display:block;width:52px;height:22px"></span></div><div class="k">Data readiness</div></div>
+      <div class="fo-stat"><div class="v">&mdash;</div><div class="k">Active cycle</div></div>
+      <div class="fo-stat"><div class="v">&mdash;</div><div class="k">Active monitoring tests</div></div>
+    </div>
+
+    <div class="fo-card" style="text-align:center;padding:34px 20px;">
+      <h2 style="margin-bottom:6px;">Ready when you are</h2>
+      <p style="font-size:13px;color:var(--muted);margin:0 auto 20px;max-width:60ch;">
+        One run gathers product evidence, checks each feed gate, loads converting search terms,
+        writes two alternative titles and descriptions per product, validates them, and produces a report you can download.
+      </p>
+      <button class="btn btn-primary btn-cta" id="fo-run">Run Optimization Cycle</button>
+      <div style="margin-top:12px;">
+        <button class="btn-link" id="fo-settings-open" style="font-size:12.5px;">Cycle settings</button>
+      </div>
+      <div id="fo-resume" style="margin-top:18px;display:none;font-size:13px;">
+        <span class="badge blue">Unfinished cycle</span>
+        <button class="btn btn-sm" id="fo-resume-btn" style="margin-left:8px;">Resume</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ B. RUNNING VIEW ═══════════ -->
+  <section id="fo-view-run" hidden aria-live="polite">
+    <div class="fo-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+        <div>
+          <h2 id="fo-run-title">Cycle</h2>
+          <div id="fo-run-status" style="font-size:13px;color:var(--muted);"></div>
+        </div>
+        <div style="text-align:right;font-size:13px;color:var(--muted);">
+          <div id="fo-run-count" style="font-size:17px;font-weight:700;color:var(--ink);"></div>
+          <div id="fo-run-elapsed"></div>
+        </div>
+      </div>
+      <div class="fo-bar" style="margin-top:14px;"><i id="fo-run-bar" style="width:0%"></i></div>
+      <ul class="fo-steps" id="fo-run-steps"></ul>
+    </div>
+
+    <div class="fo-sec">Products in this cycle</div>
+    <ul class="fo-plist" id="fo-run-products"></ul>
+  </section>
+
+  <!-- ═══════════ C. REPORT VIEW ═══════════ -->
+  <section id="fo-view-report" hidden>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+      <div>
+        <h2 id="fo-rep-title" style="font-size:20px;">Optimization Cycle Complete</h2>
+        <div id="fo-rep-when" style="font-size:12.5px;color:var(--muted);"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" id="fo-rep-details">View Full Cycle Details</button>
+        <button class="btn" id="fo-rep-new">New cycle</button>
+        <button class="btn btn-primary" id="fo-rep-download">Customize &amp; Download</button>
+      </div>
+    </div>
+
+    <div class="fo-stats" id="fo-rep-stats" style="margin-top:18px;"></div>
+
+    <div class="fo-sec">Final report</div>
+    <div class="fo-scroll">
+      <table class="fo" id="fo-rep-tbl">
+        <thead><tr>
+          <th>Product</th>
+          <th class="col-opt">Item ID / SKU</th>
+          <th>Feed Gate</th>
+          <th class="col-opt">Current Title</th>
+          <th>Variant A</th>
+          <th>Variant B</th>
+          <th class="col-opt">Search Evidence</th>
+          <th>Data Quality</th>
+          <th>Result</th>
+          <th>Choice</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:16px;padding:14px 17px;background:var(--warn-bg);border:1px solid var(--warn-line);
+                border-radius:12px;font-size:13px;color:var(--warn);">
+      <b>Downloading the file does not change anything live.</b>
+      Upload the approved copy to Merchant Center yourself, then come back and press
+      <b>Start Monitoring</b> so performance is measured from the correct date.
+      <div style="margin-top:11px;">
+        <button class="btn btn-primary btn-sm" id="fo-start-monitoring">Start Monitoring</button>
+      </div>
+    </div>
+  </section>
+
+  <details class="fo-lim">
+    <summary>Data limitations</summary>
+    <div class="bd">
+      These are limitations of the available data, not application errors.
+      <ul>
+        <li>Authoritative France Feed Eligible source is unavailable &mdash; products show <b>Check Required</b>.</li>
+        <li>FR converting paid-search data is historical, not the latest 30 days.</li>
+        <li>Exact search-term &rarr; product attribution is unavailable (campaign / category level only).</li>
+        <li>Keyword Planner volume data is unavailable.</li>
+        <li>Search intent classification is not stored.</li>
+        <li>Verified technical specifications are partial.</li>
+      </ul>
+    </div>
+  </details>
+</main>
+
+<!-- ═══════════ layers ═══════════ -->
+<div class="fo-back-drop" id="fo-backdrop"></div>
+
+<!-- cycle settings -->
+<div class="fo-modal" id="fo-settings" role="dialog" aria-modal="true" aria-labelledby="fo-settings-h" tabindex="-1">
+  <h2 id="fo-settings-h">Cycle settings</h2>
+  <p style="font-size:12.5px;color:var(--muted);margin:0 0 18px;">Optional. The defaults follow the written workflow.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div>
+      <label class="fo-f" for="fo-set-count">How many products?</label>
+      <input type="number" id="fo-set-count" min="1" max="25" value="10">
+    </div>
+    <div>
+      <label class="fo-f" for="fo-set-priority">Priority</label>
+      <select id="fo-set-priority"><option value="">All priorities</option></select>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;padding:13px 15px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px;">
+    <label class="fo-choice" style="border:none;background:none;padding:0;margin:0;">
+      <input type="checkbox" id="fo-set-draft">
+      <span style="font-size:12.5px;color:var(--warn);">
+        <b>Also generate drafts for products that need an eligibility check.</b><br>
+        Off by default. The written workflow requires <code>Feed Eligible = Y</code> before an AI call is
+        spent, and no authoritative France eligibility source exists today &mdash; so by default those
+        products are reported as <i>Skipped &mdash; Feed Gate</i> and no AI call is made.
+        Turning this on is recorded against the cycle. It does not mark anything eligible,
+        and the results stay draft-only.
+      </span>
+    </label>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:22px;">
+    <button class="btn" data-close-layer>Cancel</button>
+    <button class="btn btn-primary" id="fo-settings-run">Run Optimization Cycle</button>
+  </div>
+</div>
+
+<!-- variant comparison -->
+<div class="fo-drawer" id="fo-compare" role="dialog" aria-modal="true" aria-labelledby="fo-compare-h" tabindex="-1">
+  <div class="hd">
+    <div><div id="fo-compare-h" style="font-size:15px;font-weight:700;">Compare variants</div>
+      <div id="fo-compare-sub" class="mono"></div></div>
+    <button class="btn btn-sm" data-close-layer>Close</button>
+  </div>
+  <div class="bd" id="fo-compare-body"></div>
+</div>
+
+<!-- download -->
+<div class="fo-modal" id="fo-dl" role="dialog" aria-modal="true" aria-labelledby="fo-dl-h" tabindex="-1">
+  <h2 id="fo-dl-h">Customize &amp; Download</h2>
+  <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px;" id="fo-dl-sub"></p>
+
+  <div class="fo-card" style="margin-bottom:16px;">
+    <h2 style="font-size:14px;">Products</h2>
+    <div id="fo-dl-products" style="max-height:200px;overflow:auto;font-size:12.5px;"></div>
+  </div>
+
+  <div class="fo-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <h2 style="font-size:14px;margin:0;">Columns</h2>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm" id="fo-col-rec">Recommended</button>
+        <button class="btn btn-sm" id="fo-col-all">Select all</button>
+        <button class="btn btn-sm" id="fo-col-none">Clear all</button>
+      </div>
+    </div>
+    <div class="fo-cols" id="fo-col-groups"></div>
+    <div id="fo-col-warn" style="display:none;color:var(--bad);font-size:12.5px;margin-top:10px;">Select at least one column.</div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+    <button class="btn" data-close-layer>Cancel</button>
+    <button class="btn btn-primary" id="fo-dl-go">Download CSV</button>
+  </div>
+</div>
+
+<!-- start monitoring -->
+<div class="fo-modal" id="fo-mon" role="dialog" aria-modal="true" aria-labelledby="fo-mon-h" tabindex="-1"
+     style="width:min(620px,94vw);">
+  <h2 id="fo-mon-h">Have the selected feed changes been uploaded and gone live?</h2>
+  <p style="font-size:12.5px;color:var(--muted);margin:0 0 18px;">
+    Monitoring compares performance before and after the change, so it needs the real go-live date.
+  </p>
+
+  <label class="fo-choice"><input type="radio" name="fomon" id="fo-mon-today" checked>
+    <span><b>Yes &mdash; live today</b><br><span style="font-size:11.5px;color:var(--muted);">Baseline is the 30 days ending yesterday.</span></span></label>
+  <label class="fo-choice"><input type="radio" name="fomon" id="fo-mon-other">
+    <span><b>Yes &mdash; live on another date</b><br><span style="font-size:11.5px;color:var(--muted);">Use the date the feed actually changed.</span></span></label>
+  <label class="fo-choice"><input type="radio" name="fomon" id="fo-mon-not">
+    <span><b>Not yet</b><br><span style="font-size:11.5px;color:var(--muted);">Nothing is recorded and monitoring does not start.</span></span></label>
+
+  <div id="fo-mon-datewrap" style="display:none;margin-top:6px;">
+    <label class="fo-f" for="fo-mon-date">Go-live date</label>
+    <input type="date" id="fo-mon-date" style="max-width:220px;">
+  </div>
+
+  <div style="margin-top:16px;padding:11px 14px;background:var(--warn-bg);border:1px solid var(--warn-line);
+              border-radius:10px;font-size:12.5px;color:var(--warn);">
+    A meaningful verdict needs at least 14 days after monitoring starts.
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+    <button class="btn" data-close-layer>Cancel</button>
+    <button class="btn btn-primary" id="fo-mon-go">Confirm</button>
+  </div>
+</div>
+
+<!-- diagnostics -->
+<div class="fo-drawer" id="fo-diag" role="dialog" aria-modal="true" aria-labelledby="fo-diag-h" tabindex="-1">
+  <div class="hd">
+    <div><div id="fo-diag-h" style="font-size:15px;font-weight:700;">Diagnostics</div>
+      <div style="font-size:11.5px;color:var(--muted);">Technical detail for the development team.</div></div>
+    <button class="btn btn-sm" data-close-layer>Close</button>
+  </div>
+  <div class="bd" id="fo-diag-body"></div>
+</div>
+
+<script src="workspace.js"></script>
+</body>
+</html>

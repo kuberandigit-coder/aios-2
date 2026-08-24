@@ -4465,5 +4465,213 @@ function exportProdCSV() {
   a.download = 'seo-product-intelligence.csv'; a.click();
 }
 </script>
+
+<style>
+#seoAiBtn{position:fixed;bottom:28px;right:28px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0c1a30,#1f5eff);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(31,94,255,.45);z-index:9999;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;}
+#seoAiBtn:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(31,94,255,.55);}
+#seoAiBtn svg{width:26px;height:26px;fill:#fff;}
+#seoAiPanel{position:fixed;bottom:96px;right:28px;width:380px;max-height:600px;background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9998;display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(16px) scale(.97);pointer-events:none;transition:opacity .22s,transform .22s;}
+#seoAiPanel.open{opacity:1;transform:none;pointer-events:all;}
+#seoAiPanelHead{background:linear-gradient(135deg,#0c1a30,#1f5eff);padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.seoai-avatar{font-size:24px;line-height:1;}
+.seoai-title{flex:1;min-width:0;}.seoai-title b{display:block;color:#fff;font-size:14px;font-weight:700;}.seoai-title span{color:rgba(255,255,255,.75);font-size:11px;}
+#seoAiRefreshBtn,#seoAiCloseBtn{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;white-space:nowrap;}
+#seoAiRefreshBtn:hover,#seoAiCloseBtn:hover{background:rgba(255,255,255,.28);}
+#seoAiMessages{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:8px;min-height:0;}
+.seoai-msg{max-width:90%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.55;word-break:break-word;}
+.seoai-msg.bot{background:#eaf0ff;color:#1a2233;border-bottom-left-radius:4px;align-self:flex-start;}
+.seoai-msg.user{background:#1f5eff;color:#fff;border-bottom-right-radius:4px;align-self:flex-end;}
+.seoai-thinking{display:flex;gap:5px;padding:10px 13px;align-self:flex-start;}
+.seoai-thinking span{width:8px;height:8px;border-radius:50%;background:#1f5eff;animation:seoAiPulse 1.2s infinite;}
+.seoai-thinking span:nth-child(2){animation-delay:.2s;}
+.seoai-thinking span:nth-child(3){animation-delay:.4s;}
+@keyframes seoAiPulse{0%,80%,100%{transform:scale(.7);opacity:.5;}40%{transform:scale(1);opacity:1;}}
+#seoAiInputBar{display:flex;align-items:flex-end;gap:8px;padding:10px 12px;border-top:1px solid #e3e7ee;flex-shrink:0;}
+#seoAiInput{flex:1;border:1.5px solid #d0d7e3;border-radius:10px;padding:8px 11px;font-size:13px;resize:none;outline:none;font-family:inherit;max-height:80px;overflow-y:auto;line-height:1.4;}
+#seoAiInput:focus{border-color:#1f5eff;}
+#seoAiSendBtn{width:36px;height:36px;border-radius:50%;background:#1f5eff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s;}
+#seoAiSendBtn:disabled{opacity:.4;cursor:not-allowed;}
+#seoAiSendBtn svg{width:18px;height:18px;fill:#fff;}
+</style>
+
+<button id="seoAiBtn" title="SEO AI Assistant" aria-label="Open SEO AI Assistant">
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+</button>
+
+<div id="seoAiPanel">
+  <div id="seoAiPanelHead">
+    <div class="seoai-avatar">🔍</div>
+    <div class="seoai-title">
+      <b>SEO Intelligence AI</b>
+      <span>ledsone.co.uk — Live GSC data analysis</span>
+    </div>
+    <button id="seoAiRefreshBtn" onclick="seoAiLoadBrief()" title="Refresh brief">↻ Refresh</button>
+    <button id="seoAiCloseBtn" onclick="seoAiToggle()">✕</button>
+  </div>
+  <div id="seoAiMessages"></div>
+  <div id="seoAiInputBar">
+    <textarea id="seoAiInput" rows="1" placeholder="Ask anything — e.g. 'which keyword is dropping?'" onkeydown="seoAiHandleKey(event)"></textarea>
+    <button id="seoAiSendBtn" onclick="seoAiSend()" disabled>
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var panel    = document.getElementById('seoAiPanel');
+  var messages = document.getElementById('seoAiMessages');
+  var input    = document.getElementById('seoAiInput');
+  var sendBtn  = document.getElementById('seoAiSendBtn');
+  var isOpen = false, isLoading = false, briefLoaded = false;
+  var chatHistory = [];
+
+  function saveMsg(role, content) {
+    fetch('/api/intel-api?service=seo&module=ai&type=chat-save', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, content })
+    }).catch(function(){});
+  }
+
+  window.seoAiToggle = function() {
+    isOpen = !isOpen;
+    panel.classList.toggle('open', isOpen);
+    if (isOpen && !briefLoaded) seoAiLoadBrief();
+    if (isOpen) setTimeout(function(){ input.focus(); }, 300);
+  };
+
+  function prefetchHistory() {
+    fetch('/api/intel-api?service=seo&module=ai&type=chat-history', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(function(data){
+      if (briefLoaded) return;
+      if (data.ok && data.messages && data.messages.length > 0) {
+        messages.innerHTML = '';
+        chatHistory = [];
+        data.messages.forEach(function(m){
+          addMsg(m.role === 'user' ? 'user' : 'bot', m.role === 'user'
+            ? m.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            : formatAiText(m.content));
+          chatHistory.push({ role: m.role, content: m.content });
+        });
+        briefLoaded = true; isLoading = false; sendBtn.disabled = false;
+        addMsg('bot', '💬 <em style="color:#5b6577;font-size:12px;">Session restored. Ask me anything.</em>');
+      }
+    }).catch(function(){});
+  }
+
+  document.getElementById('seoAiBtn').addEventListener('click', seoAiToggle);
+  input.addEventListener('input', function(){
+    sendBtn.disabled = !input.value.trim() || isLoading;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 80) + 'px';
+  });
+
+  window.seoAiHandleKey = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) seoAiSend(); }
+  };
+
+  function addMsg(role, html) {
+    var div = document.createElement('div');
+    div.className = 'seoai-msg ' + (role === 'bot' ? 'bot' : 'user');
+    div.innerHTML = html;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+  }
+  function addThinking() {
+    var div = document.createElement('div');
+    div.className = 'seoai-thinking'; div.id = 'seoAiThinking';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(div); messages.scrollTop = messages.scrollHeight;
+  }
+  function removeThinking() { var t = document.getElementById('seoAiThinking'); if (t) t.remove(); }
+
+  function formatAiText(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^### (.*)/gm, '<strong style="font-size:12px;color:#0c1a30;text-transform:uppercase;letter-spacing:.4px;">$1</strong>')
+      .replace(/^## (.*)/gm, '<strong style="font-size:13px;color:#0c1a30;">$1</strong>')
+      .replace(/^# (.*)/gm, '<strong style="font-size:14px;color:#0c1a30;">$1</strong>')
+      .replace(/^[\-\•] (.*)/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+  }
+
+  window.seoAiLoadBrief = function() {
+    if (isLoading) return;
+    isLoading = true; briefLoaded = false; chatHistory = [];
+    messages.innerHTML = ''; sendBtn.disabled = true;
+    prefetchHistory();
+    addMsg('bot', '🔍 <strong>SEO Intelligence AI</strong><br>Fetching live GSC data for ledsone.co.uk…');
+    addThinking();
+
+    var t = setTimeout(function(){
+      if (briefLoaded) return;
+      removeThinking();
+      var first = messages.querySelector('.seoai-msg'); if (first) first.remove();
+      addMsg('bot', '⏱️ <strong>Taking longer than usual.</strong> Click ↻ Refresh to try again.');
+      isLoading = false; briefLoaded = false;
+    }, 90000);
+
+    fetch('/api/intel-api?service=seo&module=ai&type=chat', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ history: [] })
+    })
+    .then(r => { if (!r.ok) return r.text().then(t => { throw new Error('HTTP ' + r.status + ': ' + t.slice(0,200)); }); return r.json(); })
+    .then(function(data){
+      clearTimeout(t); if (briefLoaded) return;
+      removeThinking();
+      messages.querySelectorAll('.seoai-msg').forEach(el => el.remove());
+      if (!data.ok) {
+        addMsg('bot', '❌ <strong>Error:</strong> ' + (data.error || 'Unknown error') + (data.detail ? '<br><code style="font-size:10px;word-break:break-all;">' + data.detail + '</code>' : ''));
+      } else {
+        chatHistory.push({ role: 'assistant', content: data.message });
+        addMsg('bot', formatAiText(data.message));
+        saveMsg('assistant', data.message);
+        briefLoaded = true; sendBtn.disabled = false;
+        addMsg('bot', '💬 <em style="color:#5b6577;font-size:12px;">Ask me anything — e.g. "which keyword is dropping?" or "what are my page-2 opportunities?"</em>');
+      }
+    })
+    .catch(function(e){
+      clearTimeout(t); removeThinking();
+      var first = messages.querySelector('.seoai-msg'); if (first) first.remove();
+      addMsg('bot', '❌ <strong>Error:</strong> ' + e.message);
+    })
+    .finally(function(){ isLoading = false; });
+  };
+
+  window.seoAiSend = function() {
+    var msg = input.value.trim(); if (!msg || isLoading) return;
+    addMsg('user', msg.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+    input.value = ''; input.style.height = 'auto';
+    sendBtn.disabled = true; isLoading = true; addThinking();
+
+    fetch('/api/intel-api?service=seo&module=ai&type=chat', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: chatHistory.slice(-6) })
+    })
+    .then(r => r.json())
+    .then(function(data){
+      removeThinking();
+      if (!data.ok) {
+        addMsg('bot', '❌ ' + (data.error || 'Error getting response'));
+      } else {
+        chatHistory.push({ role: 'user', content: msg });
+        chatHistory.push({ role: 'assistant', content: data.message });
+        saveMsg('user', msg); saveMsg('assistant', data.message);
+        addMsg('bot', formatAiText(data.message));
+      }
+    })
+    .catch(function(){ removeThinking(); addMsg('bot', '❌ Network error. Please try again.'); })
+    .finally(function(){ isLoading = false; sendBtn.disabled = input.value.trim() === ''; });
+  };
+})();
+</script>
+
 </body>
 </html>

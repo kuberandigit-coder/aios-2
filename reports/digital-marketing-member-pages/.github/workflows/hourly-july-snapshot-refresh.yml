@@ -1,0 +1,73 @@
+name: Hourly snapshot refresh (July sales + Postgres)
+# (Dilaksi Req3 live snapshot job was tried and reverted 2026-07-23 -- the
+# full check couldn't fit Vercel's 300s limit even from a chunked/standalone
+# approach worth the added complexity at the time; Req3 stays fully static.)
+#
+# Updated 2026-07-24: this repo's pages/api files had drifted out of sync
+# with what was actually deployed (all of 2026-07-23/24's work was done as
+# direct file edits + manual `vercel --prod` CLI deploys from a different
+# local checkout, never pushed back here) -- synced back up, and this job
+# now calls the merged api/scripts/generate-snapshots.js (postgres/july
+# modes) instead of the old separate generate-july-snapshots.js /
+# generate-jefri-snapshots.js scripts, which are superseded but left in
+# place rather than deleted.
+#
+# Keeps two sets of slow-live pages fast:
+# 1. The live-month (2026-07) sales tabs on sales.html -- every visitor to
+#    a July tab otherwise triggers a 30-50s live Shopify fetch.
+# 2. Jefri's Req1/Req2/Req3 and Mahima's Req1/Req2 -- Postgres-backed with
+#    only a 60s in-memory cache that resets on cold starts.
+# This job runs both fetches once per hour, commits the refreshed snapshot
+# JSON files, and redeploys -- so visitors get an instant cached response
+# the rest of the time. Each page's on-page Refresh/refresh=1 still does a
+# real live fetch on demand, unaffected by this.
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate July sales snapshots
+        env:
+          SNAPSHOT_BASE_URL: https://digital-marketing-member-pages.vercel.app
+        run: node api/scripts/generate-snapshots.js july
+
+      - name: Generate salesuk.html July snapshots (all groups + Not Assigned)
+        env:
+          SNAPSHOT_BASE_URL: https://digital-marketing-member-pages.vercel.app
+        run: node api/scripts/generate-snapshots.js salesuk
+
+      - name: Generate Postgres snapshots (Jefri Req1/Req2/Req3, Mahima Req1/Req2)
+        env:
+          SNAPSHOT_BASE_URL: https://digital-marketing-member-pages.vercel.app
+        run: node api/scripts/generate-snapshots.js postgres
+
+      - name: Commit refreshed snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add api/data/*.json
+          git diff --cached --quiet && echo "No changes, skipping commit" || git commit -m "chore: hourly snapshot refresh (sales + postgres) [skip ci]"
+          git push
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          mkdir -p .vercel
+          cat > .vercel/project.json <<'EOF'
+          {"projectId":"prj_ziowoLxTbIReqBYx1zVweZZBaBDg","orgId":"team_3yn5bmAF7peUPYM7LJcj07PF","projectName":"digital-marketing-member-pages"}
+          EOF
+          npx vercel --prod --yes --token "$VERCEL_TOKEN"

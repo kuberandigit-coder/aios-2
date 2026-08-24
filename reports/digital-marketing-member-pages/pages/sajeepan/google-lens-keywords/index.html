@@ -1,0 +1,321 @@
+<!-- pages/sajeepan/google-lens-keywords/index.html — REQ-DM-2026-08-SAJE01
+     Injected into #sajeepan-lens-root by lens.js on mount(). Not a standalone
+     page — sajeepan.html stays the persistent shell (sidebar/header).
+
+     The whole feature sits inside .lens-shell, which paints its own surface
+     and accent rule so it reads as a distinct tool rather than a continuation
+     of the PMAX dashboard rendered above it. -->
+<div class="lens-wrap">
+ <div class="lens-shell">
+
+  <header class="lens-header">
+    <div class="lens-header-text">
+      <h2>Automation Keyword Finder</h2>
+      <p class="lens-sub">Fully automatic weekly workflow — product selection, Google Lens competitor discovery, keyword analysis, expansion, validation and title/alt-text generation. No manual approval step.</p>
+    </div>
+    <div class="lens-header-side">
+      <span class="lens-badge lens-badge-auto">Runs automatically</span>
+      <span class="lens-badge lens-badge-neutral">Up to <strong id="lensMaxProducts">50</strong> products/week</span>
+    </div>
+  </header>
+
+  <!-- ── WEEKLY SCHEDULE STATUS ─────────────────────────────────────────── -->
+  <section class="lens-panel lens-schedule" aria-label="Weekly automation status">
+    <div class="lens-schedule-grid">
+      <div class="lens-stat"><span class="lens-stat-label">Weekly automation</span><span class="lens-stat-value" id="lensSchedEnabled">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Schedule</span><span class="lens-stat-value" id="lensSchedWhen">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Last run</span><span class="lens-stat-value" id="lensSchedLast">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Next scheduled run</span><span class="lens-stat-value" id="lensSchedNext">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Last run products</span><span class="lens-stat-value" id="lensSchedProducts">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Last run status</span><span class="lens-stat-value" id="lensSchedStatus">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Search cache reuse</span><span class="lens-stat-value" id="lensSchedCache">—</span></div>
+    </div>
+    <p class="lens-note" id="lensSchedNote">Scheduled times are UTC.</p>
+  </section>
+
+  <!-- ── PRIMARY ACTION ─────────────────────────────────────────────────── -->
+  <section class="lens-panel lens-action" aria-label="Run automation">
+    <div class="lens-action-stats">
+      <div class="lens-stat"><span class="lens-stat-label">Products selected</span><span class="lens-stat-value lens-stat-big" id="lensPlanSelected">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Live searches needed</span><span class="lens-stat-value lens-stat-big" id="lensPlanLive">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Cached searches reused</span><span class="lens-stat-value lens-stat-big" id="lensPlanCached">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">SerpAPI searches available</span><span class="lens-stat-value lens-stat-big" id="lensPlanAvailable">—</span></div>
+      <div class="lens-stat"><span class="lens-stat-label">Reserved (never auto-spent)</span><span class="lens-stat-value lens-stat-big" id="lensPlanReserve">—</span></div>
+    </div>
+    <div class="lens-action-cta">
+      <div id="lensPlanReady" class="lens-ready" hidden></div>
+      <div id="lensPlanBlocked" class="lens-blocked" hidden></div>
+      <button type="button" class="lens-btn lens-btn-primary lens-btn-lg" id="lensRunBtn" disabled>Run Automation Now</button>
+      <button type="button" class="lens-btn lens-btn-ghost" id="lensPlanRefresh">Refresh</button>
+    </div>
+    <p class="lens-note">Running now uses the same workflow as the weekly schedule and does not change the schedule.</p>
+  </section>
+
+  <div id="lensQuotaError" class="lens-banner lens-banner-warn" hidden></div>
+
+  <!-- ── PROGRESS ───────────────────────────────────────────────────────── -->
+  <section id="lensProgressPanel" class="lens-panel lens-progress" aria-live="polite" hidden>
+    <h3 id="lensProgressTitle">Automation running</h3>
+    <p class="lens-sub" id="lensProgressSummary">Starting…</p>
+    <div class="lens-progress-track"><div id="lensProgressFill" class="lens-progress-fill" style="width:0%"></div></div>
+    <div class="lens-progress-stats">
+      <span>Stage <strong id="lensProgressStage">—</strong></span>
+      <span>Products done <strong id="lensProgressDone">0</strong></span>
+      <span>Live searches <strong id="lensProgressLive">0</strong></span>
+      <span>Cached searches <strong id="lensProgressCached">0</strong></span>
+    </div>
+  </section>
+
+  <!-- ── TABS (inspection only — the automation moves through these itself) -->
+  <nav class="lens-tabbar" role="tablist" aria-label="Automation stages">
+    <button type="button" class="lens-tab on" data-view="products"    id="lensTabProducts"    role="tab" aria-selected="true">1. Products</button>
+    <button type="button" class="lens-tab"    data-view="competitors" id="lensTabCompetitors" role="tab" aria-selected="false">2. Competitors</button>
+    <button type="button" class="lens-tab"    data-view="phase1"      id="lensTabPhase1"      role="tab" aria-selected="false">3. Phase 1 Keywords</button>
+    <button type="button" class="lens-tab"    data-view="phase2"      id="lensTabPhase2"      role="tab" aria-selected="false">4. Phase 2 Expansion</button>
+    <button type="button" class="lens-tab"    data-view="ads"         id="lensTabAds"         role="tab" aria-selected="false">5. Ads &amp; Validation</button>
+    <button type="button" class="lens-tab"    data-view="copy"        id="lensTabCopy"        role="tab" aria-selected="false">6. Title &amp; Alt Text</button>
+    <button type="button" class="lens-tab"    data-view="final"       id="lensTabFinal"       role="tab" aria-selected="false">7. Final Output</button>
+    <button type="button" class="lens-tab"    data-view="history"     id="lensTabHistory"     role="tab" aria-selected="false">8. History</button>
+  </nav>
+
+  <!-- ── 1. PRODUCTS ────────────────────────────────────────────────────── -->
+  <section id="lensViewProducts" class="lens-view" role="tabpanel" aria-labelledby="lensTabProducts">
+    <div class="lens-panel">
+      <h3>All products in scope</h3>
+      <p class="lens-sub" id="lensProductsCounts">—</p>
+
+      <div class="lens-toolbar">
+        <input type="search" id="lensSearchBox" class="lens-input" placeholder="Filter by SKU or product title…" maxlength="120" aria-label="Filter products">
+        <select id="lensFilterEligibility" class="lens-select" aria-label="Filter by automation eligibility">
+          <option value="">All products</option>
+          <option value="SELECTED">Automatically selected</option>
+          <option value="ELIGIBLE">Eligible, not selected</option>
+          <option value="NOT_ELIGIBLE">Not eligible</option>
+        </select>
+        <span class="lens-note lens-note-inline">Filtering never triggers a search.</span>
+      </div>
+
+      <div id="lensProductsState" class="lens-state" hidden></div>
+      <div class="lens-table-scroll">
+        <table class="lens-table" id="lensProductsTable">
+          <thead><tr>
+            <th scope="col">Select Status</th>
+            <th scope="col">Image</th>
+            <th scope="col">SKU</th>
+            <th scope="col">Current Title</th>
+            <th scope="col">Product URL</th>
+            <th scope="col">Same-SKU Status</th>
+            <th scope="col">Image Status</th>
+            <th scope="col">Product Data Status</th>
+            <th scope="col">Attribute Coverage</th>
+            <th scope="col">Google Ads Evidence</th>
+            <th scope="col">Automation Eligibility</th>
+            <th scope="col" class="lens-num">Selection Score</th>
+            <th scope="col">Selection Reason</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. COMPETITORS ─────────────────────────────────────────────────── -->
+  <section id="lensViewCompetitors" class="lens-view" role="tabpanel" aria-labelledby="lensTabCompetitors" hidden>
+    <div class="lens-panel">
+      <h3>Automatic competitor decisions</h3>
+      <p class="lens-sub">Every visual match is decided automatically with a stated reason. Nothing here waits for approval — this view is for inspection.</p>
+      <div id="lensCompetitorSummary" class="lens-chipline"></div>
+    </div>
+
+    <div class="lens-split">
+      <aside class="lens-rail" id="lensCompetitorRail" aria-label="Products in this run"></aside>
+      <div class="lens-split-main">
+        <div class="lens-panel">
+          <div class="lens-our-product" id="lensOurProduct"></div>
+          <div class="lens-toolbar">
+            <select id="lensFilterDecision" class="lens-select" aria-label="Filter by automatic decision">
+              <option value="">All decisions</option>
+              <option value="AUTO_INCLUDED">Auto included</option>
+              <option value="AUTO_EXCLUDED_SELF">Excluded — our own listing</option>
+              <option value="AUTO_EXCLUDED_DUPLICATE">Excluded — duplicate</option>
+              <option value="AUTO_EXCLUDED_MISSING_DATA">Excluded — missing data</option>
+              <option value="AUTO_EXCLUDED_IRRELEVANT">Excluded — not relevant</option>
+              <option value="AUTO_EXCLUDED_ATTRIBUTE_CONFLICT">Excluded — attribute conflict</option>
+            </select>
+            <input type="text" id="lensFilterDomain" class="lens-input lens-input-sm" placeholder="Filter by domain…" maxlength="120" aria-label="Filter by domain">
+            <button type="button" class="lens-btn lens-btn-ghost lens-btn-sm" id="lensExportBtn">Download CSV</button>
+          </div>
+          <div id="lensCompetitorState" class="lens-state" hidden></div>
+          <div class="lens-table-scroll">
+            <table class="lens-table" id="lensCompetitorTable">
+              <thead><tr>
+                <th scope="col" class="lens-num">Rank</th>
+                <th scope="col">Image</th>
+                <th scope="col">Title</th>
+                <th scope="col">Domain</th>
+                <th scope="col">Decision</th>
+                <th scope="col" class="lens-num">Score</th>
+                <th scope="col">Reason</th>
+                <th scope="col">Evidence</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. PHASE 1 KEYWORDS ────────────────────────────────────────────── -->
+  <section id="lensViewPhase1" class="lens-view" role="tabpanel" aria-labelledby="lensTabPhase1" hidden>
+    <div class="lens-split">
+      <aside class="lens-rail" id="lensPhase1Rail" aria-label="Products in this run"></aside>
+      <div class="lens-split-main">
+        <div class="lens-panel">
+          <h3>Phase 1 keywords</h3>
+          <p class="lens-sub">Ranked by how many <em>distinct</em> auto-included competitor titles each phrase appears in — not by raw repetition. Brand terms are excluded automatically.</p>
+          <p class="lens-callout" id="lensPrimaryKeyword">Primary keyword: —</p>
+          <div class="lens-table-scroll">
+            <table class="lens-table" id="lensPhase1Table"><thead><tr>
+              <th scope="col">Keyword</th><th scope="col">Category</th>
+              <th scope="col" class="lens-num">Distinct Titles</th><th scope="col" class="lens-num">%</th>
+              <th scope="col">In Current Title</th><th scope="col">Brand</th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. PHASE 2 EXPANSION ───────────────────────────────────────────── -->
+  <section id="lensViewPhase2" class="lens-view" role="tabpanel" aria-labelledby="lensTabPhase2" hidden>
+    <div class="lens-split">
+      <aside class="lens-rail" id="lensPhase2Rail" aria-label="Products in this run"></aside>
+      <div class="lens-split-main">
+        <div class="lens-panel">
+          <h3>Phase 2 expansion</h3>
+          <p class="lens-sub">Google All, Images and Shopping evidence gathered automatically from each product's Phase 1 primary keyword.</p>
+          <div id="lensPhase2Groups"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. ADS & VALIDATION ────────────────────────────────────────────── -->
+  <section id="lensViewAds" class="lens-view" role="tabpanel" aria-labelledby="lensTabAds" hidden>
+    <div class="lens-split">
+      <aside class="lens-rail" id="lensAdsRail" aria-label="Products in this run"></aside>
+      <div class="lens-split-main">
+        <div class="lens-panel">
+          <h3>Google Ads evidence</h3>
+          <div id="lensPlannerState" class="lens-state" hidden></div>
+          <div class="lens-table-scroll">
+            <table class="lens-table" id="lensPlannerTable"><thead><tr>
+              <th scope="col">Seed</th><th scope="col">Matched / New</th>
+              <th scope="col" class="lens-num">Avg Monthly Searches</th><th scope="col">Competition</th>
+              <th scope="col">Bid Range</th><th scope="col">Source</th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+        <div class="lens-panel">
+          <h3>Product attribute validation</h3>
+          <p class="lens-sub">Each candidate is checked against the product's own attribute record. Conflicting and unverified terms never reach a title.</p>
+          <div class="lens-table-scroll">
+            <table class="lens-table" id="lensAttributeTable"><thead><tr>
+              <th scope="col">Keyword</th><th scope="col">Category</th><th scope="col">Status</th>
+              <th scope="col">Product Value</th><th scope="col">Reason</th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 6. TITLE & ALT TEXT ────────────────────────────────────────────── -->
+  <section id="lensViewCopy" class="lens-view" role="tabpanel" aria-labelledby="lensTabCopy" hidden>
+    <div class="lens-split">
+      <aside class="lens-rail" id="lensCopyRail" aria-label="Products in this run"></aside>
+      <div class="lens-split-main">
+        <div class="lens-panel">
+          <h3>Generated title</h3>
+          <div class="lens-kv"><span class="lens-kv-key">Generated by</span><span class="lens-kv-val" id="lensGenSource">—</span></div>
+          <div class="lens-kv"><span class="lens-kv-key">Validation</span><span class="lens-kv-val" id="lensGenValidation">—</span></div>
+          <div class="lens-kv"><span class="lens-kv-key">Current title</span><span class="lens-kv-val" id="lensCurrentTitle">—</span></div>
+          <div class="lens-kv"><span class="lens-kv-key">Suggested title</span><span class="lens-kv-val"><strong id="lensSuggestedTitle">—</strong> <span class="lens-note-inline">(<span id="lensTitleCharCount">0</span> characters)</span></span></div>
+          <label class="lens-label" for="lensFinalTitleInput">Optional override</label>
+          <textarea id="lensFinalTitleInput" class="lens-input lens-textarea" rows="2" placeholder="The automation already produced a title — edit only if you want to override it."></textarea>
+          <button type="button" class="lens-btn lens-btn-primary lens-btn-sm" id="lensSaveTitleBtn">Save override</button>
+        </div>
+        <div class="lens-panel">
+          <h3>Generated alt text</h3>
+          <div class="lens-kv"><span class="lens-kv-key">Suggested alt text</span><span class="lens-kv-val"><strong id="lensSuggestedAlt">—</strong></span></div>
+          <label class="lens-label" for="lensFinalAltInput">Optional override</label>
+          <textarea id="lensFinalAltInput" class="lens-input lens-textarea" rows="2" placeholder="Edit only if you want to override the generated alt text."></textarea>
+          <button type="button" class="lens-btn lens-btn-primary lens-btn-sm" id="lensSaveAltBtn">Save override</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 7. FINAL OUTPUT ────────────────────────────────────────────────── -->
+  <section id="lensViewFinal" class="lens-view" role="tabpanel" aria-labelledby="lensTabFinal" hidden>
+    <div class="lens-split">
+      <aside class="lens-rail" id="lensFinalRail" aria-label="Products in this run"></aside>
+      <div class="lens-split-main">
+        <div class="lens-panel">
+          <h3>Final Google Ads keywords</h3>
+          <p class="lens-sub">Combined, deduplicated and provenance-tagged. Nothing here is pushed to Google Ads automatically.</p>
+          <div class="lens-table-scroll">
+            <table class="lens-table" id="lensFinalTable"><thead><tr>
+              <th scope="col">Keyword</th><th scope="col">Source</th>
+              <th scope="col" class="lens-num">Phase 1 Freq.</th><th scope="col" class="lens-num">Planner Volume</th>
+              <th scope="col">Existing Ads Evidence</th><th scope="col">Status</th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+          <button type="button" class="lens-btn lens-btn-ghost lens-btn-sm lens-mt" id="lensCopyFinalBtn">Copy keywords</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 8. HISTORY ─────────────────────────────────────────────────────── -->
+  <section id="lensViewHistory" class="lens-view" role="tabpanel" aria-labelledby="lensTabHistory" hidden>
+    <div class="lens-panel">
+      <h3>Weekly run history</h3>
+      <p class="lens-sub">Opening a past run reads stored evidence only — it never triggers a new search.</p>
+      <div id="lensHistoryState" class="lens-state" hidden></div>
+      <div class="lens-table-scroll">
+        <table class="lens-table" id="lensWeeklyTable"><thead><tr>
+          <th scope="col">Week</th><th scope="col">Run ID</th><th scope="col">Started</th><th scope="col">Completed</th>
+          <th scope="col" class="lens-num">Products</th><th scope="col" class="lens-num">Fresh Searches</th>
+          <th scope="col" class="lens-num">Cached Searches</th><th scope="col" class="lens-num">Gemma Titles</th>
+          <th scope="col" class="lens-num">Script Fallback</th><th scope="col">Warnings</th><th scope="col">Status</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="lens-panel">
+      <h3>All runs</h3>
+      <div class="lens-table-scroll">
+        <table class="lens-table" id="lensRunTable"><thead><tr>
+          <th scope="col">Started</th><th scope="col">Triggered by</th><th scope="col">Type</th>
+          <th scope="col" class="lens-num">Products</th><th scope="col" class="lens-num">Competitors</th>
+          <th scope="col">Status</th><th scope="col"></th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── EVIDENCE DRAWER ────────────────────────────────────────────────── -->
+  <div id="lensDrawerScrim" class="lens-scrim" hidden></div>
+  <div id="lensDrawer" class="lens-drawer" role="dialog" aria-modal="true" aria-labelledby="lensDrawerTitle" hidden>
+    <div class="lens-drawer-head">
+      <h4 id="lensDrawerTitle">Competitor evidence</h4>
+      <button type="button" class="lens-btn lens-btn-ghost lens-btn-sm" id="lensDrawerClose">Close</button>
+    </div>
+    <div id="lensDrawerBody" class="lens-drawer-body"></div>
+  </div>
+
+  <div id="lensToast" class="lens-toast" data-open="false" role="status"></div>
+ </div>
+</div>

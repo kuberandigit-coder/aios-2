@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring — Feed Optimization</title>
+<link rel="stylesheet" href="feed.css">
+<script src="feed.js"></script>
+<script>FO.guard();</script>
+</head>
+<body>
+
+<header class="fo-top">
+  <div class="fo-top-in">
+    <div class="fo-brand">Feed Optimization<small>Ledsone France · Digital Marketing</small></div>
+    <nav class="fo-nav" aria-label="Feed Optimization">
+      <a href="./">Workspace</a>
+      <a href="monitoring.html" aria-current="page">Monitoring</a>
+      <a href="history.html">History</a>
+    </nav>
+    <a class="fo-back" href="../../thivajini.html">&larr; Back to dashboard</a>
+  </div>
+</header>
+
+<main>
+  <h1>Monitoring</h1>
+  <p class="fo-sub">Live tests for products whose feed copy you changed, and how they have performed since.</p>
+
+  <div id="fo-msg" class="msg"></div>
+
+  <div role="tablist" aria-label="Monitoring status" style="display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap;">
+    <button class="btn btn-sm" role="tab" id="tab-active" aria-selected="true"  data-filter="active">Active</button>
+    <button class="btn btn-sm" role="tab" id="tab-review" aria-selected="false" data-filter="review" tabindex="-1">Ready for Review</button>
+    <button class="btn btn-sm" role="tab" id="tab-done"   aria-selected="false" data-filter="done"   tabindex="-1">Completed</button>
+    <button class="btn btn-sm" style="margin-left:auto;" id="fo-refresh">Refresh</button>
+  </div>
+
+  <div id="fo-mon-host"></div>
+
+  <p style="font-size:11.5px;color:var(--muted);margin-top:18px;line-height:1.7;">
+    Verdicts use the approved raw formula &mdash; Google Ads conversion rate, with a 14-day minimum before any
+    verdict is meaningful. The attribution-adjusted verdict is <b>not implemented</b>; it is awaiting approved
+    business logic.
+  </p>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var PLANS = [], FILTER = 'active';
+
+  function bucket(m) {
+    if (!m.actual_go_live_date) return 'active';           // recorded, not yet live
+    if (m.status === 'CLOSED') return 'done';
+    var days = m.days_live;
+    if (days != null && days >= (m.minimum_test_days || 14)) return 'review';
+    return 'active';
+  }
+
+  function verdictBadge(m) {
+    var days = m.days_live;
+    if (!m.actual_go_live_date) return FO.badge('amber', 'Awaiting go-live confirmation');
+    if (days == null || days < (m.minimum_test_days || 14)) {
+      return FO.badge('blue', 'Too Early — Keep Testing',
+        (days == null ? '' : days + ' of ' + (m.minimum_test_days || 14) + ' days'));
+    }
+    var v = m.verdict || 'Monitor';
+    var tone = v === 'Scale' ? 'green' : v === 'Revert' ? 'red' : 'amber';
+    return FO.badge(tone, v);
+  }
+
+  function render() {
+    var host = document.getElementById('fo-mon-host');
+    var rows = PLANS.filter(function (m) { return bucket(m) === FILTER; });
+    if (!PLANS.length) {
+      host.innerHTML = FO.empty('No live tests are being monitored.',
+        'Run a cycle, download the file, upload it to Merchant Center, then press Start Monitoring.');
+      return;
+    }
+    if (!rows.length) {
+      host.innerHTML = FO.empty('Nothing in this group right now.', 'Try another tab.');
+      return;
+    }
+    host.innerHTML =
+      '<div class="fo-scroll"><table class="fo"><thead><tr>' +
+        '<th>Product</th><th>Variant</th><th class="col-opt">Cycle</th><th>Go-live</th><th>Days Live</th>' +
+        '<th>Baseline Conv. Rate</th><th>Current Conv. Rate</th><th class="col-opt">Shopify Actual Conv.</th>' +
+        '<th>Status</th><th></th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (m) {
+        var b = m.baseline || {}, p = m.post_change || {};
+        return '<tr>' +
+          '<td><span class="mono">' + FO.esc(m.item_id) + '</span></td>' +
+          '<td><b>' + FO.esc(m.selected_variant_label || '—') + '</b></td>' +
+          '<td class="col-opt"><span class="mono">' + FO.esc(String(m.cycle_id || '—').slice(0, 8)) + '</span></td>' +
+          '<td>' + (m.actual_go_live_date ? FO.day(m.actual_go_live_date)
+                    : '<span style="color:var(--warn);">not confirmed</span>') + '</td>' +
+          '<td>' + (m.days_live == null ? '—' : m.days_live) + '</td>' +
+          '<td>' + FO.pct(b.conversion_rate) + '</td>' +
+          '<td>' + FO.pct(p.conversion_rate) + '</td>' +
+          '<td class="col-opt">' + FO.num(b.shopify_conv_orders) + ' → ' + FO.num(p.shopify_conv_orders) + '</td>' +
+          '<td>' + verdictBadge(m) + '</td>' +
+          '<td>' + (m.actual_go_live_date ? ''
+                    : '<button class="btn btn-sm fo-live" data-id="' + FO.esc(m.monitoring_id) + '">Confirm live</button>') + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+
+    Array.prototype.forEach.call(document.querySelectorAll('.fo-live'), function (b) {
+      b.addEventListener('click', function () { confirmLive(b); });
+    });
+  }
+
+  function confirmLive(btn) {
+    var when = window.prompt(
+      'What date did this copy actually go live in Merchant Center? (YYYY-MM-DD)',
+      new Date().toISOString().slice(0, 10));
+    if (!when) return;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    FO.post('req5-confirm-live', { monitoring_id: btn.getAttribute('data-id'), actual_go_live_date: when })
+      .then(function (d) {
+        if (!d.ok) { btn.disabled = false; btn.textContent = 'Confirm live'; FO.msg('fo-msg', FO.esc(FO.fail(d)), 'err'); return; }
+        FO.msg('fo-msg', 'Go-live confirmed for ' + FO.esc(when) + '.', 'ok');
+        load();
+      })
+      .catch(function (e) { btn.disabled = false; btn.textContent = 'Confirm live'; FO.msg('fo-msg', FO.esc(FO.netFail(e)), 'err'); });
+  }
+
+  function load() {
+    var host = document.getElementById('fo-mon-host');
+    host.innerHTML = FO.loading('Loading monitored tests…');
+    FO.get('req5-monitoring').then(function (d) {
+      if (!d.ok) { host.innerHTML = FO.empty('Monitoring could not be loaded', FO.fail(d)); return; }
+      PLANS = d.plans || [];
+      render();
+    }).catch(function (e) { host.innerHTML = FO.empty('Monitoring could not be loaded', FO.netFail(e)); });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () { select(t); });
+      t.addEventListener('keydown', function (e) {
+        var i = tabs.indexOf(t), n = null;
+        if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
+        if (n === null) return;
+        e.preventDefault(); select(tabs[n]); tabs[n].focus();
+      });
+    });
+    function select(t) {
+      tabs.forEach(function (x) { x.setAttribute('aria-selected', String(x === t)); x.tabIndex = x === t ? 0 : -1; });
+      FILTER = t.getAttribute('data-filter');
+      render();
+    }
+    document.getElementById('fo-refresh').addEventListener('click', load);
+    load();
+  });
+})();
+</script>
+</body>
+</html>

@@ -291,7 +291,7 @@ const MEMBERS = [
   { name:'Thanishtika',empId:'DMG006', dept:'Google Ads', cssClass:'m10', color:'var(--c10)', kpiId:'kpi10' },
 ];
 
-// Exact file dates verified from GitHub repo — 2026-08-13
+// KNOWN_DATES kept as fallback only — loadAll() now fetches live from GitHub API first
 const KNOWN_DATES = {
   Sajeepan: [
     '2026-03-30','2026-03-31',
@@ -485,6 +485,12 @@ let globalTaskSeq = 0;
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() { loadAll(); })();
 
+let _lastLoad = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && Date.now() - _lastLoad > 60000) { _lastLoad = Date.now(); loadAll(); }
+});
+setInterval(() => { if (!document.hidden) { _lastLoad = Date.now(); loadAll(); } }, 10 * 60 * 1000);
+
 // ── Month filter ──────────────────────────────────────────────────────────────
 function buildMonthButtons() {
   const months = [...new Set(allRows.map(r => r.date.slice(0,7)))].sort().reverse();
@@ -535,6 +541,20 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function cleanText(s) { return s.replace(/\*+/g,'').replace(/^#+/,'').replace(/[^\x20-\x7EÀ-ɏ—–]/g,' ').trim(); }
 
 // ── Load all files ────────────────────────────────────────────────────────────
+const GH_API_BASE = 'https://api.github.com/repos/digitalmarketing69140951-sys/eod-reports/contents/eods';
+
+async function fetchMemberDates(memberName) {
+  try {
+    const r = await fetch(`/api/auth?action=eod-dates&member=${encodeURIComponent(memberName)}`, { cache: 'no-store', credentials: 'same-origin' });
+    if (!r.ok) throw new Error('API error');
+    const j = await r.json();
+    if (j.success && Array.isArray(j.dates)) return j.dates;
+    throw new Error('bad response');
+  } catch(e) {
+    return KNOWN_DATES[memberName] || [];
+  }
+}
+
 async function loadAll() {
   allRows       = [];
   globalTaskSeq = 0;
@@ -542,8 +562,14 @@ async function loadAll() {
   document.getElementById('tableWrap').style.display = 'none';
   document.getElementById('kpiRow').style.display    = 'none';
 
+  setProgress(2); setStatus('Fetching latest EOD dates from GitHub…');
+  const liveDates = {};
+  await Promise.all(MEMBERS.map(async m => {
+    liveDates[m.name] = await fetchMemberDates(m.name);
+  }));
+
   const toFetch = [];
-  MEMBERS.forEach(m => KNOWN_DATES[m.name].forEach(date => toFetch.push({member:m,date})));
+  MEMBERS.forEach(m => (liveDates[m.name]||[]).forEach(date => toFetch.push({member:m,date})));
   const total = toFetch.length;
 
   setProgress(5); setStatus(`Loading ${total} EOD files…`);
@@ -564,7 +590,7 @@ async function loadAll() {
   }
 
   MEMBERS.forEach(m => {
-    KNOWN_DATES[m.name].forEach(date => {
+    (liveDates[m.name]||[]).forEach(date => {
       const f  = fetched.find(x => x.member.name===m.name && x.date===date);
       const md = f ? f.md : null;
       if (!md) { allRows.push({member:m,date,noEod:true,fetchFail:true}); return; }

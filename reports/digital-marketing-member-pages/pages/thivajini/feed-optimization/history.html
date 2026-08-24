@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History — Feed Optimization</title>
+<link rel="stylesheet" href="feed.css">
+<script src="feed.js"></script>
+<script>FO.guard();</script>
+</head>
+<body>
+
+<header class="fo-top">
+  <div class="fo-top-in">
+    <div class="fo-brand">Feed Optimization<small>Ledsone France · Digital Marketing</small></div>
+    <nav class="fo-nav" aria-label="Feed Optimization">
+      <a href="./">Workspace</a>
+      <a href="monitoring.html">Monitoring</a>
+      <a href="history.html" aria-current="page">History</a>
+    </nav>
+    <a class="fo-back" href="../../thivajini.html">&larr; Back to dashboard</a>
+  </div>
+</header>
+
+<main>
+  <h1>History</h1>
+  <p class="fo-sub">Every optimization cycle that has been run, newest first.</p>
+
+  <div id="fo-msg" class="msg"></div>
+  <div id="fo-hist-host"></div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var TONE = {
+    COMPLETED: 'green',
+    COMPLETED_WITH_WARNINGS: 'amber',
+    FAILED: 'red'
+  };
+
+  function statusBadge(c) {
+    var tone = TONE[c.status] || 'blue';
+    var label = c.status === 'COMPLETED' ? 'Completed'
+      : c.status === 'COMPLETED_WITH_WARNINGS' ? 'Completed with warnings'
+        : c.status === 'FAILED' ? 'Failed'
+          : 'In progress';
+    return FO.badge(tone, label);
+  }
+
+  function render(cycles) {
+    var host = document.getElementById('fo-hist-host');
+    if (!cycles.length) {
+      host.innerHTML = FO.empty('No optimization cycles yet.',
+        'Open the Workspace and press Run Optimization Cycle.');
+      return;
+    }
+    host.innerHTML = '<div class="fo-grid">' + cycles.map(function (c) {
+      var k = c.counts || {};
+      return '<div class="fo-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+          '<div><div style="font-size:15px;font-weight:700;">Cycle #' + FO.esc(c.cycle_no) + '</div>' +
+          '<div style="font-size:11.5px;color:var(--muted);">' + FO.esc(FO.when(c.created_at)) +
+          ' · ' + FO.esc(c.created_by) + '</div></div>' +
+          statusBadge(c) +
+        '</div>' +
+        '<div style="margin-top:12px;font-size:12.5px;line-height:1.85;">' +
+          '<div><b>' + (k.total || 0) + '</b> products · <b>' + (k.generated || 0) + '</b> generated</div>' +
+          ((k.check_required || k.failed || k.skipped)
+            ? '<div style="color:var(--warn);">' + (k.check_required || 0) + ' check required · ' +
+              ((k.failed || 0) + (k.skipped || 0)) + ' failed or skipped</div>' : '') +
+          '<div>' + (c.exports ? c.exports + ' download' + (c.exports === 1 ? '' : 's') : 'not downloaded') +
+          ' · ' + (c.monitoring ? c.monitoring + ' monitored' : 'not monitored') + '</div>' +
+          '<div style="color:var(--muted);">' + (c.llm_calls || 0) + ' AI calls · ' +
+          (c.gemini_calls || 0) + ' Gemini fallback</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;">' +
+          '<a class="btn btn-sm" href="./?cycle=' + encodeURIComponent(c.cycle_id) + '">View Report</a>' +
+          '<a class="btn btn-sm" href="cycle.html?cycle=' + encodeURIComponent(c.cycle_id) + '">View Full Details</a>' +
+          (c.monitoring ? '<a class="btn btn-sm" href="monitoring.html">Open Monitoring</a>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var host = document.getElementById('fo-hist-host');
+    host.innerHTML = FO.loading('Loading cycles…');
+    FO.get('req5-cycle-history', '&limit=50').then(function (d) {
+      if (!d.ok) { host.innerHTML = FO.empty('History could not be loaded', FO.fail(d)); return; }
+      render(d.cycles || []);
+    }).catch(function (e) { host.innerHTML = FO.empty('History could not be loaded', FO.netFail(e)); });
+  });
+})();
+</script>
+</body>
+</html>

@@ -18,20 +18,27 @@
 let pool;
 
 /**
- * REQ5 DATABASE BOUNDARY — Neon side.
+ * REQ5 DATABASE BOUNDARY — application side.
  *
- * Req5 uses NEON_DATABASE_URL and NOTHING ELSE. The historical
- * `FEED_TRACKER_DB_URL || AUTH_DATABASE_URL` chain is deliberately NOT used
- * here: an implicit fallback can silently point workflow writes at a different
- * database, which is exactly the class of defect ARCHITECTURE.md §10 finding 4
- * records. Older dashboard modules keep their own variables — this correction
- * is scoped to Req5 only.
+ * Req5 workflow/history uses AUTH_DATABASE_URL and NOTHING ELSE.
  *
- * If NEON_DATABASE_URL is absent we fail loudly rather than connecting to
- * whatever else happens to be configured.
+ * CORRECTION (2026-08-20). An earlier revision pointed Req5 at
+ * NEON_DATABASE_URL. That was wrong for this repository:
+ *   - ARCHITECTURE.md §8.1 defines NEON_DATABASE_URL as the OPTIONAL
+ *     SEMrush/GEO Neon database, consumed by api/intel-api.js.
+ *   - AUTH_DATABASE_URL is the dedicated Neon database for authentication and
+ *     application-owned data / trackers — which is what Req5 workflow state is.
+ *   - Live evidence: all 11 thivajini_feed_* tables already exist in the
+ *     `neondb` database reached through AUTH_DATABASE_URL.
+ * See 06_VALIDATION/…_CONTINUATION-VALIDATION.md Addendum 3.
+ *
+ * The historical `FEED_TRACKER_DB_URL || AUTH_DATABASE_URL` chain is still NOT
+ * used: an implicit fallback can silently point workflow writes at a different
+ * database (ARCHITECTURE.md §10 finding 4). Req5 reads ONE variable, with no
+ * fallback in either direction.
  */
 function connectionString() {
-  return process.env.NEON_DATABASE_URL || null;
+  return process.env.AUTH_DATABASE_URL || null;
 }
 
 function getPool() {
@@ -39,9 +46,9 @@ function getPool() {
     const cs = connectionString();
     if (!cs) {
       const err = new Error(
-        'REQ5_NEON_DATABASE_URL_MISSING — Req5 workflow/history requires NEON_DATABASE_URL. ' +
-        'It will NOT fall back to FEED_TRACKER_DB_URL, AUTH_DATABASE_URL or DATABASE_URL.');
-      err.code = 'REQ5_NEON_DATABASE_URL_MISSING';
+        'REQ5_APP_DATABASE_URL_MISSING — Req5 workflow/history requires AUTH_DATABASE_URL. ' +
+        'It will NOT fall back to FEED_TRACKER_DB_URL or DATABASE_URL.');
+      err.code = 'REQ5_APP_DATABASE_URL_MISSING';
       throw err;
     }
     const { Pool } = require('pg'); // lazy: see lib/feed/req5.js
@@ -54,8 +61,10 @@ function getPool() {
 function wrapDbError(e) {
   if (e && e.code === '42P01') {
     const err = new Error(
-      'Feed Optimization tables are missing. Apply db/migrations/2026-08-20_001_thivajini_feed_optimization.sql ' +
-      'to the application Neon database before using Req5.');
+      'Feed Optimization tables are missing in the application database ' +
+      '(AUTH_DATABASE_URL). Apply both migrations there: ' +
+      'db/migrations/2026-08-20_001_thivajini_feed_optimization.sql and ' +
+      'db/migrations/2026-08-20_002_thivajini_feed_export_monitoring_push.sql.');
     err.code = 'MIGRATION_NOT_APPLIED';
     return err;
   }
@@ -74,9 +83,8 @@ async function q(text, params) {
  * Confirm the migration is present without attempting any DDL, AND prove which
  * database we actually reached.
  *
- * This self-verification exists because NEON_DATABASE_URL is a Vercel
- * "Sensitive" variable and cannot be read back by the CLI — so the only place
- * its true target can be established is at runtime.
+ * AUTH_DATABASE_URL is readable, but runtime self-verification is kept: it is
+ * the only way to prove which database a DEPLOYED function actually reached.
  */
 async function migrationStatus() {
   const id = await q('SELECT current_database() AS db, current_user AS usr');
@@ -87,9 +95,9 @@ async function migrationStatus() {
            to_regclass('listings.shopify_listings')      IS NOT NULL AS has_listings`);
   if (guard.rows[0].has_google_ads || guard.rows[0].has_listings) {
     const err = new Error(
-      'REQ5_NEON_TARGET_IS_LEDSONE — NEON_DATABASE_URL points at the Ledsone operational database. ' +
+      'REQ5_APP_TARGET_IS_LEDSONE — AUTH_DATABASE_URL points at the Ledsone operational database. ' +
       'Req5 refuses to store workflow history there.');
-    err.code = 'REQ5_NEON_TARGET_IS_LEDSONE';
+    err.code = 'REQ5_APP_TARGET_IS_LEDSONE';
     throw err;
   }
 
@@ -107,6 +115,14 @@ async function migrationStatus() {
     'thivajini_feed_selection',
     'thivajini_feed_term_selection',
     'thivajini_feed_variant',
+    // migration 002
+    'thivajini_feed_export',
+    'thivajini_feed_monitoring',
+    'thivajini_feed_push',
+    // migration 003 - the durable Optimization Cycle state machine
+    'thivajini_feed_cycle',
+    'thivajini_feed_cycle_product',
+    'thivajini_feed_cycle_event',
   ];
   const missing = expected.filter((t) => !present.includes(t));
 
@@ -120,11 +136,11 @@ async function migrationStatus() {
     applied: missing.length === 0,
     present, missing, expected,
     target: {
-      variable: 'NEON_DATABASE_URL',
+      variable: 'AUTH_DATABASE_URL',
       current_database: id.rows[0].db,
       current_user: id.rows[0].usr,
       other_public_tables: neighbours.rows.map((r) => r.tablename),
-      note: 'Identity is reported so the correct Neon target can be confirmed at runtime — NEON_DATABASE_URL is Sensitive and cannot be read back by the CLI.',
+      note: 'Identity is reported so the real target of the deployed function can be confirmed at runtime. NEON_DATABASE_URL is the SEMrush/GEO database and is NOT used by Req5.',
     },
   };
 }
@@ -462,8 +478,8 @@ async function createExport(e) {
       (batch_id, generation_ids, item_ids, variant_ids, selected_columns,
        export_format, row_count, content_sha256, monitoring_start_date,
        monitoring_start_mode, change_method, change_status,
-       baseline_snapshot_ids, notes, generated_by)
-    VALUES ($1,$2::jsonb,$3::jsonb,$4::jsonb,$5::jsonb,$6,$7,$8,$9::date,$10,$11,$12,$13::jsonb,$14,$15)
+       baseline_snapshot_ids, notes, generated_by, cycle_id)
+    VALUES ($1,$2::jsonb,$3::jsonb,$4::jsonb,$5::jsonb,$6,$7,$8,$9::date,$10,$11,$12,$13::jsonb,$14,$15,$16)
     RETURNING *`,
     [e.batchId || null,
      JSON.stringify(e.generationIds || []),
@@ -479,7 +495,8 @@ async function createExport(e) {
      e.changeStatus || 'AWAITING_MANUAL_GO_LIVE',
      JSON.stringify(e.baselineSnapshotIds || []),
      e.notes || null,
-     e.generatedBy]);
+     e.generatedBy,
+     e.cycleId || null]);
   return rows[0];
 }
 
@@ -581,3 +598,8 @@ module.exports.confirmMonitoringLive = confirmMonitoringLive;
 module.exports.updateMonitoring = updateMonitoring;
 module.exports.dueMonitoring = dueMonitoring;
 module.exports.listPushes = listPushes;
+
+// Generic parameterised query against the APPLICATION database.
+// Exposed so lib/feed/cycle.js can own its own SQL without duplicating the
+// pool, the migration guard or the error translation.
+module.exports.query = q;

@@ -619,8 +619,8 @@ async function selectMember(m) {
   setViewerBody(`<div class="state-msg"><span class="icon">⏳</span><span>Loading available dates for ${m.name}…</span></div>`);
 
   const res = await fetch(
-    `${GH_API}/repos/${GH_OWNER}/${GH_REPO}/contents/eods/${encodeURIComponent(m.name)}`,
-    { headers: ghHeaders() }
+    `${GH_API}/repos/${GH_OWNER}/${GH_REPO}/contents/eods/${encodeURIComponent(m.name)}?_=${Date.now()}`,
+    { headers: ghHeaders(), cache: 'no-store' }
   );
 
   if (!res.ok) {

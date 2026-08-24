@@ -3,8 +3,9 @@
 // Thivajini Req5 — Ledsone.fr Feed Optimization.
 // Routed from api/members-api.js as ?member=thivajini&type=req5-*
 //
-// Reads: Ledsone DB (DATABASE_URL) — operational truth, read-only.
-// Writes: Neon app DB (FEED_TRACKER_DB_URL || AUTH_DATABASE_URL) — workflow only.
+// Reads:  Ledsone DB (DATABASE_URL)       — operational truth, read-only.
+// Writes: application Neon DB (AUTH_DATABASE_URL) — workflow/history only.
+//         NEON_DATABASE_URL is the SEMrush/GEO database and is NOT used here.
 //
 // EVERY endpoint here requires a verified dm_session. Page guards are not an
 // authorization boundary (ARCHITECTURE.md §10 finding 1).
@@ -19,6 +20,8 @@ const providers = require('./providers');
 const { requireSession, actorOf } = require('./session');
 const notes = require('./notes');
 const columns = require('./columns');
+const gate = require('./gate');
+const cycleLib = require('./cycle');
 const crypto = require('node:crypto');
 
 const GENERATION_WINDOW_DAYS = 30;
@@ -36,7 +39,7 @@ function ledsoneClient() {
   if (!cs) {
     const e = new Error(
       'REQ5_LEDSONE_DATABASE_URL_MISSING — Req5 operational reads require DATABASE_URL. ' +
-      'It will NOT fall back to NEON_DATABASE_URL.');
+      'It will NOT fall back to the application database.');
     e.code = 'REQ5_LEDSONE_DATABASE_URL_MISSING';
     throw e;
   }
@@ -51,13 +54,61 @@ function ledsoneClient() {
   });
 }
 
+/**
+ * Configuration/setup failures are 503 and are NEVER shown raw to staff.
+ * `error` carries the staff message; `detail` carries the technical text for
+ * the Diagnostics panel and the server log (§21).
+ */
+const CONFIG_CODES = [
+  'MIGRATION_NOT_APPLIED',
+  'REQ5_APP_DATABASE_URL_MISSING',
+  'REQ5_LEDSONE_DATABASE_URL_MISSING',
+  'REQ5_APP_TARGET_IS_LEDSONE',
+];
+
+const SETUP_MESSAGE = 'Feed Optimization setup is unavailable. Please contact the technical team.';
+
+const STAFF_MESSAGE = {
+  MIGRATION_NOT_APPLIED: SETUP_MESSAGE,
+  REQ5_APP_DATABASE_URL_MISSING: SETUP_MESSAGE,
+  REQ5_APP_TARGET_IS_LEDSONE: SETUP_MESSAGE,
+  REQ5_LEDSONE_DATABASE_URL_MISSING: SETUP_MESSAGE,
+};
+
+/**
+ * A PostgreSQL SQLSTATE is five characters of [0-9A-Z] — 42P10, 23503, 42P01.
+ * Any error carrying one is a DATABASE fault, and its message is written for a
+ * DBA, not for Thivajini. "there is no unique or exclusion constraint matching
+ * the ON CONFLICT specification" is 76 characters, so a naive length check let
+ * it straight through to the browser. It never should have.
+ */
+const SQLSTATE_RE = /^[0-9A-Z]{5}$/;
+
+const DB_FAILURE_MESSAGE =
+  'Something went wrong saving that. Please try again, or contact the technical team if it keeps happening.';
+
+function staffMessage(code, technical) {
+  if (STAFF_MESSAGE[code]) return STAFF_MESSAGE[code];
+  if (code && SQLSTATE_RE.test(String(code))) return DB_FAILURE_MESSAGE;
+  // Anything unmapped is a genuine runtime failure — keep it, but keep it short.
+  return technical && technical.length <= 200
+    ? technical
+    : 'Something went wrong completing that action. Please try again, or contact the technical team if it keeps happening.';
+}
+
 function err(res, e) {
-  const msg = (e && e.message) || 'unknown error';
+  const technical = (e && e.message) || 'unknown error';
   const code = (e && e.code) || null;
-  const CONFIG_CODES = ['MIGRATION_NOT_APPLIED', 'REQ5_NEON_DATABASE_URL_MISSING',
-    'REQ5_LEDSONE_DATABASE_URL_MISSING', 'REQ5_NEON_TARGET_IS_LEDSONE'];
   const status = CONFIG_CODES.includes(code) ? 503 : 500;
-  return res.status(status).json({ ok: false, code, error: msg });
+  // Technical detail is logged server-side regardless of what staff sees.
+  console.error('[req5]', code || 'ERROR', technical);
+  return res.status(status).json({
+    ok: false,
+    code,
+    error: staffMessage(code, technical),
+    detail: technical,
+    setup_issue: CONFIG_CODES.includes(code),
+  });
 }
 
 function body(req) {
@@ -99,9 +150,14 @@ async function handleCandidates(req, res) {
                       : ctr < 0.02 ? 'Tier 2 - Medium'
                       : 'Tier 3 - Monitor';
       c.priority_tier_caveat =
-        'Feed Eligible is UNKNOWN for France, so the workbook\'s "Tier 0 - Fix Feed First" branch cannot be evaluated.';
+        'Feed Gate is Needs Check for France, so the workbook branch "Tier 0 - Fix Feed First" cannot be evaluated.';
       c.batch_status = 'Not started';
-      c.draft_only = c.feed_eligible.status !== 'Y';
+
+      // Staff-facing Feed Gate + data quality. `feed_eligible` is retained as
+      // the internal neutral state; the UI reads `feed_gate` only (sections 9 and 10).
+      c.feed_gate = gate.fromLegacy(c.feed_eligible);
+      c.data_quality = gate.dataQuality(c, { termsStale: freshness.status === 'STALE' });
+      c.draft_only = c.feed_gate.blocks_push;
     });
 
     return res.status(200).json({
@@ -152,6 +208,13 @@ async function handleProductEvidence(req, res) {
 
     const baseline = await sql.getItemPerformance(client, { itemId, from, to });
 
+    const freshness = termsFreshness(cutoffs, sql.isoDate(new Date()));
+    product.feed_gate = gate.fromLegacy(product.feed_eligible);
+    product.data_quality = gate.dataQuality(product, { termsStale: freshness.status === 'STALE' });
+    product.specs_summary = (product.specs && product.specs.length)
+      ? null
+      : 'No verified technical specifications available';
+
     return res.status(200).json({
       ok: true,
       product,
@@ -159,7 +222,7 @@ async function handleProductEvidence(req, res) {
       organic_evidence: organic,
       organic_note: notes.ORGANIC_NOTE,
       source_cutoffs: cutoffs,
-      terms_freshness: termsFreshness(cutoffs, sql.isoDate(new Date())),
+      terms_freshness: freshness,
     });
   } catch (e) {
     return err(res, e);
@@ -256,12 +319,12 @@ async function handleTelemetry(req, res) {
       quota_note: QUOTA_NOTE,
       db_boundary: {
         operational_reads: { variable: 'DATABASE_URL', present: !!process.env.DATABASE_URL },
-        workflow_history: { variable: 'NEON_DATABASE_URL', present: !!process.env.NEON_DATABASE_URL },
-        note: 'Req5 uses these two variables only. No implicit fallback to FEED_TRACKER_DB_URL or AUTH_DATABASE_URL.',
+        workflow_history: { variable: 'AUTH_DATABASE_URL', present: !!process.env.AUTH_DATABASE_URL },
+        note: 'Req5 uses these two variables only. No implicit fallback to FEED_TRACKER_DB_URL or DATABASE_URL. NEON_DATABASE_URL is the SEMrush/GEO database and is not used by Req5.',
       },
       env_present: {
         DATABASE_URL: !!process.env.DATABASE_URL,
-        NEON_DATABASE_URL: !!process.env.NEON_DATABASE_URL,
+        AUTH_DATABASE_URL: !!process.env.AUTH_DATABASE_URL,
         LOCAL_LLM_URL: !!process.env.LOCAL_LLM_URL,
         LOCAL_LLM_API: !!process.env.LOCAL_LLM_API,
         LOCAL_LLM_MODEL: !!process.env.LOCAL_LLM_MODEL,
@@ -343,6 +406,166 @@ async function handleSaveTermSelection(req, res, session) {
   }
 }
 
+
+/**
+ * THE GENERATION CORE — steps 3 and 5-8 for ONE product.
+ *
+ * Extracted so the manual endpoint and the one-button Optimization Cycle run
+ * byte-identical logic. Anything that changes here changes for both; they can
+ * never drift apart.
+ *
+ * The caller owns the Ledsone client and the evidence gathering, because the
+ * cycle already has both in hand by the time it gets here.
+ */
+async function generateForProduct(opts) {
+  const {
+    client, product, candidates, cutoffs, from, to, freshness,
+    batchId, itemId, actor, includeOrganic,
+  } = opts;
+
+  const organic = (includeOrganic && product.handle)
+    ? await sql.getOrganicTerms(client, { handle: product.handle, from, to, limit: 15 })
+    : [];
+
+  const selectedTerms = await repo.getTermSelections({ batchId, itemId });
+  const baseline = await sql.getItemPerformance(client, { itemId, from, to });
+
+  const evidence = {
+    item_id: product.item_id,
+    sku: product.sku,
+    brand: product.brand,
+    price_eur: product.price_eur,
+    product_type: product.product_type,
+    google_product_category: product.google_product_category,
+    current_title: product.current_title,
+    current_description: product.current_description,
+    specs: product.specs,
+    stock_status: product.stock.status,
+    feed_eligible_status: product.feed_eligible.status,
+    selected_terms: selectedTerms.map((t) => ({
+      search_term: t.search_term,
+      category_label: t.category_label,
+      impressions: t.metrics_snapshot && t.metrics_snapshot.impressions,
+      clicks: t.metrics_snapshot && t.metrics_snapshot.clicks,
+      conversions: t.metrics_snapshot && t.metrics_snapshot.conversions,
+      conversion_value: t.metrics_snapshot && t.metrics_snapshot.conversion_value,
+      source_min_date: t.source_min_date ? String(t.source_min_date).slice(0, 10) : null,
+      source_max_date: t.source_max_date ? String(t.source_max_date).slice(0, 10) : null,
+      mapping_level: t.mapping_level,
+    })),
+    terms_are_stale: freshness.status === 'STALE',
+    terms_freshness_note: freshness.note,
+    organic_terms: organic,
+    baseline: { ...baseline, period_start: from, period_end: to },
+    image_metadata: product.image_link ? { url: product.image_link } : null,
+  };
+
+  const conf = validate.evidenceConfidence(evidence);
+  const prompt = promptLib.buildPrompt(evidence);
+  const iterationNo = await repo.nextIteration(itemId);
+
+  const generation = await repo.createGeneration({
+    batchId, itemId,
+    shopifyProductId: product.shopify_product_id,
+    shopifyVariantId: product.shopify_variant_id,
+    sku: product.sku,
+    iterationNo,
+    inputSnapshot: evidence,
+    missingEvidence: product.missing_evidence,
+    selectedTermsSnapshot: evidence.selected_terms,
+    organicSupportSnapshot: organic.length ? organic : null,
+    feedEligibleStatus: product.feed_eligible.status,
+    feedEligibleSource: product.feed_eligible.source,
+    promptVersion: prompt.promptVersion,
+    promptHash: prompt.promptHash,
+    templateVersion: prompt.templateVersion,
+    generationStatus: 'RUNNING',
+    evidenceConfidence: conf.level,
+    evidenceConfidenceReasons: conf.reasons,
+    isDraftOnly: gate.fromLegacy(product.feed_eligible).blocks_push,
+    createdBy: actor,
+  });
+
+  const ctx = {
+    specs: product.specs,
+    selectedTerms: evidence.selected_terms,
+    otherSkus: candidates.filter((c) => c.item_id !== itemId).map((c) => c.sku).filter(Boolean).slice(0, 300),
+  };
+
+  const chain = await runProviderChain({
+    prompt, evidence, ctx, generationId: generation.generation_id,
+  });
+
+  const savedVariants = [];
+  if (chain.winner) {
+    const parsed = chain.winner.attempt.parsed_response;
+    const vr = chain.winner.validation;
+    for (const label of ['A', 'B']) {
+      const src = label === 'A' ? parsed.variant_a : parsed.variant_b;
+      const vres = label === 'A' ? vr.variantA : vr.variantB;
+      savedVariants.push(await repo.saveVariant({
+        generationId: generation.generation_id,
+        attemptId: chain.winner.attemptRow.attempt_id,
+        label,
+        title: src.title,
+        titleCharCount: vres.title_char_count,
+        description: src.description,
+        suggestedGpc: parsed.suggested_google_product_category || null,
+        convertingTermsUsed: src.converting_terms_used || [],
+        uncertainClaims: parsed.uncertain_or_unsupported_claims || [],
+        validationStatus: vres.status,
+        validationDetails: vres,
+      }));
+    }
+    await repo.finishGeneration({
+      generationId: generation.generation_id,
+      status: 'SUCCESS',
+      selectedAttemptId: chain.winner.attemptRow.attempt_id,
+    });
+  } else {
+    await repo.finishGeneration({
+      generationId: generation.generation_id,
+      status: chain.terminalStatus || 'FAILED',
+    });
+  }
+
+  // STEP 3 - immutable baseline, so monitoring has something to compare to.
+  await repo.savePerfSnapshot({
+    generationId: generation.generation_id,
+    itemId, iterationNo,
+    snapshotType: 'BASELINE',
+    periodStart: from, periodEnd: to,
+    impressions: baseline.impressions, clicks: baseline.clicks, ctr: baseline.ctr,
+    gadsConversions: baseline.conversions, conversionValue: baseline.conversion_value,
+    conversionRate: baseline.conversion_rate,
+    shopifyOrders: product.shopify_conversions && product.shopify_conversions.orders,
+    shopifyLines: product.shopify_conversions && product.shopify_conversions.lines,
+    shopifyUnits: product.shopify_conversions && product.shopify_conversions.units,
+    shopifyGrainNote: product.shopify_conversions && product.shopify_conversions.grain_note,
+    sourceMaxDate: baseline.source_max_date,
+    sourceRefs: { source_cutoffs: cutoffs, campaigns: sql.FR.CAMPAIGNS.map(String) },
+  });
+
+  const attempts = chain.attempts || [];
+  return {
+    generationId: generation.generation_id,
+    iterationNo,
+    winner: chain.winner || null,
+    winnerAlias: chain.winner ? chain.winner.attemptRow.provider_alias : null,
+    winnerModel: chain.winner ? chain.winner.attemptRow.model : null,
+    terminalStatus: chain.terminalStatus || null,
+    variants: savedVariants,
+    validation: chain.winner ? chain.winner.validation : chain.lastValidation,
+    evidenceConfidence: conf,
+    prompt: { version: prompt.promptVersion, hash: prompt.promptHash, template: prompt.templateVersion },
+    attempts,
+    attemptSummary: attempts.map((a) => a.provider_alias + ':' + a.status),
+    llmCalls: attempts.length,
+    geminiCalls: attempts.filter((a) => String(a.provider_alias || '').startsWith('gemini')).length,
+    reason: chain.winner ? null : (chain.lastValidation && chain.lastValidation.summary) || null,
+  };
+}
+
 /**
  * The generation endpoint. ONE logical request per product.
  * Providers are tried in priority order and a later provider is only reached
@@ -356,11 +579,9 @@ async function handleGenerate(req, res, session) {
   if (!batchId) return res.status(400).json({ ok: false, error: 'batch_id required' });
 
   const client = ledsoneClient();
-  let generation = null;
   try {
     await client.connect();
 
-    // ---- 1. gather evidence -------------------------------------------
     const cutoffs = await sql.getSourceCutoffs(client);
     const to = cutoffs.ads_perf || sql.isoDate(new Date());
     const from = sql.addDays(to, -(GENERATION_WINDOW_DAYS - 1));
@@ -373,154 +594,36 @@ async function handleGenerate(req, res, session) {
     await sql.attachStock(client, [product]);
     await sql.attachShopifyConversions(client, [product], { from, to });
 
-    const selectedTerms = await repo.getTermSelections({ batchId, itemId });
-    const baseline = await sql.getItemPerformance(client, { itemId, from, to });
     const freshness = termsFreshness(cutoffs, sql.isoDate(new Date()));
 
-    const organic = (b.include_organic && product.handle)
-      ? await sql.getOrganicTerms(client, { handle: product.handle, from, to, limit: 15 })
-      : [];
-
-    // ---- 2. build the evidence object ---------------------------------
-    const evidence = {
-      item_id: product.item_id,
-      sku: product.sku,
-      brand: product.brand,
-      price_eur: product.price_eur,
-      product_type: product.product_type,
-      google_product_category: product.google_product_category,
-      current_title: product.current_title,
-      current_description: product.current_description,
-      specs: product.specs,
-      stock_status: product.stock.status,
-      feed_eligible_status: product.feed_eligible.status,
-      selected_terms: selectedTerms.map((t) => ({
-        search_term: t.search_term,
-        category_label: t.category_label,
-        impressions: t.metrics_snapshot && t.metrics_snapshot.impressions,
-        clicks: t.metrics_snapshot && t.metrics_snapshot.clicks,
-        conversions: t.metrics_snapshot && t.metrics_snapshot.conversions,
-        conversion_value: t.metrics_snapshot && t.metrics_snapshot.conversion_value,
-        source_min_date: t.source_min_date ? String(t.source_min_date).slice(0, 10) : null,
-        source_max_date: t.source_max_date ? String(t.source_max_date).slice(0, 10) : null,
-        mapping_level: t.mapping_level,
-      })),
-      terms_are_stale: freshness.status === 'STALE',
-      terms_freshness_note: freshness.note,
-      organic_terms: organic,
-      baseline: { ...baseline, period_start: from, period_end: to },
-      image_metadata: product.image_link ? { url: product.image_link } : null,
-    };
-
-    const conf = validate.evidenceConfidence(evidence);
-    const prompt = promptLib.buildPrompt(evidence);
-    const iterationNo = await repo.nextIteration(itemId);
-
-    // ---- 3. open the generation record --------------------------------
-    generation = await repo.createGeneration({
-      batchId, itemId,
-      shopifyProductId: product.shopify_product_id,
-      shopifyVariantId: product.shopify_variant_id,
-      sku: product.sku,
-      iterationNo,
-      inputSnapshot: evidence,
-      missingEvidence: product.missing_evidence,
-      selectedTermsSnapshot: evidence.selected_terms,
-      organicSupportSnapshot: organic.length ? organic : null,
-      feedEligibleStatus: product.feed_eligible.status,
-      feedEligibleSource: product.feed_eligible.source,
-      promptVersion: prompt.promptVersion,
-      promptHash: prompt.promptHash,
-      templateVersion: prompt.templateVersion,
-      generationStatus: 'RUNNING',
-      evidenceConfidence: conf.level,
-      evidenceConfidenceReasons: conf.reasons,
-      isDraftOnly: product.feed_eligible.status !== 'Y',
-      createdBy: actorOf(session),
+    // Same core the Optimization Cycle runs. One implementation, so a manual
+    // run and a cycle run can never diverge.
+    const gen = await generateForProduct({
+      client, product, candidates, cutoffs, from, to, freshness,
+      batchId, itemId, actor: actorOf(session),
+      includeOrganic: !!b.include_organic,
     });
 
-    // ---- 4. provider chain --------------------------------------------
-    const ctx = {
-      specs: product.specs,
-      selectedTerms: evidence.selected_terms,
-      otherSkus: candidates.filter((c) => c.item_id !== itemId).map((c) => c.sku).filter(Boolean).slice(0, 300),
-    };
-
-    const chain = await runProviderChain({
-      prompt, evidence, ctx, generationId: generation.generation_id,
-    });
-
-    // ---- 5. persist variants for the winning attempt -------------------
-    let savedVariants = [];
-    if (chain.winner) {
-      const parsed = chain.winner.attempt.parsed_response;
-      const vr = chain.winner.validation;
-      for (const label of ['A', 'B']) {
-        const src = label === 'A' ? parsed.variant_a : parsed.variant_b;
-        const vres = label === 'A' ? vr.variantA : vr.variantB;
-        savedVariants.push(await repo.saveVariant({
-          generationId: generation.generation_id,
-          attemptId: chain.winner.attemptRow.attempt_id,
-          label,
-          title: src.title,
-          titleCharCount: vres.title_char_count,
-          description: src.description,
-          suggestedGpc: parsed.suggested_google_product_category || null,
-          convertingTermsUsed: src.converting_terms_used || [],
-          uncertainClaims: parsed.uncertain_or_unsupported_claims || [],
-          validationStatus: vres.status,
-          validationDetails: vres,
-        }));
-      }
-      await repo.finishGeneration({
-        generationId: generation.generation_id,
-        status: 'SUCCESS',
-        selectedAttemptId: chain.winner.attemptRow.attempt_id,
-      });
-    } else {
-      await repo.finishGeneration({
-        generationId: generation.generation_id,
-        status: chain.terminalStatus || 'FAILED',
-      });
-    }
-
-    // ---- 6. baseline snapshot (immutable) ------------------------------
-    await repo.savePerfSnapshot({
-      generationId: generation.generation_id,
-      itemId, iterationNo,
-      snapshotType: 'BASELINE',
-      periodStart: from, periodEnd: to,
-      impressions: baseline.impressions, clicks: baseline.clicks, ctr: baseline.ctr,
-      gadsConversions: baseline.conversions, conversionValue: baseline.conversion_value,
-      conversionRate: baseline.conversion_rate,
-      shopifyOrders: product.shopify_conversions && product.shopify_conversions.orders,
-      shopifyLines: product.shopify_conversions && product.shopify_conversions.lines,
-      shopifyUnits: product.shopify_conversions && product.shopify_conversions.units,
-      shopifyGrainNote: product.shopify_conversions && product.shopify_conversions.grain_note,
-      sourceMaxDate: baseline.source_max_date,
-      sourceRefs: { source_cutoffs: cutoffs, campaigns: sql.FR.CAMPAIGNS.map(String) },
-    });
-
+    const feedGate = gate.fromLegacy(product.feed_eligible);
     return res.status(200).json({
       ok: true,
-      generation_id: generation.generation_id,
-      iteration_no: iterationNo,
-      status: chain.winner ? 'SUCCESS' : (chain.terminalStatus || 'FAILED'),
-      draft_only: product.feed_eligible.status !== 'Y',
-      draft_only_reason: product.feed_eligible.status !== 'Y'
-        ? 'Feed eligibility not verified — draft only. Production push is blocked.' : null,
-      evidence_confidence: conf,
-      prompt: { version: prompt.promptVersion, hash: prompt.promptHash, template: prompt.templateVersion },
-      attempts: chain.attempts,
-      variants: savedVariants,
-      validation: chain.winner ? chain.winner.validation : chain.lastValidation,
+      generation_id: gen.generationId,
+      iteration_no: gen.iterationNo,
+      status: gen.winner ? 'SUCCESS' : (gen.terminalStatus || 'FAILED'),
+      feed_gate: feedGate,
+      draft_only: feedGate.blocks_push,
+      draft_only_reason: feedGate.blocks_push
+        ? 'Feed Gate is Check Required — draft only. Production upload is blocked.' : null,
+      evidence_confidence: gen.evidenceConfidence,
+      prompt: gen.prompt,
+      attempts: gen.attempts,
+      variants: gen.variants,
+      validation: gen.validation,
       terms_freshness: freshness,
+      attribution_note: notes.ATTRIBUTION_NOTE,
       known_gaps: KNOWN_GAPS,
     });
   } catch (e) {
-    if (generation) {
-      await repo.finishGeneration({ generationId: generation.generation_id, status: 'FAILED' }).catch(() => {});
-    }
     return err(res, e);
   } finally {
     await client.end().catch(() => {});
@@ -803,13 +906,19 @@ async function handleExport(req, res, session) {
   const col = columns.resolveColumns(b.columns);
   if (!col.ok) return res.status(400).json({ ok: false, error: col.error, rejected_columns: col.rejected });
 
-  const mode = b.monitoring_start_mode === 'CUSTOM' ? 'CUSTOM' : 'TODAY';
+  // DEFERRED is the normal path: downloading a file changes nothing anywhere,
+  // so no baseline is captured and no monitoring plan is created. Monitoring
+  // starts later, by an explicit human action carrying the real go-live date.
+  const MODES = ['TODAY', 'CUSTOM', 'DEFERRED'];
+  const mode = MODES.indexOf(b.monitoring_start_mode) >= 0 ? b.monitoring_start_mode : 'DEFERRED';
   const today = todayIso();
-  const monitoringStart = mode === 'CUSTOM' ? String(b.monitoring_start_date || '') : today;
-  if (!DATE_RE.test(monitoringStart)) {
+  const deferred = mode === 'DEFERRED';
+  const monitoringStart = deferred ? null
+    : (mode === 'CUSTOM' ? String(b.monitoring_start_date || '') : today);
+  if (!deferred && !DATE_RE.test(monitoringStart)) {
     return res.status(400).json({ ok: false, error: 'monitoring_start_date must be YYYY-MM-DD when monitoring_start_mode is CUSTOM' });
   }
-  const isFuture = monitoringStart > today;
+  const isFuture = !deferred && monitoringStart > today;
 
   const client = ledsoneClient();
   try {
@@ -856,7 +965,7 @@ async function handleExport(req, res, session) {
       let baselineStart = null;
       let baselineEnd = null;
       let baselineSnapshotId = null;
-      if (!isFuture) {
+      if (!isFuture && !deferred) {
         baselineEnd = sql.addDays(monitoringStart, -1);
         baselineStart = sql.addDays(baselineEnd, -(BASELINE_WINDOW_DAYS - 1));
         baseline = await sql.getItemPerformance(client, {
@@ -903,10 +1012,12 @@ async function handleExport(req, res, session) {
     const sha = crypto.createHash('sha256').update(csv, 'utf8').digest('hex');
 
     // A DOWNLOAD IS NOT A GO-LIVE.
-    const changeStatus = isFuture ? 'SCHEDULED' : 'AWAITING_MANUAL_GO_LIVE';
+    const changeStatus = deferred ? 'DOWNLOADED_NOT_LIVE'
+      : isFuture ? 'SCHEDULED' : 'AWAITING_MANUAL_GO_LIVE';
 
     const exportRow = await repo.createExport({
       batchId: b.batch_id || null,
+      cycleId: b.cycle_id || null,
       generationIds, itemIds, variantIds,
       selectedColumns: col.columns,
       rowCount: rows.length,
@@ -920,8 +1031,9 @@ async function handleExport(req, res, session) {
       generatedBy: actorOf(session),
     });
 
+    // No monitoring plan for a deferred download. Nothing is live yet.
     const plans = [];
-    for (const p of plansToCreate) {
+    for (const p of (deferred ? [] : plansToCreate)) {
       plans.push(await repo.createMonitoring({
         exportId: exportRow.export_id,
         generationId: p.gen.generation_id,
@@ -951,11 +1063,129 @@ async function handleExport(req, res, session) {
       rejected_columns: col.rejected,
       row_count: rows.length,
       content_sha256: sha,
-      baseline_note: isFuture
-        ? 'Monitoring start is in the future — status SCHEDULED. No baseline was fabricated; it is captured when the window opens.'
-        : 'Baseline captured for the 30 days ending ' + sql.addDays(monitoringStart, -1) + ' (immediately before monitoring starts).',
-      go_live_note: 'Downloading a CSV does NOT prove the feed changed. Status is AWAITING_MANUAL_GO_LIVE until a human confirms it is live.',
+      monitoring_started: !deferred,
+      baseline_note: deferred
+        ? 'No baseline was captured. Monitoring has not started, so there is nothing yet to measure from.'
+        : isFuture
+          ? 'Monitoring start is in the future — status SCHEDULED. No baseline was fabricated; it is captured when the window opens.'
+          : 'Baseline captured for the 30 days ending ' + sql.addDays(monitoringStart, -1) + ' (immediately before monitoring starts).',
+      go_live_note: 'Downloading a CSV does NOT change the feed. Upload it to Merchant Center, then press Start Monitoring so measurement runs from the real go-live date.',
       minimum_verdict_note: 'Minimum meaningful verdict: 14 days after monitoring starts.',
+    });
+  } catch (e) {
+    return err(res, e);
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
+
+
+/**
+ * START MONITORING — the explicit human step after a manual upload.
+ *
+ * This is deliberately NOT a side effect of downloading a file. Monitoring
+ * only begins when a person confirms the change actually went live, and says
+ * on which date, because the baseline window is defined relative to that date.
+ */
+async function handleMonitoringStart(req, res, session) {
+  const b = body(req);
+  const selections = Array.isArray(b.selections) ? b.selections : [];
+  if (!selections.length) {
+    return res.status(400).json({ ok: false, error: 'selections[] required' });
+  }
+  const goLive = String(b.actual_go_live_date || '').slice(0, 10);
+  if (!DATE_RE.test(goLive)) {
+    return res.status(400).json({ ok: false, error: 'actual_go_live_date must be YYYY-MM-DD' });
+  }
+  const today = todayIso();
+  if (goLive > today) {
+    return res.status(400).json({
+      ok: false,
+      error: 'The go-live date cannot be in the future. Start monitoring once the change is actually live.',
+    });
+  }
+
+  const actor = actorOf(session);
+  const client = ledsoneClient();
+  try {
+    await client.connect();
+
+    // BASELINE = the 30 days ending immediately BEFORE the real go-live date.
+    const baselineEnd = sql.addDays(goLive, -1);
+    const baselineStart = sql.addDays(baselineEnd, -(BASELINE_WINDOW_DAYS - 1));
+
+    const started = [];
+    for (const sel of selections) {
+      const gen = (await repo.listGenerations({ itemId: sel.item_id, limit: 50 }))
+        .find((g) => g.generation_id === sel.generation_id);
+      if (!gen) continue;
+      const vars = await repo.listVariants(gen.generation_id);
+      const variant = vars.find((v) => v.variant_label === sel.variant_label) || vars[0];
+      if (!variant) continue;
+
+      const perf = await sql.getItemPerformance(client, {
+        itemId: gen.item_id, from: baselineStart, to: baselineEnd,
+      });
+      const shop = await sql.getItemShopifyConversions(client, {
+        variantId: gen.shopify_variant_id, productId: gen.shopify_product_id,
+        from: baselineStart, to: baselineEnd,
+      });
+      const snap = await repo.savePerfSnapshot({
+        generationId: gen.generation_id, itemId: gen.item_id,
+        iterationNo: gen.iteration_no, snapshotType: 'BASELINE',
+        periodStart: baselineStart, periodEnd: baselineEnd,
+        impressions: perf.impressions, clicks: perf.clicks, ctr: perf.ctr,
+        gadsConversions: perf.conversions, conversionValue: perf.conversion_value,
+        conversionRate: perf.conversion_rate,
+        shopifyOrders: shop.orders, shopifyLines: shop.lines, shopifyUnits: shop.units,
+        shopifyGrainNote: 'orders/lines/units all stored; business definition not chosen',
+        sourceMaxDate: perf.source_max_date,
+        sourceRefs: { captured_for: 'MONITORING_START', go_live: goLive },
+      });
+
+      const plan = await repo.createMonitoring({
+        exportId: b.export_id || null,
+        generationId: gen.generation_id,
+        itemId: gen.item_id,
+        selectedVariantId: variant.variant_id,
+        selectedVariantLabel: variant.variant_label,
+        changeMethod: 'CSV_DOWNLOAD',
+        intendedGoLiveDate: goLive,
+        monitoringStartDate: goLive,
+        baselinePeriodStart: baselineStart,
+        baselinePeriodEnd: baselineEnd,
+        minimumTestDays: 14,
+        status: 'AWAITING_MANUAL_GO_LIVE',
+        baselineSnapshotId: snap.snapshot_id,
+        monitoringStartReason: b.reason || 'Confirmed uploaded and live by staff',
+        createdBy: actor,
+      });
+
+      // The person just told us it is live, on this date. Record that as the
+      // confirmation, so the plan moves straight to LIVE_TESTING.
+      const live = await repo.confirmMonitoringLive({
+        monitoringId: plan.monitoring_id,
+        actualGoLiveDate: goLive,
+        confirmedBy: actor,
+      });
+      if (b.cycle_id) {
+        await repo.query(
+          'UPDATE public.thivajini_feed_monitoring SET cycle_id = $2 WHERE monitoring_id = $1',
+          [plan.monitoring_id, b.cycle_id]);
+      }
+      started.push(live || plan);
+    }
+
+    if (!started.length) {
+      return res.status(404).json({ ok: false, error: 'No matching generated products were found to monitor.' });
+    }
+    return res.status(200).json({
+      ok: true,
+      started: started.length,
+      actual_go_live_date: goLive,
+      baseline_period: { from: baselineStart, to: baselineEnd },
+      plans: started,
+      verdict_note: 'A meaningful verdict needs at least 14 days of live data.',
     });
   } catch (e) {
     return err(res, e);
@@ -1100,7 +1330,7 @@ function pushGate(gen, variant) {
   }
   reasons.push('Merchant API access for account 5551466539 is not configured — see the Merchant Push Feasibility report.');
   if (!gen || gen.feed_eligible_status !== 'Y') {
-    reasons.push('Feed Eligible is not Y (France Merchant eligibility is UNKNOWN in Ledsone DB).');
+    reasons.push('Feed Gate is not Eligible - ' + gate.CHECK_REASON + '.');
   }
   if (!variant || variant.validation_status !== 'PASS') {
     reasons.push('Selected variant has not passed validation.');
@@ -1176,15 +1406,136 @@ async function handlePushExecute(req, res) {
 
 // ═══════════════════════════ ROUTER ═══════════════════════════════════════
 
+
+// ═══════════════════════════ OPTIMIZATION CYCLE ════════════════════════════
+//
+// One durable, resumable run over N products. Every collaborator is injected
+// so lib/feed/cycle.js never requires this file back.
+
+const CYCLE_CREATE_FAILED =
+  "We couldn't start this optimization cycle. Please try again or contact the technical team.";
+
+const cycleDeps = {
+  repo, sql, gate, ledsoneClient, termsFreshness, generateForProduct,
+};
+
+async function handleCycleCreate(req, res, session) {
+  const b = body(req);
+  try {
+    const out = await cycleLib.createCycle(cycleDeps, {
+      createdBy: actorOf(session),
+      settings: {
+        product_count: b.product_count,
+        priority_tier: b.priority_tier || null,
+        allow_draft_for_check: b.allow_draft_for_check === true,
+      },
+      idempotencyKey: b.idempotency_key ? String(b.idempotency_key).slice(0, 120) : null,
+      itemIds: Array.isArray(b.item_ids) ? b.item_ids : null,
+    });
+    return res.status(200).json({ ok: true, reused: out.reused, cycle: cycleLib.publicCycle(out.cycle) });
+  } catch (e) {
+    if (e && e.code === 'CYCLE_NO_CANDIDATES') {
+      return res.status(400).json({ ok: false, code: e.code, error: e.message });
+    }
+    // Cycle creation gets its own sentence: the staff member pressed one button
+    // and needs to know that button did not work, not what a constraint is.
+    console.error('[req5] cycle-create', (e && e.code) || 'ERROR', (e && e.message) || '');
+    return res.status(500).json({
+      ok: false,
+      code: (e && e.code) || null,
+      error: CYCLE_CREATE_FAILED,
+      detail: (e && e.message) || 'unknown error',
+    });
+  }
+}
+
+async function handleCycleAdvance(req, res, session) {
+  const b = body(req);
+  const cycleId = String(b.cycle_id || '').trim();
+  if (!cycleId) return res.status(400).json({ ok: false, error: 'cycle_id required' });
+  try {
+    const step = await cycleLib.advanceCycle(cycleDeps, { cycleId, actor: actorOf(session) });
+    const status = await cycleLib.getStatus(cycleDeps, cycleId);
+    return res.status(200).json({ ok: true, ...step, ...status });
+  } catch (e) {
+    if (e && e.code === 'CYCLE_NOT_FOUND') return res.status(404).json({ ok: false, error: e.message });
+    return err(res, e);
+  }
+}
+
+async function handleCycleStatus(req, res) {
+  const cycleId = String(req.query.cycle || '').trim();
+  if (!cycleId) return res.status(400).json({ ok: false, error: 'cycle required' });
+  try {
+    return res.status(200).json({ ok: true, ...(await cycleLib.getStatus(cycleDeps, cycleId)) });
+  } catch (e) {
+    if (e && e.code === 'CYCLE_NOT_FOUND') return res.status(404).json({ ok: false, error: e.message });
+    return err(res, e);
+  }
+}
+
+async function handleCycleReport(req, res) {
+  const cycleId = String(req.query.cycle || '').trim();
+  if (!cycleId) return res.status(400).json({ ok: false, error: 'cycle required' });
+  try {
+    const out = await cycleLib.getReport(cycleDeps, cycleId);
+    return res.status(200).json({ ok: true, ...out, known_gaps: KNOWN_GAPS });
+  } catch (e) {
+    if (e && e.code === 'CYCLE_NOT_FOUND') return res.status(404).json({ ok: false, error: e.message });
+    return err(res, e);
+  }
+}
+
+async function handleCycleDetail(req, res) {
+  const cycleId = String(req.query.cycle || '').trim();
+  if (!cycleId) return res.status(400).json({ ok: false, error: 'cycle required' });
+  try {
+    return res.status(200).json({ ok: true, ...(await cycleLib.getDetail(cycleDeps, cycleId)) });
+  } catch (e) {
+    if (e && e.code === 'CYCLE_NOT_FOUND') return res.status(404).json({ ok: false, error: e.message });
+    return err(res, e);
+  }
+}
+
+async function handleCycleHistory(req, res) {
+  try {
+    const cycles = await cycleLib.listCycles(cycleDeps, req.query.limit);
+    return res.status(200).json({ ok: true, cycles });
+  } catch (e) { return err(res, e); }
+}
+
+async function handleCycleSelect(req, res) {
+  const b = body(req);
+  if (!b.cycle_id || !b.item_id) {
+    return res.status(400).json({ ok: false, error: 'cycle_id and item_id required' });
+  }
+  try {
+    const row = await cycleLib.selectVariant(cycleDeps, {
+      cycleId: b.cycle_id, itemId: b.item_id,
+      variantLabel: b.variant_label, excluded: b.excluded,
+    });
+    if (!row) return res.status(404).json({ ok: false, error: 'Product not found in this cycle.' });
+    return res.status(200).json({
+      ok: true,
+      item_id: row.item_id,
+      selected_variant: row.selected_variant,
+      excluded_from_export: row.excluded_from_export,
+    });
+  } catch (e) { return err(res, e); }
+}
+
 const READ_TYPES = new Set([
   'req5-candidates', 'req5-product', 'req5-search-terms',
   'req5-history', 'req5-telemetry', 'req5-provider-status',
   'req5-export-columns', 'req5-export-history', 'req5-monitoring', 'req5-push-preview',
+  'req5-cycle-status', 'req5-cycle-report', 'req5-cycle-detail', 'req5-cycle-history',
 ]);
 const WRITE_TYPES = new Set([
   'req5-create-batch', 'req5-save-terms', 'req5-generate',
   'req5-select', 'req5-capture-performance',
   'req5-export', 'req5-confirm-live', 'req5-push-execute',
+  'req5-cycle-create', 'req5-cycle-advance', 'req5-cycle-select',
+  'req5-monitoring-start',
 ]);
 
 async function handleReq5(req, res, type) {
@@ -1220,6 +1571,15 @@ async function handleReq5(req, res, type) {
     case 'req5-confirm-live':        return handleConfirmLive(req, res, session);
     case 'req5-push-preview':        return handlePushPreview(req, res);
     case 'req5-push-execute':        return handlePushExecute(req, res);
+    // ── Optimization Cycle ───────────────────────────────────────────────
+    case 'req5-cycle-create':        return handleCycleCreate(req, res, session);
+    case 'req5-cycle-advance':       return handleCycleAdvance(req, res, session);
+    case 'req5-cycle-status':        return handleCycleStatus(req, res);
+    case 'req5-cycle-report':        return handleCycleReport(req, res);
+    case 'req5-cycle-detail':        return handleCycleDetail(req, res);
+    case 'req5-cycle-history':       return handleCycleHistory(req, res);
+    case 'req5-cycle-select':        return handleCycleSelect(req, res);
+    case 'req5-monitoring-start':    return handleMonitoringStart(req, res, session);
     default:
       return res.status(400).json({ ok: false, error: `Unknown Req5 type: ${type}` });
   }
@@ -1229,4 +1589,7 @@ module.exports = {
   handleReq5, READ_TYPES, WRITE_TYPES,
   runProviderChain, termsFreshness, pushGate,
   KNOWN_GAPS, CONFLICT_NOTE, VERDICT_NOTE, QUOTA_NOTE,
+  // test-only seam: lets the boundary suite assert the staff-facing error shape
+  __err: err, __staffMessage: staffMessage, CONFIG_CODES, CYCLE_CREATE_FAILED,
+  generateForProduct, cycleDeps,
 };

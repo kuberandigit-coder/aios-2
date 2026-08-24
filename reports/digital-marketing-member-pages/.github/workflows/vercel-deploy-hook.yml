@@ -1,0 +1,20 @@
+name: Trigger Vercel Deploy
+
+# Fires on every push to main, regardless of who pushed. This exists because
+# Vercel's Hobby plan blocks auto-deploy for commits authored by anyone who
+# isn't a member of the Vercel team (private repos) — a plain "git push"
+# from a collaborator who only has GitHub access, not Vercel team access,
+# gets silently blocked. A Deploy Hook sidesteps that check entirely: this
+# workflow calls it as a webhook (not a Vercel GitHub-App event), which
+# Vercel accepts unconditionally.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel Deploy Hook
+        run: |
+          curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_ziowoLxTbIReqBYx1zVweZZBaBDg/v1v5KfkYDY"

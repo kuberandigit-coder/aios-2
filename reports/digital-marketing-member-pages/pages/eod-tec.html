@@ -321,6 +321,12 @@ function setMonth(ym) {
 // ── Init: auto-load everything ─────────────────────────────────────────────────
 (function init() { loadAll(); })();
 
+let _lastLoad = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && Date.now() - _lastLoad > 60000) { _lastLoad = Date.now(); loadAll(); }
+});
+setInterval(() => { if (!document.hidden) { _lastLoad = Date.now(); loadAll(); } }, 10 * 60 * 1000);
+
 // ── Person filter ─────────────────────────────────────────────────────────────
 function setFilter(who) {
   personFilter = who;
@@ -354,16 +360,36 @@ function fmtFull(d) {
 
 // ── Load all available EOD data ───────────────────────────────────────────────
 // Uses KNOWN_DATES hardcoded list — no GitHub API calls, all fetches via raw CDN
+const GH_API_BASE_TEC = 'https://api.github.com/repos/digitalmarketing69140951-sys/eod-reports/contents/eods';
+
+async function fetchMemberDatesTEC(memberName) {
+  try {
+    const r = await fetch(`/api/auth?action=eod-dates&member=${encodeURIComponent(memberName)}`, { cache: 'no-store', credentials: 'same-origin' });
+    if (!r.ok) throw new Error('API error');
+    const j = await r.json();
+    if (j.success && Array.isArray(j.dates)) return j.dates;
+    throw new Error('bad response');
+  } catch(e) {
+    return KNOWN_DATES[memberName] || [];
+  }
+}
+
 async function loadAll() {
   allRows = [];
   document.getElementById('stateWrap').style.display = '';
   document.getElementById('tableWrap').style.display = 'none';
   document.getElementById('kpiRow').style.display    = 'none';
 
-  // Build fetch list from hardcoded known dates
+  setProgress(2);
+  setStatus('Fetching latest EOD dates from GitHub…');
+  const liveDates = {};
+  await Promise.all(MEMBERS.map(async m => {
+    liveDates[m.name] = await fetchMemberDatesTEC(m.name);
+  }));
+
   const toFetch = [];
   MEMBERS.forEach(m => {
-    KNOWN_DATES[m.name].forEach(date => toFetch.push({ member: m, date }));
+    (liveDates[m.name]||[]).forEach(date => toFetch.push({ member: m, date }));
   });
   const totalFiles = toFetch.length;
 
@@ -386,9 +412,9 @@ async function loadAll() {
     fetched.push(...results);
   }
 
-  // Parse into rows — member by member, date ascending (KNOWN_DATES is already sorted)
+  // Parse into rows — member by member, date ascending
   MEMBERS.forEach(m => {
-    KNOWN_DATES[m.name].forEach(date => {
+    (liveDates[m.name]||[]).forEach(date => {
       const f  = fetched.find(x => x.member.name === m.name && x.date === date);
       const md = f ? f.md : null;
       if (!md) {

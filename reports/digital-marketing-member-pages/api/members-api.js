@@ -10,6 +10,9 @@ const https      = require('https');
 // Hobby ceiling — see .vercelignore's note about api/scripts/.
 const feedReq5        = require('../lib/feed/req5');
 const { callGroqAI }  = require('../lib/groq');
+// Sajeepan — Automation Keyword Finder (Google Lens Search Keywords), Phase 1.
+// Same lib/ (not api/lib/) reasoning as lib/feed/ above.
+const lensKeywords    = require('../lib/lens-keywords/router');
 
 // ─── SHARED HELPERS ───────────────────────────────────────────────────────────
 
@@ -1822,9 +1825,6 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
   try {
     const n = v => Number(v) || 0;
 
-    // AI chat needs more time than the default 30s — complex cross-platform CTE
-    await client.query('SET statement_timeout = 55000').catch(() => {});
-
     // ── Run all queries in parallel for speed ────────────────────────────────
     const [
       { rows: campRows },
@@ -1849,7 +1849,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
         JOIN google_ads.campaigns c ON c.campaign_id=cp.campaign_id
         WHERE cp.campaign_id=ANY($1::bigint[]) AND cp.date BETWEEN $2 AND $3
         GROUP BY c.campaign_name, c.campaign_status ORDER BY cv DESC
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
 
       // REQ 1: Top products
       client.query(`
@@ -1863,7 +1863,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
           AND pp.product_item_id != ''
         GROUP BY pp.product_item_id, mp.description
         ORDER BY cv DESC LIMIT 5
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
 
       // REQ 2: Zero-conv wasteful products
       client.query(`
@@ -1876,7 +1876,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
         GROUP BY pp.product_item_id, mp.description
         HAVING SUM(pp.conversions)=0 AND SUM(pp.cost)>5
         ORDER BY SUM(pp.cost) DESC LIMIT 8
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
 
       // REQ 2: Negative keyword candidates (correct table)
       client.query(`
@@ -1918,7 +1918,7 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
         GROUP BY pp.product_item_id, mp.description
         HAVING SUM(pp.conversion_value)>0
         ORDER BY cv DESC LIMIT 5
-      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] })),
+      `, [SJ_CAMPAIGN_IDS, fromDate, toDate]),
 
       // PER-CAMPAIGN PRODUCT BREAKDOWN: top 3 by cost per campaign
       client.query(`
@@ -1998,23 +1998,6 @@ async function handleSajeepanAiChat(req, res, client, fromDate, toDate, prevFrom
       GROUP BY mp.product_id, mp.description, mp.availability, mp.custom_label3
       ORDER BY cv DESC LIMIT 6
     `, [SJ_CAMPAIGN_IDS, fromDate, toDate]).catch(() => ({ rows: [] }));
-
-    // Tracker stats via same main client (already connected, no extra connection needed)
-    let trackerStats = { total: 0, started: 0, sale: 0, pending: 0 };
-    try {
-      const { rows: tr } = await client.query(`
-        SELECT COUNT(*) AS total,
-          COUNT(CASE WHEN optimization_started=true THEN 1 END) AS started,
-          COUNT(CASE WHEN sale_received=true THEN 1 END) AS sale
-        FROM public.feed_optimization_tracker
-      `);
-      if (tr[0]) {
-        trackerStats.total   = Number(tr[0].total)   || 0;
-        trackerStats.started = Number(tr[0].started) || 0;
-        trackerStats.sale    = Number(tr[0].sale)    || 0;
-        trackerStats.pending = trackerStats.total - trackerStats.started;
-      }
-    } catch (_) {}
 
     // ── Build compact context (keep under token limit) ───────────────────────
     const totalCost = campRows.reduce((s,r)=>s+n(r.cost),0);
@@ -2120,8 +2103,6 @@ LIMITED CAMPAIGNS(budget+targetROAS): ${limitedDetailLines}
 CROSS-PLATFORM TOP SELLERS(Amazon/eBay≥3orders,low Google imps): ${crossPlatLines}
 
 FEED ISSUES: ${feedLines}
-
-FEED OPTIMIZATION TRACKER(Req4): total:${trackerStats.total}|optimization_started:${trackerStats.started}|sale_received:${trackerStats.sale}|not_started_yet:${trackerStats.pending}
 
 ROAS TARGETS: PENDANT_KLARNA:320%,HIGH_REV_PH:320%,TOP_20:400%,zero_conv2:400%,HERO:380%,ACCESS:380%
 
@@ -2949,6 +2930,190 @@ async function handleSonya(req, res) {
   }
 }
 
+// ─── SONYA AI CHAT ───────────────────────────────────────────────────────────
+
+async function getSonyaChatClient() {
+  const connStr = process.env.SJ_CHAT_DB_URL;
+  if (!connStr) throw new Error('SJ_CHAT_DB_URL not configured');
+  const c = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000 });
+  await c.connect();
+  await c.query(`
+    CREATE TABLE IF NOT EXISTS sonya_ai_chat (
+      id SERIAL PRIMARY KEY,
+      session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  return c;
+}
+
+async function handleSonyaChatHistory(req, res) {
+  let c;
+  try {
+    c = await getSonyaChatClient();
+    const { rows } = await c.query(
+      `SELECT role, content FROM sonya_ai_chat WHERE session_date = CURRENT_DATE ORDER BY id ASC`
+    );
+    return res.status(200).json({ ok: true, messages: rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
+
+async function handleSonyaChatSave(req, res) {
+  const { role, content } = req.body || {};
+  if (!role || !content) return res.status(400).json({ ok: false, error: 'role and content required' });
+  let c;
+  try {
+    c = await getSonyaChatClient();
+    await c.query(`INSERT INTO sonya_ai_chat (role, content) VALUES ($1, $2)`, [role, content]);
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  } finally {
+    if (c) await c.end().catch(() => {});
+  }
+}
+
+async function handleSonyaAiChat(req, res) {
+  const body        = req.body || {};
+  const userMessage = (body.message || '').trim();
+  const history     = Array.isArray(body.history) ? body.history : [];
+
+  try {
+    const db = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 15000, statement_timeout: 55000,
+    });
+    await db.connect();
+
+    const latest = await db.query(`SELECT MAX(date) AS d FROM google_ads.campaign_performance`);
+    const toDate  = new Date(latest.rows[0].d);
+    const toStr   = toDate.toISOString().slice(0, 10);
+    const from30  = new Date(toDate); from30.setDate(from30.getDate() - 29);
+    const fromStr = from30.toISOString().slice(0, 10);
+    const from7   = new Date(toDate); from7.setDate(from7.getDate() - 6);
+    const from7Str = from7.toISOString().slice(0, 10);
+
+    // ── Parallel data fetch ──────────────────────────────────────────────────
+    const [
+      { rows: campRows },
+      { rows: oppRows },
+      { rows: wasteRows },
+    ] = await Promise.all([
+
+      // Campaign 30d summary — all Sonya campaigns
+      db.query(`
+        SELECT c.campaign_name, c.campaign_status, c.budget,
+          ROUND(SUM(cp.cost)::numeric,2) AS cost,
+          ROUND(SUM(cp.conversion_value)::numeric,2) AS revenue,
+          SUM(cp.conversions)::numeric AS convs,
+          SUM(cp.impressions) AS imps,
+          ROUND(CASE WHEN SUM(cp.cost)>0 THEN SUM(cp.conversion_value)/SUM(cp.cost) ELSE 0 END::numeric,2) AS roas
+        FROM google_ads.campaign_performance cp
+        JOIN google_ads.campaigns c ON c.campaign_id=cp.campaign_id
+        WHERE (c.campaign_name ILIKE '%Sonya%' OR c.campaign_id=20810136438)
+          AND cp.date BETWEEN $1 AND $2
+        GROUP BY c.campaign_name, c.campaign_status, c.budget
+        ORDER BY cost DESC
+      `, [fromStr, toStr]),
+
+      // Opportunity: top products (by orders, last 30d)
+      db.query(`
+        SELECT oii.handle,
+          SUM(oii.item_quantity::int) AS qty,
+          ROUND(SUM(oii.item_price::numeric * oii.item_quantity::int)::numeric,2) AS revenue
+        FROM order_management.orders o
+        JOIN order_management.order_item_info oii ON oii.order_id=o.id
+        WHERE o.sub_source_id=3 AND o.status='Completed'
+          AND o.order_date BETWEEN $1 AND $2
+          AND oii.handle IS NOT NULL AND oii.handle!=''
+        GROUP BY oii.handle ORDER BY revenue DESC LIMIT 10
+      `, [fromStr, toStr]).catch(() => ({ rows: [] })),
+
+      // Wasteful search terms (no conversions, clicks > 5)
+      db.query(`
+        SELECT st.search_term, SUM(st.clicks) AS clicks,
+          ROUND(SUM(st.cost)::numeric,2) AS cost
+        FROM google_ads.pmax_campaign_search_term_data st
+        JOIN google_ads.campaigns c ON c.campaign_id::text=st.campaign_id::text
+        WHERE (c.campaign_name ILIKE '%Sonya%' OR c.campaign_id=20810136438)
+          AND st.date BETWEEN $1 AND $2 AND st.conversions<0.001
+        GROUP BY st.search_term HAVING SUM(st.clicks)>5
+        ORDER BY SUM(st.cost) DESC LIMIT 15
+      `, [fromStr, toStr]).catch(() => ({ rows: [] })),
+
+    ]);
+
+    await db.end().catch(() => {});
+
+    // ── Build compact context ────────────────────────────────────────────────
+    const campLines = campRows.map(r =>
+      `${r.campaign_name}|${r.campaign_status}|budget:£${r.budget||0}|cost:£${r.cost}|rev:£${r.revenue}|ROAS:${r.roas}x|convs:${Number(r.convs).toFixed(1)}|imps:${r.imps}`
+    ).join('\n') || 'No data';
+
+    const oppLines = oppRows.map((r, i) =>
+      `#${i+1} ${r.handle}|qty:${r.qty}|£${r.revenue}`
+    ).join('\n') || 'None';
+
+    const wasteLines = wasteRows.map(r =>
+      `"${r.search_term}"|clicks:${r.clicks}|cost:£${r.cost}`
+    ).join('\n') || 'None';
+
+    const systemPrompt = `You are Sonya's Google Ads AI at LEDSone UK. Give specific numbered daily priorities using the real data below. No generic advice. Max 400 words.
+
+HOW I WORK:
+- I read live Google Ads campaign performance, top-selling products, and wasteful search terms
+- I cover: (1) campaign ROAS & budget health, (2) top revenue products to prioritise in ads, (3) wasteful search terms to add as negative keywords
+- All figures are from the last 30 days (${fromStr} to ${toStr})
+- I prioritise: low ROAS campaigns > high-cost zero-conversion search terms > revenue opportunities
+
+DATA (${fromStr} to ${toStr}):
+
+CAMPAIGN PERFORMANCE (name|status|budget|cost|revenue|ROAS|conversions|impressions):
+${campLines}
+
+TOP REVENUE PRODUCTS — LEDSone UK (handle|qty|revenue):
+${oppLines}
+
+WASTEFUL SEARCH TERMS (no conversions, cost > £0):
+${wasteLines}
+
+INSTRUCTIONS:
+- For daily brief: numbered action items only, no preamble, start with "1."
+- Format: "1. [ACTION] — [campaign/product] ([reason with number])"
+- For questions about campaigns or search terms: answer directly using the data above
+- Keep it actionable — what to pause, what to scale, what negative keywords to add`;
+
+    const isDailyBrief = !userMessage;
+    const messages = [{ role: 'system', content: systemPrompt }];
+    for (const h of history) {
+      if (h.role && h.content) messages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
+    }
+    messages.push({ role: 'user', content: isDailyBrief
+      ? 'Give me my daily Google Ads priority briefing. What should I focus on today? List priorities 1-2-3 clearly.'
+      : userMessage });
+
+    const groqResult = await callGroqAI(messages);
+    if (!groqResult.ok) return res.status(502).json({ ok: false, error: groqResult.error, detail: groqResult.detail });
+
+    return res.status(200).json({
+      ok: true,
+      message: groqResult.text,
+      is_daily_brief: isDailyBrief,
+      meta: { from: fromStr, to: toStr, campaigns: campRows.length },
+    });
+
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+}
+
 // ─── THEEKSHY ─────────────────────────────────────────────────────────────────
 
 const TH_CAMPAIGNS = [23714290257, 23684837882];
@@ -3682,10 +3847,24 @@ module.exports = async function handler(req, res) {
   if (member === 'jakshan') return handleJakshan(req, res);
 
   // ── sajeepan ──────────────────────────────────────────────────────────────
-  if (member === 'sajeepan') return handleSajeepan(req, res);
+  if (member === 'sajeepan') {
+    // Automation Keyword Finder. Auth is enforced inside lensKeywords.handle:
+    // staff routes require a dm_session; the two weekly-cron routes require a
+    // CRON_SECRET bearer token instead and never accept a session. Existing
+    // Sajeepan req1-req4 handlers untouched.
+    if (typeof type === 'string' && type.startsWith('lens-keyword')) {
+      return lensKeywords.handle(req, res, type);
+    }
+    return handleSajeepan(req, res);
+  }
 
   // ── sonya ─────────────────────────────────────────────────────────────────
-  if (member === 'sonya') return handleSonya(req, res);
+  if (member === 'sonya') {
+    if (type === 'ai-chat-history') return handleSonyaChatHistory(req, res);
+    if (type === 'ai-chat-save')    return handleSonyaChatSave(req, res);
+    if (type === 'ai-chat')         return handleSonyaAiChat(req, res);
+    return handleSonya(req, res);
+  }
 
   // ── theekshy ──────────────────────────────────────────────────────────────
   if (member === 'theekshy') return handleTheekshy(req, res);

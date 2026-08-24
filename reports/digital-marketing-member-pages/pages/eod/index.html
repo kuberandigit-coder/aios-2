@@ -480,17 +480,27 @@
       window.location.replace('../../login.html');
       return;
     }
-    if (data.user.role === 'admin') {
-      // Admins manage EOD through admin.html, not this staff submission
-      // form — no EOD member name is tied to an admin login.
-      window.location.replace('admin.html');
-      return;
-    }
     // Server is the source of truth for staff_key -> EOD member name (see
     // api/auth.js EOD_NAME_BY_STAFF_KEY) — the session response already
     // carries the resolved name, no need to fetch/decode report files here.
     if (!data.user.eod_member) {
-      showAlert('error', 'Your account is not linked to an EOD member name. Contact an admin.');
+      if (data.user.role === 'admin') {
+        // Admin has no fixed member — populate dropdown with all members so they can submit for anyone
+        const ALL_MEMBERS = ["Kuberan","Piranav","Mahima","Sonya","Kamsi","Hetheesha",
+          "Dilaksi","Sukirtha","Thasitha","Theekshy","Thivagini","Jefri","Sajeepan","Jakshan"];
+        [$("memberSelect"), $("leaveMember")].forEach(sel => {
+          sel.innerHTML = `<option value="">— Select member —</option>` +
+            ALL_MEMBERS.map(n => `<option value="${n}">${n}</option>`).join('');
+          sel.removeAttribute('disabled');
+        });
+        $("sidebarMember").textContent = 'Admin';
+        // SESSION_MEMBER stays null until user picks one
+        [$("memberSelect"), $("leaveMember")].forEach(sel => {
+          sel.addEventListener('change', () => { SESSION_MEMBER = sel.value || null; });
+        });
+      } else {
+        showAlert('error', 'Your account is not linked to an EOD member name. Contact an admin.');
+      }
       return;
     }
     SESSION_MEMBER = data.user.eod_member;

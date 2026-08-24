@@ -6,9 +6,11 @@
     "pg": "^8.13.1"
   },
   "scripts": {
-    "test": "node --test tests/feed/feed.test.js tests/feed/export.test.js tests/feed/dbboundary.test.js tests/feed/gate.test.js tests/feed/ui.test.js tests/feed/cycle.test.js tests/stpm/stpm.test.js tests/stpm/ui.test.js",
-    "check": "node --check api/members-api.js && node --check lib/feed/req5.js && node --check api/requirement.js && node --check lib/stpm/router.js",
+    "test": "node --test tests/feed/feed.test.js tests/feed/export.test.js tests/feed/dbboundary.test.js tests/feed/gate.test.js tests/feed/ui.test.js tests/feed/cycle.test.js tests/stpm/stpm.test.js tests/stpm/ui.test.js tests/lens-keywords/logic.test.js tests/lens-keywords/phase1.test.js tests/lens-keywords/serpapi.test.js tests/lens-keywords/security.test.js tests/lens-keywords/ui.test.js tests/lens-keywords/analysis-logic.test.js tests/lens-keywords/automation.test.js",
+    "check": "node --check api/members-api.js && node --check lib/feed/req5.js && node --check api/requirement.js && node --check lib/stpm/router.js && node --check lib/lens-keywords/router.js && node --check lib/lens-keywords/phase1.js && node --check lib/lens-keywords/automation.js && node --check lib/lens-keywords/weekly.js && node --check lib/lens-keywords/gemma.js && node --check lib/lens-keywords/eligibility.js && node --check lib/lens-keywords/competitor-filter.js && node --check lib/lens-keywords/cache.js",
     "stpm:migrate": "node scripts/stpm-migrate.js",
-    "stpm:verify": "node scripts/stpm-migrate.js --verify"
+    "stpm:verify": "node scripts/stpm-migrate.js --verify",
+    "lens-keywords:migrate": "node scripts/lens-keywords-migrate.js",
+    "lens-keywords:verify": "node scripts/lens-keywords-migrate.js --verify"
   }
 }

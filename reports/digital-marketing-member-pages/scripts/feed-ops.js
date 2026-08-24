@@ -41,37 +41,42 @@ const path = require('node:path');
       v = v.slice(1, -1);
     }
     v = v.replace(/\\n/g, '\n');
+    // Skip EMPTY values. Vercel returns "" for variables marked Sensitive, and
+    // an empty string would otherwise shadow a real value the operator exported
+    // in their own shell.
+    if (v === '') continue;
     if (!process.env[k]) { process.env[k] = v; n++; }
   }
-  console.log(`[env] loaded ${n} variables from .env.local (values never printed)`);
+  console.log(`[env] loaded ${n} non-empty variables from .env.local (values never printed)`);
 })();
 
 const { Client } = require('pg');
 
 /**
- * REQ5 BOUNDARY: the workflow database is NEON_DATABASE_URL.
+ * REQ5 BOUNDARY: the workflow/history database is AUTH_DATABASE_URL.
+ *
+ * CORRECTED 2026-08-20. NEON_DATABASE_URL is the SEMrush/GEO database
+ * (ARCHITECTURE.md section 8.1) and is not Req5s. AUTH_DATABASE_URL is the
+ * dedicated Neon database for authentication and application-owned trackers,
+ * and already holds all 11 thivajini_feed_* tables.
  *
  * There is NO implicit fallback. An operator may override the variable NAME
- * explicitly with --db-env=NAME, which exists because NEON_DATABASE_URL is a
- * Vercel "Sensitive" variable and therefore comes back empty from
- * `vercel env pull` — so a local migration run may have to name a readable
- * variable deliberately. It is never chosen automatically.
+ * explicitly with --db-env=NAME; it is never chosen automatically.
  */
 function appDbUrl() {
   const flag = process.argv.find((a) => a.startsWith('--db-env='));
-  const name = flag ? flag.split('=')[1] : 'NEON_DATABASE_URL';
+  const name = flag ? flag.split('=')[1] : 'AUTH_DATABASE_URL';
   const url = process.env[name];
   if (!url) {
-    if (name === 'NEON_DATABASE_URL') {
+    if (name === 'AUTH_DATABASE_URL') {
       throw new Error(
-        'REQ5_NEON_DATABASE_URL_MISSING — NEON_DATABASE_URL is not set (it is a Vercel "Sensitive" ' +
-        'variable, so `vercel env pull` returns it empty). Re-run with an explicit ' +
-        '--db-env=<VARIABLE_NAME> if you intend to target a different, readable variable.');
+        'REQ5_APP_DATABASE_URL_MISSING - AUTH_DATABASE_URL is not set. Run ' +
+        '`vercel env pull .env.local` first, or export it in this shell.');
     }
-    throw new Error(`${name} is not set`);
+    throw new Error(name + ' is not set');
   }
   if (flag) {
-    console.log(`[warn] EXPLICIT OVERRIDE: using ${name} instead of NEON_DATABASE_URL`);
+    console.log('[warn] EXPLICIT OVERRIDE: using ' + name + ' instead of AUTH_DATABASE_URL');
   }
   return { url, which: name };
 }
@@ -210,7 +215,55 @@ async function candidates() {
   } finally { await c.end().catch(() => {}); }
 }
 
-const CMDS = { precheck, migrate, 'migrate-status': migrateStatus, providers, candidates };
+/**
+ * STEP 1 verification — proves WHICH database AUTH_DATABASE_URL reaches,
+ * read-only, without printing the connection string.
+ */
+async function verify() {
+  const { url, which } = appDbUrl();
+  console.log(`[target] ${which}`);
+  await withClient(url, async (c) => {
+    const id = await c.query('SELECT current_database() AS db, current_user AS usr, current_schema() AS sch');
+    console.log('  current_database :', id.rows[0].db);
+    console.log('  current_user     :', id.rows[0].usr);
+    console.log('  current_schema   :', id.rows[0].sch);
+
+    // Is this the Ledsone operational DB by mistake?
+    const led = await c.query(`
+      SELECT to_regclass('google_ads.product_performance') AS google_ads,
+             to_regclass('listings.shopify_listings')      AS listings`);
+    const isLedsone = !!(led.rows[0].google_ads || led.rows[0].listings);
+    console.log('  google_ads.product_performance :', led.rows[0].google_ads || 'absent');
+    console.log('  listings.shopify_listings      :', led.rows[0].listings || 'absent');
+    if (isLedsone) {
+      console.log('\n  *** REQ5_APP_TARGET_IS_LEDSONE ***');
+      console.log('  This is the Ledsone OPERATIONAL database. Req5 must NOT store workflow');
+      console.log('  history here. Stopping — do not apply the migration.');
+      throw new Error('REQ5_APP_TARGET_IS_LEDSONE');
+    }
+    console.log('  NOT the Ledsone operational DB :  confirmed');
+
+    const mine = await c.query(`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname='public' AND tablename LIKE 'thivajini_feed%' ORDER BY 1`);
+    console.log(`  thivajini_feed_* tables        : ${mine.rows.length}`);
+    mine.rows.forEach((r) => console.log('      -', r.tablename));
+
+    const known = await c.query(`
+      SELECT to_regclass('public.users') AS users_table,
+             to_regclass('public.feed_optimization_tracker') AS existing_tracker`);
+    console.log('  public.users                   :', known.rows[0].users_table || 'absent');
+    console.log("  Sajeepan's feed_optimization_tracker :", known.rows[0].existing_tracker || 'absent');
+
+    const others = await c.query(`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname='public' AND tablename NOT LIKE 'thivajini_feed%' ORDER BY 1 LIMIT 30`);
+    console.log('  other public tables            :',
+      others.rows.length ? others.rows.map((r) => r.tablename).join(', ') : '(none)');
+  });
+}
+
+const CMDS = { verify, precheck, migrate, 'migrate-status': migrateStatus, providers, candidates };
 
 (async () => {
   const cmd = process.argv[2];

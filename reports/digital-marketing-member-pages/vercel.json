@@ -5,6 +5,20 @@
       "destination": "/login.html"
     }
   ],
+  "crons": [
+    {
+      "path": "/api/members-api?member=sajeepan&type=cron-brief",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/members-api?member=sajeepan&type=lens-keyword-weekly-run",
+      "schedule": "0 1 * * 1"
+    },
+    {
+      "path": "/api/members-api?member=sajeepan&type=lens-keyword-weekly-continue",
+      "schedule": "0 4 * * *"
+    }
+  ],
   "functions": {
     "api/sales.js": {
       "maxDuration": 300
@@ -31,7 +45,7 @@
       "maxDuration": 15
     },
     "api/members-api.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "api/staff-id-performance.js": {
       "maxDuration": 60

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cycle Details — Feed Optimization</title>
+<link rel="stylesheet" href="feed.css">
+<script src="feed.js"></script>
+<script>FO.guard();</script>
+</head>
+<body>
+
+<header class="fo-top">
+  <div class="fo-top-in">
+    <div class="fo-brand">Feed Optimization<small>Ledsone France · Digital Marketing</small></div>
+    <nav class="fo-nav" aria-label="Feed Optimization">
+      <a href="./">Workspace</a>
+      <a href="monitoring.html">Monitoring</a>
+      <a href="history.html">History</a>
+    </nav>
+    <a class="fo-back" href="history.html">&larr; Back to history</a>
+  </div>
+</header>
+
+<main>
+  <h1 id="fo-h">Full Cycle Details</h1>
+  <p class="fo-sub">An audit record of exactly what happened, start to finish. This is not the operating screen.</p>
+
+  <div id="fo-msg" class="msg"></div>
+
+  <div class="fo-stats" id="fo-summary"></div>
+
+  <div class="fo-sec">Timeline</div>
+  <div class="fo-card"><ul class="fo-tl" id="fo-timeline"></ul></div>
+
+  <div class="fo-sec">Per-product detail</div>
+  <div id="fo-products"></div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  function kv(k, v) {
+    return '<div><span style="color:var(--muted);">' + FO.esc(k) + ':</span> ' + (v || '—') + '</div>';
+  }
+
+  function renderSummary(c) {
+    document.getElementById('fo-h').textContent = 'Cycle #' + c.cycle_no + ' — Full Details';
+    var k = c.counts || {};
+    var s = c.settings || {};
+    document.getElementById('fo-summary').innerHTML =
+      '<div class="fo-stat"><div class="v">' + FO.esc(c.status.replace(/_/g, ' ').toLowerCase()) + '</div>' +
+        '<div class="k">Status</div><div class="n">' + FO.esc(c.created_by) + '</div></div>' +
+      '<div class="fo-stat"><div class="v">' + (k.total || 0) + '</div><div class="k">Products</div>' +
+        '<div class="n">' + (k.generated || 0) + ' generated · ' + (k.check_required || 0) + ' check required</div></div>' +
+      '<div class="fo-stat"><div class="v">' + (c.llm_calls || 0) + '</div><div class="k">AI calls</div>' +
+        '<div class="n">' + (c.gemini_calls || 0) + ' Gemini fallback</div></div>' +
+      '<div class="fo-stat"><div class="v" style="font-size:15px;">' + FO.esc(FO.when(c.started_at)) + '</div>' +
+        '<div class="k">Started</div><div class="n">' +
+        (c.finished_at ? 'finished ' + FO.esc(FO.when(c.finished_at)) : 'not finished') + '</div></div>' +
+      '<div class="fo-stat"><div class="v" style="font-size:14px;">' +
+        FO.esc(FO.day(c.source_cutoffs && c.source_cutoffs.ads_perf)) + '</div>' +
+        '<div class="k">Ads data cutoff</div><div class="n">search terms to ' +
+        FO.esc(FO.day(c.source_cutoffs && c.source_cutoffs.pmax_terms)) + '</div></div>' +
+      '<div class="fo-stat"><div class="v" style="font-size:14px;">' +
+        (s.allow_draft_for_check ? 'Drafts allowed' : 'Gate enforced') + '</div>' +
+        '<div class="k">Feed Gate setting</div><div class="n">' +
+        (s.allow_draft_for_check
+          ? 'operator opted into drafts for Check Required products'
+          : 'no AI call spent on Check Required products') + '</div></div>';
+  }
+
+  function renderTimeline(events) {
+    document.getElementById('fo-timeline').innerHTML = events.length
+      ? events.map(function (e) {
+          var cls = e.level === 'ERROR' ? 'err' : e.level === 'WARN' ? 'warn' : '';
+          return '<li class="' + cls + '"><b>' + FO.esc(e.message) + '</b>' +
+            (e.item_id ? ' <span class="mono">' + FO.esc(e.item_id) + '</span>' : '') +
+            '<div class="when">' + FO.esc(FO.when(e.at)) + '</div>' +
+            (e.detail ? '<details><summary style="font-size:11.5px;color:var(--muted);cursor:pointer;">Detail</summary>' +
+              '<pre class="mono" style="white-space:pre-wrap;margin:4px 0 0;">' +
+              FO.esc(JSON.stringify(e.detail, null, 1)) + '</pre></details>' : '') +
+            '</li>';
+        }).join('')
+      : '<li>No events recorded.</li>';
+  }
+
+  function renderProducts(rows) {
+    var host = document.getElementById('fo-products');
+    if (!rows.length) { host.innerHTML = FO.empty('No products in this cycle.', ''); return; }
+    host.innerHTML = rows.map(function (r) {
+      var ev = r.data_quality || {};
+      var gaps = (ev.gaps || {});
+      var allGaps = [].concat(gaps.blocking || [], gaps.push_blocking || [], gaps.informational || []);
+      return '<details class="fo-card" style="margin-bottom:10px;">' +
+        '<summary style="cursor:pointer;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">' +
+          '<b style="flex:1;min-width:200px;">' + FO.esc(r.title || r.item_id) + '</b>' +
+          FO.gateBadge(r.feed_gate) + ' ' + FO.resultBadge(r.result_code, r.result_note) +
+        '</summary>' +
+        '<div style="margin-top:14px;font-size:12.5px;line-height:1.8;">' +
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:0 0 6px;">Evidence snapshot</h4>' +
+          kv('Item ID', '<span class="mono">' + FO.esc(r.item_id) + '</span>') +
+          kv('SKU', FO.esc(r.sku || '')) +
+          kv('Product type', FO.esc(r.product_type || '')) +
+          kv('Price', r.price_eur == null ? '' : '€' + FO.esc(r.price_eur)) +
+          kv('Converting terms used', r.terms_count || 0) +
+
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:14px 0 6px;">Feed Gate</h4>' +
+          kv('State', FO.gateBadge(r.feed_gate)) +
+          kv('Source', FO.esc((r.feed_gate && r.feed_gate.source) || 'UNVERIFIED')) +
+          ((r.feed_gate && r.feed_gate.reasons || []).length
+            ? '<ul style="margin:4px 0 0 18px;color:var(--muted);">' +
+              r.feed_gate.reasons.map(function (x) { return '<li>' + FO.esc(x) + '</li>'; }).join('') + '</ul>' : '') +
+
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:14px 0 6px;">Data gaps</h4>' +
+          (allGaps.length
+            ? '<ul style="margin:0 0 0 18px;">' + allGaps.map(function (g) {
+                return '<li>' + FO.esc(g.label) + (g.detail ? ' <span style="color:var(--muted);">— ' + FO.esc(g.detail) + '</span>' : '') + '</li>';
+              }).join('') + '</ul>'
+            : '<div style="color:var(--muted);">None recorded.</div>') +
+
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:14px 0 6px;">Paid converting search evidence</h4>' +
+          ((r.paid_terms || []).length
+            ? '<div class="fo-scroll"><table class="fo"><thead><tr><th>Search term</th><th>Category</th>' +
+              '<th>Clicks</th><th>Conversions</th><th>Data date</th><th>Mapping</th></tr></thead><tbody>' +
+              r.paid_terms.map(function (t) {
+                return '<tr><td><b>' + FO.esc(t.search_term) + '</b></td>' +
+                  '<td>' + FO.esc(t.category_label || 'Campaign-level only') + '</td>' +
+                  '<td>' + FO.num(t.clicks) + '</td>' +
+                  '<td>' + FO.num(t.conversions, 2) + '</td>' +
+                  '<td>' + FO.day(t.source_min_date) + ' → ' + FO.day(t.source_max_date) + '</td>' +
+                  '<td>' + FO.esc(t.mapping_level || '—') + '</td></tr>';
+              }).join('') + '</tbody></table></div>'
+            : '<div style="color:var(--muted);">No paid converting terms were recorded for this product.</div>') +
+
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:14px 0 6px;">Organic supporting evidence</h4>' +
+          '<div style="color:var(--muted);font-size:11.5px;margin-bottom:5px;">Google Search Console language. No conversion metric exists, so this is never a paid converting term.</div>' +
+          ((r.organic_terms || []).length
+            ? '<div class="fo-scroll"><table class="fo"><thead><tr><th>Query</th><th>Impressions</th><th>Clicks</th></tr></thead><tbody>' +
+              r.organic_terms.map(function (o) {
+                return '<tr><td>' + FO.esc(o.query) + '</td><td>' + FO.num(o.impressions) +
+                  '</td><td>' + FO.num(o.clicks) + '</td></tr>';
+              }).join('') + '</tbody></table></div>'
+            : '<div style="color:var(--muted);">Not included in this generation.</div>') +
+
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:14px 0 6px;">Prompt</h4>' +
+          (r.prompt
+            ? kv('Version', FO.esc(r.prompt.version || '—')) +
+              kv('Hash', '<code class="mono">' + FO.esc(r.prompt.hash || '—') + '</code>') +
+              kv('Template', FO.esc(r.prompt.template || '—')) +
+              kv('Evidence confidence', FO.esc(r.prompt.evidence_confidence || '—')) +
+              ((r.prompt.evidence_confidence_reasons || []).length
+                ? '<ul style="margin:4px 0 0 18px;color:var(--muted);">' +
+                  r.prompt.evidence_confidence_reasons.map(function (x) { return '<li>' + FO.esc(x) + '</li>'; }).join('') +
+                  '</ul>' : '')
+            : '<div style="color:var(--muted);">No prompt was built — no AI call was made for this product.</div>') +
+
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:14px 0 6px;">Provider attempts</h4>' +
+          ((r.attempts || []).length
+            ? '<div class="fo-scroll"><table class="fo"><thead><tr><th>#</th><th>Provider</th><th>Model</th>' +
+              '<th>Status</th><th>Reason</th><th>Tokens in/out</th><th>Latency</th></tr></thead><tbody>' +
+              r.attempts.map(function (a) {
+                return '<tr><td>' + FO.esc(a.seq) + '</td><td>' + FO.esc(a.provider_alias) + '</td>' +
+                  '<td>' + FO.esc(a.model || '—') + '</td>' +
+                  '<td>' + FO.badge(a.status === 'SUCCESS' ? 'green' : 'amber', a.status) + '</td>' +
+                  '<td>' + FO.esc(a.fallback_reason || '') + '</td>' +
+                  '<td>' + FO.num(a.input_tokens) + ' / ' + FO.num(a.output_tokens) + '</td>' +
+                  '<td>' + FO.num(a.latency_ms) + 'ms</td></tr>';
+              }).join('') + '</tbody></table></div>'
+            : '<div style="color:var(--muted);">No AI call was made for this product.</div>') +
+
+          '<h4 style="font-size:11.5px;text-transform:uppercase;color:#7a8598;margin:14px 0 6px;">Variants</h4>' +
+          ((r.variants || []).length
+            ? r.variants.map(function (v) {
+                return '<div style="margin-bottom:10px;"><b>Variant ' + FO.esc(v.variant_label) + '</b> ' +
+                  FO.badge(v.validation_status === 'PASS' ? 'green' : 'red', v.validation_status) +
+                  (r.selected_variant === v.variant_label ? ' ' + FO.badge('blue', 'Selected') : '') +
+                  '<div class="copy">' + FO.esc(v.title_fr) + '</div>' +
+                  '<div class="copy">' + FO.esc(v.description_fr) + '</div></div>';
+              }).join('')
+            : '<div style="color:var(--muted);">None.</div>') +
+
+          (r.generation_id ? '<div class="mono" style="margin-top:10px;">generation ' + FO.esc(r.generation_id) + '</div>' : '') +
+        '</div>' +
+      '</details>';
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var id = FO.qs('cycle');
+    if (!id) {
+      document.getElementById('fo-products').innerHTML =
+        FO.empty('No cycle selected.', 'Open a cycle from History.');
+      return;
+    }
+    document.getElementById('fo-products').innerHTML = FO.loading('Loading cycle detail…');
+    FO.get('req5-cycle-detail', '&cycle=' + encodeURIComponent(id)).then(function (d) {
+      if (!d.ok) {
+        document.getElementById('fo-products').innerHTML = FO.empty('Cycle could not be loaded', FO.fail(d));
+        return;
+      }
+      renderSummary(d.cycle);
+      renderTimeline(d.events || []);
+      renderProducts(d.rows || []);
+    }).catch(function (e) {
+      document.getElementById('fo-products').innerHTML = FO.empty('Cycle could not be loaded', FO.netFail(e));
+    });
+  });
+})();
+</script>
+</body>
+</html>

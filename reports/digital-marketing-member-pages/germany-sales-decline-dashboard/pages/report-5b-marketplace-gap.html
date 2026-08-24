@@ -784,12 +784,13 @@ async function loadLive(){
     var json=await res.json();
     if(!json.ok) throw new Error(json.error||'API error');
 
-    detectTransitions(json.rows);
     DATA=json.rows;
     ACC_SUMMARY=json.ebayAccounts||[];
     var s=json.summary;
     var d=json.refreshed_at?json.refreshed_at.slice(0,10):'live';
 
+    await syncLogFromDB();   // load DB log first so detectTransitions can diff correctly
+    detectTransitions(json.rows);
     updateDashboard(s,d);
     applyFilters();
     updateLogBadge();
@@ -812,11 +813,37 @@ function showTab(n){
   if(n===3) accRender();
 }
 
-// Listing Added Log
-var LOG_KEY='de_marketplace_added_log_v1';
+// Listing Added Log — DB-backed (shared across all browsers/sessions)
 var PREV_KEY='de_marketplace_prev_state_v1';
-function log_load(){try{return JSON.parse(localStorage.getItem(LOG_KEY)||'[]');}catch(e){return [];}}
-function log_save(e){localStorage.setItem(LOG_KEY,JSON.stringify(e));}
+var LOG_CACHE=[];  // in-memory mirror of DB; populated on load and updated on new transitions
+
+function log_load(){return LOG_CACHE;}
+
+async function syncLogFromDB(){
+  try{
+    var res=await fetch('/api/intel-api?service=germany&type=listing-log-load',{cache:'no-store'});
+    var j=await res.json();
+    if(j.ok&&j.entries) LOG_CACHE=j.entries;
+  }catch(e){}
+  updateLogBadge();
+  log_render();
+}
+
+async function log_db_save(sku,channel,addedAt){
+  try{
+    await fetch('/api/intel-api?service=germany&type=listing-log-save',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sku:sku,channel:channel,added_at:addedAt})
+    });
+  }catch(e){}
+}
+
+async function log_db_remove(sku,channel){
+  // Remove from in-memory cache immediately; DB has UNIQUE(sku,channel) so a re-add is clean
+  // There is no delete endpoint — we mark removal by filtering LOG_CACHE only (cosmetic removal)
+  LOG_CACHE=LOG_CACHE.filter(function(e){return !(e.sku===sku&&e.channel===channel);});
+}
 
 // eBay account-level transition log
 var ACC_LOG_KEY='de_ebay_acc_added_log_v1';
@@ -834,7 +861,6 @@ function detectTransitions(newRows){
     localStorage.setItem(PREV_KEY,JSON.stringify(newMap));
   } else {
     var entries=log_load();
-    var changed=false;
     var channels=[{key:'a',label:'Amazon DE'},{key:'e',label:'eBay DE'},{key:'sh',label:'Shopify DE'}];
     newRows.forEach(function(r){
       var prev=prevMap[r.s];
@@ -842,13 +868,15 @@ function detectTransitions(newRows){
       channels.forEach(function(ch){
         if(prev[ch.key]===0&&r[ch.key]===1){
           if(!entries.some(function(e){return e.sku===r.s&&e.channel===ch.label;})){
-            entries.unshift({sku:r.s,channel:ch.label,addedAt:new Date().toISOString(),auto:true});
-            changed=true;
+            var at=new Date().toISOString();
+            LOG_CACHE.unshift({sku:r.s,channel:ch.label,addedAt:at,auto:true});
+            log_db_save(r.s,ch.label,at);  // persist to DB (shared across browsers)
           }
         }
       });
     });
-    if(changed){log_save(entries);updateLogBadge();log_render();}
+    updateLogBadge();
+    log_render();
     localStorage.setItem(PREV_KEY,JSON.stringify(newMap));
   }
 
@@ -885,14 +913,14 @@ function detectTransitions(newRows){
 }
 
 function log_remove(sku,channel){
-  log_save(log_load().filter(function(e){return !(e.sku===sku&&e.channel===channel);}));
+  log_db_remove(sku,channel);
   updateLogBadge();
   log_render();
 }
 
 function log_clearAll(){
   if(!confirm('Clear all log entries?')) return;
-  localStorage.removeItem(LOG_KEY);
+  LOG_CACHE=[];
   updateLogBadge();
   log_render();
 }
