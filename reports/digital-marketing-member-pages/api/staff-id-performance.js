@@ -68,6 +68,19 @@ module.exports = async function handler(req, res) {
 
   const ids = STAFF_IDS[ids_param];
 
+  // Mahima (added 2026-08-24) is the only DE-store (ledsone.de) staff key
+  // here — everyone else is UK. DE listings' SKUs carry a store suffix
+  // (e.g. "CL2TGD-IDE") that inventory.products' base SKU doesn't have
+  // ("CL2TGD"), so the stock join must strip it; her stock also lives
+  // under warehouse_location='Germany', not 'UK'. Confirmed via direct DB
+  // query before implementing (order/listing data matched fine as-is —
+  // only the stock join needed this DE-specific handling).
+  const isDeStaff = ids_param === 'mahima';
+  const stockWarehouse = isDeStaff ? 'Germany' : 'UK';
+  const stockSkuExpr = isDeStaff
+    ? `regexp_replace(COALESCE(child.mapped_sku, child.sku), '-[A-Za-z]+$', '')`
+    : `COALESCE(child.mapped_sku, child.sku)`;
+
   // Optional date range (ISO date strings, e.g. 2026-04-10)
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   const fromDate = req.query.from && dateRegex.test(req.query.from) ? req.query.from : null;
@@ -122,10 +135,10 @@ module.exports = async function handler(req, res) {
       FROM listings.shopify_listings sl
       JOIN listings.shopify_listings_parent_child_mapping m ON m.parent_id = sl.id
       JOIN listings.shopify_listings child ON child.id = m.child_id
-      JOIN inventory.products p ON p.sku = COALESCE(child.mapped_sku, child.sku)
+      JOIN inventory.products p ON p.sku = ${stockSkuExpr}
       JOIN inventory.local_inventory_current_stock_location_wise l ON l.inventory_id = p.id
       WHERE sl.item_id = ANY($1::text[]) AND sl.is_parent = 1
-        AND l.warehouse_location = 'UK'
+        AND l.warehouse_location = '${stockWarehouse}'
       GROUP BY sl.item_id, sl.shopify_handle
     `, [ids]);
 
