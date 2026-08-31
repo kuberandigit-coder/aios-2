@@ -1,0 +1,9 @@
+Requirement,Run 1,Run 2,Average,Status
+Req 1 - Product Status Labels,16.97s,14.49s,~15.7s,Very slow
+Req 2 - Search Terms Labels,7.36s,7.39s,~7.4s,Slow
+Req 3 - 3-Period Comparison,5.02s,3.11s,~4.1s,Moderate
+Req 4 - Item ID -> Parent Mapping,4.05s,2.72s,~3.4s,Moderate
+Req 5 - Cross-Campaign Attribution,3.22s,1.91s,~2.6s,OK
+Req 6 - Image Update Tracker,11.86s,11.95s,~11.9s,Very slow
+Req 7 - SKU & Price Reconciliation,1.39s,1.46s,~1.4s,Good
+Req 8 - Order Conversion Split,18.35s,12.10s,~15.2s,Very slow

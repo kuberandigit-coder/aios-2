@@ -1,0 +1,40 @@
+Staff,Page,Time,Status
+Hetheesha,Req 5 - Internal Link Audit,143.97s,Critical - worst in the app
+Hetheesha,Req 4 - High-Traffic Stock Alert,68.02s,Critical
+Hetheesha,Req 3 - Duplicate Page Analysis,46.50s,Critical
+Dilaksi,Req 1 - GA4 SEO Performance,25.86s,Very slow
+Kamsi,Req 3 - GA4 SEO Performance,25.43s,Very slow
+Mahima,Req 1 - Product Performance Report,20.09s,Very slow
+Hetheesha,Req 1 - Product SEO Report,18.51s,Very slow
+Kamsi,Req 2 - Low CTR Pages,15.86s,Very slow
+Mahima,Req 5 - Product ID Coverage,15.80s,Very slow
+Thasitha,Req 2 - PMax Zero-Performance,15.36s,Very slow
+Thasitha,Req 7 - Amazon DE Search Terms,13.35s,Very slow
+Thivajini,Req 1 - Conversion Tracking,12.74s,Slow
+Mahima,Search Terms,7.08s,Slow
+Sukirtha,Req 4 - GA4 SEO Performance,6.31s,Slow
+Thasitha,Req 6 - Search Terms Labels,5.20s,Slow
+Sonya,Product Performance,5.40s,Slow
+Sonya,Trend & Segment Dashboard,4.78s,Moderate
+Sukirtha,Req 1 - Low CTR Blog/Collections,4.88s,Moderate
+Sonya,Opportunity Tab,4.14s,Moderate
+Sajeepan,Req 3 - Product Action Dashboard,3.82s,Moderate
+Hetheesha,Req 2 - Collection Performance,3.83s,Moderate
+Thivajini,Req 3 - Stock-Spend Tracker,3.80s,Moderate
+Thivajini,Req 4 - Order Data,3.78s,Moderate
+Sajeepan,Req 2 - Revenue Protection,3.46s,Moderate
+Sonya,Stop Waste Spend,2.84s,Moderate
+Sonya,Daily Orders,2.78s,Moderate
+Sajeepan,Req 1 - Product Intelligence,2.76s,Moderate
+Sajeepan,Req 4 - Feed Optimization,2.70s,Moderate
+Thivajini,Req 2 - Product-Level Performance,2.85s,Moderate
+Theekshy,Req 5 - Product Optimisation,2.56s,OK
+Theekshy,Req 1 - Campaign Optimisation,2.01s,OK
+Theekshy,Req 3 - Feed Optimisation,2.06s,OK
+Theekshy,Req 4 - Stock Status Snapshot,1.87s,OK
+Theekshy,Req 2 - Search Term Optimisation,1.23s,OK
+Thasitha,Req 1 - Campaign Performance,1.16s,Good
+Sonya,Campaign Performance,0.96s,Good
+Dilaksi,Req 3 - Collections Removal Audit,0.38s,Good
+Thasitha,Req 3 - Item ID Cross-Campaign,0.35s,Good
+"Kamsi Req1/4/5/6; Mahima Req2/5b; Dilaksi Req2; Sukirtha Req2/3/5/6; Thasitha Req4/5",-,~0.2s each,Already fast
