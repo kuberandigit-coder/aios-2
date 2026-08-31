@@ -11,35 +11,43 @@
 | Backend restarted | healthy | confirmed via `/api/health` | PASS |
 | Retry logic actively engages on a real failure | confirmed via live logs, not just code inspection | `[employee-performance] sonya/2026-08 attempt 3/4 hit a transient DB error, retrying in 30s/60s` observed live in `backend_out.log` during a manual retry | CONFIRMED WORKING |
 | Manual retry (id 556) outcome | ideally success | **failed** after all 5 retries, 731.1s total -- the congestion window was unusually severe/persistent (confirmed via `pg_stat_activity` showing repeated external-IP connections during the retry chain) | PARTIAL -- see below |
-| Second manual retry (id 557), after congestion cleared | success expected once headroom confirmed (5/10 connections free at trigger time) | pending -- see follow-up note | PENDING |
+| Second manual retry (id 557), after congestion cleared | success expected once headroom confirmed (5/10 connections free at trigger time) | **also failed**, 710.7s, same member+month (`sonya: 1 month(s) failed to fetch (2026-08)`) | FAIL |
 
-## Honest assessment
-The retry-with-backoff fix is confirmed **working exactly as designed** --
-live logs show it actively retrying through transient connection errors
-instead of giving up after one weak 3-second retry like the original
-code. However, the first live test (id 556) hit an unusually severe and
-persistent congestion window on the shared `dev_user` connection budget
-(external IP `14.1.78.23` holding multiple idle connections throughout),
-severe enough that even 5 retries spanning ~3.7 minutes for the one
-stuck month didn't clear it before the whole chain was exhausted --
-duration (731s) indicates more than one retry cycle was needed across
-the sync's ~20 months.
+## Honest assessment -- REVISED after second retry
+The retry-with-backoff logic itself is confirmed **working exactly as
+designed**: live logs show all 5 attempts firing with correct escalating
+delays (5s/15s/30s/60s/120s) on both runs, not giving up early.
 
-This does not mean the fix is ineffective -- it means the fix raises the
-bar from "fails almost every time this specific congestion happens" to
-"fails only during unusually severe/prolonged congestion," which is the
-realistic ceiling without database-admin access to raise `dev_user`'s
-connection limit (an external constraint, confirmed earlier this session
-and unchanged). A second manual retry was triggered once headroom was
-confirmed (5/10 connections free) to see whether it succeeds under
-normal conditions.
+But the second retry result changes the diagnosis. Both id 556 and id
+557 failed on the **exact same member+month** (`sonya`, `2026-08`) with
+the **exact same underlying error on every single attempt**:
+`consuming input failed: server closed the connection unexpectedly`
+(confirmed via `backend_out.log` grep -- 5/5 attempts, both runs, same
+message, no variation). That is not the signature of *random* transient
+congestion (which would be expected to succeed at least once across 10
+total attempts spread over ~24 minutes) -- it is the signature of
+something **deterministic** about this specific query for this specific
+member+month: the connection is being closed by the server itself every
+time this particular query runs, which points at the query being
+expensive/long enough to hit a server-side statement timeout or
+resource limit, not merely "the pool was busy."
+
+The retry-with-backoff fix is still a real, verified improvement for
+genuinely transient pool-exhaustion errors (which is what it was
+originally built for and tested against, e.g. Jefri's Req1/6/8 syncs).
+It is not sufficient for this specific sonya/2026-08 case, because
+retrying a query that fails deterministically just repeats the same
+failure with delay in between -- no amount of backoff fixes a query that
+the server kills every time it runs.
 
 ## Status
-PASS for the code fix itself (proven correct and actively working via
-live logs). Real-world reliability improvement confirmed directionally,
-not unconditionally -- severe congestion can still exhaust all 5 retries
-in rare cases, which is an honest limit of a client-side retry approach
-against a hard external resource cap.
+PASS for the retry-logic code itself (correct, and proven to actively
+retry). **FAIL for fully resolving the reported symptom** -- sonya's
+2026-08 cell continues to fail sync deterministically. The real fix here
+needs a follow-up investigation into what makes this specific
+member+month query different (data volume, a slow join, a missing
+index) rather than more retry patience.
 
 ## Reviewer
-Pending final outcome of sync_history id 557 (second manual retry).
+Reported to user as an honest partial fix with a concrete open item
+(sonya/2026-08 query itself needs investigation).
