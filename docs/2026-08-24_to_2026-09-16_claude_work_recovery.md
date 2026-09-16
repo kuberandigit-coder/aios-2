@@ -22,6 +22,15 @@ Postgres app). No Shopify theme, GA4/GSC/SEMrush, or Google Ads work occurred in
 this window — that work is dated earlier (see `docs/2026-07-*` and `docs/2026-08-05`
 through `2026-08-24` files, already documented pre-existing).
 
+## Related: Earlier Gap Check (2026-07-01 → 2026-08-24)
+
+Same cross-folder method applied to the daily-log gaps before this window's
+start: [docs/2026-07-01_to_2026-08-24_daily-log-gap-index.md](2026-07-01_to_2026-08-24_daily-log-gap-index.md).
+Result: almost every gap date already has a full evidence/validation/handover
+trail under a per-task filename (just no `docs/*_daily-work-log.md` for that
+date) — one real undocumented gap found (2026-08-20 Thivajini feed migrations,
+code with no doc trail).
+
 ## Day-by-Day (git-evidenced)
 
 | Date | Topic | Closure file |
