@@ -1,10 +1,10 @@
 # Capability — Automated SEO Metadata Audit and Traffic-Based Prioritization
 
-**Date:** 2026-09-16
+**Date:** 2026-09-16 (created), **updated 2026-09-16 same day** (relocation + keyword-generation expansion)
 **Owner:** Kuberan
-**Staff/Requirement:** Dilaksi Requirement 07 (Meta Title & Description Audit)
+**Staff/Requirement:** Originally built as Dilaksi Requirement 07; relocated same day to Development Tasks (internal dev tooling, not a Dilaksi-owned feature) — see the relocation closure record
 **Store/Project:** dm-dashboard / ledsone.co.uk (UK)
-**Status:** Completed (implementation), pending push/deploy — see closure record
+**Status:** Completed (implementation), merged to `main` — see closure records
 
 ## Capability
 Given a live Shopify catalog and a GA4 property, automatically produce a
@@ -62,16 +62,42 @@ only, by design).
   pattern elsewhere in this session's work, since that pattern belongs
   to a different, explicitly-scoped feature).
 
+## Expansion (same day, after relocation) — Manual-Keyword AI Generation
+Per explicit instruction, this audit-only capability was extended with a
+SEPARATE, clearly-scoped generation step for the Missing Metadata tab
+specifically (the original audit/backlog logic above is completely
+unchanged and still never auto-generates or auto-publishes anything):
+- User types/pastes one or more keywords (gathered manually, or via an
+  agent using the Semrush MCP connector in a chat session — see
+  source-map; this account's Semrush Standard API is Business-tier-only,
+  confirmed live with a 403 Forbidden), clicks Generate.
+- Backend always generates BOTH a title and description together (per
+  explicit instruction — safe since nothing is written to Shopify) via
+  the local LLM (self-hosted Qwen3-Next) with a Gemini fallback, using
+  two fixed prompt templates. Generated titles are normalized to always
+  end `" | LEDSone"` regardless of what separator the model used.
+- Every successful generation is logged (`meta_audit_generation_log`:
+  who, what, when, which keywords) with a delete action, and the
+  keywords used are auto-saved for that product
+  (`meta_audit_keyword_candidates`) so they're never re-typed.
+- Real bugs found and fixed during this expansion: a character-count
+  inflation bug from one model's response formatting, and a live
+  Generate-button-does-nothing bug (found via browser DevTools network
+  tab) — both documented in the evidence record.
+
 ## Files / Components
-- `backend/app/dilaksi_meta_audit.py`
-- `frontend/src/dilaksi/pages/MetaTitleDescriptionAudit.jsx`
+- `backend/app/dev_tasks/meta_audit/{router.py,schema.py,generate.py}` (moved + expanded from `backend/app/dilaksi_meta_audit.py`)
+- `frontend/src/admin/pages/dev-tasks/MetaTitleDescriptionAudit.jsx` (moved from `frontend/src/dilaksi/pages/`)
 
 ## Data Sources / Tools
 Shopify Admin GraphQL API (`ledsone_uk`), GA4 Data API (property
-`408110563`, organic search only), this app's own Postgres.
+`408110563`, organic search only), this app's own Postgres, self-hosted
+local LLM + Gemini fallback (generation step only), Semrush MCP
+connector (interactive/chat-session-only, keyword research for the
+generation step only — never the audit itself).
 
 ## Validation
-See `validation/dilaksi/2026-09-16_dilaksi_req07_meta_title_description_audit_validation.md` — live-verified against real data (5,533 pages).
+Original audit: `validation/dilaksi/2026-09-16_dilaksi_req07_meta_title_description_audit_validation.md` — live-verified against real data (5,533 pages). Relocation + generation expansion: `validation/dm-dashboard/2026-09-16_alt-text-and-meta-audit-continued_validation.md`.
 
 ## Reuse
 This exact pipeline shape (whole-catalog lightweight Shopify metadata
@@ -85,7 +111,7 @@ data/schema-markup audit. Reuse the traffic-threshold and priority-
 ladder pattern rather than re-deriving one per feature.
 
 ## Evidence
-`evidence/dilaksi/2026-09-16_dilaksi_req07_meta_title_description_audit_evidence.md`
+Original: `evidence/dilaksi/2026-09-16_dilaksi_req07_meta_title_description_audit_evidence.md`. Relocation + expansion: `evidence/dm-dashboard/2026-09-16_alt-text-and-meta-audit-continued_evidence.md`.
 
 ## Limitations
 The priority ladder and traffic threshold are specific business rules
