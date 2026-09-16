@@ -58,5 +58,42 @@
 - Docs: `evidence/validation/closure/muguntha/2026-08-24_target-achievement-removed-status-redefined.md`
 - Status: PASS
 
+### Task: dm-dashboard — project start (separate project, new workstream)
+- First day of the dm-dashboard rebuild (React + Postgres app replacing the old static-HTML system). Removed an earlier Blog Tool prototype from nav, clarified Overview page.
+- Kamsi backend ported live: 3 Shopify-backed requirement pages (Slow-Moving Products, Missing Meta Title/Desc, Duplicate & Price Check) verified against real data; Req2-4 flagged as not-portable yet (missing GSC/GA4 credentials, or duplicate of Dilaksi's page).
+- Thasitha Req4/Req5 reconstructed live (replacing frozen static arrays with genuine queries); deviations from original brief documented and flagged for confirmation.
+- Admin overview: staff cards clickable (admin-only); Users page: admin can reset any user's password.
+- First-ever GitHub push for this project (`websitetecteam-arch/dm-dashboard` created, initialized, pushed). Dev tunnel set up for remote access during development.
+- Drafted MD approval request for server + Postgres purchase (employee performance tracking, future-proofing).
+- Files: `backend/app/kamsi.py`, `THASITHA_PORT_NOTES.md`, dm-dashboard repo init.
+- Docs: `closure/dm-dashboard/2026-08-24_dm-dashboard-project-start.md`
+- Status: PASS (MD approval + Thasitha Amazon-inclusion deviation left open)
+
+### Task: Mahima product-ID list update (660 -> 678 IDs)
+- Updated `MAHIMA_EXCLUDED_PRODUCT_IDS` in `api/sales.js` and `api/salesde25.js` from Kuberan's supplied latest list (18 additions, 0 removals, diffed programmatically). Fed directly into building Mahima's new Performance tab the same day.
+- Docs: `evidence/validation/closure/muguntha/2026-08-24_mahima-product-id-list-update.md`
+- Status: PASS
+
+### Task: Mahima — new Performance tab
+- Built on `muguntha.html` (DE store), reusing her established `mahima-total` Sales endpoint and real Google Ads spend query; static-snapshot fast-load pattern applied from the start (learned from the Sukirtha same-day-fix lesson earlier that day).
+- All UK staff (Sonya/Sajeepan/Kamsi/Dilaksi) and all DE staff (Jefri/Sukirtha/Mahima/Thasitha) now have Performance tabs.
+- Docs: `evidence/validation/closure/muguntha/2026-08-24_mahima-performance-tab-added.md`
+- Status: PASS, verified live (1.07s load)
+
+### Task: Mahima — Staff ID Performance tab
+- Added Mahima to `staff-id-performance.html` (UK-titled page, her list is DE) — investigated rather than assumed: sales/titles matched fine (shared multi-store warehouse), stock needed DE-specific handling (SKU suffix stripping, Germany warehouse), verified against DB before shipping. Existing UK staff queries untouched.
+- Docs: `evidence/validation/closure/muguntha/2026-08-24_mahima-staff-id-performance-tab.md`
+- Status: PASS
+
+### Task: Mahima Req5b — product-scope reconciliation
+- Corrected earlier wrong assumption that Req5b was UK-scoped (it was already correctly DE-scoped). Found and quantified divergence between Req5b's dynamic campaign-history product derivation (1,313 IDs) and her curated 678-ID list; made the curated list the single source of truth, removed dead DB-query code. All three Mahima features (Req5b, Performance tab, Staff ID Performance) now consistent on one product universe.
+- Docs: `evidence/validation/closure/mahima/2026-08-24_req5b-product-scope-reconciliation.md`
+- Status: PASS, deployed and verified live
+
+### Gap found (this recovery pass): Sajeepan lens-keywords DB migrations — no doc trail
+- Found in code only, not previously documented: `reports/digital-marketing-member-pages/db/migrations/2026-08-24_006_sajeepan_lens_keywords.sql`, `_007_..._full.sql`, `_008_..._automation.sql` — schema for "Automation Keyword Finder Phase 1" (REQ-DM-2026-08-SAJE01): same-SKU -> Google Lens visual search -> competitor result capture -> review, run as a Postgres-backed state machine (same pattern as thivajini_feed_cycle / mahima_stpm_run) so a Vercel Function can process one product per invocation without losing state or burning SerpAPI credits on retry.
+- No evidence/validation/closure file exists anywhere for this feature. Not fabricating one — flagging per the no-guess rule. If the user confirms scope/outcome, a proper evidence/validation/closure entry can be written.
+- Status: NOT VERIFIABLE beyond the SQL itself (schema exists; live behavior/outcome unconfirmed)
+
 ### Meta: AIOS documentation catch-up
 - Last daily-work-log entry before today was 2026-08-19 — a 5-day documentation gap covering all of the above plus the 2026-08-21 refund fix. This entry and `2026-08-21_daily-work-log.md`, along with the individual evidence/validation/closure files referenced above, close that gap.
