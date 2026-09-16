@@ -55,8 +55,22 @@ code with no doc trail).
 | 2026-09-07 | Mahima 2026 cache backfill | [closure/dm-dashboard/2026-09-07_dm-dashboard-mahima-2026-cache-backfill.md](../closure/dm-dashboard/2026-09-07_dm-dashboard-mahima-2026-cache-backfill.md) |
 | 2026-09-07 | Piranav branch page fixes | [closure/dm-dashboard/2026-09-07_dm-dashboard-piranav-branch-page-fixes.md](../closure/dm-dashboard/2026-09-07_dm-dashboard-piranav-branch-page-fixes.md) |
 | 2026-09-07 | Open items carried forward | [handover/dm-dashboard/2026-09-07_dm-dashboard-open-items.md](../handover/dm-dashboard/2026-09-07_dm-dashboard-open-items.md) |
-| 2026-09-08 to 2026-09-15 | **No git commits exist in this window** (verified via `git log`) | [closure/dm-dashboard/2026-09-08_to_2026-09-15_no-git-activity.md](../closure/dm-dashboard/2026-09-08_to_2026-09-15_no-git-activity.md) |
-| 2026-09-16 (today) | No new commits/uncommitted changes as of this recovery pass | this file |
+| 2026-09-08 | **CORRECTED** (see note below) — 16 real commits: Thasitha GMC fixes, Blog Tool restore, Jefri Non-Moving | [closure/dm-dashboard/2026-09-08_thasitha-blog-tool-jefri-nonmoving.md](../closure/dm-dashboard/2026-09-08_thasitha-blog-tool-jefri-nonmoving.md) |
+| 2026-09-09 | Product Ownership DB cutover begins (Mahima), SKU Audit + DM Campaign (new admin pages) | [closure/dm-dashboard/2026-09-09_product-ownership-sku-audit-dm-campaign.md](../closure/dm-dashboard/2026-09-09_product-ownership-sku-audit-dm-campaign.md) |
+| 2026-09-10 | Competitor Analysis + Competitor Lens Search (new); API Health Monitor removed | [closure/dm-dashboard/2026-09-10_competitor-lens-search-and-analysis.md](../closure/dm-dashboard/2026-09-10_competitor-lens-search-and-analysis.md) |
+| 2026-09-11 | Content Gap Analysis (new, ~12 commits); Product Ownership cutover finished for all 6 staff | [closure/dm-dashboard/2026-09-11_content-gap-analysis-and-product-ownership-cutover.md](../closure/dm-dashboard/2026-09-11_content-gap-analysis-and-product-ownership-cutover.md) |
+| 2026-09-12 to 13 | Genuinely no commits (weekend) — confirmed via real `git log` | — |
+| 2026-09-14 | AI/GEO Visibility Gap Analysis (new, ~14 commits, 2 same-day build-then-revert cycles) | [closure/dm-dashboard/2026-09-14_ai-geo-visibility-gap-analysis.md](../closure/dm-dashboard/2026-09-14_ai-geo-visibility-gap-analysis.md) |
+| 2026-09-15 | Alt Text Keyword Finder (new, ~25 commits, busiest day found); Dev Task Log (new); 2 features removed; 1 production hotfix | [closure/dm-dashboard/2026-09-15_alt-text-keyword-finder-and-dev-task-log.md](../closure/dm-dashboard/2026-09-15_alt-text-keyword-finder-and-dev-task-log.md) |
+| 2026-09-16 (today) | Alt Text controls continued; Sonya AI brief fixes (from `piranv-work` branch, merged via Dev Tools) | [closure/dm-dashboard/2026-09-16_alt-text-controls-and-sonya-ai-fix.md](../closure/dm-dashboard/2026-09-16_alt-text-controls-and-sonya-ai-fix.md) |
+
+**Correction note (2026-09-16):** rows above for 09-08 through 09-16 replace an
+earlier entry that wrongly concluded "no git activity" — that check ran
+`git log` against this AIOS repo instead of the actual `dm-dashboard`
+application repo (`websitetecteam-arch/dm-dashboard`, `dev-work` branch). Once
+the real repo was cloned, 135 commits were found across this window. The
+original wrong file is kept, not deleted, with the correction recorded inside
+it: [closure/dm-dashboard/2026-09-08_to_2026-09-15_no-git-activity.md](../closure/dm-dashboard/2026-09-08_to_2026-09-15_no-git-activity.md).
 
 ## Evidence
 
@@ -98,19 +112,43 @@ code with no doc trail).
 
 ## Pending
 
-- Items listed in [handover/dm-dashboard/2026-09-07_dm-dashboard-open-items.md](../handover/dm-dashboard/2026-09-07_dm-dashboard-open-items.md) remain open as of the last commit (2026-09-07); no work occurred against them 2026-09-08 through 2026-09-16.
+- Items listed in [handover/dm-dashboard/2026-09-07_dm-dashboard-open-items.md](../handover/dm-dashboard/2026-09-07_dm-dashboard-open-items.md) as of 2026-09-07 — superseded by continued active development through 09-16 (see corrected rows above); status of each individual open item not re-checked in this pass.
 
-## Data Sources / Connectors (this window)
+## More Completed (2026-09-08 → 2026-09-16, added after the correction)
 
-PostgreSQL (dm-dashboard app DB), GitHub API (EOD report source), Gemini API (Jefri AI Assistant). No Shopify/GA4/SEMrush/GSC/Google Ads work occurred in this window.
+- Product Ownership: database-backed product-ID lists replacing hardcoded arrays, cut over for all 6 staff (Mahima first, then Kamsi + rest as a batch).
+- SKU Audit, DM Campaign (new admin-only pages).
+- E27 Competitor Analysis (ported from a standalone prototype).
+- Content Gap Analysis (new dev task, SerpAPI-backed).
+- AI/GEO Visibility Gap Analysis (new dev task, SearchAPI.io-backed, multi-key quota switching).
+- Alt Text Keyword Finder (new major feature — AI-generated + local-LLM alt text, Shopify write-back on its own scoped app, audit log, daily per-user limits).
+- Dev Task Log (new manual tracking page).
+- Sonya AI Daily Brief bug fixes (from `piranv-work` branch).
+
+## Built-then-removed (2026-09-08 → 2026-09-16)
+
+- Competitor Lens Search — built 09-10, removed entirely 09-15.
+- "My Dev Tasks" (git-history-driven tracker) — built 09-08, removed 09-15.
+- API Health Monitor — built 09-07 (documented in the original 18-entry set), removed 09-10.
+
+This continues a pattern already present in the original 08-24→09-07 window
+(Requirement Usage tracker, deploy button) — rapid build-and-revert under
+direct user feedback appears to be normal working style on this project, not
+an anomaly.
+
+## Data Sources / Connectors (full window, corrected)
+
+PostgreSQL (dm-dashboard app DB), GitHub API (EOD report source, and the git-history-driven My Dev Tasks feature), Gemini API (Jefri AI Assistant, Sonya AI brief, alt-text generation fallback), a self-hosted local LLM (alt-text generation), SerpAPI (Content Gap Analysis, Competitor Lens Search), SearchAPI.io (AI/GEO Visibility, multi-key), Shopify Admin API (alt-text write-back, on a narrowly-scoped app).
 
 ## Known Gaps
 
 - No dedicated evidence file exists for most 2026-08-24 → 2026-09-06 closure entries (only closure-level docs) — flagged as Manual Verification Required in the validation summary, not silently assumed PASS.
-- 2026-09-08 → 2026-09-16: NOT VERIFIABLE beyond "no git activity" — if manual/local work happened without a commit, it is not recoverable from this repo.
+- 2026-09-08 → 2026-09-16 closure files are commit-log-derived (VERIFIED existence, SUPPORTED intent) — no live-test evidence or session transcript recovered for this window, since it comes from `git log` alone, not a Claude session record.
+- The `piranv-work` branch (a different contributor, Piranav) was only spot-checked for 2026-09-16 merges — its full history has not been reviewed in this pass.
 
 ## Final Status
 
-GREEN — the window is fully indexed; every dated file existing in the repo is
-reachable from this page, and the one gap (no-commit period) is recorded rather
-than guessed at.
+AMBER→GREEN — the window is now fully indexed using the correct source repo.
+The original recovery pass had a real error (wrong repo checked for
+2026-09-08→15) which is now corrected in place, not silently overwritten. Every
+dated closure file in the repo is reachable from this page.
