@@ -90,10 +90,11 @@
 - Docs: `evidence/validation/closure/mahima/2026-08-24_req5b-product-scope-reconciliation.md`
 - Status: PASS, deployed and verified live
 
-### Gap found (this recovery pass): Sajeepan lens-keywords DB migrations — no doc trail
-- Found in code only, not previously documented: `reports/digital-marketing-member-pages/db/migrations/2026-08-24_006_sajeepan_lens_keywords.sql`, `_007_..._full.sql`, `_008_..._automation.sql` — schema for "Automation Keyword Finder Phase 1" (REQ-DM-2026-08-SAJE01): same-SKU -> Google Lens visual search -> competitor result capture -> review, run as a Postgres-backed state machine (same pattern as thivajini_feed_cycle / mahima_stpm_run) so a Vercel Function can process one product per invocation without losing state or burning SerpAPI credits on retry.
-- Evidence written from the schema itself (SUPPORTED, not VERIFIED — no session record): `evidence/sajeepan/2026-08-24_lens-keywords-automation-schema.md`. No validation/closure written yet — outcome/deployment status unconfirmed.
-- Status: NOT VERIFIABLE beyond the SQL itself (schema exists; live behavior/outcome unconfirmed)
+### Gap found (this recovery pass): Sajeepan Automation Keyword Finder (Requirement 5) — no doc trail
+- Found in code, not previously documented anywhere in this AIOS: full feature (3 DB migrations, 20-module `lib/lens-keywords/` application layer, dedicated UI wired as Sajeepan Requirement 5 on `pages/sajeepan.html`, migration runner, 7-file test suite) — REQ-DM-2026-08-SAJE01, same-SKU -> Google Lens visual search -> human-reviewed competitor capture -> keyword/attribute/Ads-output pipeline, with an optional fully automatic weekly 50-product batch mode.
+- `node --test` run during this recovery: 73/77 pass; 4 fail only due to a missing `pg` dependency in this worktree (no `node_modules` installed) — not a code defect.
+- Full doc set now written: `evidence/`, `validation/`, `closure/`, `handover/`, `prompts/` (reconstructed, labeled), `reports/`, `source-map/`, `capability/`, `duplicate-risk/` — all under `sajeepan/2026-08-24_lens-keywords-automation-*` (duplicate-risk at repo root, source-map/capability at repo root per existing convention).
+- Status: PARTIAL — code/wiring/DB-independent tests VERIFIED; live production usage and original prompt NOT VERIFIABLE (no session record, no DB access from this worktree). Not marked full PASS.
 
 ### Meta: AIOS documentation catch-up
 - Last daily-work-log entry before today was 2026-08-19 — a 5-day documentation gap covering all of the above plus the 2026-08-21 refund fix. This entry and `2026-08-21_daily-work-log.md`, along with the individual evidence/validation/closure files referenced above, close that gap.

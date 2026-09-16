@@ -2,7 +2,40 @@
 Document the Sajeepan "Automation Keyword Finder" (REQ-DM-2026-08-SAJE01) database schema found in code but missing any evidence/validation/closure trail, discovered during AIOS historical recovery.
 
 ## Certainty
-**SUPPORTED, not VERIFIED.** No session/conversation record for this task exists in the AIOS structure — this file is reconstructed entirely from reading the migration SQL and its inline comments. It documents what the schema says was built, not confirmed live behavior, outcomes, or user sign-off. Labeled per the recovery task's own rule: never convert UNKNOWN/SUPPORTED into VERIFIED without cross-checkable evidence.
+**UPDATED after deeper cross-check (see below): VERIFIED that a full feature was built**, not just a schema. No session/conversation record for this task exists in the AIOS structure, so business intent/original prompt remains SUPPORTED (reconstructed), but code existence, wiring, and partial test results below are VERIFIED directly from the repository.
+
+## Correction to initial recovery pass
+The first version of this file (written before this cross-check) only found the
+3 SQL migrations and assumed no application code existed. A follow-up
+`grep` across `reports/digital-marketing-member-pages` for `google_lens_keyword`/
+`lens-keyword` found a complete, wired feature:
+- `lib/lens-keywords/` — 20 modules (router, phase1, analysis, automation, weekly,
+  serpapi, cache, quota, eligibility, competitor-filter, review, keyword-planner,
+  google-ads, gemma, title, alt-text, attributes, final-output, export, errors,
+  normalize, sql, config).
+- `pages/sajeepan/google-lens-keywords/index.html` + `lens.js` — the tab's UI,
+  injected into `pages/sajeepan.html` as **Requirement 5 ("Automation Keyword
+  Finder")**, tab id `req5`/`req5Panel`, confirmed present in the live page
+  markup (`grep` on `pages/sajeepan.html` lines ~373-412, ~2248-3626).
+- `scripts/lens-keywords-migrate.js` — a dedicated migration runner (separate
+  from `stpm-migrate.js`), confirming this was treated as a first-class
+  sub-system, not a one-off script.
+- `tests/lens-keywords/` — 6 test files (logic, phase1, serpapi, security, ui,
+  analysis-logic, automation — 7 files, one omitted from `npm test` originally
+  listed as run together with the feed/stpm suites in `package.json`).
+
+## Test run (this recovery session, 2026-08-24 files, run 2026-09-16)
+`node --test` against all 7 lens-keywords test files: **73 passed, 4 failed**.
+All 4 failures are `MODULE_NOT_FOUND: 'pg'` at import time (`lib/lens-keywords/
+config.js` requires the `pg` package) — **this worktree has no `node_modules`
+installed** (confirmed: `node_modules/` absent entirely), so this is an
+environment/dependency-install issue in the recovery worktree, not a code
+defect. The 73 passing tests (UI/layout/security/logic tests that don't need a
+live DB connection) ran and passed cleanly, including:
+- tab-5 wiring, Req1-4 panels untouched, `switchReqTab` toggling correctly
+- no API key ever shown to the user (generation provenance check)
+- dark/light theme completeness, no sideways scroll, keyboard focus states
+- filters/history are read-only and cannot trigger a paid provider call
 
 ## Business Question / Requirement
 REQ-DM-2026-08-SAJE01 — Automation Keyword Finder: same-SKU product -> Google Lens visual search -> competitor result capture -> human review -> (per migration 007) frequency/category analysis, Keyword Planner cache, attribute validation, final title/alt text and Ads keyword output -> (per migration 008) a fully automatic weekly 50-product workflow.
@@ -37,17 +70,27 @@ No API key values are stored anywhere in this schema — only named key slots (`
 - `reports/digital-marketing-member-pages/db/migrations/2026-08-24_007_sajeepan_lens_keywords_full.sql`
 - `reports/digital-marketing-member-pages/db/migrations/2026-08-24_008_sajeepan_lens_keywords_automation.sql`
 
+## Files
+Also (found on cross-check):
+- `reports/digital-marketing-member-pages/lib/lens-keywords/*.js` (20 modules)
+- `reports/digital-marketing-member-pages/pages/sajeepan/google-lens-keywords/index.html`, `lens.js`
+- `reports/digital-marketing-member-pages/pages/sajeepan.html` (Requirement 5 tab integration)
+- `reports/digital-marketing-member-pages/scripts/lens-keywords-migrate.js`
+- `reports/digital-marketing-member-pages/tests/lens-keywords/*.test.js` (7 files)
+- `reports/digital-marketing-member-pages/api/members-api.js` (references the feature)
+
 ## What Is NOT Verifiable From This Evidence
-- Whether these migrations were actually run against the live database.
-- Whether any run has ever completed, or what its outcome was.
-- Whether the feature was deployed, reviewed by the user, or is still in progress.
-- The original prompt/requirement conversation (REQ-DM-2026-08-SAJE01 is referenced but not found as a separate requirement doc in this AIOS).
+- Whether the Postgres migrations were actually run against the live database (schema presence in a `.sql` file is not proof of execution).
+- Whether any real Lens/SerpAPI run has ever completed against production, or what its outcome was.
+- Whether the feature has been used/reviewed by Sajeepan or Kuberan since it was built.
+- The original prompt/requirement conversation (REQ-DM-2026-08-SAJE01 is referenced throughout the code but no separate requirement doc exists in this AIOS).
+- Full test suite pass rate in a properly provisioned environment (this worktree lacks `node_modules`; 4/7 test files could not import past a missing `pg` dependency).
 
 ## Status
-NOT VERIFIABLE (schema-only) — do not mark PASS/FAIL. If the user confirms the run history or intended outcome, this file should be updated (not replaced) with that information.
+PARTIAL / SUPPORTED — code exists, is wired into the live page, and the DB-independent half of its test suite passes. Live/deployed behavior against the real database is NOT VERIFIABLE from this worktree. Do not mark full PASS.
 
 ## Reviewer
-Pending — flagged for Kuberan to confirm.
+Pending — flagged for Kuberan to confirm live status.
 
 ## Next step
-Ask Kuberan whether this feature is live, in progress, or abandoned, then update this evidence file and add matching validation/closure entries accordingly.
+Ask Kuberan whether this feature has been used against production (any real run history), then update this file and the linked validation/closure with the confirmed outcome. Optionally: run `npm install` in `reports/digital-marketing-member-pages` and re-run the full test suite to get a complete pass/fail picture.
