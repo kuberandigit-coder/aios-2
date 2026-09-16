@@ -92,7 +92,7 @@
 
 ### Gap found (this recovery pass): Sajeepan lens-keywords DB migrations — no doc trail
 - Found in code only, not previously documented: `reports/digital-marketing-member-pages/db/migrations/2026-08-24_006_sajeepan_lens_keywords.sql`, `_007_..._full.sql`, `_008_..._automation.sql` — schema for "Automation Keyword Finder Phase 1" (REQ-DM-2026-08-SAJE01): same-SKU -> Google Lens visual search -> competitor result capture -> review, run as a Postgres-backed state machine (same pattern as thivajini_feed_cycle / mahima_stpm_run) so a Vercel Function can process one product per invocation without losing state or burning SerpAPI credits on retry.
-- No evidence/validation/closure file exists anywhere for this feature. Not fabricating one — flagging per the no-guess rule. If the user confirms scope/outcome, a proper evidence/validation/closure entry can be written.
+- Evidence written from the schema itself (SUPPORTED, not VERIFIED — no session record): `evidence/sajeepan/2026-08-24_lens-keywords-automation-schema.md`. No validation/closure written yet — outcome/deployment status unconfirmed.
 - Status: NOT VERIFIABLE beyond the SQL itself (schema exists; live behavior/outcome unconfirmed)
 
 ### Meta: AIOS documentation catch-up
