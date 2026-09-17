@@ -1,8 +1,26 @@
 # Source Map — Screaming Frog SEO Spider CLI (Dilaksi Task 08)
 
-Date: 2026-09-17
+Date: 2026-09-17 (updated same day — see "Integration update" below)
 
-## New source confirmed available (not yet integrated)
+## Integration update (2026-09-17, later same day)
+
+**Now integrated.** The CLI confirmed below has been wired into
+dm-dashboard as the "Broken Link / 404 Monitor" Development Task
+(`backend/app/dev_tasks/broken_link_monitor/`). It is invoked via
+`screaming_frog.py`'s `run_list_crawl()` in Screaming Frog's list mode
+only (`--crawl-list`), against a small, explicit, bounded URL list —
+never an unrestricted full-site crawl (no `--max-urls` flag exists in
+this CLI version, so list mode is the deliberate size-bounding
+mechanism used instead). Live-tested end to end against
+`https://ledsone.co.uk` on 2026-09-17: a real 2-URL crawl correctly
+found and classified a deliberately non-existent product URL as a 404,
+which was then enriched with real GA4/GSC/Shopify data and saved to
+Postgres. See the matching implementation prompt/evidence/validation/
+handover records dated 2026-09-17 (`..._task08_implementation_*`) for
+full detail. This entry's original "available, not yet integrated"
+content is kept below for history.
+
+## Original entry — available, not yet integrated (superseded above)
 
 **Screaming Frog SEO Spider CLI** — local, licensed-machine desktop tool
 (not a web API). Confirmed installed and executable on this machine.
@@ -28,5 +46,22 @@ Date: 2026-09-17
 
 ## Not yet documented (because not yet built)
 
-- No crawl schedule, cadence, or scope has been defined.
-- No DM Dashboard endpoint or table consumes this source yet.
+- No crawl schedule, cadence, or scope has been defined — manual trigger
+  only as of 2026-09-17 (see implementation handover).
+- ~~No DM Dashboard endpoint or table consumes this source yet~~ —
+  superseded, see "Integration update" above.
+
+## Reused sources in this integration (no new credentials/integrations)
+
+- **GA4** — `backend/app/google_client.py`'s `fetch_ga4_report()`, same
+  property (408110563) Dilaksi's Req1/Req2/meta_audit already use.
+- **GSC** — `google_client.py`'s `query_gsc()`, same site
+  (`sc-domain:ledsone.co.uk`) `dilaksi.py` already uses.
+- **Shopify Admin API** — `backend/app/shopify_client.py`'s `graphql()`,
+  same `ledsone_uk` store every other task this session uses, read-only.
+- **Postgres** — this app's own production database, new tables only
+  (`broken_link_monitor_crawls`, `broken_link_monitor_issues`).
+
+No new external source, credential, or integration was added for this
+task — only the CLI (already present above) plus reuse of the four
+sources listed here.
