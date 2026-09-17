@@ -6,6 +6,26 @@
 **Store/Project:** dm-dashboard / ledsone.co.uk (UK)
 **Status:** PARTIAL — backend fully live-verified, UI/UAM not browser-tested (see validation/closure records)
 
+## UPDATE (2026-09-17, later same day) — Screaming Frog approach REMOVED, superseded
+
+This entire Screaming Frog CLI-based implementation was **removed from
+the codebase** later the same day, per explicit instruction ("remove
+all code about the screaming frog... change it to use GSC"). It was
+briefly replaced by a pure-GSC-API version (`gsc_404_report`,
+`broken_link_monitor` rebuilt on GSC's URL Inspection API instead of a
+local crawl), which was then **also removed** per a further explicit
+instruction ("remove the both pages, no need them for now").
+
+The capability that now actually exists in the codebase is a **third,
+final implementation**: see
+`2026-09-17_gsc-404-url-monitor_capability.md` (new record, this same
+folder) for the current, live "GSC 404 URL Monitor" (Dilaksi) task —
+GSC URL Inspection API + Shopify replacement matching + review
+workflow, registered with the existing Sync Monitor. This record is
+kept for history (the Screaming Frog technical knowledge below is
+still accurate about that CLI, it's just no longer used by this app)
+rather than deleted, per "never delete previous evidence."
+
 ## Capability
 
 Given a licensed, already-installed Screaming Frog SEO Spider CLI on

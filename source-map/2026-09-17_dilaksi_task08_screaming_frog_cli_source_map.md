@@ -1,6 +1,16 @@
 # Source Map — Screaming Frog SEO Spider CLI (Dilaksi Task 08)
 
-Date: 2026-09-17 (updated same day — see "Integration update" below)
+Date: 2026-09-17 (updated same day — see "Integration update" and "REMOVED" below)
+
+## REMOVED (2026-09-17, later same day)
+
+Per explicit instruction, this Screaming Frog integration was removed
+from `dm-dashboard` entirely and replaced with a Google Search Console
+API-based approach instead (no local CLI dependency). The final,
+currently-live implementation is the "GSC 404 URL Monitor" (Dilaksi)
+task — see `2026-09-17_gsc-404-url-monitor_source_map.md` (new record,
+this same folder). This file is kept for history only; nothing below
+reflects the current codebase.
 
 ## Integration update (2026-09-17, later same day)
 
