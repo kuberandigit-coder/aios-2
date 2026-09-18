@@ -86,3 +86,21 @@ for Implementation. Each should follow the same audit-first, no-fabrication disc
 User deploys `dev-work` → `main`, runs the server-side rebuild, grants `dilaksi` the
 `tools.DevInternalLinkingSuggestionEngine` task in UAM, then clicks "Refresh Content Index" once live to
 confirm real product/collection data populates the table.
+
+## UPDATE (2026-09-18, later)
+
+- A local dev environment (backend on `:8199`, frontend on `:5199`, both against the SAME production
+  Postgres — this project has no separate local DB) was set up to let the user verify this task before
+  deploying, instead of testing directly on the live server. Two local-only environment bugs were found
+  and fixed (a `--reload` self-restart loop from watching its own log file, and a Windows `cp1252`
+  console-encoding crash on real Shopify Unicode content) — neither affects the deployed Linux server,
+  confirmed by the user ("the deployed system all working").
+- Blog data source gap resolved at the source rather than left as a permanent limitation: the user
+  confirmed blog posts genuinely exist in Shopify Admin, and is adding the `read_content` scope to the
+  SAME existing Shopify custom app (via its own OAuth token-reissue script, outside this repo) rather than
+  a new integration. `content_fetch.fetch_blog_pages()` has been implemented for real (was a documented
+  no-op) and is ready to populate Blog Pages the moment the reissued token is saved into `backend/.env`.
+  As of this update, `ACCESS_DENIED` was still returned on the last live check — status is PARTIAL until
+  the new token is confirmed working (see validation doc's UPDATE section).
+- Current status is therefore: Product + Collection indexing fully working and locally verified; Blog
+  indexing code-complete but pending the token/scope update on the user's side.

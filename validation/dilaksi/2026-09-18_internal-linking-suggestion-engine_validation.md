@@ -33,3 +33,25 @@ against real production Shopify data, and (b) the actual UAM grant-to-Dilaksi to
 action for the user to perform, not something this session executes. Both are standing, known limitations
 of this environment (see project memory: no SSH access to production server), not defects in the
 implementation.
+
+## UPDATE (2026-09-18, later) — Local verification + Blog Pages re-checked
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 6 (re-check) | Page loads without errors | PASS | Backend/frontend now running locally (port 8199 / 5199); `GET /content-index` confirmed returning real stored data via curl and via FastAPI TestClient |
+| 7 (re-check) | Step 01 loads real data | PASS | Confirmed live locally: `internal_linking_content_index` already contains real Collection rows (e.g. "15%", "15-off-1") from a prior refresh; `GET /content-index` reads them correctly |
+| 8 (re-check) | Blog pages indexed where an approved source provides them | PARTIAL | User confirmed via Shopify Admin screenshot that blog posts genuinely exist. Live re-check of the `blogs` GraphQL field on 2026-09-18 confirmed `ACCESS_DENIED` still held at that moment — the earlier 2026-09-17 finding was current, not stale. `fetch_blog_pages()` has since been implemented for real (was a documented no-op) and is ready, but the `read_content` scope grant + token reissue was still in progress at last check, so a successful live blog fetch has NOT yet been observed. Re-verify once the new token is in `backend/.env`. |
+| 15 (re-check) | No Shopify write operation occurs | PASS | `fetch_blog_pages()` uses only `blogs`/`articles` `Query` fields, same as products/collections — no mutation added |
+| 16 (re-check) | No credentials exposed | PASS | Neither the OAuth helper script's Client Secret nor the reissued Shopify Admin API token were pasted into chat or recorded in any AIOS file — user was instructed to edit `backend/.env` directly |
+
+### New finding this update: two local-environment bugs, not app-logic bugs
+- Local backend returned HTTP 500 on `GET /content-index` due to a Windows-only `cp1252` console-encoding
+  crash when logging Unicode characters present in real Shopify titles/descriptions. Confirmed NOT present
+  on the deployed server (Linux, UTF-8 default locale) — user confirmed "the deployed system all working."
+  Fixed locally via `PYTHONIOENCODING=utf-8`. No code change was needed or made to the application itself.
+- `uvicorn --reload` watching its own redirected log file caused an intermittent restart loop while testing
+  locally, affecting ALL pages transiently, not specific to this task. Fixed by dropping `--reload` for
+  local testing.
+
+Both are session/environment findings, not regressions introduced by this task's code — recorded here per
+the "record honestly" validation standard rather than omitted.
