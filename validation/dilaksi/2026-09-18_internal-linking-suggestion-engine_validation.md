@@ -127,3 +127,22 @@ Same honest reasoning as Step 02: everything achievable through code review, com
 grep-based verification is PASS, but **no live end-to-end calculation run against the real 5,938-row
 production Content Index was performed in this session** — pushed to `dev-work` (`5a5d58b`) for the user
 to test live. Re-verify once the user runs "Calculate Link Density" and reports the result.
+
+## UPDATE (2026-09-18, later) — Live-tested and fixed: fan-out bug + stuck transaction
+
+The user's first live test of Step 02 surfaced two real, confirmed-via-production-database issues (not
+theoretical):
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| — | Opportunity count is reasonable, not a combinatorial explosion | **FAIL → FIXED** | Live production data showed 795,275 rows from one scan (`product_type` fan-out bug); fixed in commit `199f18c` (cap of 3 targets per phrase); confirmed via code review, not yet re-verified with a fresh live scan post-fix |
+| — | A scan failure cannot leave the system stuck | **FAIL → FIXED** | An interrupted local test run left a Postgres connection `idle in transaction`, blocking the live production table for hours; fixed via `executemany` + explicit rollback-on-error in both `_save_opportunities` and `replace_density_rows` (commit `199f18c`); the stuck connection was terminated live (`pg_terminate_backend`, with explicit user permission) and the 795,275 garbage rows manually cleared |
+| — | Tab navigation is not janky | **Addressed** | Diagnosed that all 3 tabs fired their API calls simultaneously on page load; fixed to lazy-load per-tab (commit `425279b`) |
+
+### Overall Step 02 status: still PARTIAL
+
+Both real bugs found via live testing are now fixed and pushed (`199f18c`), but **a fresh live scan run
+confirming the FIXED matching logic produces a small, sensible opportunity count has not yet been
+observed** — the user's second live scan attempt was still in progress (confirmed via `pg_stat_activity`
+to be genuinely computing, not stuck) at the time of this update. Re-verify once that run completes and
+the user reports the actual opportunity count.

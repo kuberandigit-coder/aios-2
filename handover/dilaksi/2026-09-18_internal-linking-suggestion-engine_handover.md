@@ -177,6 +177,34 @@ Step 05 (handoff) all still to come as separate tasks.
 
 **Owner:** Dilaksi. **Reviewer:** Kuberan.
 
+## UPDATE (2026-09-18, later) — Live-test incident and fixes (post Step 02/03 launch)
+
+The user's first live test of "Find Link Opportunities" got stuck on "Scanning…" indefinitely. Root-caused
+via direct live queries against the production database (`pg_stat_activity`):
+
+1. A connection was stuck `idle in transaction`, holding a lock on `internal_linking_opportunities` for
+   hours -- traced to an earlier interrupted local test run (force-killed mid-write, abandoning the
+   transaction). Terminated with the user's explicit permission, which unblocked the system.
+2. That revealed 795,275 rows already in the table -- a real matching-logic bug, not just the stuck
+   transaction: a shared `product_type` value (e.g. "Wall Light", used by thousands of products) mapped
+   to every one of those products as a target, so one mention of that phrase generated thousands of
+   "opportunities."
+
+**Fixed and pushed (`199f18c`):** phrases mapping to more than 3 target pages are now dropped from the
+matching index entirely (too ambiguous for a confident single-target suggestion); both Step 02's and Step
+03's bulk-write functions now use batched inserts with explicit rollback-on-error, so a failure mid-write
+can no longer leave a hung, lock-holding transaction again. The 795,275 garbage rows were manually cleared
+from production.
+
+**Also fixed (`425279b`):** the page felt janky navigating between tabs -- root cause was all three tabs'
+data loading simultaneously on page open; Step 02/03 now load lazily on first tab visit, plus a subtle
+fade-in was added on tab switch.
+
+**Current status:** both fixes are pushed to `dev-work`. The user's second live scan attempt was
+confirmed (via live `pg_stat_activity` check) to be genuinely computing, not stuck, at time of writing --
+awaiting the user's report of the actual (now hopefully small and sensible) opportunity count to close out
+Step 02/03 validation.
+
 ## UPDATE (2026-09-18, later) — Step 03: Check Existing Link Density
 
 **What was implemented:** per-page link-density measurement — total internal link occurrences, unique

@@ -320,3 +320,47 @@ as Step 02's current status.
 
 ### No secrets
 None recorded.
+
+## UPDATE (2026-09-18, later) — Real production incident: fan-out bug + stuck transaction, fixed
+
+While the user tested Step 02 live, "Find Link Opportunities" appeared permanently stuck on "Scanning…".
+Diagnosed live against the actual production database (not guessed):
+
+- `pg_stat_activity` showed a connection in `idle in transaction` state, holding a lock on
+  `internal_linking_opportunities` for hours -- caused by an earlier interrupted local test run of this
+  same scan (hard-killed via `Stop-Process -Force` per an earlier "stop all local testing" instruction,
+  which does not let Python's connection-cleanup code run, abandoning the transaction mid-write). This was
+  blocking every read/write to that table, including the user's live click.
+- With the user's explicit permission, terminated that stuck connection (`pg_terminate_backend`), which
+  unblocked the table -- but revealed the table already held **795,275 rows** from that same incomplete
+  run.
+- Investigated why: a `product_type` value like "Wall Light" is shared by thousands of individual
+  products, so the matching index mapped that ONE phrase to thousands of targets -- any source page
+  mentioning it then generated one opportunity PER product sharing that type. This is exactly the
+  "suggestion from one shared generic word" the original task spec explicitly forbids (section 4),
+  just manifesting through `product_type` fan-out rather than a literal single word.
+
+**Fixes applied (commit `199f18c`, pushed to `dev-work`):**
+1. `_build_phrase_index` now drops any phrase mapping to more than 3 target pages -- too ambiguous to
+   point at one relevant target with real confidence, so it's excluded entirely rather than guessed or
+   fanned out to every match. Exact page titles are unaffected (titles are effectively unique).
+2. `_save_opportunities` (Step 02) and `replace_density_rows` (Step 03) were both rewritten to use
+   `executemany` (one batch instead of one network round trip per row) wrapped in an explicit
+   try/except that rolls back on any failure -- a mid-write error can no longer leave a hung,
+   lock-holding transaction the way it did here.
+3. Manually cleared the 795,275 garbage rows from production after deploying the fix.
+
+**Follow-up (commit `425279b`):** while the user was waiting on a subsequent scan, diagnosed live via
+`pg_stat_activity` again that the second run was NOT stuck (no hung connection, no active query at that
+moment -- it was doing genuine in-memory tokenization/matching work, the CPU-bound step described to the
+user). Separately fixed real UI jank found during this same session: all three tabs (Content Index,
+Opportunities, Density) were firing their API calls simultaneously on page load regardless of which tab
+was active; Step 02/03 now load lazily on first tab open, plus a subtle fade-in transition was added on
+tab switch (`.jreq-tab-fade`, respects `prefers-reduced-motion`).
+
+**Housekeeping:** cleaned up 5 stale background shell processes (including a runaway `find /` still
+scanning the entire C: drive from earlier diagnostic work) left running in the local session -- session
+hygiene, not a codebase change.
+
+No secrets were exposed or recorded during any of this diagnostic work -- all fixes and terminations were
+DB-connection/session-level, not credential-related.
