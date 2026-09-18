@@ -114,3 +114,15 @@ mix-up found during this step: production actually runs the backend on **8499**,
 session's local dev port on the user's own PC) — all production-side verification commands were updated
 to target `localhost:8499`. Awaiting the `refresh`/`refresh/status` output from the user to confirm the
 live blog fetch actually succeeds against the new token.
+
+## UPDATE (2026-09-18, later) — Blog indexing complete, pushed to dev-work
+
+Root cause of the still-0 blog count after the token update: the blog-fetch code had only existed on this
+local machine, never pushed. While testing it locally with the now-working token, two real bugs were
+found and fixed (outer `blogs` pagination missing; wrong Article field/query names — `body`/`id` instead
+of `contentHtml`/`legacyResourceId`, and `blog(id:)` instead of a nonexistent `blogByHandle`). Verified
+end-to-end against live production Shopify + Postgres: 159 real blog articles indexed
+(`{blogPages: 159, productPages: 5289, collectionPages: 490, total: 5938}`). Committed and pushed to
+`dev-work` as `128fa03`. Step 01 now covers all three page types with zero fabricated data. Remaining
+before this is fully closed: merge `dev-work` → `main`, deploy, re-run refresh on production, and grant
+Dilaksi UAM access.

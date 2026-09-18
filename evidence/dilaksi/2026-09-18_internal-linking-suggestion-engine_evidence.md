@@ -167,3 +167,29 @@ Corrected to port 8499 for all further production-side verification commands
 
 No secrets (token value, backup file contents) were pasted into chat or recorded here — only the
 method/commands used.
+
+## UPDATE (2026-09-18, later) — Blog fetch fixed, tested live, and pushed
+
+Production ran a refresh right after the token update but still showed `blogPages: 0` — root cause was
+NOT the token: the blog-fetch code itself had never been pushed past this session's local machine, so
+production was still running the prior documented no-op. Separately, while testing the code locally
+against the (now-working) token, two real query bugs surfaced and were fixed before pushing:
+
+1. **Outer `blogs` connection wasn't paginated.** A live query revealed LEDSone's store has several
+   `blogs` objects beyond the one visible "BLOG" channel (legacy/near-duplicate blog objects with 0-1
+   articles each) — `blogs(first: 50, after: $after)` is now paginated the same way products/collections
+   already are, so nothing past the first page is silently dropped.
+2. **Wrong field/query names**, caught via live GraphQL schema introspection against the real store
+   (`__type(name: "Article")`): Article has no `legacyResourceId` or `contentHtml` field (those exist on
+   Product, not Article) — corrected to `body` for content and the article's GID (`id`) for the source
+   identifier. There is also no `blogByHandle` root query — corrected to `blog(id: $blogId)` for paginating
+   a single blog's articles past the first page.
+3. Verified fully end-to-end against live production Shopify + the real Postgres DB from this local
+   machine: `fetch_blog_pages()` returned 159 real blog articles (real titles/URLs/content, e.g. "How
+   Energy-Saving Light Bulbs Save Both Energy and Money?"); full content index rebuild confirmed
+   `{totalIndexedPages: 5938, blogPages: 159, productPages: 5289, collectionPages: 490}`.
+4. Compiled (`py_compile`) and built (`vite build`) cleanly, then committed and pushed to `dev-work`
+   (commit `128fa03`). Not yet merged to `main`/deployed as of this update — that remains the user's step.
+
+Blog Pages is therefore no longer a documented limitation once this commit is deployed — Step 01 now
+indexes all three page types (Product, Collection, Blog) from real, live Shopify data.

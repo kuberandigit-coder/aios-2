@@ -55,3 +55,13 @@ implementation.
 
 Both are session/environment findings, not regressions introduced by this task's code — recorded here per
 the "record honestly" validation standard rather than omitted.
+
+## UPDATE (2026-09-18, later) — Blog Pages check now PASS
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 8 (final) | Blog pages indexed where an approved source provides them | **PASS** | `read_content` scope confirmed active on the reissued token; `fetch_blog_pages()` fixed (outer `blogs` pagination + correct Article fields, both confirmed via live schema introspection) and verified end-to-end against production: 159 real blog articles indexed. Pushed to `dev-work` (`128fa03`). |
+
+Overall status for this task item moves from PARTIAL to PASS. The task's overall status remains PARTIAL
+only for the two items unrelated to this fix: live browser click-through and the UAM grant-to-Dilaksi
+toggle, both still pending user action after deploy.
