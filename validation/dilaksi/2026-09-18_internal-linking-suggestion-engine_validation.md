@@ -177,3 +177,36 @@ and grep-based verification is PASS, but **no live end-to-end "Generate Suggesti
 production data was performed in this session**. Also worth flagging for the user explicitly: because
 cornerstone and new-blog classifications don't exist, live testing will show 0 High and 0 Medium
 suggestions by design -- this should not be mistaken for a bug when verifying live.
+
+## UPDATE (2026-09-18, later) — Step 05 validation
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 1-4 | Steps 01-04 preserved | PASS (by inspection) | No Step 01-04 file was modified except adding a fifth frontend tab and a small, additive `parse_internal_url()` helper in `link_opportunities.py` (new function, nothing existing changed) |
+| 5 | Only approved suggestions can be handed off | PASS (code) | `create_handoff()` explicitly checks `suggestion["review_status"] != "Approved"` and refuses otherwise, returning the exact current status in the error |
+| 6 | Rejected suggestions cannot be handed off | PASS (code) | Same check as above -- any non-"Approved" status is refused |
+| 7 | Duplicate handoffs prevented | PASS (code) | `UNIQUE(suggestion_id)` constraint + `schema.create_handoff()`'s explicit existing-row check before insert; a second call returns the existing id, `created: False` |
+| 8 | Source/target/anchor preserved | PASS (code) | Copied into the handoff row at creation time; no UPDATE statement in this codebase ever touches those columns afterward (grep-confirmed) |
+| 9 | Handoff task created correctly | PASS (code) | All required fields (task title, source/target info, instruction, approval info) populated from the suggestion |
+| 10 | Assignment works | PASS (code) | `assign_handoff()` writes `assigned_to`; frontend offers the existing SEO/dev staff list |
+| 11 | Status changes work | PASS (code) | `update_handoff_status()` validates against the allowed status list, records `handed_off_at`/`implemented_at`/`implemented_by` on the relevant transitions |
+| 12 | Implementation status recorded | PASS (code) | Same as above |
+| 13-15 | Verification checks actual source/target/link | PASS (code) | Live `requests.get()` on both URLs; live HTML parsed via `extract_link_occurrences`-based `parse_internal_url` for target matching |
+| 16 | No false positives | PASS (code) | `Verified` is only ever set when a live-parsed anchor is found pointing at the approved target with a matching anchor text -- never assumed |
+| 17 | Failed verification becomes Needs Rework/Unable to Verify | PASS (code) | Explicit branches for `Still Missing`/`Needs Rework`/`Target Invalid`/`Source Page Unavailable`/`Unable to Verify` |
+| 18 | Completed requires successful verification | PASS (code, enforced server-side) | `record_verification()` is the ONLY code path that sets `handoff_status = 'Completed'`; the `/status` endpoint explicitly rejects a direct request to set `Completed` |
+| 19 | Approval audit data preserved | PASS (code) | `approved_by`/`approved_at` copied from the suggestion's own `reviewed_by`/`reviewed_at` at creation |
+| 20 | No content auto-modified | PASS | Grep-confirmed no `shopify_client` import or write call anywhere in the new code -- only read-only `GET` requests |
+| 21 | No Shopify write operation | PASS | Same as above |
+| 22 | No credentials exposed | PASS | None recorded |
+| 23 | Existing UAM works | PASS | No UAM code touched |
+| 24 | Existing dashboard functionality not broken | PASS (by inspection) | `vite build` succeeded; static JSX-component-reference check passed (the same check that caught the earlier `SuggestionsPanel` bug) |
+| 25 | No duplicate task system created | PASS | Reused `internal_linking_suggestions`' review workflow and the existing staff list; no new user/task/notification system built |
+
+### Overall Step 05 status: PARTIAL
+
+Same honest pattern as every prior step: code-level checks all PASS, but **no live end-to-end handoff
+creation + verification run against real production data was performed in this session**. This is also
+why the overall Internal Linking Suggestion Engine feature is NOT being closed out yet (see handover doc)
+-- per the task's own explicit closure rule, closure requires the complete Steps 01-05 workflow to have
+been tested together, which has not happened.

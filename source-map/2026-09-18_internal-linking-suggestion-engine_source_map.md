@@ -36,3 +36,12 @@ No external API, credential, or data source outside what's listed above was intr
 | Suggestions | The Step 02 `internal_linking_opportunities` and Step 03 `internal_linking_density` tables only | No new Shopify/blog fetch, no re-matching |
 | Priority classification | Project rules, `priority_rules.py` | Cornerstone and "new blog" classifications do not exist anywhere in this project; this step's spec explicitly forbids inventing a publication-age threshold, so neither is guessed -- High/Medium cannot fire with real data today |
 | Storage | New table `internal_linking_suggestions` in the same production Postgres database | Upserted (not replaced) to preserve review decisions across regeneration |
+
+## UPDATE (2026-09-18, later) — Step 05 data source
+
+| Data | Source | Notes |
+|---|---|---|
+| Handoff creation | The Step 04 `internal_linking_suggestions` table only (Approved rows) | No new Shopify/blog fetch |
+| Verification | Live `GET` request to the actual source and target URLs, done on demand per handoff | NOT cached (deliberately -- see evidence doc for why `competitor_analysis/http_fetch.py`'s cache pattern was audited and not reused); no Shopify Admin API call, plain public HTTP reads of the live site |
+| Assignment | Existing `STAFF_LIST` (SEO/dev staff, `frontend/src/taskRegistry.js`) offered as suggestions only | No new content-team user/role system created -- confirmed none exists anywhere in this project |
+| Storage | Two new tables in the same production Postgres database | `internal_linking_handoffs` (approved data frozen at creation), `internal_linking_verification_log` (append-only) |

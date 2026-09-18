@@ -54,3 +54,16 @@ expansion of the same Content Index capability chain, no separate capability rec
 limitation carried into this expansion: High/Medium priority requires cornerstone and new-blog
 classifications that don't exist in this project, so those tiers are currently unreachable by design --
 whoever builds Step 05 (handoff) should be aware every suggestion today is Low or No Action.
+
+## UPDATE (2026-09-18, later) — Step 05 completes this capability chain (FINAL STEP)
+
+Added a content-team handoff, implementation-tracking, and LIVE verification capability (`handoff.py`,
+tables `internal_linking_handoffs`/`internal_linking_verification_log`). This is the final link in the
+chain: Content Index -> Opportunities -> Density -> Suggestions -> Handoff/Verification. Still one
+capability expansion, no separate record created. New reusable primitive added here worth noting for
+future work: `link_opportunities.parse_internal_url(url)` -- classifies any single LEDSone URL into
+`(page_type, handle)`, usable anywhere a URL needs to be matched against the Content Index without
+re-fetching a full page. The live-verification approach (plain uncached `requests.get`, not the
+competitor-research cache pattern) is the correct model to reuse for any future "check our own site's
+current live state" need -- the cached `http_fetch.py` pattern is only right for external/competitor
+pages where staleness is acceptable.

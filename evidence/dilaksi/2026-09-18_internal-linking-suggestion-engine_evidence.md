@@ -423,3 +423,74 @@ session** -- pushed to `dev-work` (`c4d1ffa`) for the user to test live, same pa
 
 ### No secrets
 None recorded.
+
+## UPDATE (2026-09-18, later) — Step 05: Handoff, Implementation Tracking & Verification implemented (FINAL STEP)
+
+### Audit performed before writing Step 05 code
+- Grepped `frontend/src/taskRegistry.js`'s `STAFF_LIST` -- confirmed it is the general SEO/dev staff list
+  (Jefri, Kamsi, Mahima, Dilaksi, Thasitha, Sukirtha, Sonya, Sajeepan, Theekshy, Hetheesha, Thivajini), not
+  a dedicated content-team role system. No such system exists anywhere. Per explicit instruction ("provide
+  an appropriate manual assignment field rather than inventing an automatic assignment rule"),
+  `assigned_to` is a plain free-text field; the frontend offers this same staff list as suggestions only.
+- Grepped the whole backend for "notification"/"Notification" -- zero matches anywhere. None was built,
+  per explicit instruction not to introduce one unnecessarily.
+- Found `backend/app/dev_tasks/competitor_analysis/http_fetch.py`, a polite-fetch-with-cache pattern.
+  Deliberately NOT reused as-is: its 7-day TTL cache exists to be polite to competitor sites, but Step 05
+  verification specifically needs the CURRENT live state of our own page right after the content team
+  edits it -- a cached "not yet verified" result would be wrong. Wrote a small, separate live fetch
+  instead (same requests/timeout/User-Agent style; no robots.txt check needed for our own site).
+
+### What was implemented
+- `handoff.py` -- `create_handoff()` (only accepts a suggestion with `review_status = 'Approved'`;
+  idempotent via `schema.create_handoff`'s `UNIQUE(suggestion_id)` check) and `verify_handoff()` (the live
+  verification method, detailed below).
+- Added `link_opportunities.parse_internal_url(url)` -- classifies a single URL into `(page_type, handle)`
+  using the exact same regexes `extract_link_occurrences` already uses, so a stored suggestion's
+  `target_url` and a live page's detected href are classified identically. Small, targeted addition to an
+  existing module rather than a new URL-parsing implementation.
+- Schema: `internal_linking_handoffs` (one row per approved suggestion, approved fields copied in at
+  creation and never overwritten -- "change protection", task section 19) and
+  `internal_linking_verification_log` (append-only recheck audit trail, task section 13).
+- Router: `POST /handoffs`, `GET /handoffs`, `POST /handoffs/{id}/status`, `POST /handoffs/{id}/assign`,
+  `POST /handoffs/{id}/verify`, `GET /handoffs/{id}/verification-log`.
+- Frontend: fifth tab, 8 real summary KPIs, a "ready for handoff" quick list of approved-but-not-yet-handed-
+  off suggestions, filterable/searchable/paginated table with inline assign/status controls and a "Verify
+  Now" action, and a detail modal with the full approval audit trail + verification result.
+
+### Verification method (task sections 10-12) -- exact detail
+1. `parse_internal_url(target_url)` -- if not a recognized internal URL, result = `Target Invalid`.
+2. Live `requests.get(target_url)` -- if unreachable, result = `Target Invalid`.
+3. Live `requests.get(source_url)` -- if unreachable, result = `Source Page Unavailable`.
+4. Self-link defensive check (should never trigger given Step 02's own exclusion, but never silently
+   "verifies" a self-link if it somehow did).
+5. Extracts every `<a href, inner_text>` pair from the LIVE source HTML, classifies each href via
+   `parse_internal_url`, and looks for one matching the approved target.
+   - No match -> `Still Missing`.
+   - Match found, but its anchor text doesn't reasonably contain/match the approved anchor -> `Needs Rework`.
+   - Match found, anchor matches -> `Verified`.
+6. Any unexpected exception anywhere in this path -> `Unable to Verify` (never assumed success).
+Every run is logged to `internal_linking_verification_log` regardless of outcome.
+
+### Completion rule (task section 20) -- enforced server-side, not just documented
+`schema.record_verification()` only transitions `handoff_status` to `Completed` when the verification
+result is `Verified` AND the handoff was currently `Implemented`. The `/handoffs/{id}/status` endpoint
+explicitly REFUSES a direct request to set status to `Completed` ("Completed can only be set by a
+successful verification run, not directly") -- this is a real, enforced constraint, not just UI copy.
+
+### No automatic content modification (task section 25) -- verified
+Grepped `handoff.py`, `schema.py`'s new functions, and the new router endpoints for any `shopify_client`
+import or write call -- none exist anywhere. The only network calls this step makes are plain `GET`
+requests (read-only) to verify existing state; nothing is ever written to Shopify, blog, product, or
+collection content.
+
+### Verification performed
+`python -m py_compile` on all 5 new/edited backend files -- passed. A direct import + route-listing sanity
+check confirmed all 6 new endpoints register correctly with no import errors. `npx vite build` -- passed.
+A Node-based static check (comparing every JSX component usage against its definition -- the same check
+that caught the missing `SuggestionsPanel` bug earlier this session) confirmed all 6 components in this
+file (including the new `HandoffsPanel`) are properly defined. **A live end-to-end run (create a real
+handoff from a real approved suggestion, verify it against the live site) was NOT performed in this
+session** -- pushed to `dev-work` (`f40895c`) for the user to test live.
+
+### No secrets
+None recorded anywhere in this update.

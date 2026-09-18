@@ -296,3 +296,62 @@ explained to Dilaksi before she reviews live results.
 reports the result; also still pending from earlier: live confirmation of Steps 02 and 03.
 
 **Owner:** Dilaksi. **Reviewer:** Kuberan.
+
+## UPDATE (2026-09-18, later) — Step 05: Handoff, Implementation Tracking & Verification (FINAL STEP)
+
+**Complete workflow status:** Content Index -> Find Link Opportunities -> Check Link Density -> Generate &
+Prioritize Suggestions -> Handoff/Implementation Tracking/Verification. All five steps are code-complete
+and pushed. **The complete Steps 01-05 workflow has NOT yet been tested together live end-to-end** -- see
+"known limitations" below. Per the task's own closure rule, this means the overall feature is not being
+marked closed yet.
+
+**What was implemented:** the final handoff/tracking/verification layer. An Approved Step 04 suggestion
+can be turned into a handoff task, assigned, moved through a content-team status workflow, and verified
+live against the actual website.
+
+**Where:** `backend/app/dev_tasks/internal_linking/handoff.py` (new), plus a small addition to
+`link_opportunities.py` (`parse_internal_url`), same package. Frontend: fifth tab on the same
+`InternalLinkingSuggestionEngine.jsx` page. Route/UAM/task key are all unchanged from Step 01 --
+`tools.DevInternalLinkingSuggestionEngine`, same page, same access.
+
+**Database changes:** `internal_linking_handoffs` (one row per approved suggestion, approved data
+preserved/immutable), `internal_linking_verification_log` (append-only audit trail).
+
+**API endpoints:** `POST /api/dev/internal-linking/handoffs`, `GET .../handoffs`,
+`POST .../handoffs/{id}/status`, `POST .../handoffs/{id}/assign`, `POST .../handoffs/{id}/verify`,
+`GET .../handoffs/{id}/verification-log`.
+
+**Data sources:** Step 04's approved suggestion (read-only) for creation; a live `GET` request to the
+source and target URLs for verification -- no Shopify call anywhere in this step.
+
+**Handoff logic:** only `review_status = 'Approved'` suggestions are eligible; idempotent creation
+prevents duplicates; approved source/target/anchor/reason/priority/confidence are frozen at creation time.
+
+**Verification logic:** live fetch of the source page, parses its actual `<a>` tags, checks for a link to
+the approved target with the approved anchor text. Results: Verified / Needs Rework / Still Missing /
+Target Invalid / Source Page Unavailable / Unable to Verify -- never assumes success.
+
+**Status workflow:** Approved -> Handed Off -> In Progress -> Implemented -> (verification) -> Completed,
+or Needs Rework/Blocked/Cancelled at any point. `Completed` can ONLY be set by a successful verification
+run while the task is `Implemented` -- enforced server-side (the manual status endpoint refuses a direct
+request to set it), not just a UI convention.
+
+**Current status:** code-complete, pushed to `dev-work` (`f40895c`), compiles and builds cleanly, static
+JSX-reference check passed (the same check that caught the earlier missing-`SuggestionsPanel` bug).
+
+**Known limitations:**
+- No live end-to-end test performed this session (create a real handoff, run real verification against
+  the live site) -- the user needs to do this before the overall feature can be considered proven.
+- No content-team role/notification system exists in this project -- assignment is manual free-text, no
+  automated notifications on status change, per explicit instruction not to invent either.
+- Verification's anchor-text match is a loose case-insensitive substring check, not exact-string equality
+  -- documented as a reasonable tolerance, not a fabricated pass.
+- High/Medium priority suggestions (from Step 04) will remain empty until cornerstone/new-blog
+  classifications exist somewhere in the project -- any handoffs created today will all be Low/No Action
+  priority, which is expected, not a defect.
+
+**Next maintenance step:** user creates a real handoff from a real approved suggestion, walks it through
+Handed Off -> Implemented, adds the actual link on the live site, then clicks "Verify Now" and confirms
+the result is accurate. Once that full loop is confirmed working, ask for the AIOS closure record.
+
+**Owner:** Dilaksi. **Reviewer:** Kuberan.
