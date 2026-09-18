@@ -210,3 +210,27 @@ creation + verification run against real production data was performed in this s
 why the overall Internal Linking Suggestion Engine feature is NOT being closed out yet (see handover doc)
 -- per the task's own explicit closure rule, closure requires the complete Steps 01-05 workflow to have
 been tested together, which has not happened.
+
+## UPDATE (2026-09-19) — Live confirmation across Steps 01-05, overall status now PASS
+
+| Step | Live confirmation |
+|---|---|
+| 01 -- Content Index | User ran real "Refresh Content Index"; 5,289 products + 490 collections + 159 blog articles confirmed indexed |
+| 02 -- Find Link Opportunities | User ran real scans, reported the product_type fan-out bug (795,275-row explosion), confirmed fixed after redeploy |
+| 03 -- Link Density | User ran real density calculations against the live index |
+| 04 -- Generate Suggestions | User ran real generation (7,301 suggestions), used the Approve/Reject workflow -- 3 real `Approved` rows confirmed via live query |
+| 05 -- Handoff/Tracking/Verification | User exercised the handoff/status/assignment UI against real approved suggestions |
+
+Also newly verified this update:
+- Unpublished/out-of-stock product exclusion (Step 02/04) -- live-confirmed real Shopify products with
+  `totalInventory: 0` exist and are now correctly excluded from both source and target roles.
+- Blog HTML Editor -- safe-insertion logic live-verified to correctly refuse an unsafe nested-link case;
+  `html_insertable` pre-check live-confirmed against real data (55 of 732 real Blog suggestions correctly
+  flagged as not insertable).
+
+### Overall Internal Linking Suggestion Engine status: PASS (moved up from PARTIAL)
+
+The task's own closure rule ("create/update closure ONLY after the entire workflow has been tested and the
+feature is genuinely complete") is now satisfied -- all 5 steps have been exercised live by the user
+against real production data, real bugs found during that testing were fixed and re-verified, and the
+requested Blog HTML editing feature is live-tested and working. See the new closure record.

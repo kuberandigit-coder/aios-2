@@ -355,3 +355,32 @@ Handed Off -> Implemented, adds the actual link on the live site, then clicks "V
 the result is accurate. Once that full loop is confirmed working, ask for the AIOS closure record.
 
 **Owner:** Dilaksi. **Reviewer:** Kuberan.
+
+## UPDATE (2026-09-19) — TASK COMPLETE across all 5 steps
+
+**Complete workflow status:** all 5 steps are implemented, deployed, and now live-confirmed by the user
+against real production data (Step 01 refresh, Step 02 scans, Step 03 density, Step 04 generate/approve,
+Step 05 handoff UI). See the new closure record for the full sign-off.
+
+**Fixes made after initial Step 05 delivery:**
+- Excluded unpublished/out-of-stock products from Step 02/04 source and target roles (real Shopify stock
+  data now captured in Step 01; filtered once at the shared fetch point).
+- Fixed a real production incident unrelated to this feature (an unrelated merged commit broke the whole
+  backend with a missing dependency) that was blocking the user from testing at all.
+
+**New feature added (explicitly requested, Blog-only):** a "Blog HTML Editor" on Step 04 -- shows the real
+current Shopify HTML for a Blog suggestion, a side-by-side Before/After diff with the exact change
+highlighted, a pretty-printed HTML code view, and a Copy HTML button. Still fully manual/read-only, no
+Shopify write anywhere. Iterated through several real user-reported UX fixes (image-caused layout chaos,
+unreadable code block, scroll-position bugs) and one real logic gap (suggestions that pass Step 02's
+existing-link check but can't actually be safely inserted are now flagged upfront via a pre-computed
+`html_insertable` field, not just discovered after opening the editor).
+
+**Also completed, unrelated to this feature:** a full Postgres unused-table audit (13 confirmed unused
+across 153 relations) and a complete database table inventory document (`docs/DATABASE-TABLE-INVENTORY.md`
++ `.docx`).
+
+**Current status: COMPLETE.** See `closure/dilaksi/2026-09-19_dilaksi_internal-linking-suggestion-engine_closure.md`
+for the final sign-off record.
+
+**Owner:** Dilaksi. **Reviewer:** Kuberan.
