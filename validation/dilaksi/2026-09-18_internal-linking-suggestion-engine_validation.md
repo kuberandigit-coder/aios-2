@@ -65,3 +65,35 @@ the "record honestly" validation standard rather than omitted.
 Overall status for this task item moves from PARTIAL to PASS. The task's overall status remains PARTIAL
 only for the two items unrelated to this fix: live browser click-through and the UAM grant-to-Dilaksi
 toggle, both still pending user action after deploy.
+
+## UPDATE (2026-09-18, later) — Step 02 validation
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 1 | Step 01 still works | PASS (by inspection) | No Step 01 file was modified except adding a tab switcher in the frontend; `content-index`/`refresh` endpoints and their code are untouched |
+| 2 | Step 02 loads Content Index data | PASS (code) | `link_opportunities._fetch_index_pages()` reads `internal_linking_content_index` directly — no new fetch |
+| 3-5 | Blog/Product/Collection pages analyzed | PASS (code) | `_fetch_index_pages()` has no page_type filter — all three types are both eligible sources and targets |
+| 6 | Relevant phrases can produce opportunities | PARTIAL | Logic implemented and code-reviewed; not observed producing real output in this session (see below) |
+| 7-8 | Existing links detected and excluded | PASS (code) | `extract_link_targets()` + the `already_linked` check in `scan_opportunities()`; excluded from `opportunitiesAfterDeduplication` counts (still stored with `existing_link=True` for transparency/filtering) |
+| 9 | Self-links excluded | PASS (code) | `(target["page_type"], target["source_id"]) == src_key` check, Step 10 |
+| 10 | Duplicate opportunities handled | PASS (code) | Dedup by `(source, target, anchor.lower())` with `occurrence_count` |
+| 11 | Invalid targets excluded | PASS (code) | Targets only come from the Content Index itself — no external/invented targets possible |
+| 12 | Relevance scoring is consistent | PASS (code) | Fixed lookup table (`{"exact_title": 90, "product_type": 60}`), deterministic, documented in the module docstring |
+| 13 | Reasons generated correctly | PASS (code) | Templated `_reason_for()`, names the actual anchor/target/match type each time — no generic "AI thinks" text |
+| 14 | Context displayed correctly | PASS (code) | `context_snippet` (±60 chars around the match) stored and shown in the frontend detail modal |
+| 15-16 | No Shopify data/content modified | PASS | `grep`-confirmed no `shopify_client` import anywhere in `link_opportunities.py`; only DB reads/writes |
+| 17-18 | Filters and search work | PASS (code) | `filteredOpportunities` memo in the frontend covers source/target type, confidence bucket, link status, and free-text search |
+| 19 | Empty/error states work | PASS (code) | "No scan has been run yet" / "No opportunities match filters" / `jreq-error` block, same pattern as Step 01 |
+| 20 | UAM remains functional | PASS | No UAM/access-grant code touched |
+| 21 | Existing dashboard functionality not broken | PASS (by inspection) | Change is additive to one file + one new backend module; `vite build` succeeded for the whole app |
+| 22 | Steps 03-05 remain unimplemented | PASS | No endpoints, no schema, no frontend code for link-density/priority/handoff |
+
+### Overall Step 02 status: PARTIAL
+
+Everything achievable through code review, compile/build checks, and grep-based verification is PASS. Marked
+PARTIAL, not PASS, because **a live end-to-end scan run with real output numbers was not observed in this
+session** — an earlier version (giant regex) was confirmed too slow against the real 5,938-row production
+index; the rewritten tokenized version was pushed to `dev-work` (`952dbe2`) but the user stopped further
+local testing before a completed timed run could be captured, opting to test live on the deployed server
+instead. This is an honest, deliberate PARTIAL, not a hidden failure — re-verify item #6 (and overall
+timing) once the user runs "Find Link Opportunities" live and reports the result.

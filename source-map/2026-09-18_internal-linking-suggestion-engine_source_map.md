@@ -11,3 +11,11 @@ Date: 2026-09-18
 | Storage | New table `public.internal_linking_content_index` in the existing dm-dashboard Postgres database | Reuses `backend/app/db.py`'s `get_conn()` pool; no new database or connection created |
 
 No external API, credential, or data source outside what's listed above was introduced.
+
+## UPDATE (2026-09-18, later) — Step 02 data source
+
+| Data | Source | Notes |
+|---|---|---|
+| Link opportunities | The Step 01 `internal_linking_content_index` table only | No new Shopify/blog fetch — Step 02 is pure analysis of already-indexed `page_title`, `content_text`, `content_html`, `product_type`, `normalized_url` |
+| Existing-link detection | `content_html` already stored in Step 01 | Reuses the same href-parsing approach as `backend/app/hetheesha.py`'s existing Req5 `_extract_links`, extended for blog article URLs |
+| Storage | Two new tables in the same production Postgres database as Step 01 | `internal_linking_opportunities`, `internal_linking_opportunity_scans` |

@@ -126,3 +126,53 @@ end-to-end against live production Shopify + Postgres: 159 real blog articles in
 `dev-work` as `128fa03`. Step 01 now covers all three page types with zero fabricated data. Remaining
 before this is fully closed: merge `dev-work` → `main`, deploy, re-run refresh on production, and grant
 Dilaksi UAM access.
+
+## UPDATE (2026-09-18, later) — Step 02: Find Link Opportunities
+
+**What was implemented:** a deterministic (non-AI) phrase-matching engine that scans Step 01's Content
+Index for internal-link opportunities — a source page's content is checked for other indexed pages' exact
+titles or product types; matches that aren't already linked and aren't self-links become opportunities,
+deduplicated per source→target→anchor combination.
+
+**Where:** `backend/app/dev_tasks/internal_linking/link_opportunities.py` (new), wired into the existing
+`router.py`/`schema.py` in the same package. Frontend: same `InternalLinkingSuggestionEngine.jsx` file,
+now with a Step 01/Step 02 tab switcher — no new page.
+
+**API endpoints:** `POST /api/dev/internal-linking/opportunities/scan`,
+`GET .../opportunities/scan/status`, `GET .../opportunities`.
+
+**Database changes:** two new tables — `internal_linking_opportunities` (scan output, replaced each scan)
+and `internal_linking_opportunity_scans` (append-only stats log for the summary cards).
+
+**Data sources:** none new — reads only from the existing `internal_linking_content_index` table built by
+Step 01. No Shopify call in this module.
+
+**Matching logic:** page titles (≥2 words, generic ones like "Sale"/"New" excluded) and Product
+`product_type` values become anchor phrases; source content is tokenized once and checked via O(1)
+dictionary lookups per n-gram window (not a brute-force regex — see evidence doc for why that was
+rejected after live timing).
+
+**Confidence logic:** fixed, documented, non-AI score — 90 for an exact title match, 60 for a product-type
+match. Explicitly not presented as an SEO/Google ranking signal anywhere in the UI or code.
+
+**Current status:** code-complete, pushed to `dev-work` (`952dbe2`), compiles and builds cleanly. **Not
+yet confirmed working end-to-end with real output** — the user is testing live on the deployed server
+rather than locally; awaiting that result.
+
+**Known limitations:**
+- Existing-link check confirms the source links to the target's URL somewhere on the page, not that this
+  specific anchor occurrence is wrapped in that link (documented in the module docstring).
+- Matching is exact-phrase based (title/product_type), not semantic — a topic discussed in different words
+  than any indexed title won't be found. This is the honest limitation of a non-AI, transparent-scoring
+  approach as required by the task spec.
+- Blog pages contribute their title as a candidate anchor phrase but are not yet a rich phrase source
+  beyond that (no keyword extraction from blog body content) — acceptable for "find opportunities," to be
+  revisited if Step 04 needs richer signals.
+
+**Remaining Steps 03-05:** not implemented. Step 03 (link-density analysis), Step 04 (suggestion/ranking),
+Step 05 (handoff) all still to come as separate tasks.
+
+**Next step:** user runs "Find Link Opportunities" live on the deployed server and reports the result
+(timing + summary numbers); if it performs well, Step 02 validation moves from PARTIAL to PASS.
+
+**Owner:** Dilaksi. **Reviewer:** Kuberan.

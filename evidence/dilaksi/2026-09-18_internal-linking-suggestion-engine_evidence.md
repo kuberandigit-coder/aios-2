@@ -193,3 +193,76 @@ against the (now-working) token, two real query bugs surfaced and were fixed bef
 
 Blog Pages is therefore no longer a documented limitation once this commit is deployed — Step 01 now
 indexes all three page types (Product, Collection, Blog) from real, live Shopify data.
+
+## UPDATE (2026-09-18, later) — Step 02: Find Link Opportunities implemented
+
+### Audit performed before writing Step 02 code
+Re-read the existing Step 01 files in full before touching anything: `schema.py` (table shape, upsert
+convention), `content_fetch.py` (`normalize_url`, `html_to_text`), `router.py` (endpoint/BackgroundJob
+conventions), and the frontend page. Confirmed Step 02 needs zero new Shopify/blog calls — everything it
+needs (title, content_text, content_html, product_type, normalized_url) already exists in
+`internal_linking_content_index`. Also reused `backend/app/hetheesha.py`'s existing `_extract_links`
+href-parsing pattern (Req5) for existing-link detection, extended with a blog-URL pattern it didn't
+previously need.
+
+### What was implemented
+New module `backend/app/dev_tasks/internal_linking/link_opportunities.py`:
+- `extract_link_targets(html)` — parses `<a href>` tags into `(page_type, handle)` pairs (Product,
+  Collection, Blog), same regex-based approach as hetheesha.py's Req5, extended for `/blogs/<blog>/<article>`.
+- `_build_phrase_index(pages)` — every indexed page's exact `page_title` and (for Products) `product_type`
+  become candidate anchor phrases pointing at that page, EXCEPT phrases under 2 words or on a small
+  generic-title denylist (`sale`, `new`, `home`, etc.) — dropped structurally, not just down-scored, per
+  the explicit "don't suggest from one shared generic word" requirement.
+- `_find_matches(content, phrase_targets, max_words)` — tokenizes each source page's content once and
+  checks n-gram windows (2 up to the longest indexed phrase's word count) against the phrase dictionary
+  via O(1) lookups. **Performance note (see section 22 of the task):** a compiled single alternation regex
+  (`\b(phrase1|phrase2|...)\b`) was tried FIRST and rejected — Python's `re` backtracking engine took
+  several minutes against real pages with large embedded HTML/CSS blocks (confirmed via live timing
+  against the actual 5,938-row production index). The tokenized dictionary-lookup approach is linear in
+  content length regardless of phrase count and was adopted instead.
+- `scan_opportunities()` — orchestrates the full pass: self-link exclusion (Step 10, same
+  `(page_type, source_id)` key comparison), existing-link exclusion (Step 9), fixed documented confidence
+  (90 = exact title match, 60 = product_type match — Step 13, never framed as an SEO/ranking score),
+  templated per-opportunity reasons (Step 14), and dedup by `(source, target, anchor lowercase)` with an
+  `occurrence_count` (Step 11).
+- Storage: `TRUNCATE`-and-replace per scan for `internal_linking_opportunities` (an opportunity has no
+  stable identity across scans the way a Shopify product does, unlike Step 01's incremental upsert) plus
+  an append-only `internal_linking_opportunity_scans` log row per scan for the Pages Scanned / Potential
+  Opportunities summary numbers (these can't be derived from the deduped table alone).
+
+### Documented limitation (not hidden)
+The existing-link check verifies the source page links to the target's URL ANYWHERE on the page, not
+that this specific anchor occurrence is wrapped in that exact link. A byte-offset-accurate check would
+need a full HTML parser tracking tag positions — judged unnecessary complexity for a "surface opportunities
+for human review" step; documented in the module's own docstring for Steps 03-05 to revisit if needed.
+
+### Backend endpoints added (under the existing `/api/dev/internal-linking` prefix)
+`POST /opportunities/scan` (non-blocking, same `BackgroundJob` pattern as Step 01's refresh),
+`GET /opportunities/scan/status`, `GET /opportunities` (list + summary). No endpoints created for
+link-density, priority, or handoff — confirmed absent from the router.
+
+### Frontend
+`InternalLinkingSuggestionEngine.jsx` (same file, no new page) gained a Step 01/Step 02 tab switcher and
+an `OpportunitiesPanel`: 4 summary cards (Pages Scanned, Potential Opportunities, Existing Links Detected,
+Opportunities After Deduplication — all from real scan data, no placeholders), a filterable/searchable
+table (source/target type, confidence bucket, existing-link status, free-text search across
+URL/title/anchor), and a click-through detail modal showing the context snippet and full reason. Steps
+03-05 remain visibly locked in the step tracker; no code exists for them.
+
+### Verification performed
+- `python -m py_compile` on all 4 backend files — passed.
+- `npx vite build` — passed (only the same pre-existing `INEFFECTIVE_DYNAMIC_IMPORT` warning class every
+  sibling dev-task page already produces).
+- The regex-vs-tokenized performance comparison WAS verified live against the real 5,938-row production
+  index from this local machine (confirmed the regex approach was too slow, confirmed the rewrite's design
+  is sound) — but the user explicitly stopped further local testing/background runs before a full
+  end-to-end timed run of the FINAL tokenized version completed, instructing that live testing on the
+  deployed server would be done manually instead. **This session did not observe a completed successful
+  scan run with output numbers** — code is pushed and believed correct based on the earlier partial timing
+  work and code review, but has not been confirmed working end-to-end. See validation doc for exact PASS/
+  PARTIAL status.
+- No Shopify write call exists anywhere in this module (grep-confirmed: only `get_conn`/local DB queries
+  and pure-Python string/regex operations — no `shopify_client` import at all in `link_opportunities.py`).
+
+### No secrets
+No credentials of any kind appear in this update.

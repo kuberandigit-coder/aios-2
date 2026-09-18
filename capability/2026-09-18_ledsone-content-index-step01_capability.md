@@ -24,3 +24,14 @@ Searched `capability/` for existing "internal linking", "content index", or "Dil
 none found (closest matches were `2026-09-17_gsc-404-url-monitor_capability.md` and
 `2026-09-17_broken-link-404-monitor_capability.md`, both unrelated 404-monitoring capabilities). No
 duplicate capability record created.
+
+## UPDATE (2026-09-18, later) — Step 02 expands this capability
+
+This capability now also includes a deterministic internal-link-opportunity detector
+(`link_opportunities.py`, tables `internal_linking_opportunities` / `internal_linking_opportunity_scans`)
+built directly on top of the Content Index above — no new capability record was created since this is a
+direct expansion of the same one. It matches page titles/product types as anchor phrases via tokenized
+n-gram dictionary lookups (not AI/semantic similarity, not a brute-force regex — see this task's evidence
+doc for the performance rationale), checks existing links, excludes self-links, and deduplicates results.
+Future steps (03-05: link-density, ranking, handoff) should build on this same capability rather than
+re-indexing or re-scanning independently.
