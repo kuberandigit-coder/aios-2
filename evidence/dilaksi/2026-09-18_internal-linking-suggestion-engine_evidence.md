@@ -142,3 +142,28 @@ deploying, instead of testing directly on the production server as had been the 
 The OAuth helper script's Client ID/Client Secret and the Shopify Admin API token itself are NOT recorded
 anywhere in this AIOS update — only that "the existing Shopify custom app's token was reissued with
 `read_content` added" is documented, per the standing AIOS rule.
+
+## UPDATE (2026-09-18, later) — Production `.env` token update performed by the user
+
+User applied the reissued Shopify Admin API token directly on the production server (Contabo VPS), method:
+
+1. `ssh root@158.220.99.127`, `cd /var/www/dashboard-dm/backend`
+2. `cp .env .env.backup-$(date +%Y%m%d-%H%M%S)` — timestamped backup taken before editing, so the prior
+   token is recoverable if anything went wrong
+3. `nano .env` — replaced `SHOPIFY_UK_ADMIN_TOKEN`'s value with the newly reissued token (containing
+   `read_content` in addition to the existing scopes), saved
+4. `sudo systemctl restart dm-dashboard`
+5. `sudo systemctl status dm-dashboard` — confirmed `active (running)`, fresh PID, clean startup log
+   (`Started server process` → `Application startup complete` → `Uvicorn running`)
+
+### Correction: production backend port is 8499, not 8199
+While verifying the restart, the `systemctl status` output showed the real production uvicorn command as
+`--host 0.0.0.0 --port 8499`. This session's earlier deploy-verification `curl` instructions incorrectly
+assumed port 8199 (the LOCAL dev port used on the user's own PC in this same session) — those curls
+against the production server returned nothing because 8199 isn't the port that server listens on.
+Corrected to port 8499 for all further production-side verification commands
+(`POST /api/dev/internal-linking/content-index/refresh` and
+`GET /api/dev/internal-linking/content-index/refresh/status` against `localhost:8499`).
+
+No secrets (token value, backup file contents) were pasted into chat or recorded here — only the
+method/commands used.

@@ -104,3 +104,13 @@ confirm real product/collection data populates the table.
   the new token is confirmed working (see validation doc's UPDATE section).
 - Current status is therefore: Product + Collection indexing fully working and locally verified; Blog
   indexing code-complete but pending the token/scope update on the user's side.
+
+## UPDATE (2026-09-18, later) — Production token updated by user
+
+User applied the reissued `SHOPIFY_UK_ADMIN_TOKEN` (with `read_content` added) directly on the production
+server: SSH in, backed up `.env` (timestamped copy), edited `.env` with the new token, restarted the
+`dm-dashboard` systemd service, confirmed `active (running)` with a clean startup log. Corrected a port
+mix-up found during this step: production actually runs the backend on **8499**, not 8199 (8199 was this
+session's local dev port on the user's own PC) — all production-side verification commands were updated
+to target `localhost:8499`. Awaiting the `refresh`/`refresh/status` output from the user to confirm the
+live blog fetch actually succeeds against the new token.
