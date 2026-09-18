@@ -44,3 +44,13 @@ tracking, and a single documented threshold-based status (not a priority/ranking
 expansion of the same Content Index capability, no separate capability record created. A real bug in the
 shared link-parsing code (external links mis-counted as internal) was found and fixed as part of this
 work, improving Step 02's accuracy too.
+
+## UPDATE (2026-09-18, later) — Step 04 further expands this capability
+
+Added a suggestion-generation and priority-classification capability (`suggestions.py`,
+`priority_rules.py`, table `internal_linking_suggestions`) -- turns Step 02/03's outputs into reviewable,
+prioritized suggestions with a persistent Approve/Reject/Keep-for-Review workflow. Still a direct
+expansion of the same Content Index capability chain, no separate capability record created. Documented
+limitation carried into this expansion: High/Medium priority requires cornerstone and new-blog
+classifications that don't exist in this project, so those tiers are currently unreachable by design --
+whoever builds Step 05 (handoff) should be aware every suggestion today is Low or No Action.

@@ -247,3 +247,52 @@ moves from PARTIAL to PASS once confirmed. Also still pending from Step 02: the 
 confirmation.
 
 **Owner:** Dilaksi. **Reviewer:** Kuberan.
+
+## UPDATE (2026-09-18, later) — Step 04: Generate & Prioritize Internal Link Suggestions
+
+**What was implemented:** turns Step 02's actionable opportunities + Step 03's density data into
+prioritized, reviewable suggestions -- no new matching, no new Shopify data, confidence reused verbatim
+from Step 02.
+
+**Where:** `backend/app/dev_tasks/internal_linking/priority_rules.py` (new, the priority logic) and
+`suggestions.py` (new, the generation), same package. Frontend: fourth tab on the same
+`InternalLinkingSuggestionEngine.jsx` page.
+
+**API endpoints:** `POST /api/dev/internal-linking/suggestions/generate`,
+`GET .../suggestions/generate/status`, `GET .../suggestions`, `POST .../suggestions/{id}/review`.
+
+**Database changes:** new table `internal_linking_suggestions`, **upserted** (not replaced) so a review
+decision survives regeneration.
+
+**Data sources:** the existing Step 02 opportunities and Step 03 density tables only -- no new fetch.
+
+**Suggestion logic:** one suggestion per actionable (not-already-linked) Step 02 opportunity, joined with
+the source page's Step 03 density row.
+
+**Confidence logic:** reused verbatim from Step 02, not recombined with new signals -- documented choice
+per task section 14, to avoid inventing a new score.
+
+**Priority logic:** re-audited the project for a cornerstone classification and a "new blog" definition --
+neither exists, and this step's own spec explicitly forbids inventing a publication-age threshold (unlike
+Step 03, which allowed a labeled default). Real consequence, stated plainly: HIGH and MEDIUM can never
+fire with real data today; every suggestion is LOW (reusing Step 03's own configured thresholds) or NO
+ACTION. This is the correct outcome of the "don't guess" instruction, not a defect.
+
+**Review workflow:** Approve / Reject / Keep for Review, stored as `review_status` +
+`reviewed_by` (from the existing `dm_user` localStorage convention) + `reviewed_at`. "Approved" only
+records that decision -- it does not send anything anywhere, since Step 05 (handoff) is not implemented.
+
+**Current status:** code-complete, pushed to `dev-work` (`c4d1ffa`), compiles and builds cleanly (one real
+JSX syntax error was introduced mid-edit and caught immediately by the build before pushing). **Not yet
+confirmed working end-to-end live.**
+
+**Known limitations:** High/Medium priority will show 0 until a real cornerstone classification and a
+new-blog definition are added to the project elsewhere -- this is expected, not a bug, and should be
+explained to Dilaksi before she reviews live results.
+
+**Remaining Step 05:** not implemented -- content-team handoff, still a separate future task.
+
+**Next step:** user runs "Generate Suggestions" live (requires Step 02/03 to have real data first) and
+reports the result; also still pending from earlier: live confirmation of Steps 02 and 03.
+
+**Owner:** Dilaksi. **Reviewer:** Kuberan.

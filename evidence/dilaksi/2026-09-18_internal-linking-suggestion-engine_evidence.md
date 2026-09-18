@@ -364,3 +364,62 @@ hygiene, not a codebase change.
 
 No secrets were exposed or recorded during any of this diagnostic work -- all fixes and terminations were
 DB-connection/session-level, not credential-related.
+
+## UPDATE (2026-09-18, later) — Step 04: Generate & Prioritize Suggestions implemented
+
+### Audit performed before writing Step 04 code
+Re-checked the whole codebase and AIOS again specifically for a cornerstone-page classification and a
+"new blog post" definition (same audit method as Step 03). Neither exists anywhere -- same finding as
+before, now re-confirmed for this step. Critical difference from Step 03: this task's own spec explicitly
+states "Do not invent a publication-age threshold" (section 7) for the new-blog condition -- stricter than
+Step 03's allowance of a labeled project-config default for link-count thresholds. Applied that
+distinction directly in code (`priority_rules.py`): `CORNERSTONE_STATUS_AVAILABLE = False` and
+`NEW_BLOG_STATUS_AVAILABLE = False`, both with the reasoning documented in the module docstring.
+
+### Real, stated consequence (not hidden)
+Because cornerstone and new-blog classifications are unavailable, the HIGH and MEDIUM priority rules
+cannot fire with real data -- every suggestion this step produces is currently LOW (reusing Step 03's own
+already-configured density thresholds) or NO ACTION. This is the correct, spec-compliant outcome of "do
+not guess missing classifications," not a bug, and is stated plainly in the module docstring, the frontend
+footnote, and this evidence doc.
+
+### What was implemented
+- `priority_rules.py` -- `priority_for()`, the one classification function, documented above.
+- `suggestions.py` -- `generate_suggestions()` reads ONLY the already-stored Step 02 actionable
+  opportunities (`existing_link = FALSE`) and Step 03 density rows (joined by source page identity), never
+  re-scans or re-matches. Confidence is reused verbatim from Step 02 (task section 14 explicitly allows
+  this without combining new signals, which was the choice made here to avoid inventing a new score).
+  Pages missing a Step 03 density row are skipped (not fabricated), counted and reported as
+  `skippedNoDensityData` in the response.
+- Schema: `internal_linking_suggestions`, **upserted** (not truncate-replace like Step 02/03) keyed on
+  `(source, target, anchor)` -- deliberately different from Step 02/03's pattern because a Dilaksi review
+  decision (`review_status`/`reviewed_by`/`reviewed_at`) must survive a regeneration; the UPDATE SET
+  clause explicitly excludes those three columns.
+- Router: `POST /suggestions/generate` (non-blocking, `BackgroundJob`), `GET /suggestions/generate/status`,
+  `GET /suggestions`, `POST /suggestions/{id}/review` (body: `status`, `reviewer` -- reviewer comes from
+  the existing `dm_user` localStorage convention already used by `Gsc404UrlMonitor.jsx`, no new user
+  system).
+- Frontend: fourth tab, 8 real summary KPIs (Total/High/Medium/Low/No Action/Review Required/Approved/
+  Rejected), filterable/searchable table with an inline review-status dropdown per row, and a detail modal
+  showing source/target/anchor/context/reason/confidence/density/priority-rule plus Approve/Reject/Keep
+  for Review buttons.
+
+### Quality checks (task section 10) -- reused, not re-implemented
+Self-link exclusion, existing-link exclusion, target validity, and dedup are all already enforced by Step
+02's own output; Step 04 only reads the already-filtered `existing_link = FALSE` rows and adds priority on
+top, per explicit instruction not to duplicate that logic.
+
+### No automatic implementation (task section 22) -- verified
+Grepped `suggestions.py`, `priority_rules.py`, and the new router endpoints for any `shopify_client` import
+or content-modifying call -- none exist. The review endpoint only writes to
+`internal_linking_suggestions`'s own review columns.
+
+### Verification performed
+`python -m py_compile` on all 5 new/edited backend files -- passed. `npx vite build` -- passed after fixing
+one real JSX syntax error introduced mid-edit (a block comment was closed prematurely, caught immediately
+by the build, fixed before pushing). Grep-confirmed no Shopify calls anywhere in the new code. **A live
+end-to-end "Generate Suggestions" run against real production Step 02/03 data was NOT performed in this
+session** -- pushed to `dev-work` (`c4d1ffa`) for the user to test live, same pattern as Steps 02/03.
+
+### No secrets
+None recorded.

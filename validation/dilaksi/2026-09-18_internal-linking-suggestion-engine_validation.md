@@ -146,3 +146,34 @@ confirming the FIXED matching logic produces a small, sensible opportunity count
 observed** — the user's second live scan attempt was still in progress (confirmed via `pg_stat_activity`
 to be genuinely computing, not stuck) at the time of this update. Re-verify once that run completes and
 the user reports the actual opportunity count.
+
+## UPDATE (2026-09-18, later) — Step 04 validation
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 1-3 | Steps 01/02/03 still work | PASS (by inspection) | No Step 01/02/03 file was modified except a frontend tab addition |
+| 4 | Step 04 loads correctly | PASS (code) | `GET /suggestions` reads the new table; frontend tab wired |
+| 5 | Opportunities converted to suggestions correctly | PARTIAL | Logic implemented and code-reviewed; not observed producing real output in this session |
+| 6-8 | Existing links respected / self-links excluded / duplicates excluded | PASS (inherited from Step 02) | `generate_suggestions()` only reads `existing_link = FALSE` rows from the already-deduped, self-link-excluded Step 02 output -- not re-derived |
+| 9 | Anchor text meaningful | PASS (inherited) | Same Step 02 phrase-quality filtering (multi-word, generic-title denylist) |
+| 10 | Target relevance preserved | PASS (inherited) | Target comes straight from Step 02's matched target, unchanged |
+| 11 | Confidence displayed correctly | PASS (code) | Reused verbatim (`confidence` column copied, not recomputed) |
+| 12-13 | Priority rules applied correctly / cornerstone <3 rule works when data exists | PASS (code) / **data unavailable** | `priority_for()` implements the exact rule; cornerstone data does not exist in this project so the condition never evaluates true -- documented, not a defect |
+| 14 | New blog/no product links rule works when data exists | PASS (code) / **data unavailable** | Same as above -- `NEW_BLOG_STATUS_AVAILABLE = False`, explicitly forbidden to invent per this task's own section 7 |
+| 15-16 | Low-density rule uses configured thresholds / no arbitrary undocumented threshold | PASS | Directly reuses Step 03's already-documented `density_status` -- no new threshold introduced |
+| 17 | No Action handled correctly | PASS (code) | Fallback branch in `priority_for()` |
+| 18-20 | Approval / rejection / review status persists | PASS (code) | `set_review_status()` writes `review_status`/`reviewed_by`/`reviewed_at`; upsert explicitly preserves these on regeneration |
+| 21-22 | No content auto-modified / no Shopify write | PASS | Grep-confirmed no `shopify_client` import in `suggestions.py`/`priority_rules.py`/the review endpoint |
+| 23 | No credentials exposed | PASS | None recorded |
+| 24-25 | Filters and search work | PASS (code) | `filteredSuggestions` memo covers priority, source/target type, confidence bucket, review status, and free-text search |
+| 26 | Detail view works | PASS (code) | Modal shows all required fields plus the exact priority rule text |
+| 27 | Step 05 remains unimplemented | PASS | No endpoints, schema, or frontend code for handoff/content-team workflow |
+| 28 | Existing dashboard functionality not broken | PASS (by inspection) | `vite build` succeeded for the whole app (after fixing one real JSX syntax error caught by the build itself before push) |
+
+### Overall Step 04 status: PARTIAL
+
+Same honest reasoning as Steps 02/03: everything achievable through code review, compile/build checks,
+and grep-based verification is PASS, but **no live end-to-end "Generate Suggestions" run against real
+production data was performed in this session**. Also worth flagging for the user explicitly: because
+cornerstone and new-blog classifications don't exist, live testing will show 0 High and 0 Medium
+suggestions by design -- this should not be mistaken for a bug when verifying live.
