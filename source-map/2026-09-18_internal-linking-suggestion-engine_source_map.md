@@ -19,3 +19,12 @@ No external API, credential, or data source outside what's listed above was intr
 | Link opportunities | The Step 01 `internal_linking_content_index` table only | No new Shopify/blog fetch — Step 02 is pure analysis of already-indexed `page_title`, `content_text`, `content_html`, `product_type`, `normalized_url` |
 | Existing-link detection | `content_html` already stored in Step 01 | Reuses the same href-parsing approach as `backend/app/hetheesha.py`'s existing Req5 `_extract_links`, extended for blog article URLs |
 | Storage | Two new tables in the same production Postgres database as Step 01 | `internal_linking_opportunities`, `internal_linking_opportunity_scans` |
+
+## UPDATE (2026-09-18, later) — Step 03 data source
+
+| Data | Source | Notes |
+|---|---|---|
+| Link density measurements | The Step 01 `internal_linking_content_index` table only | No new Shopify/blog fetch |
+| Existing-link parsing | Reuses (and fixes) Step 02's `extract_link_occurrences` | External-link mis-detection bug found and fixed here — see evidence doc |
+| Density thresholds | Project-configuration default, `density_rules.py` | No existing rule found anywhere in the codebase or AIOS — explicitly NOT presented as an SEO industry standard |
+| Storage | New table `internal_linking_density` in the same production Postgres database | Replaced per calculation |

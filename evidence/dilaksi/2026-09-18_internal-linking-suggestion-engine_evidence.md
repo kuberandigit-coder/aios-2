@@ -266,3 +266,57 @@ URL/title/anchor), and a click-through detail modal showing the context snippet 
 
 ### No secrets
 No credentials of any kind appear in this update.
+
+## UPDATE (2026-09-18, later) — Step 03: Check Existing Link Density implemented
+
+### Audit performed before writing Step 03 code
+Searched the entire dm-dashboard codebase (`cornerstone`, `link_density`, `link density`) and the whole
+AIOS documentation repo (`prompts/`, `evidence/`) for an existing internal-linking minimum/maximum
+threshold or cornerstone-page classification. **None exist anywhere** — the only prior mention of
+"cornerstone" in this project is this task's own Step 01 scope-exclusion note. Found the project's actual
+existing convention for this kind of thing instead: plain, clearly-named Python config modules (e.g.
+`mahima_stpm_rules.py`, `mahima_stpm_config.py`) — followed that same pattern rather than inventing a new
+generic settings/config system.
+
+### Real bug found and fixed while building this step
+`link_opportunities.extract_link_targets()` (Step 02) stripped ANY `https://host` prefix before matching
+a path, so a link to an EXTERNAL site's `/products/x` page was wrongly counted as an internal Product
+link. Fixed by only stripping the host when it's `ledsone.co.uk`/`www.ledsone.co.uk`; any other absolute
+host is now skipped entirely as external. Added `extract_link_occurrences()` (keeps duplicates, needed for
+Step 03's "total internal links" vs "unique targets" distinction) alongside the existing deduped
+`extract_link_targets()`. This fix also improves Step 02's existing-link detection accuracy.
+
+### What was implemented
+- `density_rules.py` — the ONE threshold rule (`status_for()`), with `MIN_INTERNAL_LINKS = 3`,
+  `REVIEW_MAX_INTERNAL_LINKS = 30`, both explicitly documented as `THRESHOLD_SOURCE =
+  "project_config_default"` — never presented as an SEO fact. `CORNERSTONE_STATUS_AVAILABLE = False`,
+  documented as to why (no classification exists).
+- `link_density.py` — `compute_density()` reads only the Step 01 Content Index (no Shopify/blog call),
+  reuses `extract_link_occurrences()` per page, classifies each occurrence as self-link (excluded from
+  useful counts, tracked separately) or a real target (counted + typed as Product/Collection/Blog),
+  computes unique-target count via a set, and applies `density_rules.status_for()`.
+- Schema: `internal_linking_density` table (replaced per calculation, same reasoning as Step 02's
+  opportunities table — a page's link count can change between calculations).
+- Router: `POST /density/calculate` (non-blocking, `BackgroundJob`), `GET /density/calculate/status`,
+  `GET /density`.
+- Frontend: third tab on the same page, 7 real summary KPIs (Pages Analyzed, Pages With Few Internal
+  Links, Pages With Sufficient Links, Pages Requiring Review, Pages With No Internal Links, Total Internal
+  Links, Unique Internal Targets), filterable/searchable table, and a detail modal that states the exact
+  threshold/status explanation per page (e.g. "X internal links detected. Configured minimum is 3, review
+  threshold is 30 (source: project_config_default). Page is marked Needs Attention.").
+
+### Documented limitation (not hidden)
+Cannot distinguish an editorial in-content link from a template-injected link (theme navigation/footer
+baked into `descriptionHtml`) — no existing data in this project makes that distinction, so all hrefs in
+`content_html` are counted the same way. Stated explicitly in the module docstring and the frontend
+footnote.
+
+### Verification performed
+`python -m py_compile` on all 6 backend files (new + edited) — passed. `npx vite build` — passed (only the
+same pre-existing warning class every sibling page produces). Grep-confirmed no `shopify_client` import in
+`link_density.py` or `density_rules.py`. **A live end-to-end calculation run against the real production
+data was NOT performed in this session** — pushed to `dev-work` (`5a5d58b`) for the user to test live, same
+as Step 02's current status.
+
+### No secrets
+None recorded.

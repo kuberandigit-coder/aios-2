@@ -176,3 +176,46 @@ Step 05 (handoff) all still to come as separate tasks.
 (timing + summary numbers); if it performs well, Step 02 validation moves from PARTIAL to PASS.
 
 **Owner:** Dilaksi. **Reviewer:** Kuberan.
+
+## UPDATE (2026-09-18, later) — Step 03: Check Existing Link Density
+
+**What was implemented:** per-page link-density measurement — total internal link occurrences, unique
+targets, per-type breakdown (Product/Collection/Blog), self-links tracked separately — against ONE
+documented threshold rule (not a priority engine).
+
+**Where:** `backend/app/dev_tasks/internal_linking/density_rules.py` (new, the threshold logic) and
+`link_density.py` (new, the calculation), same package. Frontend: third tab on the same
+`InternalLinkingSuggestionEngine.jsx` page.
+
+**API endpoints:** `POST /api/dev/internal-linking/density/calculate`,
+`GET .../density/calculate/status`, `GET .../density`.
+
+**Database changes:** new table `internal_linking_density` (replaced per calculation).
+
+**Data sources:** the existing Step 01 Content Index only — no new fetch.
+
+**Link-counting logic:** reuses Step 02's href parser (a real external-link bug was found and fixed here —
+see evidence doc — external links were previously mis-counted as internal). Total occurrences and unique
+targets are tracked separately; self-links are excluded from both and counted on their own.
+
+**Density rules used:** audited the whole project and AIOS — no existing internal-link threshold or
+cornerstone rule exists anywhere. The threshold used (3 minimum, 30 review-max) is explicitly labeled a
+project-configuration default, not an SEO fact, and every analyzed row records exactly which
+threshold/source it was measured against. Cornerstone status always reads "Not Available."
+
+**Current status:** code-complete, pushed to `dev-work` (`5a5d58b`), compiles and builds cleanly. **Not
+yet confirmed working end-to-end live** — same pending-user-test status as Step 02.
+
+**Known limitations:** cannot distinguish editorial content links from template-injected (navigation/
+footer) links baked into the same stored HTML — no existing data makes that distinction; cornerstone
+classification is unavailable project-wide, not just for this step.
+
+**Remaining Steps 04-05:** not implemented. Step 04 (Generate Suggestions/ranking) and Step 05 (Handoff)
+still to come as separate tasks — they should build on Step 02's opportunities and Step 03's density data
+rather than re-deriving either.
+
+**Next step:** user runs "Calculate Link Density" live and reports timing + summary numbers; validation
+moves from PARTIAL to PASS once confirmed. Also still pending from Step 02: the live opportunities-scan
+confirmation.
+
+**Owner:** Dilaksi. **Reviewer:** Kuberan.

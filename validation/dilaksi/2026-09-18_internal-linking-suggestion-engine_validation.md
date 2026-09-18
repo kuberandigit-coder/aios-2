@@ -97,3 +97,33 @@ index; the rewritten tokenized version was pushed to `dev-work` (`952dbe2`) but 
 local testing before a completed timed run could be captured, opting to test live on the deployed server
 instead. This is an honest, deliberate PARTIAL, not a hidden failure — re-verify item #6 (and overall
 timing) once the user runs "Find Link Opportunities" live and reports the result.
+
+## UPDATE (2026-09-18, later) — Step 03 validation
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 1-2 | Step 01/Step 02 still work | PASS (by inspection) | No Step 01/02 file was modified except the shared `extract_link_targets` bug fix (behavior-improving, not breaking — only changes external-link handling) and a frontend tab addition |
+| 3 | Step 03 loads correctly | PASS (code) | `GET /density` reads the new table; frontend tab wired |
+| 4-5 | Internal links counted correctly / external excluded | PASS (code, bug fixed) | `extract_link_occurrences()` now checks host against `{ledsone.co.uk, www.ledsone.co.uk}` before treating any absolute URL as internal — verified via code review of the exact fix |
+| 6 | Self-links handled correctly | PASS (code) | Compared against `(page_type, handle)` of the page itself, tracked in `self_link_count`, excluded from `total_internal_links` |
+| 7 | Total link occurrences correct | PASS (code) | `extract_link_occurrences` explicitly returns a list (not a set) — duplicates preserved |
+| 8 | Unique target count correct | PASS (code) | Computed via a Python `set` over occurrences |
+| 9-11 | Product/Collection/Blog links identified | PASS (code) | Same typed tuples as Step 02's link parser |
+| 12 | Duplicate link occurrences handled correctly | PASS (code) | Total vs unique are two separate, correctly-distinguished counts (task section 8) |
+| 13-14 | Density status uses correct configured rules / no arbitrary threshold undocumented | PASS | `density_rules.py`'s docstring documents the full audit (no existing rule found) and labels the default explicitly as project config, not fact; every row stores its own `threshold_min/max/source` |
+| 15 | Cornerstone data used only when supported | PASS | `cornerstone_status` is hardcoded `"Not Available"` — never guessed |
+| 16 | Missing/unknown configuration handled safely | PASS | No configuration lookup can fail silently — constants are Python-level, always present |
+| 17 | No fake data | PASS | All KPIs and rows come from `schema.density_summary()`/`list_density()`, reading only real calculated rows |
+| 18-19 | Filters and search work | PASS (code) | `filteredDensity` memo covers type, status, and free-text search |
+| 20 | Page detail works | PASS (code) | Detail modal renders the exact threshold values and status reasoning per page |
+| 21-22 | No Shopify content modified / no automatic links inserted | PASS | Grep-confirmed no `shopify_client` import anywhere in `link_density.py`/`density_rules.py` |
+| 23 | UAM continues to work | PASS | No UAM code touched |
+| 24 | Existing dashboard functionality not broken | PASS (by inspection) | `vite build` succeeded for the whole app |
+| 25-26 | Steps 04/05 remain unimplemented | PASS | No endpoints, schema, or frontend code for suggestion generation or handoff |
+
+### Overall Step 03 status: PARTIAL
+
+Same honest reasoning as Step 02: everything achievable through code review, compile/build checks, and
+grep-based verification is PASS, but **no live end-to-end calculation run against the real 5,938-row
+production Content Index was performed in this session** — pushed to `dev-work` (`5a5d58b`) for the user
+to test live. Re-verify once the user runs "Calculate Link Density" and reports the result.

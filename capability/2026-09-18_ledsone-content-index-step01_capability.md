@@ -33,5 +33,14 @@ built directly on top of the Content Index above — no new capability record wa
 direct expansion of the same one. It matches page titles/product types as anchor phrases via tokenized
 n-gram dictionary lookups (not AI/semantic similarity, not a brute-force regex — see this task's evidence
 doc for the performance rationale), checks existing links, excludes self-links, and deduplicates results.
-Future steps (03-05: link-density, ranking, handoff) should build on this same capability rather than
-re-indexing or re-scanning independently.
+Future steps (04-05: ranking, handoff) should build on this same capability rather than re-indexing or
+re-scanning independently.
+
+## UPDATE (2026-09-18, later) — Step 03 further expands this capability
+
+Added a link-density measurement capability (`link_density.py`, `density_rules.py`, table
+`internal_linking_density`) — per-page total/unique internal link counts, per-type breakdown, self-link
+tracking, and a single documented threshold-based status (not a priority/ranking engine). Still a direct
+expansion of the same Content Index capability, no separate capability record created. A real bug in the
+shared link-parsing code (external links mis-counted as internal) was found and fixed as part of this
+work, improving Step 02's accuracy too.
