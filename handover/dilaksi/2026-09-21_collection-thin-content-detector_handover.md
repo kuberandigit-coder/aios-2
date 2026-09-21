@@ -81,3 +81,43 @@ write operation, automatic publishing, content rewriting, post-implementation re
 User sets both thresholds via the Config tab, runs a Refresh Audit, and reviews the resulting Priority/FAQ/
 Traffic/Backlog tabs. Recommended next level: Level 2 (content gap analysis + content brief/FAQ suggestion
 generation) — still no Shopify writes, planning/review layer only.
+
+## UPDATE (2026-09-21, later)
+
+Several follow-up fixes/additions made after the user reviewed the live page:
+
+1. **UI fixes**: every tab was rendering the identical generic table (confusing — switching tabs looked
+   like nothing changed). Fixed with distinct, purpose-built columns per tab (Priority Analysis shows
+   Priority+Reason sorted by severity; Traffic Analysis shows Clicks/Impressions/CTR/Position sorted by
+   traffic; Content Backlog has an inline status dropdown), plus a one-line subtitle per tab.
+2. **Root-cause CSS bug found and fixed**: the table markup was never wrapped in the existing
+   `.jreq-scroll` container, so none of this dashboard's sticky-header/border/padding/hover/truncation
+   styling applied at all — explained the "plain, unstyled" look the user saw. Also fixed two silent
+   styling bugs found in the same pass: the active-tab class name didn't match the CSS (`active` vs
+   `is-active`), and MEDIUM priority pills referenced a non-existent CSS class (should be `-amber`, not
+   `-orange`).
+3. **Config tab redesigned** as two side-by-side threshold cards (Configured/Not Configured status pill,
+   unit suffix in the input, Save button disabled until the value actually changes) instead of stacked
+   full-width blocks.
+4. **Tab bar redesigned** as a segmented control with a live row-count badge per tab, scoped via a new
+   CSS modifier class so the shared `.jreq-view-tab` style used by other pages (e.g. Internal Linking
+   Suggestion Engine) is untouched.
+5. **Search box**: already matched title + URL as a substring (so pasting a full/partial URL already
+   worked); added collection handle to the match and clarified the placeholder text.
+6. **Automatic 15-day audit refresh added**, in addition to the existing manual "Refresh Audit" button
+   (kept exactly as-is per explicit instruction — user triggers it manually when needed). New
+   `backend/app/dev_tasks/collection_thin_content/scheduler.py`: does not reuse `ScheduledSnapshot`
+   as-is (that helper assumes one JSON blob per snapshot table plus a `sales_cache.sync_history`/
+   `sync_control` row — the Sales/Employee-Performance Sync Monitor's own schema — whereas this task
+   upserts real per-collection rows directly into `collection_thin_content_audit`, so there's no single
+   payload to hand it and no reason to appear in that unrelated Sync Monitor UI). Reuses the same proven
+   approach instead: anchors the next run to the last actual audit success (not a flat sleep, which
+   drifts), catches up if a run was missed while the server was down, never blocks, logs failures instead
+   of dying silently. New endpoint: `GET /api/dev/collection-thin-content/schedule`, surfaced in the UI
+   next to "Last updated" as "Auto-refreshes every 15 days (next: ...)".
+7. **User set real threshold values** via the Config tab: Minimum Word Count = 300, High Traffic
+   Threshold = 10 GSC clicks (30 days). These are real business decisions made by the user, not invented
+   by this task — recorded here for reference since they now drive every priority classification.
+
+All changes committed to `dev-work` (commits `bb84261`, `584332d`, `e1ec5af`, `70d9669`, `f0ca5f1`,
+`f5f7625`) and pushed to remote on explicit "push" instruction each time.
