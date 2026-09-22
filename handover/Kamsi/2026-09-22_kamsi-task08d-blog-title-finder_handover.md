@@ -147,11 +147,25 @@ Three rounds of user feedback (screenshots) drove further changes:
    done as of this update).
 2. Nothing else — all functional/live-test criteria have passed.
 
+## UPDATE (2026-09-22, later still) — UI polish round 2 + prompt/workflow redesign
+
+- Fixed the Generated Title Details modal layout (Source URL was
+  squeezed into the same column as stat cards).
+- Removed "Kamsi" from every visible page label/text (component name,
+  task key, and backend routes/env vars are internal, left unchanged).
+- **Title-generation prompt replaced entirely** per new explicit
+  business requirement: now generates 10 differentiated title
+  candidates per run (format type + differentiation reasoning each)
+  instead of 1. New "Pending Selection" workflow step: Kamsi picks one
+  of the 10 via a new UI panel before it enters the existing QA/review
+  lifecycle. Schema migration applied to the already-deployed table.
+- All live-tested (real local-LLM 10-candidate generation, full DB
+  round-trip create->select->QA). Pushed to `dev-work` only (commits
+  `fb77986`, `e1341e5`, `e62e105`) — see evidence.md for full detail.
+
 ## Next step
 
 Ask whoever manages deployment whether/when to merge `dev-work` into
 `main` for this feature to go live in production. No closure record has
 been created yet — deliberately held open until that deployment decision
 is made.
-value, then re-run the pipeline live and update evidence/validation
-accordingly.

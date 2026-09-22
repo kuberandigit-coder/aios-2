@@ -164,6 +164,65 @@ test — run directly through the real `router.run_research()` function:
   use of the live page — correctly left untouched (the cleanup only
   targeted rows this specific test created).
 
+## UPDATE (2026-09-22, later still) — UI polish round 2, candidate-selection redesign
+
+Further real user feedback (screenshots) drove more changes on top of the
+UI overhaul below:
+
+1. **Modal layout fix** — the Generated Title Details modal squeezed the
+   Source URL into the same narrow grid column as the stat cards,
+   wrapping into a tall skinny block. Fixed: Source URL is now its own
+   full-width clickable row, the 3 real stat cards (keyword/char count/QA)
+   sit in an even row, QA Status shows as a colored pill, attribution +
+   Verify sit in a clean footer row. Modal widened 640px -> 720px.
+2. **Removed "Kamsi" from all visible page text** — nav labels, header
+   eyebrow, API Limits heading, and the SerpAPI warning message. Internal
+   identifiers (component name, task key, backend routes/env vars) were
+   left untouched — attribution is already handled generically via
+   createdBy/reviewer/verifiedBy, so hardcoding the staff name into the
+   page chrome wasn't needed.
+3. **Prompt replaced entirely, per explicit new business requirement** —
+   the original single-title-JSON prompt was swapped for the user's own
+   SEO-strategist prompt: generates 10 differentiated title candidates
+   per run (not 1), each with a format type (how-to/listicle/comparison/
+   buying-guide/faq/other) and a stated reason it's differentiated from
+   the real Top 10 competitor titles. Reuses the already-fetched real
+   Google Top 10 (confirmed: no new fetching added, no competitor-page
+   scraping) and the already-extracted primary keyword.
+4. **New human-in-the-loop step**: a research run now creates a
+   generation row in a new "Pending Selection" status holding all 10
+   candidates (JSONB). A new CandidateSelectionPanel (table: Title |
+   Chars | Format | Why It's Different | Select) lets Kamsi pick one;
+   picking it runs the exact same deterministic QA as before and moves
+   the row into the existing Draft/Ready-for-Review/Approve/Reject/
+   Verify lifecycle unchanged. Schema migration: `candidates` JSONB
+   column, `generated_title`/`character_count` made nullable,
+   `selected_format_type`/`selected_reason` columns, new status value
+   added to the CHECK constraint (migration-safe, already-deployed table
+   updated via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` / constraint
+   drop+recreate).
+
+**Live-tested, real local-LLM calls (not mocked):**
+- 10-candidate generation call returned exactly 10 real, distinct
+  candidates, varied formats (how-to/listicle/buying-guide/comparison/
+  faq/other), every title naturally including the given keyword,
+  concrete per-title differentiation reasoning (not generic filler).
+- Full DB round-trip: created a real research+generation row with 10
+  candidates, called the new `/select` endpoint, confirmed
+  `generatedTitle`/`selectedFormatType`/`selectedReason` populated
+  correctly, QA ran and passed, status moved to "Ready for Review",
+  `candidates` array preserved untouched. Test rows cleaned up
+  afterward.
+- Confirmed via the Generated Titles list + research detail endpoints
+  that a "Pending Selection" row displays correctly (shows candidate
+  count, not a blank title) in both places.
+
+**Status**: implemented, live-tested, pushed to `dev-work` only (commits
+`fb77986`, `e1341e5`, `e62e105`). Per a later, explicit standing
+instruction from the user (2026-09-22), further dm-dashboard work this
+session stopped pushing to `main` directly — `dev-work` only, `main` is
+updated via the project's own existing dev-work merge process.
+
 ## Also this update — UI overhaul
 
 Per direct user feedback (screenshots showing unstyled raw buttons/inputs
