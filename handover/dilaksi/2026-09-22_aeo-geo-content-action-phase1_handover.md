@@ -121,6 +121,26 @@ Live end-to-end test against a real database row (see evidence file for full det
   actual HTML structure beyond what was passed as context.
 - No automated way (yet) to know whether an Approved draft was actually copied into Shopify by a human —
   that tracking would belong to Phase 2 alongside the write capability itself.
+- No before/after citation verification loop exists yet (this is Phase 2, by design) — a user asked
+  directly whether the tool can confirm a published change actually flipped "You Cited" from No to Yes; the
+  honest answer today is "manually only" (publish in Shopify yourself, then re-run "Run AI Overview Check"
+  on the same query). The underlying `geo_visibility_results` data already supports an automatic
+  before/after comparison view without any new data collection — just no UI/endpoint reads it that way yet.
+- 3 real Content Actions were created by the user in production usage this session (`Lighting Set`,
+  `Wall Lights & Sconces`, `Lamp Holders & Bulb Holders`) — the latter two predate the `query` column fix
+  (below) and still show a blank query in the list; not backfilled, user was offered and declined.
+
+## UPDATE (2026-09-22, later) — same-day fixes from real usage
+
+Two real problems found once the user actually used the shipped feature, both fixed the same day (commit
+`8d3cfe7`):
+
+1. Content Actions list rows were not clickable — added `ContentActionDetailModal`, reusing the existing
+   generate/edit/regenerate/approve/reject flow, fetched standalone by action id.
+2. The action's originating query text was never stored (only numeric `query_ids`) — added a `query`
+   column, denormalized from the real result at creation time.
+
+See the evidence file's own "UPDATE (2026-09-22, later)" section for full live-verification detail.
 
 ## Recommended Phase 2
 
