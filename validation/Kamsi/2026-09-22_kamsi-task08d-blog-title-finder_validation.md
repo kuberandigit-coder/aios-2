@@ -30,6 +30,11 @@ Reviewer: (pending human review)
 | Verify re-check works, no extra credit spent | `POST /generations/{id}/verify` | **RUN — QA re-confirmed PASS, `totalSearchesLeft` unchanged by the verify call** | **PASS** | evidence.md UPDATE section |
 | Real quota tracking | `GET /account` | **RUN — `totalSearchesLeft` correctly dropped 249 -> 248 for the one research call only** | **PASS** | evidence.md UPDATE section |
 | UI usable/readable (post-feedback) | Tabs (Research/Generated Titles/API Limits), scoped CSS, wider layout, Verify button, user attribution | Frontend build + manual code review against explicit user screenshots/feedback | PASS | KamsiBlogTitleFinder.jsx/.css |
+| Modal layout fixed (round 2 feedback) | Generated Title Details modal — Source URL full-width, stat cards evenly spaced | Frontend build + code review | PASS | KamsiBlogTitleFinder.jsx/.css |
+| "Kamsi" removed from all visible page text | grep across component | No visible "Kamsi" remaining, only internal identifiers | PASS | — |
+| New 10-candidate title prompt | `generate_title()` live call with real keyword/Top10 | 10 real, distinct candidates, varied formats, concrete reasoning | PASS | evidence.md round-2 update |
+| Candidate selection -> QA -> review lifecycle | Full DB round-trip: create candidates, `/select`, QA, status transition | `generatedTitle`/`selectedFormatType`/`selectedReason` populated correctly, QA ran, status moved to Ready for Review | PASS | evidence.md round-2 update |
+| Schema migration safe on already-deployed table | `ensure_schema()` re-run against real DB | New columns + constraint added without error, no data loss | PASS | evidence.md round-2 update |
 
 ## Overall
 
