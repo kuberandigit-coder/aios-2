@@ -80,5 +80,36 @@ frontend only talks to this backend's own API, exactly like every other dev task
 
 ## Status
 
-Implemented, live-verified against real data. **Not yet committed to git** — pending final report to user;
-will follow the standing "commit locally, push only on explicit instruction" rule.
+Implemented, live-verified against real data. Committed to `dev-work` and merged to `main`, deployed to
+production (Contabo VPS, `dm-dashboard.vintageinterior.co.uk`).
+
+## UPDATE (2026-09-22) — full verification log for the FAQ generation + workflow restructure batch
+
+Every fix in this batch was live-tested against real data before commit, not just compiled. Full narrative
+is in the handover file's own "UPDATE (2026-09-22)" section (avoids duplicating the same detail twice) — key
+verification artifacts:
+
+- **Audit perf fix**: measured live, 490-collection audit went from ~10+ min to ~22s (`bulk_upsert_audit_rows`
+  vs 490 individual `upsert_audit_row` calls, each ~716ms).
+- **Scheduler datetime bug**: reproduced the exact failure (`json.dumps()` on the real payload raised
+  `TypeError: Object of type datetime is not JSON serializable`), then confirmed the fix by running the
+  same function and successfully serializing its output.
+- **FAQ generation background-job fix**: live end-to-end run — `POST .../generate` returned `{"status":
+  "computing"}` immediately, background job completed in ~66s, status poll correctly tracked
+  computing → done with the real generated schema.
+- **Script-tag bug**: fed the exact bare-JSON shape from the user's own screenshot through
+  `parse_llm_output()` — confirmed output now matches the reference `<script>`-wrapped format exactly.
+- **Internal-link reliability fix**: fed a link-free sample through `ensure_internal_link_present()` —
+  link correctly injected; then through `strip_internal_links_from_jsonld()` — correctly removed again.
+- **Internal-links-used accuracy fix**: reproduced the exact reported scenario (3 candidates offered, only
+  1 mentioned in text) — `links_actually_mentioned()` correctly returns 1, not 3.
+- **3rd Scrape.do slot**: live-confirmed via `/faq-quota` on both local machine and production server — all
+  3 slots return real balances (620/1000, 1000/1000, 1000/1000).
+- **429 rate-limit fix**: reproduced the user-reported all-3-slots-429 failure pattern conceptually (3
+  requests with zero delay), then confirmed the retry+stagger fix returns all 3 slots successfully.
+- **Implement/Verify workflow**: live round-trip on a real collection (`mark_implemented` →
+  `record_verification` against a live Shopify re-fetch) — correctly reported "Still Thin" since the test
+  collection's content was never actually edited, never fabricated a false "Verified".
+
+All test/scratch data created during these live tests was cleaned up from the database afterward (no
+leftover test rows in `collection_thin_content_audit`/`collection_thin_content_faq_draft`).

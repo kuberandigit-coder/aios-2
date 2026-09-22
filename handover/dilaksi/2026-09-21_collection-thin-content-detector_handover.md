@@ -121,3 +121,103 @@ Several follow-up fixes/additions made after the user reviewed the live page:
 
 All changes committed to `dev-work` (commits `bb84261`, `584332d`, `e1ec5af`, `70d9669`, `f0ca5f1`,
 `f5f7625`) and pushed to remote on explicit "push" instruction each time.
+
+## UPDATE (2026-09-22) — Performance fix, Sync Monitor, AI FAQ generation feature, workflow restructure
+
+Large batch of follow-on work since the last update. Level 1's own closure
+(`closure/dilaksi/2026-09-21_dilaksi_collection-thin-content-detector-level1_closure.md`) is NOT reopened —
+everything below is either a Level-1 bug fix or a separate, later-requested capability (FAQ schema
+generation) added on top, not a re-scoping of Level 1 itself.
+
+### 1. Audit performance fix (`9fd8347`)
+Root cause found live (not guessed): `upsert_audit_row()` opened a separate connection + transaction +
+commit per collection — 490 sequential commits measured at ~716ms each (~350s alone), the majority of a
+reported "10+ minutes" audit runtime. Fixed with `schema.bulk_upsert_audit_rows()` (single `unnest()`
+round-trip for all rows). Live-verified: full 490-collection audit now completes in ~22 seconds.
+
+### 2. Registered in Sync Monitor (`5472767`, later corrected by `5aecede`)
+Superseded the standalone scheduler mentioned in the note above — now uses the same `ScheduledSnapshot`
+helper `competitor_analysis`/`geo_visibility` already use, giving Run History/pause-resume/manual Run Now
+through the existing Sync Monitor page (Dev → Sync Monitor → "Dev — Collection Thin-Content Detector",
+scope `collection-thin-content`) instead of a one-off UI. **Bug found and fixed (`5aecede`)**: the
+snapshot's summary payload included a raw Postgres `datetime` object, which `json.dumps` can't serialize —
+every single scheduled run failed with "Object of type datetime is not JSON serializable" (24 failed runs
+in Run History), and because no run ever succeeded, the schedule kept retrying every few minutes instead of
+respecting the real 15-day interval. Fixed by converting the timestamp to an ISO string before returning;
+live-verified via `json.dumps()` on the exact same payload.
+
+### 3. AI FAQ generation added (FAQ Analysis tab, `17e9f03` onward) — NOT part of Level 1
+Per later explicit instruction. Multiple design iterations, in order:
+- First built as full HTML content + FAQPage JSON-LD (matching the user's own supplied prompt).
+- **Reverted to schema-only** (`10fa419`) per explicit instruction — no visible HTML/FAQ content generated
+  or previewed, JSON-LD FAQPage schema only.
+- **Reliability fix** (`755f332`): generation was originally synchronous, holding the HTTP connection open
+  for the full ~60-90s AI call — the exact anti-pattern `background_job.py` exists to prevent (breaks
+  through a proxy's shorter idle timeout as "Failed to fetch"; closing the modal lost all progress since
+  state lived only in that one request). Converted to a real per-collection `BackgroundJob`; live-verified
+  end-to-end (POST returns instantly, job completes server-side, status poll tracks it to completion).
+- **Script-tag bug** (`45279ae`): copied output was bare JSON with no `<script type="application/ld+json">`
+  wrapper — confirmed via the user's own before/after screenshots that pasting it into Shopify rendered as
+  visible page text instead of invisible structured data. Fixed: output is now always the full wrapped
+  block, with the inner JSON validated/re-serialized so a malformed AI response can never be pasted through
+  broken.
+- **Accordion preview** (`ed5b3aa`, `39aabeb`): raw JSON-LD code view replaced with a real expand/collapse
+  accordion parsed from the schema itself; any internal-link URL mentioned in an answer renders as a real
+  clickable link (using the real matched page's title) in the preview only — the underlying schema text
+  stays plain, since structured data is never rendered as a page.
+- **Internal links**: reinstated as a toggle (`54e88c3`), then per explicit instruction simplified to
+  "included by default + a free 'Remove Internal Links' button that edits the existing schema without a new
+  AI/PAA credit" (`652224c`). **Reliability fix** (`f314d5b`): confirmed live that the AI ignores the "mention
+  a link" soft instruction fairly often — added `ensure_internal_link_present()`, a deterministic fallback
+  that appends a link itself when the model's output has none. **Accuracy fix** (`5cd7319`): "Internal Links
+  Used" was reporting all ~3 candidate pages offered to the model, not the (usually 1) actually mentioned —
+  now filtered to only links genuinely present in the final text.
+- **3rd Scrape.do token** (`5edba39`): `SLOT_ENV`/`PAA_MAX_ATTEMPTS_PER_PRODUCT` generalized so automatic
+  failover (quota exhausted/rate-limited/auth-failed) reaches a 3rd configured slot, not just 2 — shared
+  with the existing product-level FAQ system. User added `DILAXI_SCRAPE_API_TOKEN_3` to production `.env`;
+  live-confirmed via `/faq-quota` all 3 slots active (620/1000, 1000/1000, 1000/1000 at time of writing).
+- **429 fix** (`2f20385`): checking all 3 slots' balances back-to-back tripped Scrape.do's own rate limit on
+  their `/info` endpoint (independent of real PAA credit usage) — user-reported via screenshot showing all 3
+  slots erroring simultaneously. Fixed with retry-with-backoff + a small stagger between slot checks;
+  live-verified all 3 now return real balances reliably.
+- Real Scrape.do credit balance surfaced in the Config tab (`3490028`, `62c5bbc`) — live `/info` endpoint
+  (confirmed not to itself cost a credit), summed total across all configured tokens, explains the
+  auto-switch behavior.
+
+### 4. Workflow restructure (`9848da1`) — per explicit instruction
+- Checkbox selection added to the Collections tab (+ select-all-on-page); once anything is checked, every
+  OTHER tab (Traffic Analysis, FAQ Analysis, Content Backlog, History) scopes down to only the selected
+  collections.
+- **Priority Analysis tab removed** — Priority is already a column on every other tab, so the dedicated tab
+  was pure duplication.
+- New tab order matching the real workflow: Collections → Traffic Analysis → FAQ Analysis → Content Backlog
+  → History → Config (reordered twice per explicit instruction, `a197dc3` moved FAQ Analysis before
+  Content Backlog).
+- **New Implement/Verify/History workflow**: "Mark Done" (Content Backlog + detail modal) records who
+  applied a change in Shopify manually and when — tracking only, never a Shopify write. "Verify" (History +
+  detail modal) does a live, read-only re-fetch from Shopify + re-analysis, comparing the real current page
+  against the configured threshold/FAQ requirement — never marks something Verified just because a user
+  said so (live-tested: correctly reported "Still Thin" against unedited test data). New History tab: every
+  Done collection, who did it, when, live verification status. New columns on `collection_thin_content_audit`:
+  `implementation_status`, `implemented_by`, `implemented_at`, `verification_status`, `verified_at`.
+- **Removed the redundant Backlog Status (`review_status`) dropdown** (`28c5097`) once the
+  Mark-Done/Verify workflow made it fully redundant — per explicit user observation ("why this need, I
+  think this is unwanted"). Deleted the dead `PUT /collections/{id}/status` endpoint and
+  `schema.update_review_status()`; the DB column itself was left in place (harmless, unused) rather than
+  dropped.
+
+### 5. Smaller fixes
+- URL columns across all tabs are now clickable links (`4451906`), not plain text.
+- FAQ schema code block was overflowing the modal, forcing horizontal scroll — fixed with a wrapping CSS
+  modifier class scoped so the Blog HTML Editor's diff view (same base class) is unaffected (`4451906`).
+- Search box already matched title+URL as a substring; added handle matching + clarified placeholder
+  (`f0ca5f1`).
+
+### Current real config (as of 2026-09-22)
+Minimum Word Count = 300, High Traffic Threshold = 10 GSC clicks (30 days) — both real business decisions
+made by the user. 3 Scrape.do tokens configured and active. Auto-sync now succeeding on the corrected
+15-day schedule.
+
+### What is still intentionally NOT implemented
+Same Level 1/2/3 boundary as before: no automatic Shopify writes anywhere (FAQ generation, Mark Done, and
+Verify are all tracking/read-only), no live before/after collection-page preview, no automatic publishing.
