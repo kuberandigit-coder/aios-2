@@ -55,3 +55,27 @@ credit-conscious "edit the existing AI output for free" action instead of a full
 `primary_keyword_for()` and `pick_internal_links()` are specific to collection-page SEO (title-cleaning,
 token-overlap against the Internal Linking content index) — reusable as a pattern, not as-is for a
 different domain.
+
+## UPDATE (2026-09-22, later) — confirmed reused, second consumer
+
+This exact pattern was reused (not duplicated) the same day by the AEO/GEO Content Action feature
+(`backend/app/dev_tasks/geo_visibility/content_actions.py`, Dilaksi Phase 1) — proof this capability record
+is genuinely reusable, not a one-off:
+
+- Same `_call_local_llm()` (`LOCAL_LLM_*` env vars) + Gemini fallback, copy-per-file per this codebase's
+  established convention.
+- Same "ask for strict JSON, validate before saving" pattern (`parse_llm_output()`) — here validating a
+  `{format, formatReason, question, content, placementNote}` shape instead of a JSON-LD block, same
+  discipline: a malformed response is rejected ("Generated response could not be validated. Please
+  regenerate.") rather than silently saved.
+- Extended the "never lose a previous draft" idea one step further: `generation_history` (a JSONB array on
+  the DB row) preserves every prior AI draft before a Regenerate overwrites `generated_content` — the FAQ
+  schema pattern only needed a single before/after edit (`strip_internal_links_from_jsonld`), this consumer
+  needed unlimited regenerate history, so the pattern generalized cleanly to that need.
+- New reusable idea contributed back: "human edit stored separately from the AI draft, original never
+  overwritten" (`final_content`/`final_question` columns alongside `generated_content`/`generated_question`)
+  — worth folding into this capability's own future consumers if a future feature needs human-editable AI
+  output.
+
+Confirms this is now a proven, twice-used pattern in this codebase, not implemented in reference to a
+single task.
