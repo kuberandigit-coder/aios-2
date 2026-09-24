@@ -1,10 +1,11 @@
-# Source Map — Task 13 (Hetheesha) French Keyword Research & Page Mapping — Phase 1 + Phase 2 + Phase 3
+# Source Map — Task 13 (Hetheesha) French Keyword Research & Page Mapping — Phase 1 + Phase 2 + Phase 3 + Phase 4
 
 **Date:** 2026-09-24. Confirmed live against real code/data this session —
 see [[2026-09-24_task13-phase1-audit_evidence]],
-[[2026-09-24_task13-phase2-datasource-layer_evidence]], and
-[[2026-09-24_task13-phase3-keyword-dataset_evidence]] for full citations.
-Overlaps partially with [[2026-08-20_thivajini-feed-optimization-source-map]]
+[[2026-09-24_task13-phase2-datasource-layer_evidence]],
+[[2026-09-24_task13-phase3-keyword-dataset_evidence]], and
+[[2026-09-24_task13-phase4-intent-classification_evidence]] for full
+citations. Overlaps partially with [[2026-08-20_thivajini-feed-optimization-source-map]]
 (same `google_search_console.query_page` / `ledsone_fr` Shopify store) —
 that record documents Thivajini's own Feed Optimization task; this one
 documents the same underlying sources specifically for Task 13's needs. Not
@@ -21,6 +22,12 @@ reflect the seed keyword dataset now built on top of these sources (144
 real seeds, provenance-merged, GSC/Shopify-enriched). Google Keyword
 Planner, GSC, and Shopify entries are otherwise unchanged from Phase 2 —
 Phase 3 consumed them exactly as built, no new integration work needed.
+
+**Phase 4 update:** the Local LLM entry below is updated from "reusable
+pattern identified" to "successfully used end-to-end for this task" —
+144/144 real seed keywords classified live. The PostgreSQL entry is
+updated with Phase 4's 8 new classification columns (same table,
+extended, not a new one).
 
 ---
 
@@ -105,7 +112,11 @@ multi-source provenance), `public.hetheesha_kw13_keyword_metrics`
 (source-tagged Keyword Planner fields, stays empty until credentials
 exist), `public.hetheesha_kw13_shopify_page_inventory` (1,178 rows).
 Clustering/URL-mapping/gap/cannibalisation tables deliberately still NOT
-created — out of Phase 3 scope per spec (belongs to Phases 5-7).
+created — out of Phase 3/4 scope per spec (belongs to Phases 5-7).
+**Phase 4** added 8 columns to the same `hetheesha_kw13_seed_keywords`
+table (`intent`, `core_topic`, `modifier_groups`, `modifier_values`,
+`classification_status`, `classified_at`, `classification_source`,
+`classification_error`) — no new table. All 144 rows classified live.
 
 ---
 
@@ -117,6 +128,13 @@ created — out of Phase 3 scope per spec (belongs to Phases 5-7).
 and already proven live generating/classifying French-language content for
 ledsone.fr in `backend/app/thivajini_feed_providers.py` (Feed
 Optimization). Directly reusable pattern for Task 13 Step 03.
+**Phase 4:** successfully reused (not just identified) — 144/144 real
+French seed keywords classified live via the LOCAL_LLM primary path
+(`backend/app/hetheesha_task13.py`'s `_call_local_llm_classify`, same
+call shape as `thivajini_feed_providers.py`), zero fallback to Gemini
+needed this run. LLM output is explicitly Derived authority only —
+never presented as authoritative search data, always validated
+deterministically before being saved (see Phase 4 evidence).
 
 ---
 
