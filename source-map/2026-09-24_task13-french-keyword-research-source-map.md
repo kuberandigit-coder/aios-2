@@ -1,8 +1,9 @@
-# Source Map — Task 13 (Hetheesha) French Keyword Research & Page Mapping — Phase 1 + Phase 2
+# Source Map — Task 13 (Hetheesha) French Keyword Research & Page Mapping — Phase 1 + Phase 2 + Phase 3
 
 **Date:** 2026-09-24. Confirmed live against real code/data this session —
-see [[2026-09-24_task13-phase1-audit_evidence]] and
-[[2026-09-24_task13-phase2-datasource-layer_evidence]] for full citations.
+see [[2026-09-24_task13-phase1-audit_evidence]],
+[[2026-09-24_task13-phase2-datasource-layer_evidence]], and
+[[2026-09-24_task13-phase3-keyword-dataset_evidence]] for full citations.
 Overlaps partially with [[2026-08-20_thivajini-feed-optimization-source-map]]
 (same `google_search_console.query_page` / `ledsone_fr` Shopify store) —
 that record documents Thivajini's own Feed Optimization task; this one
@@ -14,6 +15,12 @@ status, taskRegistry path) not covered there.
 Phase 1 was re-verified live via the new `backend/app/hetheesha_task13.py`
 data-source layer (see Phase 2 evidence). Statuses below are updated to
 reflect Phase 2 implementation, not just Phase 1 audit findings.
+
+**Phase 3 update:** the PostgreSQL (app DB) entry below is updated to
+reflect the seed keyword dataset now built on top of these sources (144
+real seeds, provenance-merged, GSC/Shopify-enriched). Google Keyword
+Planner, GSC, and Shopify entries are otherwise unchanged from Phase 2 —
+Phase 3 consumed them exactly as built, no new integration work needed.
 
 ---
 
@@ -88,14 +95,17 @@ app's own DB (`get_conn()`, never the read-only business DB), following
 the `ensure_schema()` idempotent-CREATE-TABLE-IF-NOT-EXISTS convention
 (`product_ownership.py`, `sajeepan_lens_db.py`,
 `thasitha_manual_campaigns.py`):
-`public.hetheesha_kw13_research_runs` (run history, never overwritten),
-`public.hetheesha_kw13_seed_keywords` (seed data contract only, no
-generation logic yet), `public.hetheesha_kw13_keyword_metrics`
+`public.hetheesha_kw13_research_runs` (run history, never overwritten;
+Phase 3 added the `seed_dataset_build` run type),
+`public.hetheesha_kw13_seed_keywords` (Phase 3 extended with
+`normalized_term`/`status`/`source_refs`/`gsc_metrics`/`candidate_urls`/
+`run_id` — live-populated: **144 real French seed keywords**, 85 with
+real GSC metrics, 95 with real candidate Shopify URLs, all with merged
+multi-source provenance), `public.hetheesha_kw13_keyword_metrics`
 (source-tagged Keyword Planner fields, stays empty until credentials
-exist), `public.hetheesha_kw13_shopify_page_inventory` (live-populated:
-1,178 rows from the Phase 2 test run). Clustering/URL-mapping/
-gap/cannibalisation tables deliberately NOT created — out of Phase 2
-scope per spec.
+exist), `public.hetheesha_kw13_shopify_page_inventory` (1,178 rows).
+Clustering/URL-mapping/gap/cannibalisation tables deliberately still NOT
+created — out of Phase 3 scope per spec (belongs to Phases 5-7).
 
 ---
 
