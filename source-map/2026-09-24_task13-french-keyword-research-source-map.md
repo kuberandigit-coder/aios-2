@@ -50,6 +50,13 @@ complete and will work once a credential exists.
 **LIMITATION:** the France/French target-constant IDs must be spot-checked
 against Google's live API (or published reference tables) on first real
 use — see code comment in `hetheesha_task13.py`.
+**Phase 7:** the blocker now directly gates the approved priority rules
+that need volume (HIGH transactional >= 600, LOW < 100). Real volumes are
+NULL (`hetheesha_kw13_keyword_metrics` has 0 rows), so 17 gaps are stored
+as `UNDETERMINED` and 19 informational gaps as *provisional* MEDIUM; GSC
+impressions are never substituted. The analysis re-reads Keyword Planner
+metrics on every run, so HIGH/LOW populate automatically once a credential
+exists (proven with clearly-labelled fixtures only).
 
 ---
 
@@ -76,6 +83,14 @@ per-keyword snapshot; never a score). New finding: GSC shows real
 inventory cannot list (FR token lacks `read_content`) — so GSC can reveal
 live URLs outside the verified inventory. They are reported but NOT used
 as mapping targets.
+**Phase 7:** GSC is the sole evidence for potential cannibalisation —
+9 cases where >= 2 distinct LEDSone URLs receive impressions for one
+primary keyword (per-URL clicks/impressions/position, `source:
+google_search_console`). It is search-performance evidence, not proof of
+Google's canonical/cannibalisation decision. It also shows 2 live URLs
+outside the verified inventory that qualify informational/transactional
+gaps as candidates (CL-0061, CL-0083). Only the primary keyword's stored
+30-day snapshot is used; no new GSC fetch.
 
 ---
 
@@ -104,6 +119,9 @@ excluded). It holds titles/handles/status only — no page content — so
 relevance is title/handle/GSC-based, and the lack of Blog rows makes
 informational mappings gap *candidates* until `read_content` is granted.
 Local LLM stays Derived (tie-break suggestions only, never authoritative).
+**Phase 7:** inventory is reused as stored (no re-fetch) to verify every
+selected/candidate URL in gap and conflict records. The missing Blog rows
+make the 19 informational gaps candidates, not confirmed gaps.
 
 ---
 
@@ -125,12 +143,19 @@ real GSC metrics, 95 with real candidate Shopify URLs, all with merged
 multi-source provenance), `public.hetheesha_kw13_keyword_metrics`
 (source-tagged Keyword Planner fields, stays empty until credentials
 exist), `public.hetheesha_kw13_shopify_page_inventory` (1,178 rows).
-Clustering/URL-mapping/gap/cannibalisation tables deliberately still NOT
-created — out of Phase 3/4 scope per spec (belongs to Phases 5-7).
+(Phase 3 note, superseded: clustering/mapping/gap tables did not exist yet.)
 **Phase 4** added 8 columns to the same `hetheesha_kw13_seed_keywords`
 table (`intent`, `core_topic`, `modifier_groups`, `modifier_values`,
 `classification_status`, `classified_at`, `classification_source`,
 `classification_error`) — no new table. All 144 rows classified live.
+**Phase 5** added `hetheesha_kw13_clusters` + `hetheesha_kw13_cluster_keywords`
+(83 clusters, run 25). **Phase 6** added `hetheesha_kw13_url_mappings`
+(mapping run 27, 83 rows). **Phase 7** added `hetheesha_kw13_gaps`,
+`hetheesha_kw13_cannibalisation_cases` and `hetheesha_kw13_analysis_conflicts`
+(per-analysis-run, unique constraints prevent duplicates; analysis runs are
+`research_runs` rows of type `gap_cannibalisation_analysis`, latest run 30).
+Also Phase 7: `ensure_schema()` now runs once per process (was 8-10 s per
+endpoint call).
 
 ---
 
