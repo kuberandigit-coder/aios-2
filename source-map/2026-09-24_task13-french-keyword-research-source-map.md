@@ -135,6 +135,11 @@ call shape as `thivajini_feed_providers.py`), zero fallback to Gemini
 needed this run. LLM output is explicitly Derived authority only —
 never presented as authoritative search data, always validated
 deterministically before being saved (see Phase 4 evidence).
+**Phase 5:** same LLM chain reused only for narrow MERGE/SEPARATE
+tie-breaks on near-duplicate core topics; clusters themselves are built
+deterministically by `(intent, core_topic)`. Still Derived authority —
+Google Keyword Planner and GSC remain the authoritative sources for their
+own metrics (see Phase 5 evidence).
 
 ---
 
