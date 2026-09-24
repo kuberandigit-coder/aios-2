@@ -69,6 +69,13 @@ already is the persisted snapshot). Live-tested 2026-09-24 for a real
 7-day range: 5 real French queries returned (e.g. "ampoule baionnette",
 "abat jour metal") with real clicks/impressions/ctr/position, normalized
 to the Phase 2 spec's exact field shape, `source: "google_search_console"`.
+**Phase 6:** used as source-labelled *evidence* for keyword→URL mapping
+(per-URL clicks/impressions/impression-weighted position from the stored
+per-keyword snapshot; never a score). New finding: GSC shows real
+`ledsone.fr/blogs/news/...` URLs receiving impressions that the Shopify
+inventory cannot list (FR token lacks `read_content`) — so GSC can reveal
+live URLs outside the verified inventory. They are reported but NOT used
+as mapping targets.
 
 ---
 
@@ -90,6 +97,13 @@ the UK equivalent token already has (per `content_fetch.py`). Reported
 honestly as `BLOCKED_SCOPE_REQUIRED`, zero blog rows written — not faked,
 not silently skipped. Fix requires granting `read_content` on the FR
 token (an account/app-permissions change, not a code gap).
+**Phase 6:** this inventory is now the authoritative list of valid
+mapping targets — every selected and candidate URL is checked against it
+(only ACTIVE products; the built-in `frontpage` "Home page" collection is
+excluded). It holds titles/handles/status only — no page content — so
+relevance is title/handle/GSC-based, and the lack of Blog rows makes
+informational mappings gap *candidates* until `read_content` is granted.
+Local LLM stays Derived (tie-break suggestions only, never authoritative).
 
 ---
 
