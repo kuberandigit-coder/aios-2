@@ -110,3 +110,55 @@ conflicts. Hetheesha has the access grant.
 ## Not done
 
 Production deployment. No Shopify content or SEO change of any kind.
+
+---
+
+## Update after deployment (2026-09-25) — supersedes the statements it lists
+
+Evidence: [[2026-09-25_task13-post-phase10-changes_evidence]]
+
+**Status:** still "Implementation Complete — Manual Verification Pending". Not
+closed as COMPLETED.
+
+**Two Sync Monitor jobs now exist (Dev layout)**
+1. "Dev — French Keyword Research" — the full pipeline, weekly; steps: shopify
+   (products and collections), Search Console metrics, candidate URLs,
+   Keyword Planner attempt (no effect), classification (incremental), clusters,
+   URL mapping, gaps. Last run: success, 758 s, 2,054 keywords.
+2. "Dev — French Keyword Research: Blog Articles" — daily; reads published blog
+   articles into the page inventory. Last run: success, 71 articles.
+Both resume automatically at startup if a restart killed their last run. A
+failed blog read makes the run fail visibly instead of being hidden.
+
+**Changes to earlier statements**
+- Known issue 2 (blog pages missing): resolved. The token has `read_content`
+  and 71 articles are stored. The mappings have NOT been rebuilt since, so
+  informational keywords do not yet map to them — run the main job once.
+- Known issue 3 (weekly job never refreshes Shopify): products and collections
+  are now refreshed every run and blogs daily. It still does not add new
+  Search Console queries; the dataset stays the 2,054 keywords.
+- Known issue 8: the keyword tab now loads all keywords with a summary payload
+  (2.7 MB, about 3 s).
+- Known issue 9: a restart mid-run no longer strands the job (auto-resume, plus
+  the user's own restart on deploy).
+- Volume, Google Ads competition and CPC columns were removed from every tab.
+  Keyword Planner remains not implemented and not a dependency.
+- The Clusters tab and Overview cards stay on the last complete run while a new
+  run is in progress.
+
+**Current data (built before blogs existed):** 467 clusters; mappings
+NEEDS_REVIEW 175, CONFLICT 158, NO_SUITABLE_URL 106, AUTO_MAPPED 28; 256 gaps;
+161 potential cannibalisation cases.
+
+**Still open**
+1. Run the main job again so mapping and gaps use the 71 blog articles.
+2. Conflict / cannibalisation counts are probably inflated (no minimum
+   threshold) — a threshold needs agreeing.
+3. 28 classification errors; near-duplicate (singular / plural) clusters.
+4. The manual checks listed above (Phase 9 workflow, authorization, browser).
+5. Optional: a step that adds new Search Console queries; remove the unused
+   Keyword Planner job step (a few minutes per run).
+
+**Operating note:** deploying restarts the backend and stops a running job.
+It resumes afterwards, repeating only the unfinished step, but the cleanest
+time to deploy is when the Sync Monitor shows the job Idle.

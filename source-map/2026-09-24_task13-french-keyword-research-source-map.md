@@ -206,3 +206,9 @@ Only the sources actually used by the finished Task 13:
 Other data checked in the business DB and not adopted: French Google Ads search
 terms (8,751 terms to 4 Aug 2026), Amazon.fr weekly search volume, 68 blog URLs
 visible in Search Console. Available if wanted; none is in Task 13 today.
+
+**Update 2026-09-25:** Shopify blog articles are now part of the Shopify source.
+The French token has `read_content`; a separate daily Sync Monitor job reads
+published articles into the page inventory (71 stored). Products and
+collections refresh with the weekly pipeline. Search Console seeds now come
+from the top 2,000 queries over 180 days (2,054 keywords in total).

@@ -31,3 +31,23 @@ must not be recorded as COMPLETED until the manual checks in the handover pass.
 No new tables, services or routes were created in this phase. Earlier phases
 used existing patterns (ensure_schema, ScheduledSnapshot, jreq UI classes,
 existing access grants). The only new cross-cutting code is `auth.verify_token`.
+
+---
+
+## Update after deployment (2026-09-25)
+
+Evidence: [[2026-09-25_task13-post-phase10-changes_evidence]]
+
+| Requirement | Validation | Result |
+|---|---|---|
+| Pipeline runs on the server and covers all keywords | Sync Monitor run: success, 758 s, 2,054 keywords covered | PASS |
+| Blog articles gathered from Shopify | Blog job: success, 71 articles in the page inventory | PASS |
+| Failed blog read is visible, not hidden | Simulated blocked and error responses make the job fail with the reason and leave stored rows unchanged (1,183 rows before and after) | PASS |
+| Clusters tab not empty during a run | Endpoint returned 470 clusters while the newest run was empty; run 684 (467 clusters) now shows | PASS |
+| Keyword tab shows every keyword | Endpoint returns total 2,054 (2.7 MB, about 3 s) | PASS (endpoint) / PARTIAL (not seen in a browser by me) |
+| Informational keywords map to blog pages | Mappings were built before the blogs were stored; not rebuilt | PARTIAL — re-run required |
+| Auto-resume after a real restart | Decision logic tested with simulated records; no live restart observed | PARTIAL |
+| Phase 9 review workflow, authorization failures, UI | Not exercised | PARTIAL — manual testing pending |
+
+**Overall result: PARTIAL** (unchanged). Nothing failed; the remaining items
+are the re-run and the manual checks.
