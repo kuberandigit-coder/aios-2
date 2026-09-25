@@ -25,3 +25,15 @@
   re-run to use the blog articles.
 - Docs: `evidence/hetheesha/2026-09-25_task13-post-phase10-changes_evidence.md`,
   updates in the Phase 10 handover, validation and source map.
+
+### Task: Hetheesha Task 15 — Structured Data Validation (ledsone.fr)
+- Built the full module: sitemap URL discovery, JSON-LD/microdata/RDFa extraction,
+  Product/Organization/Breadcrumb/duplicate checks against live Shopify, a bounded
+  Search Console URL Inspection sample, fix and re-validation workflow, eight-tab
+  dashboard page, Sync Monitor job, CSV export. Not deployed; left uncommitted in
+  `dm-dashboard` for review.
+- A small live sample found invalid product `availability` values (`farce`,
+  `hors de gamme`, confirmed by Search Console) and no BreadcrumbList.
+- Status: Implementation Complete — Manual Verification Pending (no closure).
+- Docs: `prompts|evidence|validation|handover/hetheesha/2026-09-25_task15-*`,
+  `source-map/2026-09-25_task15-*`.
