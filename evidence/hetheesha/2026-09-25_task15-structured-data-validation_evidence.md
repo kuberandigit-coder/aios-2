@@ -71,3 +71,16 @@ The 9–13 URL samples are not the whole site; percentages must not be inferred.
 
 Full crawl of about 1,300 URLs, the full Sync Monitor job, the dashboard in a
 browser, authorized (non-401) writes, deployment, Hetheesha's UAM access.
+
+---
+
+## Update — Action Needed workflow (2026-09-25)
+
+Requirement: each issue must show "what should I do next" and "where to get the real data" (pasted follow-up prompt; original Task 15 prompt unchanged).
+
+Implemented on the existing page and API (no new page, tab, table or endpoint), commit `6982e3d` on `dev-work`:
+- `backend/app/dev_tasks/structured_data_validation/guidance.py` (new): lookup from `issue_code` to action group — product schema missing/invalid, duplicate/conflicting Product schema, missing shipping/return policy, plus breadcrumb, organization, fetch and general groups; and a "no action" record for valid pages. Derived at read time, nothing stored, so detected values stay separate from instructions.
+- `router.py`: issue lists, Fix & Re-validation list and URL detail now include an `action` object; URL detail includes `no_action` when a URL has no issues.
+- `/export.csv`: two columns appended (Action Needed, Real Data Source); existing 12 columns unchanged and in place.
+- `StructuredDataValidation.jsx/.css`: the existing detail drawer issue block shows "What to do" steps and "Where to get the real data"; empty state shows the "no action, re-check periodically" recommendation. Status workflow OPEN → FIX_REQUIRED → READY_FOR_RECHECK → PASSED/FAILED and Before → Fix → After history untouched.
+- Rule kept: no shipping costs, delivery times or return periods are invented; guidance tells the user to obtain the real business value. Read-only toward Shopify.

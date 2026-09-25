@@ -26,3 +26,17 @@
 
 **Overall result: PARTIAL.** Nothing failed. Manual verification of the UI and
 the full workflow is pending, so no closure record was created.
+
+---
+
+## Update — Action Needed workflow (2026-09-25)
+
+| Requirement | Validation | Result |
+|---|---|---|
+| Guidance for product schema, duplicate/conflicting, shipping/return, all valid | Mapping checked for 7 sample issue codes; texts follow the requirement | PASS |
+| Guidance attached to every issue in drawer, lists and CSV | Code read; frontend builds; backend files compile | PASS (code) / PARTIAL (not seen in browser) |
+| No fabricated shipping/return values | Guidance only points to Shopify settings / confirmed policy | PASS |
+| Existing 8 tabs, workflow, priorities, CSV columns preserved | Only additive changes | PASS (code) |
+| Backend starts with new module | Not run locally (missing local dependency `psycopg_pool`); py_compile passes | PARTIAL |
+
+**Overall: PARTIAL** — manual test pending.

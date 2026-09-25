@@ -37,3 +37,5 @@
 - Status: Implementation Complete — Manual Verification Pending (no closure).
 - Docs: `prompts|evidence|validation|handover/hetheesha/2026-09-25_task15-*`,
   `source-map/2026-09-25_task15-*`.
+
+- Task 15 (Hetheesha): Action Needed workflow added to the existing Structured Data Validation page (what to do + real data source per issue, CSV columns). Details in the Task 15 evidence/validation/handover files (update section). Commit `6982e3d`, not deployed.

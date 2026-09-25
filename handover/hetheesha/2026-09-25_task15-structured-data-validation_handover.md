@@ -97,3 +97,12 @@ homepage Organization logo. Re-run the full job to see the true site-wide counts
    PASSED / FAILED and the history.
 5. Export CSV and check the 12 columns.
 6. Confirm the GSC tab wording and the sample counts.
+
+---
+
+## Update — Action Needed workflow (2026-09-25)
+
+Each issue now carries "What to do" steps and "Where to get the real data" (drawer, Fix & Re-validation, CSV columns "Action Needed" and "Real Data Source"). Guidance lives in `guidance.py`; add or edit wording there. Needs deploy of commit `6982e3d`.
+
+Manual checks: open a URL with a Product issue, a duplicate/conflict issue and a shipping/return issue and confirm the right guidance shows; open a valid URL and confirm the no-action message; export CSV and confirm the two new columns; confirm status changes and re-validation still work.
+Task 15 not closed.
