@@ -187,3 +187,22 @@ own metrics (see Phase 5 evidence).
 **DATA:** Approved mapping/status/notes
 **AUTHORITY:** Human
 **STATUS:** Future (Phase 9 per the proposed plan — not built this phase).
+
+---
+
+## Final status (Phase 10, 2026-09-25) — supersedes earlier status lines above
+
+Only the sources actually used by the finished Task 13:
+
+| Source | Final status |
+|---|---|
+| Google Search Console — ledsone.fr | Implemented. 180-day query and page metrics, read from the synced business-DB table. |
+| Shopify Admin API — ledsone.fr | Implemented, read-only. Products and collections stored as the page inventory. Blogs/articles missing (token lacks `read_content`). |
+| Local LLM | Implemented. Intent, modifiers, core topic and cluster tie-breaks; derived, validated. |
+| PostgreSQL (app DB) | Implemented. `french_keyword_research_*` tables incl. review_state / review_history. |
+| Human reviewer | Implemented (Phase 9). Final keyword-to-URL approval, authorized server-side. |
+| Google Keyword Planner | **NOT implemented and not a dependency** — dropped by decision 2026-09-25; the earlier "Partial" entry above is historical. Dormant code remains in the package. |
+
+Other data checked in the business DB and not adopted: French Google Ads search
+terms (8,751 terms to 4 Aug 2026), Amazon.fr weekly search volume, 68 blog URLs
+visible in Search Console. Available if wanted; none is in Task 13 today.
