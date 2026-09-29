@@ -130,3 +130,31 @@ status per issue, no history log yet — a lighter tracker than Task 15's
 full Before→Fix→After workflow).
 
 Commit `6ae5909` on `dev-work`, not deployed, not manually tested.
+
+---
+
+## Update — Phase 3: Fix & Re-validation (2026-09-30)
+
+Evidence: [[2026-09-30_task16-phase3-fix-revalidation_evidence]]
+
+Before building anything, checked whether any issue this task detects can be
+safely auto-fixed via this project's existing Shopify Admin API. **None
+can** — the root causes (theme canonical/noindex/robots.txt, or Google's own
+crawl/quality judgement) aren't reachable through any mutation this project
+has. So every issue routes to **Create Fix Task** (records a Before
+snapshot, hands off to a person), never a fake **Apply Fix**. This is
+recorded in `fixes.py` itself, not only in AIOS.
+
+**Re-validation** is real and works today: it re-checks one URL against
+live Search Console on demand, using the same shared cache Task 15 already
+uses, and moves the issue to RESOLVED (now indexed) or FAILED (still not).
+
+New: a **Fix Queue** tab and a **Fix & Re-validation** panel in the issue
+drawer with a Before → Fix → After history.
+
+Commit `761c89b` on `dev-work`, not deployed, not manually tested.
+
+Manual checks: create a fix task on a real issue and confirm it appears in
+the Fix Queue; re-validate a URL you know is now indexed and confirm it
+moves to RESOLVED; re-validate one still not indexed and confirm FAILED;
+confirm Phase 1/2 still work.
