@@ -109,3 +109,24 @@ server.
 Any later-phase feature: Request Indexing, GSC writes, automatic fixes,
 Shopify changes, revalidation, a PASSED/FAILED workflow, automatic task
 assignment. Production deployment.
+
+---
+
+## Update — action UI + capability check (2026-09-29)
+
+Before building the Issues detail panel's action buttons, checked whether
+Search Console has any API to request indexing for an arbitrary URL. It does
+not — see [[2026-09-29_task16-gsc-api-capability-check_evidence]]. The
+"Request Indexing" control opens the real Search Console URL Inspection
+tool for that URL in a new tab instead of a fake in-app action.
+
+Also added: a persisted per-issue status (NEW → INVESTIGATING →
+ACTION_REQUIRED → FIX_IN_PROGRESS → VALIDATION → RESOLVED, or IGNORED with a
+required reason), a recommended action + owner ("SEO team (Hetheesha)") per
+issue, the LOW priority bucket renamed to MONITOR, and a site-wide
+"indexed pages dropped >10% week-on-week" issue once 7+ days of history
+exist. New table: `public.search_console_indexing_issue_state` (current
+status per issue, no history log yet — a lighter tracker than Task 15's
+full Before→Fix→After workflow).
+
+Commit `6ae5909` on `dev-work`, not deployed, not manually tested.
