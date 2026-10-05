@@ -50,8 +50,21 @@ Screenshots: `70` through `75-ga19-p5-*.png`.
 
 ## Part 6 — Answer-first intro on Wall Light collection
 
-Found Wall Light already has a full content article in its description, but its opening line is descriptive, not answer-first ("Lights on the wall, or sconces as they're often called, are a really neat way..."). Drafted a short answer-first intro to prepend above the existing article, unchanged below it — awaiting Kuberan's final confirmation on wording before publishing. Not yet live.
+Found Wall Light already has a full content article in its description, but its opening line is descriptive, not answer-first ("Lights on the wall, or sconces as they're often called, are a really neat way..."), and the article's own heading duplicated the page's title as a second `<h1>`. Prepended a short answer-first intro above the existing article, downgraded the article's own heading to styled text, and rebuilt the FAQ into a proper accordion. Pushed live and verified: one real `<h1>`, intro renders correctly.
+
+Screenshot: `77-ga19-p6-wall-light-faq-accordion-styled-live.png`.
+
+## Muguntha's live-site review — 4 gaps found and fixed, same day
+
+After the above was live, Muguntha reviewed GA-19 directly on the real site and flagged 4 issues in the "website organic discovery" thread:
+
+- **B22 and E14's SEO titles** had never actually saved — both showed as filled-in in the admin's "Page title" box, but that was an unsaved placeholder preview, not a real saved value. Browser `<title>` was falling back to Shopify's auto-generated default in both cases. Retyped and re-saved both; confirmed live via the real `<title>` tag on each page. Screenshots: `78` and `79` (B22), `80` (E14).
+- **Wall Light had two real `<h1>` tags** — addressed as part of the Part 6 fix above.
+- **The answer-first intro rendered below the product grid, not above it.** Root cause: a shared theme block (`custom_liquid_mMhpBT`) that prints the collection description sits after the product grid in the default template used by every default-template collection on the site — not specific to Wall Light. First fix attempt reordered this shared block, which fixed Wall Light but moved every other collection's description above its own grid too; caught and reverted the same session before anything was left in that state. Correct, scoped fix: built `templates/collection.wall-light.json`, a dedicated template for Wall Light only, reusing the same `model-collection-e27` section already proven live on E27 Bulbs (editable in the theme customizer, not hardcoded raw HTML), with the old Title block disabled to avoid a duplicate-H1 risk from the reused section's own heading output. Verified live using Shopify's own section ID markers, not just text position, that the intro section's wrapper precedes the grid's wrapper. Screenshots: `81` through `84`.
+- **B22's 6-vs-7 product count** — checked and confirmed expected, not a bug: 1 of 7 is still Draft status, so only 6 show publicly; will appear automatically once published.
+
+All 4 confirmed via direct raw-HTML fetch of the live page, not the admin/editor preview. Reply with proof, plus a full GA-19 status update, drafted and ready to post.
 
 ## Team status update
 
-Replied in the shared "website organic discovery" thread confirming GA-19 as the first task, with Parts 1 & 2 done, Parts 3 & 4 blocked pending Muguntha, Parts 5 & 6 in progress at the time of posting.
+Replied in the shared "website organic discovery" thread confirming GA-19 as the first task. Final status at close of day: Parts 1, 2, 5 and 6 done and verified live, including all 4 gaps from Muguntha's review. Parts 3 & 4 — Kuberan's side (live data + report) done; actual fixes reassigned by Muguntha to Sajeepan and Hethesha, deadlines today and 09/10 respectively.

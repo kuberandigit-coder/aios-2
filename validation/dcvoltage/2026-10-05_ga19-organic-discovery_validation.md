@@ -23,12 +23,22 @@
 
 Rather than trusting the Shopify theme code editor or admin UI alone, the real publicly-served page was fetched directly via `requests` in Python for every claim above — checking the actual HTML a customer's browser receives, not what the editor shows. This method caught that an earlier WebFetch-based AI summary had mischaracterized styled `<div>` elements as "H1"/"H3" tags on a different product — a discrepancy only visible by reading raw HTML directly, which is why this became the standard verification method for the rest of the task.
 
+## Additional checks — Muguntha's live-site review round
+
+| # | Item flagged | Method | Result |
+|---|------|--------|--------|
+| 11 | B22 SEO title actually saved | Raw fetch of the real `<title>` tag before and after re-saving | PASS, confirmed live — matches the previously-unsaved placeholder issue, not a typo |
+| 12 | E14 SEO title actually saved | Same method | PASS, confirmed live |
+| 13 | Wall Light — exactly one real `<h1>` | Raw HTML `<h1>` tag count | PASS — count went from 2 to 1 |
+| 14 | Wall Light — intro renders before the grid | Shopify's own section ID wrapper positions compared directly (not text position, which gave a false negative once due to an unrelated earlier text match) | PASS — intro section wrapper confirmed before the main/grid wrapper |
+| 15 | B22 6-vs-7 product count | Checked product status directly via the Shopify Admin API | Confirmed expected — 1 of 7 is Draft, not a bug |
+| 16 | Site-wide collection.json revert | Confirmed the shared template's block order was restored to its original state after the first (too-broad) fix attempt, before anything was left live in the incorrect state | PASS — reverted and re-verified same session |
+
 ## Gaps / not yet complete
 
 - **Part 5's content follow-up** (header nav cross-links, answer-first intro box, quick links, shape table, FAQ, schema — matching E27 Bulbs) is confirmed as required by Kuberan but **not yet built**. The collections themselves are live and correct; this is additional content work logged as the next step, not a failure of what's done so far.
-- **Part 6** is not yet live — intro drafted, awaiting Kuberan's confirmation on wording before publishing.
-- **Parts 3 & 4** cannot be marked PASS/live yet by design — no changes were made, correctly, pending Muguntha's approval. The report's accuracy is what's being validated here, not a live fix.
+- **Parts 3 & 4** cannot be marked PASS/live yet by design — no changes were made, correctly, pending approval. Kuberan's side (live data pull + report) is validated as accurate and delivered; the actual fixes are now owned by Sajeepan and Hethesha, outside this validation's scope.
 
 ## Verdict
 
-**PASS** on Parts 1, 2, and 5 (all independently confirmed live, not just locally edited or editor-visible). **PASS on report accuracy and delivery** for Parts 3 & 4, with the actual fixes correctly withheld pending approval. **Part 6 in progress**, not yet validated as live since it isn't published.
+**PASS on Parts 1, 2, 5 and 6**, all independently confirmed live via direct page fetch, including the full round of fixes from Muguntha's live-site review (items 11-16 above). **PASS on report accuracy and delivery** for Parts 3 & 4, with the actual fixes correctly withheld pending approval and now reassigned. One real process gap worth noting for next time: the first attempt at fixing item 14 was too broad (it affected every collection on the site, not just Wall Light) — caught and corrected in the same session before it was left live, but a narrower first attempt would have avoided the extra round trip.

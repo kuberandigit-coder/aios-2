@@ -8,7 +8,7 @@ Source: "LEDsone Organic Discovery: Rules, Recommendations and Results Log"
 | # | Code | Task | Deadline | Status |
 |---|------|------|----------|--------|
 | 1 | **KU-01** | dcvoltage E27 batch 1 (C1/C3/C4/P1/P2/P5/G1/G2/G3) | Fri 2 Oct 18:00 SL | ✅ **Done** — see `DCVoltage_E27_quick-fixes_2026-10-02.md`. Doc still shows "past due" — flag to Muguntha so it's marked done. |
-| 2 | **GA-19** | dcvoltage pack (6 parts, below) | Start Mon 5 Oct | ☐ Not started |
+| 2 | **GA-19** | dcvoltage pack (6 parts, below) | Start Mon 5 Oct | 🔶 **4 of 6 done** (Parts 1, 2, 5, 6) — Parts 3 & 4 blocked on Muguntha's approval, report sent. See `GA19_progress_2026-10-05.md`. |
 | 3 | **KU-02** | dcvoltage E27 batch 2 (C2/C5/C7/P3/P4/P6/P10/G4/G6) | Wed 7 Oct 18:00 SL | ☐ Not started |
 | 4 | **KU-03** | dcvoltage E27 batch 3 (C8/C10/C11/P7, then C6/P8/P9) | Mon 12 Oct 18:00 SL | ☐ Not started |
 

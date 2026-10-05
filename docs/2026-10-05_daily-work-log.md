@@ -67,3 +67,22 @@
   richer content E27 Bulbs already has (intro box, quick links, shape table, FAQ, breadcrumb,
   schema) — logged as the explicit next step. Wall Light's answer-first intro still in
   progress. See [[2026-10-05_ga19-organic-discovery_closure]].
+
+- **GA-19 Part 6 completed, then Muguntha's live review caught 4 real gaps — all fixed
+  same day.** Finished Wall Light's answer-first intro (prepended above the existing
+  article, FAQ section rebuilt into a proper accordion with a rotating icon) and pushed
+  live. Muguntha then reviewed the whole task live and flagged: B22's SEO title and E14's
+  SEO title both looked filled in in the admin editor but had never actually saved (an
+  unsaved-placeholder issue, not a typo); Wall Light had two real `<h1>` tags (the
+  collection's own auto title plus the article's own heading); and the intro rendered below
+  the product grid instead of above it. Fixed all 4, each confirmed via direct raw-HTML
+  fetch of the live page, not just the admin preview. The intro-position fix needed two
+  attempts — the first (reordering a shared template block) accidentally moved every
+  collection's description above its grid site-wide, caught and reverted the same session;
+  the correct fix was a dedicated template for Wall Light only, reusing the same reusable
+  section already proven live on E27 Bulbs rather than hardcoding raw content. Build
+  confirmed: one real H1, answer-first box between the title and the grid, FAQ accordion
+  styled. Reply with proof, and a status update covering GA-19 as a whole (4 of 6 parts done
+  on Kuberan's side; Parts 3 & 4 since reassigned by Muguntha to Sajeepan/Hethesha, with
+  deadlines today and 09/10), ready to post in the team thread. See
+  [[2026-10-05_ga19-organic-discovery_closure]].

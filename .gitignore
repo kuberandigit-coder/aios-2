@@ -23,3 +23,6 @@ shopify-token/
 
 # Raw theme export/extracted copy -- the real tracked copy lives in shopify-themes/dcvoltage (its own repo)
 dcvoltage-e27-model/theme-exports/
+
+# Word temp lock files
+~$*
