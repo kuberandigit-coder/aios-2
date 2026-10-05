@@ -1,0 +1,339 @@
+{% comment %}
+  Model product specs section (DRAFT, dcvoltage.co.uk, 29 Sep 2026)
+  ----------------------------------------------------------------
+  Goes BELOW the theme's product-information section on templates/product.e27-model.json only.
+  Renders:
+    1. Spec table from product metafields (namespace "specs"), with a fallback to manual "Spec row" blocks
+    2. Optional per-wattage table from VARIANT metafields (specs.watts / specs.lumens / specs.kelvin)
+    3. Compatibility note + one delivery/returns line
+    4. FAQ accordion (native <details>, so the answers are in the raw HTML)
+    5. JSON-LD:
+         schema_mode = "full"       -> Product with one Offer per variant + FAQPage + BreadcrumbList
+         schema_mode = "supplement" -> FAQPage + BreadcrumbList only (keeps the theme's own ProductGroup)
+         schema_mode = "off"        -> nothing
+       Use "full" only after the theme's own product JSON-LD is switched off FOR THIS TEMPLATE
+       (see install step 6); otherwise the page has two Product entities.
+
+  Rules followed:
+    - Currency is cart.currency (the price the shopper sees), falling back to shop.currency. Never hard-coded.
+    - gtin is output only when the variant barcode is 8, 12, 13 or 14 digits.
+    - aggregateRating only when the standard review metafields exist (reviews.rating + reviews.rating_count > 0),
+      which Judge.me and other review apps can write. No rating = no rating markup.
+    - Brand = the "Brand override" setting if filled, otherwise the shop name.
+    - Returns policy markup only if the "Return window (days)" setting is filled in after Muguntha confirms the policy.
+{% endcomment %}
+
+{%- liquid
+  assign specs = product.metafields.specs
+  assign currency_code = cart.currency.iso_code | default: shop.currency
+  assign brand_name = section.settings.brand_override | default: shop.name
+
+  comment
+    Listing code (e.g. ~1025) stays in the title because customers quote it.
+    For JSON-LD it goes into productID (the store's own identifier). It is not used as mpn,
+    which is reserved for a manufacturer part number. Metafield custom.listing_code wins;
+    otherwise the text after the last "~" in the title is used.
+  endcomment
+  assign listing_code = product.metafields.custom.listing_code.value | default: ''
+  if listing_code == blank and product.title contains '~'
+    assign listing_code = product.title | split: '~' | last | strip
+  endif
+
+  comment
+    Build "label|value" pairs from product metafields. Blank metafields are skipped.
+  endcomment
+  assign rows_html = ''
+-%}
+
+{%- capture rows_html -%}
+  {%- if specs.fitting != blank -%}<tr><th scope="row">Fitting / cap</th><td>{{ specs.fitting.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.watts != blank -%}<tr><th scope="row">Power</th><td>{{ specs.watts.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.watt_equivalent != blank -%}<tr><th scope="row">Old-bulb equivalent</th><td>{{ specs.watt_equivalent.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.lumens != blank -%}<tr><th scope="row">Brightness</th><td>{{ specs.lumens.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.kelvin != blank -%}<tr><th scope="row">Colour temperature</th><td>{{ specs.kelvin.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.dimmable.value == true -%}
+    <tr><th scope="row">Dimmable</th><td>Yes{% if specs.dimmer_note != blank %}, {{ specs.dimmer_note.value | escape }}{% endif %}</td></tr>
+  {%- elsif specs.dimmable.value == false and specs.dimmable.type != blank -%}
+    <tr><th scope="row">Dimmable</th><td>No</td></tr>
+  {%- endif -%}
+  {%- if specs.shape != blank -%}<tr><th scope="row">Shape</th><td>{{ specs.shape.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.dimensions_mm != blank -%}<tr><th scope="row">Size</th><td>{{ specs.dimensions_mm.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.cri != blank -%}<tr><th scope="row">Colour rendering</th><td>{{ specs.cri.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.lifespan_hours != blank -%}<tr><th scope="row">Rated life</th><td>{{ specs.lifespan_hours.value | escape }} hours</td></tr>{%- endif -%}
+  {%- if specs.ip_rating != blank -%}<tr><th scope="row">IP rating</th><td>{{ specs.ip_rating.value | escape }}</td></tr>{%- endif -%}
+  {%- if specs.pack_size != blank -%}<tr><th scope="row">Pack</th><td>{{ specs.pack_size.value | escape }}</td></tr>{%- endif -%}
+{%- endcapture -%}
+
+{%- assign rows_html = rows_html | strip -%}
+{%- assign manual_rows = section.blocks | where: 'type', 'spec_row' -%}
+{%- assign faqs = section.blocks | where: 'type', 'faq' -%}
+
+{%- comment -%} Does any variant carry its own specs? Then show the per-wattage comparison. {%- endcomment -%}
+{%- assign has_variant_specs = false -%}
+{%- for v in product.variants -%}
+  {%- if v.metafields.specs.watts != blank or v.metafields.specs.lumens != blank -%}
+    {%- assign has_variant_specs = true -%}
+    {%- break -%}
+  {%- endif -%}
+{%- endfor -%}
+
+<div class="mps mps-{{ section.id }} page-width">
+  {%- if rows_html != blank or manual_rows.size > 0 -%}
+    <section class="mps__specs" aria-labelledby="mps-s-{{ section.id }}">
+      <h2 id="mps-s-{{ section.id }}">{{ section.settings.specs_heading | escape }}</h2>
+      <table class="mps__table">
+        <tbody>
+          {%- if rows_html != blank -%}
+            {{ rows_html }}
+          {%- else -%}
+            {%- comment -%} Fallback: manual rows typed into the theme editor {%- endcomment -%}
+            {%- for block in manual_rows -%}
+              <tr {{ block.shopify_attributes }}><th scope="row">{{ block.settings.label | escape }}</th><td>{{ block.settings.value | escape }}</td></tr>
+            {%- endfor -%}
+          {%- endif -%}
+        </tbody>
+      </table>
+    </section>
+  {%- endif -%}
+
+  {%- if has_variant_specs -%}
+    <section class="mps__variants" aria-labelledby="mps-v-{{ section.id }}">
+      <h2 id="mps-v-{{ section.id }}">{{ section.settings.variants_heading | escape }}</h2>
+      <div class="mps__scroll" role="region" aria-labelledby="mps-v-{{ section.id }}" tabindex="0">
+        <table class="mps__table mps__table--grid">
+          <thead><tr><th scope="col">Option</th><th scope="col">Power</th><th scope="col">Brightness</th><th scope="col">Colour</th><th scope="col">Price</th></tr></thead>
+          <tbody>
+            {%- for v in product.variants -%}
+              <tr>
+                <th scope="row">{{ v.title | escape }}</th>
+                <td>{{ v.metafields.specs.watts.value | default: '–' | escape }}</td>
+                <td>{{ v.metafields.specs.lumens.value | default: '–' | escape }}</td>
+                <td>{{ v.metafields.specs.kelvin.value | default: '–' | escape }}</td>
+                <td>{{ v.price | money }}{% unless v.available %} <small>(out of stock)</small>{% endunless %}</td>
+              </tr>
+            {%- endfor -%}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- if section.settings.compatibility != blank -%}
+    <section class="mps__compat">
+      <h2>{{ section.settings.compat_heading | escape }}</h2>
+      {{ section.settings.compatibility }}
+    </section>
+  {%- endif -%}
+
+  {%- if section.settings.delivery_line != blank -%}
+    <p class="mps__delivery">{{ section.settings.delivery_line | escape }}</p>
+  {%- endif -%}
+
+  {%- if faqs.size > 0 -%}
+    <section class="mps__faq" aria-labelledby="mps-f-{{ section.id }}">
+      <h2 id="mps-f-{{ section.id }}">{{ section.settings.faq_heading | escape }}</h2>
+      {%- for block in faqs -%}
+        <details class="mps__item" {{ block.shopify_attributes }}>
+          <summary>{{ block.settings.question | escape }}</summary>
+          <div class="mps__item-a">{{ block.settings.answer }}</div>
+        </details>
+      {%- endfor -%}
+    </section>
+  {%- endif -%}
+</div>
+
+{%- comment -%} ======================= JSON-LD ======================= {%- endcomment -%}
+{%- assign product_url = shop.url | append: product.url -%}
+
+{%- if section.settings.schema_mode == 'full' -%}
+  {%- liquid
+    assign rating = product.metafields.reviews.rating.value
+    assign rating_count = product.metafields.reviews.rating_count.value | default: 0
+  -%}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "@id": {{ product_url | append: '#product' | json }},
+      "name": {{ product.title | json }},
+      "url": {{ product_url | json }},
+      "description": {{ product.description | strip_html | strip | truncate: 4900 | json }},
+      "image": [
+        {%- for image in product.images limit: 6 -%}
+          {{ image | image_url: width: 1200 | prepend: 'https:' | json }}{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      ],
+      "brand": { "@type": "Brand", "name": {{ brand_name | json }} },
+      {%- if product.selected_or_first_available_variant.sku != blank -%}
+      "sku": {{ product.selected_or_first_available_variant.sku | json }},
+      {%- endif -%}
+      {%- if listing_code != blank -%}
+      "productID": {{ listing_code | json }},
+      {%- endif -%}
+      {%- if specs.shape != blank or specs.fitting != blank or specs.kelvin != blank or specs.lumens != blank -%}
+      "additionalProperty": [
+        {%- assign sep = '' -%}
+        {%- if specs.fitting != blank -%}{{ sep }}{ "@type": "PropertyValue", "name": "Fitting", "value": {{ specs.fitting.value | json }} }{%- assign sep = ',' -%}{%- endif -%}
+        {%- if specs.shape != blank -%}{{ sep }}{ "@type": "PropertyValue", "name": "Shape", "value": {{ specs.shape.value | json }} }{%- assign sep = ',' -%}{%- endif -%}
+        {%- if specs.lumens != blank -%}{{ sep }}{ "@type": "PropertyValue", "name": "Brightness", "value": {{ specs.lumens.value | json }} }{%- assign sep = ',' -%}{%- endif -%}
+        {%- if specs.kelvin != blank -%}{{ sep }}{ "@type": "PropertyValue", "name": "Colour temperature", "value": {{ specs.kelvin.value | json }} }{%- assign sep = ',' -%}{%- endif -%}
+        {%- if specs.lifespan_hours != blank -%}{{ sep }}{ "@type": "PropertyValue", "name": "Rated life (hours)", "value": {{ specs.lifespan_hours.value | json }} }{%- assign sep = ',' -%}{%- endif -%}
+        {%- if specs.dimmable.type != blank -%}{{ sep }}{ "@type": "PropertyValue", "name": "Dimmable", "value": {% if specs.dimmable.value == true %}"Yes"{% else %}"No"{% endif %} }{%- endif -%}
+      ],
+      {%- endif -%}
+      {%- if rating != blank and rating_count > 0 -%}
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": {{ rating.rating | json }},
+        "bestRating": {{ rating.scale_max | json }},
+        "worstRating": {{ rating.scale_min | json }},
+        "ratingCount": {{ rating_count | json }}
+      },
+      {%- endif -%}
+      "offers": [
+        {%- for v in product.variants -%}
+          {%- liquid
+            assign bc = v.barcode | strip
+            assign bc_nondigits = bc | remove: '0' | remove: '1' | remove: '2' | remove: '3' | remove: '4' | remove: '5' | remove: '6' | remove: '7' | remove: '8' | remove: '9'
+            assign bc_ok = false
+            if bc != blank and bc_nondigits == ''
+              if bc.size == 8 or bc.size == 12 or bc.size == 13 or bc.size == 14
+                assign bc_ok = true
+              endif
+            endif
+          -%}
+          {
+            "@type": "Offer",
+            "name": {{ v.title | json }},
+            "url": {{ product_url | append: '?variant=' | append: v.id | json }},
+            {%- if v.sku != blank -%}"sku": {{ v.sku | json }},{%- endif -%}
+            {%- if bc_ok -%}"gtin": {{ bc | json }},{%- endif -%}
+            "price": {{ v.price | divided_by: 100.0 | round: 2 | json }},
+            "priceCurrency": {{ currency_code | json }},
+            "itemCondition": "https://schema.org/NewCondition",
+            "availability": {% if v.available %}"https://schema.org/InStock"{% else %}"https://schema.org/OutOfStock"{% endif %},
+            {%- if section.settings.return_days > 0 -%}
+            "hasMerchantReturnPolicy": {
+              "@type": "MerchantReturnPolicy",
+              "applicableCountry": "GB",
+              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+              "merchantReturnDays": {{ section.settings.return_days }}
+            },
+            {%- endif -%}
+            "seller": { "@type": "Organization", "name": {{ shop.name | json }} }
+          }{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      ]
+    }
+  </script>
+{%- endif -%}
+
+{%- if section.settings.schema_mode != 'off' -%}
+  {%- assign crumb = section.settings.breadcrumb_collection -%}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": {{ shop.url | json }} },
+        {%- if crumb and crumb.title != blank -%}
+        { "@type": "ListItem", "position": 2, "name": {{ crumb.title | json }}, "item": {{ shop.url | append: crumb.url | json }} },
+        { "@type": "ListItem", "position": 3, "name": {{ product.title | json }}, "item": {{ product_url | json }} }
+        {%- else -%}
+        { "@type": "ListItem", "position": 2, "name": {{ product.title | json }}, "item": {{ product_url | json }} }
+        {%- endif -%}
+      ]
+    }
+  </script>
+  {%- if faqs.size > 0 -%}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {%- for block in faqs -%}
+          {
+            "@type": "Question",
+            "name": {{ block.settings.question | json }},
+            "acceptedAnswer": { "@type": "Answer", "text": {{ block.settings.answer | strip_html | strip | json }} }
+          }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ]
+      }
+    </script>
+  {%- endif -%}
+{%- endif -%}
+
+{% style %}
+  .mps-{{ section.id }} {
+    padding-block: {{ section.settings.padding_top }}px {{ section.settings.padding_bottom }}px;
+    padding-inline: 24px;
+    max-width: 900px;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+  .mps-{{ section.id }} h2 { margin: 1.5rem 0 .6rem; }
+  .mps-{{ section.id }} .mps__scroll { overflow-x: auto; }
+  .mps-{{ section.id }} .mps__table { width: 100%; border-collapse: collapse; }
+  .mps-{{ section.id }} .mps__table th, .mps-{{ section.id }} .mps__table td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid rgba(127,127,127,.25); vertical-align: top; }
+  .mps-{{ section.id }} .mps__table tbody th { width: 38%; font-weight: 600; }
+  .mps-{{ section.id }} .mps__table--grid { min-width: 520px; }
+  .mps-{{ section.id }} .mps__delivery { margin: 1.25rem 0; padding: .75rem 1rem; border-radius: 6px; background: rgba(127,127,127,.08); }
+  .mps-{{ section.id }} .mps__item { border-bottom: 1px solid rgba(127,127,127,.25); }
+  .mps-{{ section.id }} .mps__item summary { cursor: pointer; padding: .9rem 0; font-weight: 600; }
+  .mps-{{ section.id }} .mps__item-a { padding: 0 0 1rem; }
+{% endstyle %}
+
+{% schema %}
+{
+  "name": "Model product specs",
+  "tag": "section",
+  "class": "section-model-product-specs",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "specs_heading", "label": "Spec table heading", "default": "Specifications" },
+    { "type": "text", "id": "variants_heading", "label": "Per-option table heading", "default": "Compare wattages" },
+    { "type": "text", "id": "compat_heading", "label": "Compatibility heading", "default": "Will it fit?" },
+    { "type": "richtext", "id": "compatibility", "label": "Compatibility note" },
+    { "type": "text", "id": "delivery_line", "label": "Delivery and returns line (one line, same on every page)" },
+    { "type": "text", "id": "faq_heading", "label": "FAQ heading", "default": "Questions about this bulb" },
+    { "type": "header", "content": "Structured data" },
+    {
+      "type": "select", "id": "schema_mode", "label": "JSON-LD mode",
+      "info": "Full = Product+FAQ+breadcrumbs (needs theme's own product schema switched off first, see install step 6). Supplement = FAQ+breadcrumbs only, keeps theme's schema.",
+      "options": [
+        { "value": "full", "label": "Full (Product + FAQ + breadcrumbs)" },
+        { "value": "supplement", "label": "Supplement (FAQ + breadcrumbs only)" },
+        { "value": "off", "label": "Off" }
+      ],
+      "default": "supplement"
+    },
+    { "type": "text", "id": "brand_override", "label": "Brand name in schema (blank = shop name)" },
+    { "type": "collection", "id": "breadcrumb_collection", "label": "Breadcrumb collection (e.g. E27 Bulbs)" },
+    {
+      "type": "number", "id": "return_days", "label": "Return window in days (leave 0 until Muguntha confirms the policy)",
+      "default": 0
+    },
+    { "type": "header", "content": "Spacing" },
+    { "type": "range", "id": "padding_top", "label": "Top padding", "min": 0, "max": 80, "step": 4, "unit": "px", "default": 16 },
+    { "type": "range", "id": "padding_bottom", "label": "Bottom padding", "min": 0, "max": 80, "step": 4, "unit": "px", "default": 32 }
+  ],
+  "blocks": [
+    {
+      "type": "faq", "name": "FAQ",
+      "settings": [
+        { "type": "text", "id": "question", "label": "Question" },
+        { "type": "richtext", "id": "answer", "label": "Answer" }
+      ]
+    },
+    {
+      "type": "spec_row", "name": "Spec row (fallback)",
+      "settings": [
+        { "type": "text", "id": "label", "label": "Label" },
+        { "type": "text", "id": "value", "label": "Value" }
+      ]
+    }
+  ],
+  "presets": [ { "name": "Model product specs" } ]
+}
+{% endschema %}

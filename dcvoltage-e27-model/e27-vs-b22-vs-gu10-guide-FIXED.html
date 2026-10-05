@@ -1,609 +1,314 @@
-<style>
-/* ── SCOPED TO .dcv-blog — won't affect your Shopify theme ── */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+<div class="dcv-blog" style="--bg:#ffffff;--surface:#f7f8fa;--surface2:#eef0f5;--border:#e2e5ee;--text:#1a1c2e;--body:#3d4060;--muted:#8b90a8;--accent:#d4880a;--accent2:#e05c20;--e27:#0077cc;--b22:#1a8a4a;--gu10:#cc3d00;--radius:12px;--font-h:'Syne',sans-serif;--font-b:'Lora',Georgia,serif;color:var(--text);font-family:var(--font-b);font-size:17px;line-height:1.8;max-width:820px;margin:0 auto;padding:0 20px 60px;">
 
-.dcv-blog {
-  --bg:       #ffffff;
-  --surface:  #f7f8fa;
-  --surface2: #eef0f5;
-  --border:   #e2e5ee;
-  --text:     #1a1c2e;
-  --body:     #3d4060;
-  --muted:    #8b90a8;
-  --accent:   #d4880a;
-  --accent2:  #e05c20;
-  --e27:      #0077cc;
-  --b22:      #1a8a4a;
-  --gu10:     #cc3d00;
-  --radius:   12px;
-  --font-h:   'Syne', sans-serif;
-  --font-b:   'Lora', Georgia, serif;
-
-  color: var(--text);
-  font-family: var(--font-b);
-  font-size: 17px;
-  line-height: 1.8;
-  max-width: 820px;
-  margin: 0 auto;
-  padding: 0 20px 60px;
-}
-
-/* ── READING PROGRESS ── */
-.dcv-blog .dcv-progress {
-  position: fixed; top: 0; left: 0; height: 3px;
-  background: var(--accent); width: 0%; z-index: 9999;
-  transition: width .1s linear;
-}
-
-/* ── BREADCRUMB ── */
-.dcv-blog .dcv-crumb {
-  font-family: var(--font-h);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 28px;
-  padding-top: 12px;
-}
-.dcv-blog .dcv-crumb a { color: var(--accent); text-decoration: none; }
-.dcv-blog .dcv-crumb a:hover { text-decoration: underline; }
-
-/* ── HERO ── */
-.dcv-blog .dcv-hero { margin-bottom: 44px; animation: dcvFadeUp .6s ease both; }
-.dcv-blog .dcv-badge {
-  display: inline-block;
-  background: rgba(212,136,10,.1);
-  border: 1px solid rgba(212,136,10,.3);
-  color: var(--accent);
-  font-family: var(--font-h);
-  font-size: 0.7rem; font-weight: 700;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  padding: 5px 14px; border-radius: 40px; margin-bottom: 18px;
-}
-.dcv-blog h1 {
-  font-family: var(--font-h);
-  font-size: clamp(1.9rem, 4.5vw, 3rem);
-  font-weight: 800; line-height: 1.1;
-  letter-spacing: -0.025em;
-  color: var(--text); margin-bottom: 20px;
-}
-.dcv-blog h1 em { color: var(--accent); font-style: normal; }
-/* Hero title now renders as <h2> (see markup below) so the page has only
-   one real <h1> -- the theme's own blog-post title. This class reproduces
-   the exact same visual style as the original h1 rule above, so nothing
-   looks different on the page -- only the semantic tag changed. */
-.dcv-blog .dcv-hero-title {
-  font-family: var(--font-h);
-  font-size: clamp(1.9rem, 4.5vw, 3rem);
-  font-weight: 800; line-height: 1.1;
-  letter-spacing: -0.025em;
-  color: var(--text); margin-bottom: 20px;
-  border-bottom: none; padding-bottom: 0;
-}
-.dcv-blog .dcv-hero-title em { color: var(--accent); font-style: normal; }
-.dcv-blog .dcv-meta {
-  display: flex; flex-wrap: wrap; gap: 18px;
-  font-size: 0.82rem; color: var(--muted);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 0; margin-bottom: 26px;
-}
-.dcv-blog .dcv-lead {
-  font-size: 1.12rem; color: var(--body);
-  line-height: 1.85; font-style: italic;
-  border-left: 3px solid var(--accent);
-  padding-left: 20px; margin: 0;
-}
-
-/* ── TOC ── */
-.dcv-blog .dcv-toc {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px 28px; margin: 36px 0;
-}
-.dcv-blog .dcv-toc-title {
-  font-family: var(--font-h); font-size: 0.72rem;
-  font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted);
-  margin-bottom: 12px;
-}
-.dcv-blog .dcv-toc ol { padding-left: 18px; margin: 0; }
-.dcv-blog .dcv-toc li { margin-bottom: 6px; }
-.dcv-blog .dcv-toc a {
-  color: var(--body); font-size: 0.88rem;
-  text-decoration: none; font-family: var(--font-h);
-}
-.dcv-blog .dcv-toc a:hover { color: var(--accent); }
-
-/* ── HEADINGS ── */
-.dcv-blog h2 {
-  font-family: var(--font-h); font-size: 1.55rem;
-  font-weight: 700; letter-spacing: -0.02em;
-  color: var(--text); margin: 52px 0 14px;
-  scroll-margin-top: 80px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--border);
-}
-.dcv-blog h3 {
-  font-family: var(--font-h); font-size: 1.05rem;
-  font-weight: 700; color: var(--text);
-  margin: 28px 0 8px;
-}
-.dcv-blog p { margin-bottom: 18px; color: var(--body); }
-.dcv-blog ul, .dcv-blog ol { padding-left: 22px; margin-bottom: 18px; color: var(--body); }
-.dcv-blog li { margin-bottom: 7px; }
-.dcv-blog strong { color: var(--text); font-weight: 600; }
-.dcv-blog a { color: var(--accent); }
-
-/* ── FITTING CARDS ── */
-.dcv-blog .dcv-cards {
-  display: grid; grid-template-columns: repeat(3,1fr);
-  gap: 16px; margin: 28px 0 40px;
-}
-@media(max-width:620px){ .dcv-blog .dcv-cards { grid-template-columns: 1fr; } }
-.dcv-blog .dcv-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px 18px;
-  background: var(--bg);
-  transition: box-shadow .2s, transform .2s;
-}
-.dcv-blog .dcv-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.08); }
-.dcv-blog .dcv-card.e27 { border-top: 3px solid var(--e27); }
-.dcv-blog .dcv-card.b22 { border-top: 3px solid var(--b22); }
-.dcv-blog .dcv-card.gu10 { border-top: 3px solid var(--gu10); }
-.dcv-blog .dcv-card .icon { font-size: 2rem; margin-bottom: 10px; display: block; }
-.dcv-blog .dcv-card h3 { font-size: 1.35rem; margin: 0 0 2px; }
-.dcv-blog .dcv-card.e27 h3 { color: var(--e27); }
-.dcv-blog .dcv-card.b22 h3 { color: var(--b22); }
-.dcv-blog .dcv-card.gu10 h3 { color: var(--gu10); }
-.dcv-blog .dcv-card .sub { font-size: 0.75rem; color: var(--muted); font-family: var(--font-h); letter-spacing: 0.05em; margin-bottom: 10px; }
-.dcv-blog .dcv-card p { font-size: 0.86rem; color: var(--body); margin: 0; line-height: 1.6; }
-
-/* ── QUICK ANSWER ── */
-.dcv-blog .dcv-qa {
-  background: #fffbf0;
-  border: 1px solid rgba(212,136,10,.3);
-  border-radius: var(--radius);
-  padding: 26px 28px; margin: 32px 0;
-}
-.dcv-blog .dcv-qa-label {
-  font-family: var(--font-h); font-size: 0.7rem;
-  font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--accent);
-  margin-bottom: 10px;
-}
-.dcv-blog .dcv-qa p { color: var(--text); margin: 0; font-size: 1rem; }
-
-/* ── CALLOUT ── */
-.dcv-blog .dcv-callout {
-  background: var(--surface);
-  border-left: 3px solid var(--accent2);
-  border-radius: 0 10px 10px 0;
-  padding: 18px 22px; margin: 24px 0;
-  font-size: 0.91rem; color: var(--body);
-}
-.dcv-blog .dcv-callout strong { color: var(--accent2); }
-.dcv-blog .dcv-callout.tip { border-left-color: var(--e27); background: #f0f7ff; }
-.dcv-blog .dcv-callout.tip strong { color: var(--e27); }
-
-/* ── TABLE ── */
-.dcv-blog .dcv-table-wrap {
-  overflow-x: auto; margin: 24px 0 32px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-}
-.dcv-blog table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.dcv-blog thead { background: var(--surface2); }
-.dcv-blog thead th {
-  text-align: left; padding: 12px 16px;
-  font-family: var(--font-h); font-size: 0.72rem;
-  font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--muted);
-  white-space: nowrap;
-}
-.dcv-blog tbody tr { border-top: 1px solid var(--border); }
-.dcv-blog tbody tr:hover { background: var(--surface); }
-.dcv-blog tbody td { padding: 11px 16px; color: var(--body); vertical-align: middle; }
-.dcv-blog tbody td:first-child { font-weight: 600; color: var(--text); font-family: var(--font-h); font-size: 0.85rem; }
-.dcv-blog .tag {
-  display: inline-block; padding: 2px 10px;
-  border-radius: 20px; font-size: 0.73rem; font-weight: 700;
-  font-family: var(--font-h);
-}
-.dcv-blog .tag-e27 { background: rgba(0,119,204,.1); color: var(--e27); }
-.dcv-blog .tag-b22 { background: rgba(26,138,74,.1); color: var(--b22); }
-.dcv-blog .tag-gu10 { background: rgba(204,61,0,.1); color: var(--gu10); }
-
-/* ── DECISION GRID ── */
-.dcv-blog .dcv-decision {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 14px; margin: 22px 0 32px;
-}
-@media(max-width:560px){ .dcv-blog .dcv-decision { grid-template-columns: 1fr; } }
-.dcv-blog .dcv-d {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 18px;
-}
-.dcv-blog .dcv-d .dq { font-size: 0.72rem; color: var(--muted); font-family: var(--font-h); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-.dcv-blog .dcv-d .da { font-weight: 600; color: var(--text); font-size: 0.9rem; margin-bottom: 4px; font-family: var(--font-h); }
-.dcv-blog .dcv-d .df { font-size: 0.82rem; color: var(--accent); font-weight: 700; font-family: var(--font-h); }
-
-/* ── CTA BOX ── */
-.dcv-blog .dcv-cta {
-  background: var(--text);
-  border-radius: 16px;
-  padding: 44px 36px;
-  text-align: center;
-  margin: 52px 0 0;
-  color: #fff;
-}
-.dcv-blog .dcv-cta h2 {
-  font-family: var(--font-h); font-size: 1.6rem;
-  font-weight: 800; color: #fff;
-  margin: 0 0 10px; border: none; padding: 0;
-}
-.dcv-blog .dcv-cta p { color: rgba(255,255,255,.65); margin-bottom: 26px; font-size: 0.97rem; }
-.dcv-blog .dcv-btn {
-  display: inline-block;
-  background: var(--accent); color: #fff;
-  padding: 13px 32px; border-radius: 8px;
-  font-family: var(--font-h); font-weight: 700;
-  font-size: 0.9rem; text-decoration: none;
-  transition: background .2s, transform .2s;
-  margin: 6px 8px;
-}
-.dcv-blog .dcv-btn:hover { background: #b87209; transform: translateY(-2px); color: #fff; }
-.dcv-blog .dcv-btn-ghost {
-  background: transparent; color: #fff;
-  border: 2px solid rgba(255,255,255,.4);
-}
-.dcv-blog .dcv-btn-ghost:hover { border-color: #fff; background: transparent; }
-
-/* ── FAQ ── */
-.dcv-blog .dcv-faq { margin-top: 48px; }
-.dcv-blog .dcv-faq-item { border-bottom: 1px solid var(--border); }
-.dcv-blog .dcv-faq-q {
-  width: 100%; background: none; border: none;
-  text-align: left; color: var(--text);
-  font-family: var(--font-h); font-size: 0.97rem; font-weight: 600;
-  padding: 18px 0; cursor: pointer;
-  display: flex; justify-content: space-between; align-items: center; gap: 16px;
-}
-.dcv-blog .dcv-faq-q:hover { color: var(--accent); }
-.dcv-blog .dcv-faq-icon { font-size: 1.1rem; color: var(--accent); flex-shrink: 0; transition: transform .25s; }
-.dcv-blog .dcv-faq-a { overflow: hidden; max-height: 0; transition: max-height .35s ease, padding .3s ease; }
-.dcv-blog .dcv-faq-a.open { max-height: 280px; padding-bottom: 18px; }
-.dcv-blog .dcv-faq-a p { margin: 0; color: var(--body); font-size: 0.9rem; }
-
-/* ── INLINE BADGES ── */
-.dcv-blog .fit {
-  display: inline-flex; align-items: center;
-  padding: 1px 10px; border-radius: 20px;
-  font-size: 0.8rem; font-weight: 700;
-  font-family: var(--font-h); vertical-align: middle;
-}
-.dcv-blog .fit-e27 { background: rgba(0,119,204,.1); color: var(--e27); }
-.dcv-blog .fit-b22 { background: rgba(26,138,74,.1); color: var(--b22); }
-.dcv-blog .fit-gu10 { background: rgba(204,61,0,.1); color: var(--gu10); }
-
-/* ── ANIMATION ── */
-@keyframes dcvFadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-</style>
-<!-- ═══════════════════════════════════════════════════════ -->
-<p bis_size="{&quot;x&quot;:12,&quot;y&quot;:16,&quot;w&quot;:576,&quot;h&quot;:19,&quot;abs_x&quot;:280,&quot;abs_y&quot;:275}">&nbsp;</p>
-<!--  BLOG CONTENT — paste from here into your Shopify      -->
-<p bis_size="{&quot;x&quot;:12,&quot;y&quot;:51,&quot;w&quot;:576,&quot;h&quot;:19,&quot;abs_x&quot;:280,&quot;abs_y&quot;:310}">&nbsp;</p>
-<!--  article editor (HTML view)                            -->
-<p bis_size="{&quot;x&quot;:12,&quot;y&quot;:87,&quot;w&quot;:576,&quot;h&quot;:19,&quot;abs_x&quot;:280,&quot;abs_y&quot;:346}">&nbsp;</p>
-<!-- ═══════════════════════════════════════════════════════ -->
-<div class="dcv-blog" bis_size="{&quot;x&quot;:12,&quot;y&quot;:122,&quot;w&quot;:576,&quot;h&quot;:9495,&quot;abs_x&quot;:280,&quot;abs_y&quot;:381}"><!-- Reading progress -->
-<div id="dcvProgress" class="dcv-progress" bis_size="{&quot;x&quot;:0,&quot;y&quot;:114,&quot;w&quot;:0,&quot;h&quot;:3,&quot;abs_x&quot;:268,&quot;abs_y&quot;:373}"></div>
 <!-- Breadcrumb -->
-<p class="dcv-crumb" bis_size="{&quot;x&quot;:32,&quot;y&quot;:122,&quot;w&quot;:536,&quot;h&quot;:33,&quot;abs_x&quot;:300,&quot;abs_y&quot;:381}"><a href="/collections/bulbs" bis_size="{&quot;x&quot;:32,&quot;y&quot;:138,&quot;w&quot;:37,&quot;h&quot;:14,&quot;abs_x&quot;:300,&quot;abs_y&quot;:397}">Bulbs</a> › <a href="/blogs/lighting-guides" bis_size="{&quot;x&quot;:82,&quot;y&quot;:138,&quot;w&quot;:105,&quot;h&quot;:14,&quot;abs_x&quot;:350,&quot;abs_y&quot;:397}">Lighting Guides</a> › E27 vs B22 vs GU10</p>
+<p style="font-family:var(--font-h);font-size:0.75rem;letter-spacing:0.06em;color:var(--muted);margin-bottom:28px;padding-top:12px;"><a href="/collections/led-bulb" style="color:var(--accent);text-decoration:none;">Bulbs</a> › <a href="/blogs/lighting-guides" style="color:var(--accent);text-decoration:none;">Lighting Guides</a> › E27 vs B22 vs GU10</p>
+
 <!-- HERO -->
-<div class="dcv-hero" bis_size="{&quot;x&quot;:32,&quot;y&quot;:184,&quot;w&quot;:536,&quot;h&quot;:350,&quot;abs_x&quot;:300,&quot;abs_y&quot;:443}">
-<div class="dcv-badge" bis_size="{&quot;x&quot;:32,&quot;y&quot;:186,&quot;w&quot;:263,&quot;h&quot;:31,&quot;abs_x&quot;:300,&quot;abs_y&quot;:445}">⚡ Buying Guide · UK Edition</div>
-<h2 class="dcv-hero-title" bis_size="{&quot;x&quot;:32,&quot;y&quot;:236,&quot;w&quot;:536,&quot;h&quot;:100,&quot;abs_x&quot;:300,&quot;abs_y&quot;:495}">E27 vs B22 vs GU10:<br bis_size="{&quot;x&quot;:494,&quot;y&quot;:234,&quot;w&quot;:0,&quot;h&quot;:36,&quot;abs_x&quot;:762,&quot;abs_y&quot;:493}"><em bis_size="{&quot;x&quot;:32,&quot;y&quot;:267,&quot;w&quot;:506,&quot;h&quot;:70,&quot;abs_x&quot;:300,&quot;abs_y&quot;:526}">Which Bulb Fitting Do You Actually Need?</em></h2>
-<div class="dcv-meta" bis_size="{&quot;x&quot;:32,&quot;y&quot;:356,&quot;w&quot;:536,&quot;h&quot;:52,&quot;abs_x&quot;:300,&quot;abs_y&quot;:615}"><span bis_size="{&quot;x&quot;:32,&quot;y&quot;:371,&quot;w&quot;:85,&quot;h&quot;:23,&quot;abs_x&quot;:300,&quot;abs_y&quot;:630}">🕒 7 min read</span> <span bis_size="{&quot;x&quot;:135,&quot;y&quot;:371,&quot;w&quot;:135,&quot;h&quot;:23,&quot;abs_x&quot;:403,&quot;abs_y&quot;:630}">📅 Updated May 2026</span> <span bis_size="{&quot;x&quot;:289,&quot;y&quot;:371,&quot;w&quot;:180,&quot;h&quot;:23,&quot;abs_x&quot;:557,&quot;abs_y&quot;:630}">✍️ DC Voltage Lighting Team</span></div>
-<p class="dcv-lead" bis_size="{&quot;x&quot;:32,&quot;y&quot;:435,&quot;w&quot;:536,&quot;h&quot;:99,&quot;abs_x&quot;:300,&quot;abs_y&quot;:694}">You've got a dead bulb and the packaging is full of cryptic codes. <strong bis_size="{&quot;x&quot;:107,&quot;y&quot;:473,&quot;w&quot;:123,&quot;h&quot;:22,&quot;abs_x&quot;:375,&quot;abs_y&quot;:732}">E27. B22. GU10.</strong> This guide cuts through the jargon — plain English, no fuss — so you buy the right bulb first time.</p>
+<div style="margin-bottom:44px;">
+<div style="display:inline-block;background:rgba(212,136,10,.1);border:1px solid rgba(212,136,10,.3);color:var(--accent);font-family:var(--font-h);font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:5px 14px;border-radius:40px;margin-bottom:18px;">⚡ Buying Guide · UK Edition</div>
+<div style="font-family:var(--font-h);font-size:2.4rem;font-weight:800;line-height:1.1;letter-spacing:-0.025em;color:var(--text);margin:0 0 20px;">E27 vs B22 vs GU10:<br><em style="color:var(--accent);font-style:normal;">Which Bulb Fitting Do You Actually Need?</em>
 </div>
-<!-- TOC --><nav class="dcv-toc" bis_size="{&quot;x&quot;:32,&quot;y&quot;:578,&quot;w&quot;:536,&quot;h&quot;:411,&quot;abs_x&quot;:300,&quot;abs_y&quot;:837}">
-<div class="dcv-toc-title" bis_size="{&quot;x&quot;:60,&quot;y&quot;:603,&quot;w&quot;:479,&quot;h&quot;:20,&quot;abs_x&quot;:328,&quot;abs_y&quot;:862}">📋 In this guide</div>
-<ol bis_size="{&quot;x&quot;:60,&quot;y&quot;:636,&quot;w&quot;:479,&quot;h&quot;:323,&quot;abs_x&quot;:328,&quot;abs_y&quot;:895}">
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:636,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:895}"><a href="#dcv-quick" bis_size="{&quot;x&quot;:78,&quot;y&quot;:644,&quot;w&quot;:191,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:903}">Quick Answer (30 seconds)</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:672,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:931}"><a href="#dcv-what" bis_size="{&quot;x&quot;:78,&quot;y&quot;:680,&quot;w&quot;:168,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:939}">What Are Bulb Fittings?</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:709,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:968}"><a href="#dcv-e27" bis_size="{&quot;x&quot;:78,&quot;y&quot;:717,&quot;w&quot;:169,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:976}">E27 — The Edison Screw</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:746,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1005}"><a href="#dcv-b22" bis_size="{&quot;x&quot;:78,&quot;y&quot;:754,&quot;w&quot;:181,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1013}">B22 — The British Bayonet</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:782,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1041}"><a href="#dcv-gu10" bis_size="{&quot;x&quot;:78,&quot;y&quot;:790,&quot;w&quot;:219,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1049}">GU10 — The Spotlight Standard</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:819,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1078}"><a href="#dcv-compare" bis_size="{&quot;x&quot;:78,&quot;y&quot;:827,&quot;w&quot;:158,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1086}">Full Comparison Table</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:855,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1114}"><a href="#dcv-which" bis_size="{&quot;x&quot;:78,&quot;y&quot;:863,&quot;w&quot;:184,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1122}">Which One Do You Need?</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:892,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1151}"><a href="#dcv-others" bis_size="{&quot;x&quot;:78,&quot;y&quot;:900,&quot;w&quot;:168,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1159}">Other Common Fittings</a></li>
-<li bis_size="{&quot;x&quot;:78,&quot;y&quot;:929,&quot;w&quot;:461,&quot;h&quot;:30,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1188}"><a href="#dcv-faq" bis_size="{&quot;x&quot;:78,&quot;y&quot;:937,&quot;w&quot;:37,&quot;h&quot;:17,&quot;abs_x&quot;:346,&quot;abs_y&quot;:1196}">FAQs</a></li>
+<div style="display:flex;flex-wrap:wrap;gap:18px;font-size:0.82rem;color:var(--muted);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;margin-bottom:26px;">
+<span>🕒 7 min read</span> <span>📅 Updated May 2026</span> <span>✍️ DC Voltage Lighting Team</span>
+</div>
+<p style="font-size:1.12rem;color:var(--body);line-height:1.85;font-style:italic;border-left:3px solid var(--accent);padding-left:20px;margin:0;">You've got a dead bulb and the packaging is full of cryptic codes. <strong style="color:var(--text);font-weight:600;">E27. B22. GU10.</strong> This guide cuts through the jargon — plain English, no fuss — so you buy the right bulb first time.</p>
+</div>
+
+<!-- TOC -->
+<nav style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:36px 0;">
+<div style="font-family:var(--font-h);font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📋 In this guide</div>
+<ol style="padding-left:18px;margin:0;color:var(--body);">
+<li style="margin-bottom:6px;"><a href="#dcv-quick" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">Quick Answer (30 seconds)</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-what" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">What Are Bulb Fittings?</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-e27" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">E27 — The Edison Screw</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-b22" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">B22 — The British Bayonet</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-gu10" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">GU10 — The Spotlight Standard</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-compare" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">Full Comparison Table</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-which" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">Which One Do You Need?</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-others" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">Other Common Fittings</a></li>
+<li style="margin-bottom:6px;"><a href="#dcv-faq" style="color:var(--body);font-size:0.88rem;text-decoration:none;font-family:var(--font-h);">FAQs</a></li>
 </ol>
-</nav><!-- QUICK ANSWER -->
-<section id="dcv-quick" bis_size="{&quot;x&quot;:32,&quot;y&quot;:1042,&quot;w&quot;:536,&quot;h&quot;:316,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1301}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:1042,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1301}">⚡ Quick Answer</h2>
-<div class="dcv-qa" bis_size="{&quot;x&quot;:32,&quot;y&quot;:1130,&quot;w&quot;:536,&quot;h&quot;:227,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1389}">
-<div class="dcv-qa-label" bis_size="{&quot;x&quot;:60,&quot;y&quot;:1157,&quot;w&quot;:479,&quot;h&quot;:20,&quot;abs_x&quot;:328,&quot;abs_y&quot;:1416}">The 30-second version</div>
-<p bis_size="{&quot;x&quot;:60,&quot;y&quot;:1187,&quot;w&quot;:479,&quot;h&quot;:143,&quot;abs_x&quot;:328,&quot;abs_y&quot;:1446}"><strong bis_size="{&quot;x&quot;:60,&quot;y&quot;:1191,&quot;w&quot;:25,&quot;h&quot;:20,&quot;abs_x&quot;:328,&quot;abs_y&quot;:1450}">E27</strong> = large screw-in fitting, standard in modern UK &amp; European lamps. <strong bis_size="{&quot;x&quot;:112,&quot;y&quot;:1220,&quot;w&quot;:27,&quot;h&quot;:20,&quot;abs_x&quot;:380,&quot;abs_y&quot;:1479}">B22</strong> = push-and-twist bayonet, the traditional British ceiling fitting. <strong bis_size="{&quot;x&quot;:167,&quot;y&quot;:1249,&quot;w&quot;:40,&quot;h&quot;:20,&quot;abs_x&quot;:435,&quot;abs_y&quot;:1508}">GU10</strong> = twist-lock spotlight, used in kitchen and bathroom downlighters. <em bis_size="{&quot;x&quot;:244,&quot;y&quot;:1278,&quot;w&quot;:215,&quot;h&quot;:20,&quot;abs_x&quot;:512,&quot;abs_y&quot;:1537}">They are not interchangeable.</em> Check the base of your old bulb for the code before you buy.</p>
+</nav>
+
+<!-- QUICK ANSWER -->
+<section id="dcv-quick">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">⚡ Quick Answer</h2>
+<div style="background:#fffbf0;border:1px solid rgba(212,136,10,.3);border-radius:var(--radius);padding:26px 28px;margin:32px 0;">
+<div style="font-family:var(--font-h);font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">The 30-second version</div>
+<p style="color:var(--text);margin:0;font-size:1rem;"><strong style="color:var(--text);font-weight:600;">E27</strong> = large screw-in fitting, standard in modern UK &amp; European lamps. <strong style="color:var(--text);font-weight:600;">B22</strong> = push-and-twist bayonet, the traditional British ceiling fitting. <strong style="color:var(--text);font-weight:600;">GU10</strong> = twist-lock spotlight, used in kitchen and bathroom downlighters. <em>They are not interchangeable.</em> Check the base of your old bulb for the code before you buy.</p>
 </div>
 </section>
+
 <!-- WHAT ARE FITTINGS -->
-<section id="dcv-what" bis_size="{&quot;x&quot;:32,&quot;y&quot;:1410,&quot;w&quot;:536,&quot;h&quot;:2431,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1669}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:1410,&quot;w&quot;:536,&quot;h&quot;:101,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1669}">What Are Bulb Fittings — and Why Do They Matter?</h2>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:1525,&quot;w&quot;:536,&quot;h&quot;:91,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1784}">A bulb fitting (also called a lamp cap or base) is the part of the bulb that connects to your light fixture. It determines <strong bis_size="{&quot;x&quot;:32,&quot;y&quot;:1560,&quot;w&quot;:490,&quot;h&quot;:52,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1819}">how the bulb physically locks in</strong> and how electricity reaches it.</p>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:1635,&quot;w&quot;:536,&quot;h&quot;:91,&quot;abs_x&quot;:300,&quot;abs_y&quot;:1894}">Buy the wrong fitting and the bulb simply won't fit — no matter how bright or efficient it is. In UK homes, three fittings cover the vast majority of fixtures: <strong bis_size="{&quot;x&quot;:228,&quot;y&quot;:1700,&quot;w&quot;:150,&quot;h&quot;:22,&quot;abs_x&quot;:496,&quot;abs_y&quot;:1959}">E27, B22, and GU10</strong>.</p>
-<div class="dcv-cards" bis_size="{&quot;x&quot;:32,&quot;y&quot;:1755,&quot;w&quot;:536,&quot;h&quot;:2086,&quot;abs_x&quot;:300,&quot;abs_y&quot;:2014}">
-<div class="dcv-card e27" bis_size="{&quot;x&quot;:32,&quot;y&quot;:1755,&quot;w&quot;:536,&quot;h&quot;:684,&quot;abs_x&quot;:300,&quot;abs_y&quot;:2014}"><span class="icon" bis_size="{&quot;x&quot;:50,&quot;y&quot;:1779,&quot;w&quot;:499,&quot;h&quot;:532,&quot;abs_x&quot;:318,&quot;abs_y&quot;:2038}"><img src="https://dcvoltage.co.uk/cdn/shop/files/Vintage_Style_LED_Edison_Bulb_Lamp.jpg" alt="E27 icon" bis_size="{&quot;x&quot;:50,&quot;y&quot;:1779,&quot;w&quot;:499,&quot;h&quot;:499,&quot;abs_x&quot;:318,&quot;abs_y&quot;:2038}"></span>
-<h3 bis_size="{&quot;x&quot;:50,&quot;y&quot;:2322,&quot;w&quot;:499,&quot;h&quot;:38,&quot;abs_x&quot;:318,&quot;abs_y&quot;:2581}">E27</h3>
-<div class="sub" bis_size="{&quot;x&quot;:50,&quot;y&quot;:2363,&quot;w&quot;:499,&quot;h&quot;:21,&quot;abs_x&quot;:318,&quot;abs_y&quot;:2622}">Edison Screw · 27 mm</div>
-<p bis_size="{&quot;x&quot;:50,&quot;y&quot;:2395,&quot;w&quot;:499,&quot;h&quot;:22,&quot;abs_x&quot;:318,&quot;abs_y&quot;:2654}">Screw in clockwise. Found in modern pendants, table lamps &amp; floor lights.</p>
+<section id="dcv-what">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">What Are Bulb Fittings — and Why Do They Matter?</h2>
+<p style="margin-bottom:18px;color:var(--body);">A bulb fitting (also called a lamp cap or base) is the part of the bulb that connects to your light fixture. It determines <strong style="color:var(--text);font-weight:600;">how the bulb physically locks in</strong> and how electricity reaches it.</p>
+<p style="margin-bottom:18px;color:var(--body);">Buy the wrong fitting and the bulb simply won't fit — no matter how bright or efficient it is. In UK homes, three fittings cover the vast majority of fixtures: <strong style="color:var(--text);font-weight:600;">E27, B22, and GU10</strong>.</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0 40px;">
+<div style="border:1px solid var(--border);border-top:3px solid var(--e27);border-radius:var(--radius);padding:22px 18px;background:var(--bg);">
+<span style="display:block;margin-bottom:10px;"><img src="https://dcvoltage.co.uk/cdn/shop/files/Vintage_Style_LED_Edison_Bulb_Lamp.jpg" alt="E27 icon" style="width:100%;height:auto;border-radius:8px;display:block;"></span>
+<h3 style="font-family:var(--font-h);font-weight:700;color:var(--e27);font-size:1.35rem;margin:0 0 2px;">E27</h3>
+<div style="font-size:0.75rem;color:var(--muted);font-family:var(--font-h);letter-spacing:0.05em;margin-bottom:10px;">Edison Screw · 27 mm</div>
+<p style="font-size:0.86rem;color:var(--body);margin:0;line-height:1.6;">Screw in clockwise. Found in modern pendants, table lamps &amp; floor lights.</p>
 </div>
-<div class="dcv-card b22" bis_size="{&quot;x&quot;:32,&quot;y&quot;:2455,&quot;w&quot;:536,&quot;h&quot;:684,&quot;abs_x&quot;:300,&quot;abs_y&quot;:2714}"><span class="icon" bis_size="{&quot;x&quot;:50,&quot;y&quot;:2480,&quot;w&quot;:499,&quot;h&quot;:532,&quot;abs_x&quot;:318,&quot;abs_y&quot;:2739}"><img src="https://dcvoltage.co.uk/cdn/shop/files/31hymhS-LZL_0dcb5936-53df-4ba5-be95-5ba507daeb7c.jpg?v=1775822034" alt="E27 icon" bis_size="{&quot;x&quot;:50,&quot;y&quot;:2480,&quot;w&quot;:499,&quot;h&quot;:499,&quot;abs_x&quot;:318,&quot;abs_y&quot;:2739}"></span>
-<h3 bis_size="{&quot;x&quot;:50,&quot;y&quot;:3023,&quot;w&quot;:499,&quot;h&quot;:38,&quot;abs_x&quot;:318,&quot;abs_y&quot;:3282}">B22</h3>
-<div class="sub" bis_size="{&quot;x&quot;:50,&quot;y&quot;:3064,&quot;w&quot;:499,&quot;h&quot;:21,&quot;abs_x&quot;:318,&quot;abs_y&quot;:3323}">Bayonet Cap · 22 mm</div>
-<p bis_size="{&quot;x&quot;:50,&quot;y&quot;:3096,&quot;w&quot;:499,&quot;h&quot;:22,&quot;abs_x&quot;:318,&quot;abs_y&quot;:3355}">Push in, twist right. Classic British ceiling roses &amp; traditional lamps.</p>
+<div style="border:1px solid var(--border);border-top:3px solid var(--b22);border-radius:var(--radius);padding:22px 18px;background:var(--bg);">
+<span style="display:block;margin-bottom:10px;"><img src="https://dcvoltage.co.uk/cdn/shop/files/31hymhS-LZL_0dcb5936-53df-4ba5-be95-5ba507daeb7c.jpg?v=1775822034" alt="B22 icon" style="width:100%;height:auto;border-radius:8px;display:block;"></span>
+<h3 style="font-family:var(--font-h);font-weight:700;color:var(--b22);font-size:1.35rem;margin:0 0 2px;">B22</h3>
+<div style="font-size:0.75rem;color:var(--muted);font-family:var(--font-h);letter-spacing:0.05em;margin-bottom:10px;">Bayonet Cap · 22 mm</div>
+<p style="font-size:0.86rem;color:var(--body);margin:0;line-height:1.6;">Push in, twist right. Classic British ceiling roses &amp; traditional lamps.</p>
 </div>
-<div class="dcv-card gu10" bis_size="{&quot;x&quot;:32,&quot;y&quot;:3156,&quot;w&quot;:536,&quot;h&quot;:684,&quot;abs_x&quot;:300,&quot;abs_y&quot;:3415}"><span class="icon" bis_size="{&quot;x&quot;:50,&quot;y&quot;:3181,&quot;w&quot;:499,&quot;h&quot;:532,&quot;abs_x&quot;:318,&quot;abs_y&quot;:3440}"><img src="https://cdn.shopify.com/s/files/1/0688/8833/0401/files/GU10.webp?v=1779943247" alt="E27 icon" bis_size="{&quot;x&quot;:50,&quot;y&quot;:3181,&quot;w&quot;:499,&quot;h&quot;:499,&quot;abs_x&quot;:318,&quot;abs_y&quot;:3440}"></span>
-<h3 bis_size="{&quot;x&quot;:50,&quot;y&quot;:3724,&quot;w&quot;:499,&quot;h&quot;:38,&quot;abs_x&quot;:318,&quot;abs_y&quot;:3983}">GU10</h3>
-<div class="sub" bis_size="{&quot;x&quot;:50,&quot;y&quot;:3765,&quot;w&quot;:499,&quot;h&quot;:21,&quot;abs_x&quot;:318,&quot;abs_y&quot;:4024}">Twist-Lock · Mains 240 V</div>
-<p bis_size="{&quot;x&quot;:50,&quot;y&quot;:3796,&quot;w&quot;:499,&quot;h&quot;:22,&quot;abs_x&quot;:318,&quot;abs_y&quot;:4055}">Two protruding pins, push &amp; twist. Kitchen and bathroom spotlights.</p>
+<div style="border:1px solid var(--border);border-top:3px solid var(--gu10);border-radius:var(--radius);padding:22px 18px;background:var(--bg);">
+<span style="display:block;margin-bottom:10px;"><img src="https://cdn.shopify.com/s/files/1/0688/8833/0401/files/GU10.webp?v=1779943247" alt="GU10 icon" style="width:100%;height:auto;border-radius:8px;display:block;"></span>
+<h3 style="font-family:var(--font-h);font-weight:700;color:var(--gu10);font-size:1.35rem;margin:0 0 2px;">GU10</h3>
+<div style="font-size:0.75rem;color:var(--muted);font-family:var(--font-h);letter-spacing:0.05em;margin-bottom:10px;">Twist-Lock · Mains 240 V</div>
+<p style="font-size:0.86rem;color:var(--body);margin:0;line-height:1.6;">Two protruding pins, push &amp; twist. Kitchen and bathroom spotlights.</p>
 </div>
 </div>
 </section>
+
 <!-- E27 -->
-<section id="dcv-e27" bis_size="{&quot;x&quot;:32,&quot;y&quot;:3893,&quot;w&quot;:536,&quot;h&quot;:748,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4152}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:3893,&quot;w&quot;:536,&quot;h&quot;:101,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4152}"><span class="fit fit-e27" bis_size="{&quot;x&quot;:32,&quot;y&quot;:3904,&quot;w&quot;:44,&quot;h&quot;:25,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4163}">E27</span> The Edison Screw — Europe's Standard</h2>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:4008,&quot;w&quot;:536,&quot;h&quot;:122,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4267}">The <strong bis_size="{&quot;x&quot;:66,&quot;y&quot;:4012,&quot;w&quot;:27,&quot;h&quot;:22,&quot;abs_x&quot;:334,&quot;abs_y&quot;:4271}">E27</strong> fitting (E = Edison Screw, 27 = 27 mm diameter) is the most common fitting in Europe, and increasingly popular in UK homes thanks to the growth of Scandinavian-style pendant lighting and designer lamps.</p>
-<h3 bis_size="{&quot;x&quot;:32,&quot;y&quot;:4159,&quot;w&quot;:536,&quot;h&quot;:30,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4418}">Where you'll find E27 fittings:</h3>
-<ul bis_size="{&quot;x&quot;:32,&quot;y&quot;:4206,&quot;w&quot;:536,&quot;h&quot;:180,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4465}">
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:4206,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:4465}">Modern pendant lights and hanging lampshades</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:4243,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:4502}">Table lamps with a single large socket</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:4281,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:4540}">Floor lamps — especially vintage Edison-style designs</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:4319,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:4578}">Outdoor lantern-style wall lights</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:4356,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:4615}">Most decorative filament bulbs (Globe, ST64, Squirrel Cage)</li>
+<section id="dcv-e27">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">
+<span style="display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:0.8rem;font-weight:700;font-family:var(--font-h);vertical-align:middle;background:rgba(0,119,204,.1);color:var(--e27);">E27</span> The Edison Screw — Europe's Standard</h2>
+<p style="margin-bottom:18px;color:var(--body);">The <strong style="color:var(--text);font-weight:600;">E27</strong> fitting (E = Edison Screw, 27 = 27 mm diameter) is the most common fitting in Europe, and increasingly popular in UK homes thanks to the growth of Scandinavian-style pendant lighting and designer lamps.</p>
+<h3 style="font-family:var(--font-h);font-size:1.05rem;font-weight:700;color:var(--text);margin:28px 0 8px;">Where you'll find E27 fittings:</h3>
+<ul style="padding-left:22px;margin-bottom:18px;color:var(--body);">
+<li style="margin-bottom:7px;">Modern pendant lights and hanging lampshades</li>
+<li style="margin-bottom:7px;">Table lamps with a single large socket</li>
+<li style="margin-bottom:7px;">Floor lamps — especially vintage Edison-style designs</li>
+<li style="margin-bottom:7px;">Outdoor lantern-style wall lights</li>
+<li style="margin-bottom:7px;">Most decorative filament bulbs (Globe, ST64, Squirrel Cage)</li>
 </ul>
-<div class="dcv-callout tip" bis_size="{&quot;x&quot;:32,&quot;y&quot;:4411,&quot;w&quot;:536,&quot;h&quot;:114,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4670}"><strong bis_size="{&quot;x&quot;:56,&quot;y&quot;:4432,&quot;w&quot;:77,&quot;h&quot;:18,&quot;abs_x&quot;:324,&quot;abs_y&quot;:4691}">💡 Pro Tip:</strong> If you have an exposed filament or decorative bulb in a modern lamp, there's a very good chance it's E27. The large screw thread is easy to distinguish from the smaller E14 used in chandeliers.</div>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:4549,&quot;w&quot;:536,&quot;h&quot;:91,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4808}">E27 bulbs are available in the widest range of styles — energy-saving LEDs, warm filament looks, smart bulbs — making them the most versatile fitting to shop for.</p>
+<div style="background:#f0f7ff;border-left:3px solid var(--e27);border-radius:0 10px 10px 0;padding:18px 22px;margin:24px 0;font-size:0.91rem;color:var(--body);">
+<strong style="color:var(--e27);">💡 Pro Tip:</strong> If you have an exposed filament or decorative bulb in a modern lamp, there's a very good chance it's E27. The large screw thread is easy to distinguish from the smaller E14 used in chandeliers.</div>
+<p style="margin-bottom:18px;color:var(--body);">E27 bulbs are available in the widest range of styles — energy-saving LEDs, warm filament looks, smart bulbs — making them the most versatile fitting to shop for.</p>
 </section>
+
 <!-- B22 -->
-<section id="dcv-b22" bis_size="{&quot;x&quot;:32,&quot;y&quot;:4693,&quot;w&quot;:536,&quot;h&quot;:660,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4952}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:4693,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4952}"><span class="fit fit-b22" bis_size="{&quot;x&quot;:32,&quot;y&quot;:4704,&quot;w&quot;:44,&quot;h&quot;:25,&quot;abs_x&quot;:300,&quot;abs_y&quot;:4963}">B22</span> The Bayonet Cap — Britain's Classic</h2>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:4764,&quot;w&quot;:536,&quot;h&quot;:122,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5023}">The <strong bis_size="{&quot;x&quot;:66,&quot;y&quot;:4768,&quot;w&quot;:29,&quot;h&quot;:22,&quot;abs_x&quot;:334,&quot;abs_y&quot;:5027}">B22</strong> (B = Bayonet, 22 = 22 mm diameter) is the traditional British standard and still the most widely installed fitting in older UK homes. If you grew up in Britain, you almost certainly grew up with this fitting.</p>
-<h3 bis_size="{&quot;x&quot;:32,&quot;y&quot;:4914,&quot;w&quot;:536,&quot;h&quot;:30,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5173}">Where you'll find B22 fittings:</h3>
-<ul bis_size="{&quot;x&quot;:32,&quot;y&quot;:4961,&quot;w&quot;:536,&quot;h&quot;:143,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5220}">
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:4961,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:5220}">Ceiling lights with a standard rose fitting</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:4999,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:5258}">Older table lamps and bedside lights</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:5037,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:5296}">Bathroom and hallway pendant lights</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:5074,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:5333}">Most homes built before 2005</li>
+<section id="dcv-b22">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">
+<span style="display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:0.8rem;font-weight:700;font-family:var(--font-h);vertical-align:middle;background:rgba(26,138,74,.1);color:var(--b22);">B22</span> The Bayonet Cap — Britain's Classic</h2>
+<p style="margin-bottom:18px;color:var(--body);">The <strong style="color:var(--text);font-weight:600;">B22</strong> (B = Bayonet, 22 = 22 mm diameter) is the traditional British standard and still the most widely installed fitting in older UK homes. If you grew up in Britain, you almost certainly grew up with this fitting.</p>
+<h3 style="font-family:var(--font-h);font-size:1.05rem;font-weight:700;color:var(--text);margin:28px 0 8px;">Where you'll find B22 fittings:</h3>
+<ul style="padding-left:22px;margin-bottom:18px;color:var(--body);">
+<li style="margin-bottom:7px;">Ceiling lights with a standard rose fitting</li>
+<li style="margin-bottom:7px;">Older table lamps and bedside lights</li>
+<li style="margin-bottom:7px;">Bathroom and hallway pendant lights</li>
+<li style="margin-bottom:7px;">Most homes built before 2005</li>
 </ul>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:5123,&quot;w&quot;:536,&quot;h&quot;:91,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5382}">To fit a B22 bulb: align the two side pins with the slots in the socket, <strong bis_size="{&quot;x&quot;:32,&quot;y&quot;:5157,&quot;w&quot;:179,&quot;h&quot;:22,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5416}">push firmly downward</strong>, then twist clockwise a quarter-turn until it clicks. To remove, do the reverse.</p>
-<div class="dcv-callout" bis_size="{&quot;x&quot;:32,&quot;y&quot;:5239,&quot;w&quot;:536,&quot;h&quot;:114,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5498}"><strong bis_size="{&quot;x&quot;:56,&quot;y&quot;:5260,&quot;w&quot;:97,&quot;h&quot;:18,&quot;abs_x&quot;:324,&quot;abs_y&quot;:5519}">⚠️ Watch out:</strong> B22 and E27 bulbs look similar in body shape but the bases are completely different — one screws, one bayonets. Always check the fitting code before buying a replacement.</div>
+<p style="margin-bottom:18px;color:var(--body);">To fit a B22 bulb: align the two side pins with the slots in the socket, <strong style="color:var(--text);font-weight:600;">push firmly downward</strong>, then twist clockwise a quarter-turn until it clicks. To remove, do the reverse.</p>
+<div style="background:var(--surface);border-left:3px solid var(--accent2);border-radius:0 10px 10px 0;padding:18px 22px;margin:24px 0;font-size:0.91rem;color:var(--body);">
+<strong style="color:var(--accent2);">⚠️ Watch out:</strong> B22 and E27 bulbs look similar in body shape but the bases are completely different — one screws, one bayonets. Always check the fitting code before buying a replacement.</div>
 </section>
+
 <!-- GU10 -->
-<section id="dcv-gu10" bis_size="{&quot;x&quot;:32,&quot;y&quot;:5405,&quot;w&quot;:536,&quot;h&quot;:768,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5664}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:5405,&quot;w&quot;:536,&quot;h&quot;:101,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5664}"><span class="fit fit-gu10" bis_size="{&quot;x&quot;:32,&quot;y&quot;:5417,&quot;w&quot;:55,&quot;h&quot;:25,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5676}">GU10</span> The Spotlight Standard — Kitchens &amp; Bathrooms</h2>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:5521,&quot;w&quot;:536,&quot;h&quot;:122,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5780}">The <strong bis_size="{&quot;x&quot;:66,&quot;y&quot;:5525,&quot;w&quot;:42,&quot;h&quot;:22,&quot;abs_x&quot;:334,&quot;abs_y&quot;:5784}">GU10</strong> is a completely different type of fitting. Rather than hanging in a pendant, GU10 bulbs slot into recessed or surface-mounted spotlights. They run at <strong bis_size="{&quot;x&quot;:290,&quot;y&quot;:5586,&quot;w&quot;:169,&quot;h&quot;:22,&quot;abs_x&quot;:558,&quot;abs_y&quot;:5845}">mains voltage (240 V)</strong> directly — no transformer required, unlike the older low-voltage MR16.</p>
-<h3 bis_size="{&quot;x&quot;:32,&quot;y&quot;:5671,&quot;w&quot;:536,&quot;h&quot;:30,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5930}">Where you'll find GU10 fittings:</h3>
-<ul bis_size="{&quot;x&quot;:32,&quot;y&quot;:5718,&quot;w&quot;:536,&quot;h&quot;:180,&quot;abs_x&quot;:300,&quot;abs_y&quot;:5977}">
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:5718,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:5977}">Kitchen ceiling spotlights (recessed downlighters)</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:5756,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:6015}">Bathroom spotlights (IP65-rated for wet zones)</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:5793,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:6052}">Track lighting systems</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:5831,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:6090}">Under-cabinet LED spotlights</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:5869,&quot;w&quot;:514,&quot;h&quot;:30,&quot;abs_x&quot;:322,&quot;abs_y&quot;:6128}">Display lighting in retail settings</li>
+<section id="dcv-gu10">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">
+<span style="display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:0.8rem;font-weight:700;font-family:var(--font-h);vertical-align:middle;background:rgba(204,61,0,.1);color:var(--gu10);">GU10</span> The Spotlight Standard — Kitchens &amp; Bathrooms</h2>
+<p style="margin-bottom:18px;color:var(--body);">The <strong style="color:var(--text);font-weight:600;">GU10</strong> is a completely different type of fitting. Rather than hanging in a pendant, GU10 bulbs slot into recessed or surface-mounted spotlights. They run at <strong style="color:var(--text);font-weight:600;">mains voltage (240 V)</strong> directly — no transformer required, unlike the older low-voltage MR16.</p>
+<h3 style="font-family:var(--font-h);font-size:1.05rem;font-weight:700;color:var(--text);margin:28px 0 8px;">Where you'll find GU10 fittings:</h3>
+<ul style="padding-left:22px;margin-bottom:18px;color:var(--body);">
+<li style="margin-bottom:7px;">Kitchen ceiling spotlights (recessed downlighters)</li>
+<li style="margin-bottom:7px;">Bathroom spotlights (IP65-rated for wet zones)</li>
+<li style="margin-bottom:7px;">Track lighting systems</li>
+<li style="margin-bottom:7px;">Under-cabinet LED spotlights</li>
+<li style="margin-bottom:7px;">Display lighting in retail settings</li>
 </ul>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:5917,&quot;w&quot;:536,&quot;h&quot;:91,&quot;abs_x&quot;:300,&quot;abs_y&quot;:6176}">GU10 bulbs have <strong bis_size="{&quot;x&quot;:166,&quot;y&quot;:5921,&quot;w&quot;:205,&quot;h&quot;:22,&quot;abs_x&quot;:434,&quot;abs_y&quot;:6180}">two thick protruding pins</strong> with slightly enlarged tips. Insert with pins aligned, push in, and <strong bis_size="{&quot;x&quot;:365,&quot;y&quot;:5952,&quot;w&quot;:122,&quot;h&quot;:22,&quot;abs_x&quot;:633,&quot;abs_y&quot;:6211}">twist clockwise</strong> to lock. They produce a focused, directional beam — ideal for task lighting.</p>
-<div class="dcv-callout tip" bis_size="{&quot;x&quot;:32,&quot;y&quot;:6033,&quot;w&quot;:536,&quot;h&quot;:140,&quot;abs_x&quot;:300,&quot;abs_y&quot;:6292}"><strong bis_size="{&quot;x&quot;:56,&quot;y&quot;:6054,&quot;w&quot;:118,&quot;h&quot;:18,&quot;abs_x&quot;:324,&quot;abs_y&quot;:6313}">💡 LED Upgrade:</strong> Still running halogen GU10s? Switching to LED GU10s cuts energy use by over 85% — from 50 W per halogen bulb down to just 4–6 W per LED. With 6 spotlights in a kitchen, that can save £60+ per year at current UK energy prices.</div>
+<p style="margin-bottom:18px;color:var(--body);">GU10 bulbs have <strong style="color:var(--text);font-weight:600;">two thick protruding pins</strong> with slightly enlarged tips. Insert with pins aligned, push in, and <strong style="color:var(--text);font-weight:600;">twist clockwise</strong> to lock. They produce a focused, directional beam — ideal for task lighting.</p>
+<div style="background:#f0f7ff;border-left:3px solid var(--e27);border-radius:0 10px 10px 0;padding:18px 22px;margin:24px 0;font-size:0.91rem;color:var(--body);">
+<strong style="color:var(--e27);">💡 LED Upgrade:</strong> Still running halogen GU10s? Switching to LED GU10s cuts energy use by over 85% — from 50 W per halogen bulb down to just 4–6 W per LED. With 6 spotlights in a kitchen, that can save £60+ per year at current UK energy prices.</div>
 </section>
+
 <!-- COMPARISON TABLE -->
-<section id="dcv-compare" bis_size="{&quot;x&quot;:32,&quot;y&quot;:6226,&quot;w&quot;:536,&quot;h&quot;:840,&quot;abs_x&quot;:300,&quot;abs_y&quot;:6485}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:6226,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:6485}">Full Comparison: E27 vs B22 vs GU10</h2>
-<div class="dcv-table-wrap" bis_size="{&quot;x&quot;:32,&quot;y&quot;:6306,&quot;w&quot;:536,&quot;h&quot;:759,&quot;abs_x&quot;:300,&quot;abs_y&quot;:6565}">
-<table bis_size="{&quot;x&quot;:32,&quot;y&quot;:6307,&quot;w&quot;:535,&quot;h&quot;:758,&quot;abs_x&quot;:300,&quot;abs_y&quot;:6566}">
-<thead bis_size="{&quot;x&quot;:33,&quot;y&quot;:6307,&quot;w&quot;:534,&quot;h&quot;:49,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6566}">
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6307,&quot;w&quot;:534,&quot;h&quot;:49,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6566}">
-<th bis_size="{&quot;x&quot;:33,&quot;y&quot;:6307,&quot;w&quot;:110,&quot;h&quot;:49,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6566}">Feature</th>
-<th bis_size="{&quot;x&quot;:143,&quot;y&quot;:6307,&quot;w&quot;:149,&quot;h&quot;:49,&quot;abs_x&quot;:411,&quot;abs_y&quot;:6566}"><span class="tag tag-e27" bis_size="{&quot;x&quot;:159,&quot;y&quot;:6320,&quot;w&quot;:46,&quot;h&quot;:25,&quot;abs_x&quot;:427,&quot;abs_y&quot;:6579}">E27</span></th>
-<th bis_size="{&quot;x&quot;:292,&quot;y&quot;:6307,&quot;w&quot;:144,&quot;h&quot;:49,&quot;abs_x&quot;:560,&quot;abs_y&quot;:6566}"><span class="tag tag-b22" bis_size="{&quot;x&quot;:309,&quot;y&quot;:6320,&quot;w&quot;:46,&quot;h&quot;:25,&quot;abs_x&quot;:577,&quot;abs_y&quot;:6579}">B22</span></th>
-<th bis_size="{&quot;x&quot;:437,&quot;y&quot;:6307,&quot;w&quot;:129,&quot;h&quot;:49,&quot;abs_x&quot;:705,&quot;abs_y&quot;:6566}"><span class="tag tag-gu10" bis_size="{&quot;x&quot;:454,&quot;y&quot;:6320,&quot;w&quot;:57,&quot;h&quot;:25,&quot;abs_x&quot;:722,&quot;abs_y&quot;:6579}">GU10</span></th>
+<section id="dcv-compare">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">Full Comparison: E27 vs B22 vs GU10</h2>
+<div style="overflow-x:auto;margin:24px 0 32px;border:1px solid var(--border);border-radius:var(--radius);">
+<table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+<thead style="background:var(--surface2);">
+<tr>
+<th style="text-align:left;padding:12px 16px;font-family:var(--font-h);font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;">Feature</th>
+<th style="text-align:left;padding:12px 16px;"><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.73rem;font-weight:700;font-family:var(--font-h);background:rgba(0,119,204,.1);color:var(--e27);">E27</span></th>
+<th style="text-align:left;padding:12px 16px;"><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.73rem;font-weight:700;font-family:var(--font-h);background:rgba(26,138,74,.1);color:var(--b22);">B22</span></th>
+<th style="text-align:left;padding:12px 16px;"><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.73rem;font-weight:700;font-family:var(--font-h);background:rgba(204,61,0,.1);color:var(--gu10);">GU10</span></th>
 </tr>
 </thead>
-<tbody bis_size="{&quot;x&quot;:33,&quot;y&quot;:6357,&quot;w&quot;:534,&quot;h&quot;:708,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6616}">
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6357,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6616}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6357,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6616}">Fitting Action</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6357,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:6616}">Screw clockwise</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6357,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:6616}">Push &amp; twist right</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6357,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:6616}">Push &amp; twist lock</td>
+<tbody>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Fitting Action</td>
+<td style="padding:11px 16px;color:var(--body);">Screw clockwise</td>
+<td style="padding:11px 16px;color:var(--body);">Push &amp; twist right</td>
+<td style="padding:11px 16px;color:var(--body);">Push &amp; twist lock</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6430,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6689}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6430,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6689}">Base Size</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6430,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:6689}">27 mm diameter</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6430,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:6689}">22 mm diameter</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6430,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:6689}">Two pins, 10 mm apart</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Base Size</td>
+<td style="padding:11px 16px;color:var(--body);">27 mm diameter</td>
+<td style="padding:11px 16px;color:var(--body);">22 mm diameter</td>
+<td style="padding:11px 16px;color:var(--body);">Two pins, 10 mm apart</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6504,&quot;w&quot;:534,&quot;h&quot;:48,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6763}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6504,&quot;w&quot;:110,&quot;h&quot;:48,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6763}">Voltage</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6504,&quot;w&quot;:149,&quot;h&quot;:48,&quot;abs_x&quot;:411,&quot;abs_y&quot;:6763}">240 V mains</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6504,&quot;w&quot;:144,&quot;h&quot;:48,&quot;abs_x&quot;:560,&quot;abs_y&quot;:6763}">240 V mains</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6504,&quot;w&quot;:129,&quot;h&quot;:48,&quot;abs_x&quot;:705,&quot;abs_y&quot;:6763}">240 V mains</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Voltage</td>
+<td style="padding:11px 16px;color:var(--body);">240 V mains</td>
+<td style="padding:11px 16px;color:var(--body);">240 V mains</td>
+<td style="padding:11px 16px;color:var(--body);">240 V mains</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6552,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6811}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6552,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6811}">Typical Use</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6552,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:6811}">Pendants, table lamps</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6552,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:6811}">Ceiling roses, lamps</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6552,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:6811}">Spotlights, downlighters</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Typical Use</td>
+<td style="padding:11px 16px;color:var(--body);">Pendants, table lamps</td>
+<td style="padding:11px 16px;color:var(--body);">Ceiling roses, lamps</td>
+<td style="padding:11px 16px;color:var(--body);">Spotlights, downlighters</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6625,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6884}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6625,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6884}">Common In</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6625,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:6884}">Modern &amp; EU-style homes</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6625,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:6884}">Traditional UK homes</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6625,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:6884}">Kitchens &amp; bathrooms</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Common In</td>
+<td style="padding:11px 16px;color:var(--body);">Modern &amp; EU-style homes</td>
+<td style="padding:11px 16px;color:var(--body);">Traditional UK homes</td>
+<td style="padding:11px 16px;color:var(--body);">Kitchens &amp; bathrooms</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6698,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6957}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6698,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:6957}">LED Options</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6698,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:6957}">✅ Huge range</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6698,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:6957}">✅ Huge range</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6698,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:6957}">✅ Good range</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">LED Options</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Huge range</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Huge range</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Good range</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6772,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7031}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6772,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7031}">Smart Bulbs</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6772,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:7031}">✅ Wide choice</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6772,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:7031}">✅ Wide choice</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6772,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:7031}">⚠️ Limited but available</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Smart Bulbs</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Wide choice</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Wide choice</td>
+<td style="padding:11px 16px;color:var(--body);">⚠️ Limited but available</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6845,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7104}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6845,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7104}">Beam Angle</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6845,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:7104}">Omnidirectional</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6845,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:7104}">Omnidirectional</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6845,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:7104}">Directional 35–60°</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Beam Angle</td>
+<td style="padding:11px 16px;color:var(--body);">Omnidirectional</td>
+<td style="padding:11px 16px;color:var(--body);">Omnidirectional</td>
+<td style="padding:11px 16px;color:var(--body);">Directional 35–60°</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6919,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7178}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6919,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7178}">Dimmable</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6919,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:7178}">✅ Yes</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6919,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:7178}">✅ Yes</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6919,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:7178}">✅ Yes (check switch)</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">Dimmable</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Yes</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Yes</td>
+<td style="padding:11px 16px;color:var(--body);">✅ Yes (check switch)</td>
 </tr>
-<tr bis_size="{&quot;x&quot;:33,&quot;y&quot;:6992,&quot;w&quot;:534,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7251}">
-<td bis_size="{&quot;x&quot;:33,&quot;y&quot;:6992,&quot;w&quot;:110,&quot;h&quot;:73,&quot;abs_x&quot;:301,&quot;abs_y&quot;:7251}">How to Identify</td>
-<td bis_size="{&quot;x&quot;:143,&quot;y&quot;:6992,&quot;w&quot;:149,&quot;h&quot;:73,&quot;abs_x&quot;:411,&quot;abs_y&quot;:7251}">Spiral screw thread</td>
-<td bis_size="{&quot;x&quot;:292,&quot;y&quot;:6992,&quot;w&quot;:144,&quot;h&quot;:73,&quot;abs_x&quot;:560,&quot;abs_y&quot;:7251}">Two side push-pins</td>
-<td bis_size="{&quot;x&quot;:437,&quot;y&quot;:6992,&quot;w&quot;:129,&quot;h&quot;:73,&quot;abs_x&quot;:705,&quot;abs_y&quot;:7251}">Two base locking pins</td>
+<tr style="border-top:1px solid var(--border);">
+<td style="padding:11px 16px;font-weight:600;color:var(--text);font-family:var(--font-h);font-size:0.85rem;">How to Identify</td>
+<td style="padding:11px 16px;color:var(--body);">Spiral screw thread</td>
+<td style="padding:11px 16px;color:var(--body);">Two side push-pins</td>
+<td style="padding:11px 16px;color:var(--body);">Two base locking pins</td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
+
 <!-- WHICH ONE -->
-<section id="dcv-which" bis_size="{&quot;x&quot;:32,&quot;y&quot;:7118,&quot;w&quot;:536,&quot;h&quot;:772,&quot;abs_x&quot;:300,&quot;abs_y&quot;:7377}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:7118,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:7377}">Which Fitting Do You Actually Need?</h2>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:7189,&quot;w&quot;:536,&quot;h&quot;:30,&quot;abs_x&quot;:300,&quot;abs_y&quot;:7448}">Match your situation to the guide below:</p>
-<div class="dcv-decision" bis_size="{&quot;x&quot;:32,&quot;y&quot;:7241,&quot;w&quot;:536,&quot;h&quot;:476,&quot;abs_x&quot;:300,&quot;abs_y&quot;:7500}">
-<div class="dcv-d" bis_size="{&quot;x&quot;:32,&quot;y&quot;:7241,&quot;w&quot;:261,&quot;h&quot;:141,&quot;abs_x&quot;:300,&quot;abs_y&quot;:7500}">
-<div class="dq" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7260,&quot;w&quot;:224,&quot;h&quot;:20,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7519}">Your situation</div>
-<div class="da" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7285,&quot;w&quot;:224,&quot;h&quot;:51,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7544}">Modern pendant lamp or designer floor light</div>
-<div class="df" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7341,&quot;w&quot;:224,&quot;h&quot;:23,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7600}">→ Almost certainly E27</div>
+<section id="dcv-which">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">Which Fitting Do You Actually Need?</h2>
+<p style="margin-bottom:18px;color:var(--body);">Match your situation to the guide below:</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0 32px;">
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;">
+<div style="font-size:0.72rem;color:var(--muted);font-family:var(--font-h);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Your situation</div>
+<div style="font-weight:600;color:var(--text);font-size:0.9rem;margin-bottom:4px;font-family:var(--font-h);">Modern pendant lamp or designer floor light</div>
+<div style="font-size:0.82rem;color:var(--accent);font-weight:700;font-family:var(--font-h);">→ Almost certainly E27</div>
 </div>
-<div class="dcv-d" bis_size="{&quot;x&quot;:307,&quot;y&quot;:7241,&quot;w&quot;:261,&quot;h&quot;:141,&quot;abs_x&quot;:575,&quot;abs_y&quot;:7500}">
-<div class="dq" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7260,&quot;w&quot;:224,&quot;h&quot;:20,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7519}">Your situation</div>
-<div class="da" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7285,&quot;w&quot;:224,&quot;h&quot;:51,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7544}">Standard ceiling light in a pre-2005 UK home</div>
-<div class="df" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7341,&quot;w&quot;:224,&quot;h&quot;:23,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7600}">→ Almost certainly B22</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;">
+<div style="font-size:0.72rem;color:var(--muted);font-family:var(--font-h);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Your situation</div>
+<div style="font-weight:600;color:var(--text);font-size:0.9rem;margin-bottom:4px;font-family:var(--font-h);">Standard ceiling light in a pre-2005 UK home</div>
+<div style="font-size:0.82rem;color:var(--accent);font-weight:700;font-family:var(--font-h);">→ Almost certainly B22</div>
 </div>
-<div class="dcv-d" bis_size="{&quot;x&quot;:32,&quot;y&quot;:7397,&quot;w&quot;:261,&quot;h&quot;:141,&quot;abs_x&quot;:300,&quot;abs_y&quot;:7656}">
-<div class="dq" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7416,&quot;w&quot;:224,&quot;h&quot;:20,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7675}">Your situation</div>
-<div class="da" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7440,&quot;w&quot;:224,&quot;h&quot;:51,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7699}">Kitchen or bathroom recessed spotlight</div>
-<div class="df" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7496,&quot;w&quot;:224,&quot;h&quot;:23,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7755}">→ Almost certainly GU10</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;">
+<div style="font-size:0.72rem;color:var(--muted);font-family:var(--font-h);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Your situation</div>
+<div style="font-weight:600;color:var(--text);font-size:0.9rem;margin-bottom:4px;font-family:var(--font-h);">Kitchen or bathroom recessed spotlight</div>
+<div style="font-size:0.82rem;color:var(--accent);font-weight:700;font-family:var(--font-h);">→ Almost certainly GU10</div>
 </div>
-<div class="dcv-d" bis_size="{&quot;x&quot;:307,&quot;y&quot;:7397,&quot;w&quot;:261,&quot;h&quot;:141,&quot;abs_x&quot;:575,&quot;abs_y&quot;:7656}">
-<div class="dq" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7416,&quot;w&quot;:224,&quot;h&quot;:20,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7675}">Your situation</div>
-<div class="da" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7440,&quot;w&quot;:224,&quot;h&quot;:51,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7699}">Decorative filament / vintage Edison bulb</div>
-<div class="df" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7496,&quot;w&quot;:224,&quot;h&quot;:23,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7755}">→ Usually E27 (or E14 if small)</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;">
+<div style="font-size:0.72rem;color:var(--muted);font-family:var(--font-h);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Your situation</div>
+<div style="font-weight:600;color:var(--text);font-size:0.9rem;margin-bottom:4px;font-family:var(--font-h);">Decorative filament / vintage Edison bulb</div>
+<div style="font-size:0.82rem;color:var(--accent);font-weight:700;font-family:var(--font-h);">→ Usually E27 (or E14 if small)</div>
 </div>
-<div class="dcv-d" bis_size="{&quot;x&quot;:32,&quot;y&quot;:7552,&quot;w&quot;:261,&quot;h&quot;:165,&quot;abs_x&quot;:300,&quot;abs_y&quot;:7811}">
-<div class="dq" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7571,&quot;w&quot;:224,&quot;h&quot;:20,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7830}">Your situation</div>
-<div class="da" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7596,&quot;w&quot;:224,&quot;h&quot;:51,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7855}">Small candle bulb in a chandelier</div>
-<div class="df" bis_size="{&quot;x&quot;:50,&quot;y&quot;:7652,&quot;w&quot;:224,&quot;h&quot;:23,&quot;abs_x&quot;:318,&quot;abs_y&quot;:7911}">→ E14 or B15 (smaller variants)</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;">
+<div style="font-size:0.72rem;color:var(--muted);font-family:var(--font-h);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Your situation</div>
+<div style="font-weight:600;color:var(--text);font-size:0.9rem;margin-bottom:4px;font-family:var(--font-h);">Small candle bulb in a chandelier</div>
+<div style="font-size:0.82rem;color:var(--accent);font-weight:700;font-family:var(--font-h);">→ E14 or B15 (smaller variants)</div>
 </div>
-<div class="dcv-d" bis_size="{&quot;x&quot;:307,&quot;y&quot;:7552,&quot;w&quot;:261,&quot;h&quot;:165,&quot;abs_x&quot;:575,&quot;abs_y&quot;:7811}">
-<div class="dq" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7571,&quot;w&quot;:224,&quot;h&quot;:20,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7830}">Your situation</div>
-<div class="da" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7596,&quot;w&quot;:224,&quot;h&quot;:51,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7855}">Dead bulb with no packaging left</div>
-<div class="df" bis_size="{&quot;x&quot;:326,&quot;y&quot;:7652,&quot;w&quot;:224,&quot;h&quot;:47,&quot;abs_x&quot;:594,&quot;abs_y&quot;:7911}">→ Check base — code is printed there</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;">
+<div style="font-size:0.72rem;color:var(--muted);font-family:var(--font-h);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Your situation</div>
+<div style="font-weight:600;color:var(--text);font-size:0.9rem;margin-bottom:4px;font-family:var(--font-h);">Dead bulb with no packaging left</div>
+<div style="font-size:0.82rem;color:var(--accent);font-weight:700;font-family:var(--font-h);">→ Check base — code is printed there</div>
 </div>
 </div>
-<div class="dcv-callout" bis_size="{&quot;x&quot;:32,&quot;y&quot;:7750,&quot;w&quot;:536,&quot;h&quot;:140,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8009}"><strong bis_size="{&quot;x&quot;:56,&quot;y&quot;:7771,&quot;w&quot;:113,&quot;h&quot;:18,&quot;abs_x&quot;:324,&quot;abs_y&quot;:8030}">🔎 Best method:</strong> Remove the dead bulb and look at the very base. The fitting code (E27, B22, GU10 etc.) is almost always printed or embossed there. If the print has faded, bring it into our store or <a href="/pages/contact" bis_size="{&quot;x&quot;:418,&quot;y&quot;:7823,&quot;w&quot;:116,&quot;h&quot;:18,&quot;abs_x&quot;:686,&quot;abs_y&quot;:8082}">contact our team</a> — we'll identify it for you.</div>
+<div style="background:var(--surface);border-left:3px solid var(--accent2);border-radius:0 10px 10px 0;padding:18px 22px;margin:24px 0;font-size:0.91rem;color:var(--body);">
+<strong style="color:var(--accent2);">🔎 Best method:</strong> Remove the dead bulb and look at the very base. The fitting code (E27, B22, GU10 etc.) is almost always printed or embossed there. If the print has faded, bring it into our store or <a href="/pages/contact" style="color:var(--accent);">contact our team</a> — we'll identify it for you.</div>
 </section>
+
 <!-- OTHER FITTINGS -->
-<section id="dcv-others" bis_size="{&quot;x&quot;:32,&quot;y&quot;:7942,&quot;w&quot;:536,&quot;h&quot;:596,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8201}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:7942,&quot;w&quot;:536,&quot;h&quot;:101,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8201}">Other Common UK Fittings (Quick Reference)</h2>
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:8058,&quot;w&quot;:536,&quot;h&quot;:61,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8317}">E27, B22, and GU10 cover the vast majority of UK homes, but you may also encounter:</p>
-<ul bis_size="{&quot;x&quot;:32,&quot;y&quot;:8137,&quot;w&quot;:536,&quot;h&quot;:402,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8396}">
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:8137,&quot;w&quot;:514,&quot;h&quot;:61,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8396}"><strong bis_size="{&quot;x&quot;:54,&quot;y&quot;:8141,&quot;w&quot;:247,&quot;h&quot;:22,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8400}">E14 (Small Edison Screw / SES)</strong> — Smaller screw version used in decorative lamps and chandeliers.</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:8205,&quot;w&quot;:514,&quot;h&quot;:61,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8464}"><strong bis_size="{&quot;x&quot;:54,&quot;y&quot;:8209,&quot;w&quot;:242,&quot;h&quot;:22,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8468}">B15 (Small Bayonet Cap / SBC)</strong> — Smaller bayonet used in appliances, night lights, and smaller fittings.</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:8273,&quot;w&quot;:514,&quot;h&quot;:61,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8532}"><strong bis_size="{&quot;x&quot;:54,&quot;y&quot;:8277,&quot;w&quot;:112,&quot;h&quot;:22,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8536}">GU5.3 / MR16</strong> — Low-voltage (12 V) spotlight needing a transformer. Being phased out in favour of GU10.</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:8341,&quot;w&quot;:514,&quot;h&quot;:61,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8600}"><strong bis_size="{&quot;x&quot;:54,&quot;y&quot;:8345,&quot;w&quot;:22,&quot;h&quot;:22,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8604}">G9</strong> — Small loop-pin fitting used in wall lights, bathroom bars, and some table lamps.</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:8410,&quot;w&quot;:514,&quot;h&quot;:61,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8669}"><strong bis_size="{&quot;x&quot;:54,&quot;y&quot;:8414,&quot;w&quot;:22,&quot;h&quot;:22,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8673}">G4</strong> — Tiny two-pin fitting used in cabinet lights, under-shelf LEDs, and marine/caravan lighting.</li>
-<li bis_size="{&quot;x&quot;:54,&quot;y&quot;:8478,&quot;w&quot;:514,&quot;h&quot;:61,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8737}"><strong bis_size="{&quot;x&quot;:54,&quot;y&quot;:8482,&quot;w&quot;:61,&quot;h&quot;:22,&quot;abs_x&quot;:322,&quot;abs_y&quot;:8741}">T8 / T5</strong> — Fluorescent tube fittings for garages and offices; increasingly replaced by LED tube equivalents.</li>
+<section id="dcv-others">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">Other Common UK Fittings (Quick Reference)</h2>
+<p style="margin-bottom:18px;color:var(--body);">E27, B22, and GU10 cover the vast majority of UK homes, but you may also encounter:</p>
+<ul style="padding-left:22px;margin-bottom:18px;color:var(--body);">
+<li style="margin-bottom:7px;">
+<strong style="color:var(--text);font-weight:600;">E14 (Small Edison Screw / SES)</strong> — Smaller screw version used in decorative lamps and chandeliers.</li>
+<li style="margin-bottom:7px;">
+<strong style="color:var(--text);font-weight:600;">B15 (Small Bayonet Cap / SBC)</strong> — Smaller bayonet used in appliances, night lights, and smaller fittings.</li>
+<li style="margin-bottom:7px;">
+<strong style="color:var(--text);font-weight:600;">GU5.3 / MR16</strong> — Low-voltage (12 V) spotlight needing a transformer. Being phased out in favour of GU10.</li>
+<li style="margin-bottom:7px;">
+<strong style="color:var(--text);font-weight:600;">G9</strong> — Small loop-pin fitting used in wall lights, bathroom bars, and some table lamps.</li>
+<li style="margin-bottom:7px;">
+<strong style="color:var(--text);font-weight:600;">G4</strong> — Tiny two-pin fitting used in cabinet lights, under-shelf LEDs, and marine/caravan lighting.</li>
+<li style="margin-bottom:7px;">
+<strong style="color:var(--text);font-weight:600;">T8 / T5</strong> — Fluorescent tube fittings for garages and offices; increasingly replaced by LED tube equivalents.</li>
 </ul>
 </section>
+
 <!-- FAQ -->
-<section class="dcv-faq" id="dcv-faq" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8591,&quot;w&quot;:536,&quot;h&quot;:414,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8850}">
-<h2 bis_size="{&quot;x&quot;:32,&quot;y&quot;:8591,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8850}">Frequently Asked Questions</h2>
-<div class="dcv-faq-item" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8662,&quot;w&quot;:536,&quot;h&quot;:57,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8921}"><button class="dcv-faq-q" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8662,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8921}"> Can I use an E27 bulb in a B22 fitting? <span class="dcv-faq-icon" bis_size="{&quot;x&quot;:559,&quot;y&quot;:8680,&quot;w&quot;:9,&quot;h&quot;:20,&quot;abs_x&quot;:827,&quot;abs_y&quot;:8939}">+</span> </button>
-<div class="dcv-faq-a" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8718,&quot;w&quot;:536,&quot;h&quot;:0,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8977}">
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:8718,&quot;w&quot;:536,&quot;h&quot;:103,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8977}">No — E27 and B22 bases are physically different and not interchangeable. Swapping fitting types requires replacing the light fixture itself. Adapters exist but we'd always recommend a proper fixture replacement for safety and reliability.</p>
+<section id="dcv-faq" itemscope itemtype="https://schema.org/FAQPage" style="margin-top:48px;">
+<h2 style="font-family:var(--font-h);font-size:1.55rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);">Frequently Asked Questions</h2>
+
+<div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="border-bottom:1px solid var(--border);">
+<div itemprop="name" style="color:var(--text);font-family:var(--font-h);font-size:0.97rem;font-weight:600;padding:18px 0 0;">Can I use an E27 bulb in a B22 fitting?</div>
+<div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+<p itemprop="text" style="margin:8px 0 18px;color:var(--body);font-size:0.9rem;">No — E27 and B22 bases are physically different and not interchangeable. Swapping fitting types requires replacing the light fixture itself. Adapters exist but we'd always recommend a proper fixture replacement for safety and reliability.</p>
 </div>
 </div>
-<div class="dcv-faq-item" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8719,&quot;w&quot;:536,&quot;h&quot;:57,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8978}"><button class="dcv-faq-q" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8719,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:8978}"> Are LED GU10s worth switching to from halogen? <span class="dcv-faq-icon" bis_size="{&quot;x&quot;:559,&quot;y&quot;:8737,&quot;w&quot;:9,&quot;h&quot;:20,&quot;abs_x&quot;:827,&quot;abs_y&quot;:8996}">+</span> </button>
-<div class="dcv-faq-a" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8776,&quot;w&quot;:536,&quot;h&quot;:0,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9035}">
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:8776,&quot;w&quot;:536,&quot;h&quot;:103,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9035}">Absolutely. LED GU10s use around 4–6 W versus 50 W for halogen — over 85% less energy. They also last 15,000–25,000 hours compared to around 2,000 for halogen. With 6 spotlights running daily, the payback period on LED replacements is typically under 6 months.</p>
+<div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="border-bottom:1px solid var(--border);">
+<div itemprop="name" style="color:var(--text);font-family:var(--font-h);font-size:0.97rem;font-weight:600;padding:18px 0 0;">Are LED GU10s worth switching to from halogen?</div>
+<div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+<p itemprop="text" style="margin:8px 0 18px;color:var(--body);font-size:0.9rem;">Absolutely. LED GU10s use around 4–6 W versus 50 W for halogen — over 85% less energy. They also last 15,000–25,000 hours compared to around 2,000 for halogen. With 6 spotlights running daily, the payback period on LED replacements is typically under 6 months.</p>
 </div>
 </div>
-<div class="dcv-faq-item" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8776,&quot;w&quot;:536,&quot;h&quot;:57,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9035}"><button class="dcv-faq-q" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8776,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9035}"> What's the difference between E27 and E26? <span class="dcv-faq-icon" bis_size="{&quot;x&quot;:559,&quot;y&quot;:8794,&quot;w&quot;:9,&quot;h&quot;:20,&quot;abs_x&quot;:827,&quot;abs_y&quot;:9053}">+</span> </button>
-<div class="dcv-faq-a" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8833,&quot;w&quot;:536,&quot;h&quot;:0,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9092}">
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:8833,&quot;w&quot;:536,&quot;h&quot;:103,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9092}">E26 is the North American standard (26 mm) and E27 is the European/UK standard (27 mm). They are almost identical and E26 bulbs will usually fit E27 sockets — but for UK homes always use E27 to ensure correct fit and electrical compliance.</p>
+<div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="border-bottom:1px solid var(--border);">
+<div itemprop="name" style="color:var(--text);font-family:var(--font-h);font-size:0.97rem;font-weight:600;padding:18px 0 0;">What's the difference between E27 and E26?</div>
+<div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+<p itemprop="text" style="margin:8px 0 18px;color:var(--body);font-size:0.9rem;">E26 is the North American standard (26 mm) and E27 is the European/UK standard (27 mm). They are almost identical and E26 bulbs will usually fit E27 sockets — but for UK homes always use E27 to ensure correct fit and electrical compliance.</p>
 </div>
 </div>
-<div class="dcv-faq-item" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8834,&quot;w&quot;:536,&quot;h&quot;:57,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9093}"><button class="dcv-faq-q" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8834,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9093}"> How do I know if my GU10 fitting is dimmable? <span class="dcv-faq-icon" bis_size="{&quot;x&quot;:559,&quot;y&quot;:8852,&quot;w&quot;:9,&quot;h&quot;:20,&quot;abs_x&quot;:827,&quot;abs_y&quot;:9111}">+</span> </button>
-<div class="dcv-faq-a" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8890,&quot;w&quot;:536,&quot;h&quot;:0,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9149}">
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:8890,&quot;w&quot;:536,&quot;h&quot;:103,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9149}">Two things must be dimmable: the bulb AND the dimmer switch. Many standard GU10 LEDs are not dimmable — look for "dimmable" on the packaging. You'll also need an LED-compatible dimmer switch (not an old incandescent-only dimmer). Check both before buying.</p>
+<div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="border-bottom:1px solid var(--border);">
+<div itemprop="name" style="color:var(--text);font-family:var(--font-h);font-size:0.97rem;font-weight:600;padding:18px 0 0;">How do I know if my GU10 fitting is dimmable?</div>
+<div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+<p itemprop="text" style="margin:8px 0 18px;color:var(--body);font-size:0.9rem;">Two things must be dimmable: the bulb AND the dimmer switch. Many standard GU10 LEDs are not dimmable — look for "dimmable" on the packaging. You'll also need an LED-compatible dimmer switch (not an old incandescent-only dimmer). Check both before buying.</p>
 </div>
 </div>
-<div class="dcv-faq-item" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8891,&quot;w&quot;:536,&quot;h&quot;:57,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9150}"><button class="dcv-faq-q" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8891,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9150}"> What brightness should I choose — wattage or lumens? <span class="dcv-faq-icon" bis_size="{&quot;x&quot;:559,&quot;y&quot;:8909,&quot;w&quot;:9,&quot;h&quot;:20,&quot;abs_x&quot;:827,&quot;abs_y&quot;:9168}">+</span> </button>
-<div class="dcv-faq-a" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8948,&quot;w&quot;:536,&quot;h&quot;:0,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9207}">
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:8948,&quot;w&quot;:536,&quot;h&quot;:103,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9207}">With LED bulbs, always use lumens — not wattage. A quick guide: 40 W incandescent ≈ 470 lm (around 5–6 W LED), 60 W ≈ 806 lm (8–10 W LED), 100 W ≈ 1521 lm (13–15 W LED). All modern LED packaging lists the equivalent wattage clearly.</p>
+<div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="border-bottom:1px solid var(--border);">
+<div itemprop="name" style="color:var(--text);font-family:var(--font-h);font-size:0.97rem;font-weight:600;padding:18px 0 0;">What brightness should I choose — wattage or lumens?</div>
+<div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+<p itemprop="text" style="margin:8px 0 18px;color:var(--body);font-size:0.9rem;">With LED bulbs, always use lumens — not wattage. A quick guide: 40 W incandescent ≈ 470 lm (around 5–6 W LED), 60 W ≈ 806 lm (8–10 W LED), 100 W ≈ 1521 lm (13–15 W LED). All modern LED packaging lists the equivalent wattage clearly.</p>
 </div>
 </div>
-<div class="dcv-faq-item" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8948,&quot;w&quot;:536,&quot;h&quot;:57,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9207}"><button class="dcv-faq-q" bis_size="{&quot;x&quot;:32,&quot;y&quot;:8948,&quot;w&quot;:536,&quot;h&quot;:56,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9207}"> Is B22 being phased out in the UK? <span class="dcv-faq-icon" bis_size="{&quot;x&quot;:559,&quot;y&quot;:8966,&quot;w&quot;:9,&quot;h&quot;:20,&quot;abs_x&quot;:827,&quot;abs_y&quot;:9225}">+</span> </button>
-<div class="dcv-faq-a" bis_size="{&quot;x&quot;:32,&quot;y&quot;:9005,&quot;w&quot;:536,&quot;h&quot;:0,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9264}">
-<p bis_size="{&quot;x&quot;:32,&quot;y&quot;:9005,&quot;w&quot;:536,&quot;h&quot;:103,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9264}">No — B22 remains a fully active UK standard with a wide range of LED bulbs available. While newer homes often feature E27 fittings, there are no UK government plans to phase out B22 as of 2025. Millions of UK homes still use it daily.</p>
+<div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="border-bottom:1px solid var(--border);">
+<div itemprop="name" style="color:var(--text);font-family:var(--font-h);font-size:0.97rem;font-weight:600;padding:18px 0 0;">Is B22 being phased out in the UK?</div>
+<div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+<p itemprop="text" style="margin:8px 0 18px;color:var(--body);font-size:0.9rem;">No — B22 remains a fully active UK standard with a wide range of LED bulbs available. While newer homes often feature E27 fittings, there are no UK government plans to phase out B22 as of 2025. Millions of UK homes still use it daily.</p>
 </div>
 </div>
 </section>
+
 <!-- CTA -->
-<div class="dcv-cta" bis_size="{&quot;x&quot;:32,&quot;y&quot;:9058,&quot;w&quot;:536,&quot;h&quot;:499,&quot;abs_x&quot;:300,&quot;abs_y&quot;:9317}">
-<h2 bis_size="{&quot;x&quot;:68,&quot;y&quot;:9102,&quot;w&quot;:464,&quot;h&quot;:92,&quot;abs_x&quot;:336,&quot;abs_y&quot;:9361}">Find the Right Bulb in Seconds</h2>
-<p bis_size="{&quot;x&quot;:68,&quot;y&quot;:9204,&quot;w&quot;:464,&quot;h&quot;:83,&quot;abs_x&quot;:336,&quot;abs_y&quot;:9463}">Browse our full range of E27, B22, GU10 and more — with expert filters for fitting, brightness, colour temperature, and dimmability.</p>
-<a class="dcv-btn" href="https://dcvoltage.co.uk/collections/e27-bulbs" bis_size="{&quot;x&quot;:105,&quot;y&quot;:9320,&quot;w&quot;:184,&quot;h&quot;:51,&quot;abs_x&quot;:373,&quot;abs_y&quot;:9579}">Shop E27 Bulbs</a> <a class="dcv-btn" href="https://dcvoltage.co.uk/products/vintage-style-led-edison-bulb-lamp-b22" bis_size="{&quot;x&quot;:310,&quot;y&quot;:9320,&quot;w&quot;:184,&quot;h&quot;:51,&quot;abs_x&quot;:578,&quot;abs_y&quot;:9579}"> Shop B22 Bulbs</a> <a class="dcv-btn" href="/collections/gu10-bulbs" bis_size="{&quot;x&quot;:201,&quot;y&quot;:9384,&quot;w&quot;:197,&quot;h&quot;:51,&quot;abs_x&quot;:469,&quot;abs_y&quot;:9643}">Shop GU10 Bulbs</a> <br bis_size="{&quot;x&quot;:407,&quot;y&quot;:9397,&quot;w&quot;:0,&quot;h&quot;:22,&quot;abs_x&quot;:675,&quot;abs_y&quot;:9656}"><a style="margin-top: 10px;" class="dcv-btn dcv-btn-ghost" href="/pages/contact" bis_size="{&quot;x&quot;:211,&quot;y&quot;:9451,&quot;w&quot;:176,&quot;h&quot;:55,&quot;abs_x&quot;:479,&quot;abs_y&quot;:9710}">Ask an Expert</a></div>
+<div style="background:var(--text);border-radius:16px;padding:44px 36px;text-align:center;margin:52px 0 0;color:#fff;">
+<h2 style="font-family:var(--font-h);font-size:1.6rem;font-weight:800;color:#fff;margin:0 0 10px;">Find the Right Bulb in Seconds</h2>
+<p style="color:rgba(255,255,255,.65);margin-bottom:26px;font-size:0.97rem;">Browse our full range of E27, B22, GU10 and more — with expert filters for fitting, brightness, colour temperature, and dimmability.</p>
+<a href="https://dcvoltage.co.uk/collections/e27-bulbs" style="display:inline-block;background:var(--accent);color:#fff;padding:13px 32px;border-radius:8px;font-family:var(--font-h);font-weight:700;font-size:0.9rem;text-decoration:none;margin:6px 8px;">Shop E27 Bulbs</a>
+<a href="https://dcvoltage.co.uk/products/vintage-style-led-edison-bulb-lamp-b22" style="display:inline-block;background:var(--accent);color:#fff;padding:13px 32px;border-radius:8px;font-family:var(--font-h);font-weight:700;font-size:0.9rem;text-decoration:none;margin:6px 8px;">Shop B22 Bulbs</a>
+<a href="/collections/led-bulb" style="display:inline-block;background:var(--accent);color:#fff;padding:13px 32px;border-radius:8px;font-family:var(--font-h);font-weight:700;font-size:0.9rem;text-decoration:none;margin:6px 8px;">Shop GU10 Bulbs</a>
+<br>
+<a href="/pages/contact" style="display:inline-block;background:transparent;color:#fff;border:2px solid rgba(255,255,255,.4);padding:13px 32px;border-radius:8px;font-family:var(--font-h);font-weight:700;font-size:0.9rem;text-decoration:none;margin-top:10px;">Ask an Expert</a>
 </div>
-<!-- /.dcv-blog -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Can I use an E27 bulb in a B22 fitting?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No — E27 and B22 bases are physically different and not interchangeable. Swapping fitting types requires replacing the light fixture itself. Adapters exist but we'd always recommend a proper fixture replacement for safety and reliability." }
-    },
-    {
-      "@type": "Question",
-      "name": "Are LED GU10s worth switching to from halogen?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. LED GU10s use around 4–6 W versus 50 W for halogen — over 85% less energy. They also last 15,000–25,000 hours compared to around 2,000 for halogen. With 6 spotlights running daily, the payback period on LED replacements is typically under 6 months." }
-    },
-    {
-      "@type": "Question",
-      "name": "What's the difference between E27 and E26?",
-      "acceptedAnswer": { "@type": "Answer", "text": "E26 is the North American standard (26 mm) and E27 is the European/UK standard (27 mm). They are almost identical and E26 bulbs will usually fit E27 sockets — but for UK homes always use E27 to ensure correct fit and electrical compliance." }
-    },
-    {
-      "@type": "Question",
-      "name": "How do I know if my GU10 fitting is dimmable?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Two things must be dimmable: the bulb AND the dimmer switch. Many standard GU10 LEDs are not dimmable — look for \"dimmable\" on the packaging. You'll also need an LED-compatible dimmer switch (not an old incandescent-only dimmer). Check both before buying." }
-    },
-    {
-      "@type": "Question",
-      "name": "What brightness should I choose — wattage or lumens?",
-      "acceptedAnswer": { "@type": "Answer", "text": "With LED bulbs, always use lumens — not wattage. A quick guide: 40 W incandescent ≈ 470 lm (around 5–6 W LED), 60 W ≈ 806 lm (8–10 W LED), 100 W ≈ 1521 lm (13–15 W LED). All modern LED packaging lists the equivalent wattage clearly." }
-    },
-    {
-      "@type": "Question",
-      "name": "Is B22 being phased out in the UK?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No — B22 remains a fully active UK standard with a wide range of LED bulbs available. While newer homes often feature E27 fittings, there are no UK government plans to phase out B22 as of 2025. Millions of UK homes still use it daily." }
-    }
-  ]
-}
-</script>
-<p bis_size="{&quot;x&quot;:12,&quot;y&quot;:9617,&quot;w&quot;:576,&quot;h&quot;:19,&quot;abs_x&quot;:280,&quot;abs_y&quot;:9876}">&nbsp;</p>
+
+</div>

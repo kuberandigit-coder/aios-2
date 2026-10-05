@@ -1,0 +1,288 @@
+{% comment %}
+  Model E27 collection section (DRAFT, dcvoltage.co.uk, 29 Sep 2026)
+  ------------------------------------------------------------------
+  Purpose: adds, to one collection template only (collection.e27-model):
+    - "intro" layout:   H1, one-line subheading, a 40-60 word direct answer, quick links
+    - "details" layout: shape comparison table, FAQ accordion, plain crawlable pagination links,
+                        and JSON-LD (CollectionPage + ItemList + BreadcrumbList + FAQPage)
+  Use it twice in the template: once ABOVE the theme's product grid (layout = intro) and once
+  BELOW it (layout = details). The theme's own "main-collection" grid, filters and cards are untouched.
+
+  Safe by design:
+    - Self-contained: no snippets, no theme JS, CSS is scoped to .mce27-{{ section.id }}.
+    - Only renders on collection templates ("enabled_on"), so it cannot break other templates.
+    - Prices in JSON-LD come from Liquid (cart currency, falling back to shop currency). Nothing is hard-coded.
+    - The template must NOT also contain the theme's default heading section, or the page gets two H1s.
+{% endcomment %}
+
+{%- liquid
+  assign layout = section.settings.layout
+  assign per_page = section.settings.products_per_page
+  assign heading = section.settings.heading | default: collection.title
+  assign currency_code = cart.currency.iso_code | default: shop.currency
+-%}
+
+<div class="mce27 mce27-{{ section.id }} page-width" data-layout="{{ layout }}">
+  {%- if layout == 'intro' -%}
+    {%- comment -%} ---------- INTRO (above the grid) ---------- {%- endcomment -%}
+    <header class="mce27__header">
+      <h1 class="mce27__h1">{{ heading | escape }}</h1>
+      {%- if section.settings.subheading != blank -%}
+        <p class="mce27__sub">{{ section.settings.subheading | escape }}</p>
+      {%- endif -%}
+    </header>
+
+    {%- if section.settings.answer != blank -%}
+      <section class="mce27__answer" aria-labelledby="mce27-q-{{ section.id }}">
+        <h2 id="mce27-q-{{ section.id }}" class="mce27__q">{{ section.settings.question | escape }}</h2>
+        <div class="mce27__a">{{ section.settings.answer }}</div>
+      </section>
+    {%- endif -%}
+
+    {%- if section.settings.quick_links != blank -%}
+      <div class="mce27__links">{{ section.settings.quick_links }}</div>
+    {%- endif -%}
+  {%- else -%}
+    {%- comment -%} ---------- DETAILS (below the grid) ---------- {%- endcomment -%}
+
+    {%- comment -%} Plain page links so crawlers can reach page 2+ even when the grid uses infinite scroll. {%- endcomment -%}
+    {%- comment -%} One paginate block covers the page links and the JSON-LD (same page of products). {%- endcomment -%}
+    {%- paginate collection.products by per_page -%}
+      {%- if section.settings.show_pagination_links and paginate.pages > 1 -%}
+          <nav class="mce27__pages" aria-label="{{ heading | escape }}: pages">
+            <span class="mce27__pages-label">Pages:</span>
+            {%- for part in paginate.parts -%}
+              {%- if part.is_link -%}
+                <a href="{{ part.url }}">{{ part.title }}</a>
+              {%- elsif part.title contains 'hellip' -%}
+                <span aria-hidden="true">{{ part.title }}</span>
+              {%- else -%}
+                <span aria-current="page">{{ part.title }}</span>
+              {%- endif -%}
+            {%- endfor -%}
+          </nav>
+      {%- endif -%}
+
+    {%- assign rows = section.blocks | where: 'type', 'shape_row' -%}
+    {%- if rows.size > 0 -%}
+      <section class="mce27__table-wrap" aria-labelledby="mce27-t-{{ section.id }}">
+        <h2 id="mce27-t-{{ section.id }}">{{ section.settings.table_heading | escape }}</h2>
+        <div class="mce27__scroll" role="region" aria-labelledby="mce27-t-{{ section.id }}" tabindex="0">
+          <table class="mce27__table">
+            <thead>
+              <tr>
+                <th scope="col">Shape</th>
+                <th scope="col">Looks like</th>
+                <th scope="col">Size</th>
+                <th scope="col">Best for</th>
+                <th scope="col">Dimmable here</th>
+                <th scope="col">Light colour here</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%- for block in rows -%}
+                <tr {{ block.shopify_attributes }}>
+                  <th scope="row">{{ block.settings.shape | escape }}</th>
+                  <td>{{ block.settings.looks_like | escape }}</td>
+                  <td>{{ block.settings.size | escape }}</td>
+                  <td>{{ block.settings.best_for | escape }}</td>
+                  <td>{{ block.settings.dimmable | escape }}</td>
+                  <td>{{ block.settings.colour | escape }}</td>
+                </tr>
+              {%- endfor -%}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {%- endif -%}
+
+    {%- assign faqs = section.blocks | where: 'type', 'faq' -%}
+    {%- if faqs.size > 0 -%}
+      <section class="mce27__faq" aria-labelledby="mce27-f-{{ section.id }}">
+        <h2 id="mce27-f-{{ section.id }}">{{ section.settings.faq_heading | escape }}</h2>
+        {%- for block in faqs -%}
+          <details class="mce27__item" {{ block.shopify_attributes }}>
+            <summary>{{ block.settings.question | escape }}</summary>
+            <div class="mce27__item-a">{{ block.settings.answer }}</div>
+          </details>
+        {%- endfor -%}
+      </section>
+    {%- endif -%}
+
+    {%- if section.settings.output_schema -%}
+      {%- comment -%}
+        JSON-LD. Every string goes through the | json filter, which adds quotes and escaping.
+        ItemList covers the products on the CURRENT page only, positioned by the page offset.
+      {%- endcomment -%}
+        {%- assign offset = paginate.current_offset -%}
+        {%- capture item_list -%}
+          {%- for product in collection.products -%}
+            {
+              "@type": "ListItem",
+              "position": {{ offset | plus: forloop.index }},
+              "item": {
+                "@type": "Product",
+                "name": {{ product.title | json }},
+                "url": {{ shop.url | append: product.url | json }}
+                {%- if product.featured_image -%},
+                "image": {{ product.featured_image | image_url: width: 800 | prepend: 'https:' | json }}
+                {%- endif -%},
+                "offers": {
+                  "@type": "AggregateOffer",
+                  "lowPrice": {{ product.price_min | divided_by: 100.0 | round: 2 | json }},
+                  "highPrice": {{ product.price_max | divided_by: 100.0 | round: 2 | json }},
+                  "offerCount": {{ product.variants.size }},
+                  "priceCurrency": {{ currency_code | json }},
+                  "availability": {% if product.available %}"https://schema.org/InStock"{% else %}"https://schema.org/OutOfStock"{% endif %}
+                }
+              }
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        {%- endcapture -%}
+        {%- assign page_url = shop.url | append: collection.url -%}
+        {%- if paginate.current_page > 1 -%}
+          {%- assign page_url = page_url | append: '?page=' | append: paginate.current_page -%}
+        {%- endif -%}
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "@id": {{ page_url | append: '#collection' | json }},
+            "url": {{ page_url | json }},
+            "name": {{ heading | json }},
+            "description": {{ section.settings.schema_description | default: collection.description | strip_html | strip | truncate: 300 | json }},
+            "inLanguage": {{ request.locale.iso_code | json }},
+            "isPartOf": { "@type": "WebSite", "name": {{ shop.name | json }}, "url": {{ shop.url | json }} },
+            "breadcrumb": {
+              "@type": "BreadcrumbList",
+              "itemListElement": [
+                { "@type": "ListItem", "position": 1, "name": "Home", "item": {{ shop.url | json }} },
+                {%- if section.settings.parent_label != blank and section.settings.parent_url != blank -%}
+                { "@type": "ListItem", "position": 2, "name": {{ section.settings.parent_label | json }}, "item": {{ shop.url | append: section.settings.parent_url | json }} },
+                { "@type": "ListItem", "position": 3, "name": {{ heading | json }}, "item": {{ shop.url | append: collection.url | json }} }
+                {%- else -%}
+                { "@type": "ListItem", "position": 2, "name": {{ heading | json }}, "item": {{ shop.url | append: collection.url | json }} }
+                {%- endif -%}
+              ]
+            },
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": {{ collection.products_count }},
+              "itemListElement": [{{ item_list }}]
+            }
+          }
+        </script>
+
+      {%- if faqs.size > 0 -%}
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {%- for block in faqs -%}
+              {
+                "@type": "Question",
+                "name": {{ block.settings.question | json }},
+                "acceptedAnswer": { "@type": "Answer", "text": {{ block.settings.answer | strip_html | strip | json }} }
+              }{% unless forloop.last %},{% endunless %}
+              {%- endfor -%}
+            ]
+          }
+        </script>
+      {%- endif -%}
+    {%- endif -%}
+    {%- endpaginate -%}
+  {%- endif -%}
+</div>
+
+{% style %}
+  .mce27-{{ section.id }} {
+    padding-block: {{ section.settings.padding_top }}px {{ section.settings.padding_bottom }}px;
+    padding-inline: 24px;
+    max-width: 1440px;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+  .mce27-{{ section.id }} .mce27__h1 { margin: 0 0 .25em; }
+  .mce27-{{ section.id }} .mce27__sub { margin: 0 0 1rem; opacity: .8; }
+  .mce27-{{ section.id }} .mce27__answer { border-left: 4px solid currentColor; padding: .75rem 1rem; margin: 0 0 1rem; background: rgba(127,127,127,.08); border-radius: 6px; max-width: 100%; }
+  .mce27-{{ section.id }} .mce27__q { font-size: 1.1em; margin: 0 0 .35rem; }
+  .mce27-{{ section.id }} .mce27__a p { margin: 0; }
+  .mce27-{{ section.id }} .mce27__links a { text-decoration: underline; }
+  .mce27-{{ section.id }} .mce27__pages { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1rem 0 2rem; }
+  .mce27-{{ section.id }} .mce27__pages a, .mce27-{{ section.id }} .mce27__pages span[aria-current] { padding: .25rem .6rem; border: 1px solid rgba(127,127,127,.4); border-radius: 4px; }
+  .mce27-{{ section.id }} .mce27__pages span[aria-current] { font-weight: 700; }
+  .mce27-{{ section.id }} .mce27__scroll { overflow-x: auto; }
+  .mce27-{{ section.id }} .mce27__table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: .95em; }
+  .mce27-{{ section.id }} .mce27__table th, .mce27-{{ section.id }} .mce27__table td { text-align: left; padding: .6rem .7rem; border-bottom: 1px solid rgba(127,127,127,.25); vertical-align: top; }
+  .mce27-{{ section.id }} .mce27__table thead th { font-size: .85em; text-transform: uppercase; letter-spacing: .03em; }
+  .mce27-{{ section.id }} .mce27__faq { margin-top: 2rem; max-width: 80ch; }
+  .mce27-{{ section.id }} .mce27__item { border-bottom: 1px solid rgba(127,127,127,.25); }
+  .mce27-{{ section.id }} .mce27__item summary { cursor: pointer; padding: .9rem 0; font-weight: 600; list-style-position: outside; }
+  .mce27-{{ section.id }} .mce27__item-a { padding: 0 0 1rem; }
+{% endstyle %}
+
+{% schema %}
+{
+  "name": "Model E27 collection",
+  "tag": "section",
+  "class": "section-model-e27",
+  "enabled_on": { "templates": ["collection"] },
+  "settings": [
+    {
+      "type": "select", "id": "layout", "label": "Part of page",
+      "options": [
+        { "value": "intro", "label": "Intro (place ABOVE the product grid)" },
+        { "value": "details", "label": "Details: table, FAQ, schema (place BELOW the grid)" }
+      ],
+      "default": "intro"
+    },
+    { "type": "header", "content": "Intro" },
+    { "type": "text", "id": "heading", "label": "H1 (blank = collection title)" },
+    { "type": "text", "id": "subheading", "label": "Subheading" },
+    { "type": "text", "id": "question", "label": "Direct-answer question", "default": "Which E27 bulb do I need?" },
+    { "type": "richtext", "id": "answer", "label": "Direct answer (40-60 words)" },
+    { "type": "richtext", "id": "quick_links", "label": "Quick links" },
+    { "type": "header", "content": "Details" },
+    { "type": "text", "id": "table_heading", "label": "Table heading", "default": "Which shape for which job?" },
+    { "type": "text", "id": "faq_heading", "label": "FAQ heading", "default": "E27 bulb questions" },
+    {
+      "type": "range", "id": "products_per_page", "label": "Products per page (must match the product grid)",
+      "min": 8, "max": 48, "step": 4, "default": 24
+    },
+    { "type": "checkbox", "id": "show_pagination_links", "label": "Show plain page links (helps crawlers)", "default": true },
+    { "type": "header", "content": "Structured data" },
+    { "type": "checkbox", "id": "output_schema", "label": "Output JSON-LD (use on the Details part only)", "default": true },
+    { "type": "textarea", "id": "schema_description", "label": "Schema description (blank = collection description)" },
+    { "type": "text", "id": "parent_label", "label": "Breadcrumb parent label (optional)", "info": "e.g. LED Light Bulbs" },
+    { "type": "text", "id": "parent_url", "label": "Breadcrumb parent URL path (optional)", "info": "e.g. /collections/led-bulb" },
+    { "type": "header", "content": "Spacing" },
+    { "type": "range", "id": "padding_top", "label": "Top padding", "min": 0, "max": 80, "step": 4, "unit": "px", "default": 24 },
+    { "type": "range", "id": "padding_bottom", "label": "Bottom padding", "min": 0, "max": 80, "step": 4, "unit": "px", "default": 24 }
+  ],
+  "blocks": [
+    {
+      "type": "faq", "name": "FAQ",
+      "settings": [
+        { "type": "text", "id": "question", "label": "Question" },
+        { "type": "richtext", "id": "answer", "label": "Answer" }
+      ]
+    },
+    {
+      "type": "shape_row", "name": "Table row (shape)",
+      "settings": [
+        { "type": "text", "id": "shape", "label": "Shape" },
+        { "type": "text", "id": "looks_like", "label": "Looks like" },
+        { "type": "text", "id": "size", "label": "Size" },
+        { "type": "text", "id": "best_for", "label": "Best for" },
+        { "type": "text", "id": "dimmable", "label": "Dimmable here" },
+        { "type": "text", "id": "colour", "label": "Light colour here" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Model E27 collection: intro", "settings": { "layout": "intro" } },
+    { "name": "Model E27 collection: details", "settings": { "layout": "details" } }
+  ]
+}
+{% endschema %}
