@@ -1,0 +1,197 @@
+DC VOLTAGE E27 PAGES: NEXT LEVEL TASKS (VERSION 2)
+For: Kuberan
+Date: Thursday 1 October 2026. Next review: Thursday 15 October 2026.
+Version 2 replaces version 1. Only the approvers have changed. The tasks are the same.
+
+WHO APPROVES WHAT (NEW RULE FROM 1 OCTOBER 2026)
+Every product now has one portfolio holder who owns its content and decisions and fixes them on every channel it is sold on (ledsone.co.uk, dcvoltage.co.uk, eBay, Amazon and others). The rule is Create Once, Deploy Everywhere.
+Product content, facts and prices for the E27 bulbs: Thuwaraga, portfolio holder for Bulbs. She decides, and she deploys the same content on the other channels.
+Site-wide website items (menu, theme, speed, site-wide structured data templates, delivery promise, collections, navigation and guides): Muguntha, website team leader.
+You build everything on dcvoltage.co.uk. Each task below is marked with its approver. Nothing goes live until that approver says OK. Do theme and code changes on a duplicate theme first and send screenshots to the approver.
+
+WHY THIS FILE
+Your E27 build is good and it was right to approve it: one H1, a real spec sheet and compare table, FAQs, metafields, and you caught real errors (the 1035 code, the swapped size, the E27 and B22 cap bug, and the unconfirmed A+, CE and 3-year claims).
+Our new rule is that approval is the start, not the finish. Each page is compared with the best UK lighting shops, gets a list of changes that lift it one level, and is re-checked two weeks later.
+
+WHAT WE CHECKED ON THE LIVE SITE TODAY
+Confirmed: filters only show the values of product 1025. Card names are inconsistent. There are no reviews or stars. The old description contradicts the new spec sheet. The meta description on 1025 does not sell. The header says Next-Day Delivery while the product says 2 to 5 working days.
+Already fixed: the SEO title on 1025 is the new one.
+Different from the earlier review:
+6W lumens: the SOT says 450 lm, the same as the 4W, and that figure is not trusted. You were right to leave it blank. Thuwaraga gets the supplier figure.
+Missing alt text: the 26 images without alt are mostly small thumbnails in the New Arrivals carousel, not the bulb photos. The bulb photos also need their own alt text (see P6).
+New problems found:
+The collection has no links pointing to it (not in the menu, not on the LED Bulb page, and the guide button goes to the product instead).
+Raw link text is visible to customers in FAQ 2 on the collection and in FAQ 1 on the product.
+Page speed on mobile is slow (the largest image or text takes 17 to 22 seconds to appear in the lab test).
+The guide has two broken links (pages not found).
+
+COLLECTION PAGE: CHANGES IN ORDER (do the top ones first)
+
+C1. Connect the collection (30 minutes). Approver: Muguntha.
+a) Main menu: under LED Bulb add a link named E27 Screw Bulbs to /collections/e27-bulbs
+b) On the LED Bulb collection page add the link text: Shop E27 (Edison Screw) bulbs, pointing to /collections/e27-bulbs
+c) In the guide, change the Shop E27 Bulbs button to /collections/e27-bulbs
+d) On product 1025 add the breadcrumb (see P4)
+How AI will check: the homepage menu, the LED Bulb page and the guide all contain a link to /collections/e27-bulbs.
+
+C2. Make the filters work for all 17 products (2 to 3 hours).
+Filter set-up: Muguntha. Values for each product: Thuwaraga.
+Change Brightness and Colour of light to fixed choices, and use list type metafields so a product with several variants can hold more than one value.
+Brightness choices: Soft glow under 300 lm; Ambient 300 to 600 lm; Bright 600 to 900 lm (about 60W); Very bright 900 lm plus.
+Colour choices: Extra warm 2200K; Warm white 2700K; Cool daylight 6400K.
+Shape choices: A60, ST64, G95, G125, T45, T185, Decorative.
+Values from the SOT for each listing (send this list to Thuwaraga to confirm before filling):
+1025: ST64; Ambient and Bright; Warm white and Extra warm; Dimmable yes. 6W lumens not confirmed.
+1116: T185; Soft glow (230 lm); Warm white; Dimmable yes.
+1002: G125; Bright; Warm white; Dimmable yes.
+1213: A60; Very bright (1160 lm); Cool daylight; Dimmable no.
+1140: G95; Ambient; Warm white; Dimmable yes.
+1102: mixed set of shapes. Fill shape, brightness, colour and dimmable per variant from the SOT; ask Thuwaraga about any variant not in the SOT.
+1024: G125; Bright; Warm white; Dimmable yes.
+1227: ST64; Bright; Extra warm; Dimmable yes.
+1226: G95; Bright; Warm white; Dimmable yes.
+1214: A60; Bright (820 lm); Cool daylight; Dimmable no.
+1158: T185; Ambient; Warm white; Dimmable: the title says Non Dimmable but the SOT says dimmable. Wait for Thuwaraga's decision.
+1103: not in the SOT (SKUs ENC9246 and ENC8556). Leave empty until Thuwaraga confirms the set contents.
+1045: Decorative (heart); Ambient; Warm white; Dimmable no.
+1044: Decorative (LOVE); Ambient; Warm white; Dimmable no.
+1043: G125; Ambient; Warm white; Dimmable no.
+1042: T185; Ambient; Extra warm; Dimmable no.
+1041: T45; Ambient; Warm white; Dimmable yes.
+How AI will check: every filter shows more than one value, every value returns at least one product, and all 17 products have values.
+
+C3. Fix the visible broken text (15 minutes). Approver: Muguntha (collection page text).
+FAQ 2 answer should end with: Our E27 vs B22 guide has photos. Make the words E27 vs B22 guide a normal link to /blogs/news/e27-vs-b22-vs-gu10-which-bulb-fitting-do-you-actually-need using the rich text link tool. Delete the bracket text with the arrow.
+In the intro box, remove the manual line breaks so the text wraps by itself on a phone.
+How AI will check: the page text contains no arrow and no "(link".
+
+C4. Sold-out products last (10 minutes).
+Order on the collection page: Muguntha. Restock or retire: Thuwaraga.
+Move 1116 and 1226 (both fully sold out) to the end of the manual order, or hide them until restocked. Turn on Notify me if the theme has it.
+How AI will check: the first 12 products are all in stock.
+
+C5. Structured data clean-up (1 hour, duplicate theme). Approver: Muguntha, except point c.
+a) In the collection product list, give each item only its position and its product web address. Remove the price and offer details from the list items. Google says product markup is for a single product, not a list.
+b) Organization: add legal name DC VOLTAGE UK Ltd, the Coventry address, phone and email as shown in the footer. Add the social profile links if Muguntha gives them.
+c) Brand shown on the bulbs: the SOT brand is LEDsone, while the site says DCVOLTAGE, DC Voltage and DC VOLTAGE UK Ltd. Thuwaraga decides the brand on the bulbs; Muguntha decides the company name used in the Organization data.
+d) Remove the numbers (1. 2. 3.) from the start of the FAQ questions.
+How AI will check: list items have no offers; Organization has an address and phone.
+
+C6. One true delivery promise (20 minutes after the decision). Approver: Muguntha.
+Today the header says Next-Day Delivery Available, the product says Standard Delivery 2 to 5 working days, and the shipping policy says processed in 2 to 4 working days but also same day before 1pm. Muguntha decides the true promise. Then put the same words in the header, on the product page and in the policy, for example: Free UK delivery over 25 pounds. Order by 1pm for same-day dispatch. Use that wording only if it is true.
+How AI will check: header, product tab and policy say the same thing.
+
+C7. Card names to one pattern (1 to 2 hours). Approver: Thuwaraga (product titles). She uses the same titles on the other channels.
+Pattern: Shape, E27, Filament or LED, Bulb, watts and lumens, Kelvin, Dimmable or Non-dimmable, pack, then the listing code with a space before the tilde.
+Example: T45 E27 LED Filament Bulb, 4W 450lm, 2700K, Dimmable ~1041
+Also rename the variants of 1102 from Style 3 to Style 11 to real names. Suggested names from the SKUs: G125 Music (LDSG125MUE274), G95 Diamond (LDSG95DIE274), G95 (LDSG95E274), ST64 (LDSST64E274), Star (LDSSTRE274), T185 (LDST185E274), T45 (LDST45E274), G95 8W (LDMG95E278). Check each name against its photo and the SOT first.
+How AI will check: all 17 names follow the pattern; no Style variants.
+
+C8. Shop by shape buttons and a richer shape table (2 hours). Approver: Muguntha.
+Above the grid add buttons ST64, G95, G125, T45, T185, A60 and Decorative, each linking to the collection filtered by that shape.
+In the shape table add two columns: Brightness (lumens) and From price, and a small photo per row.
+How AI will check: the buttons are present and the table has the new columns.
+
+C9. Reviews (1 hour). Review app set-up and badges: Muguntha. Review emails to buyers: Thuwaraga.
+Turn on Judge.me review request emails for all 17 products and show star badges on the product cards. Reviews of the same products from other sites are shown only if Thuwaraga agrees and the platform terms allow it.
+How AI will check: star badges appear once reviews exist.
+
+C10. Speed (3 to 4 hours, duplicate theme). Approver: Muguntha.
+In Google Tag Manager remove tags that are not used and load the remaining marketing tags after the page has loaded (Tag Manager alone blocks about 0.8 seconds). Reduce the inline icons and styles where possible.
+Goal for 15 October: the largest item visible in under 6 seconds in the same mobile test.
+How AI will check: Lighthouse mobile re-run on 15 October.
+
+C11. Share image (10 minutes). Approver: Muguntha.
+Set a collection image showing lit E27 bulbs. Today, when the page is shared, the preview shows the logo.
+
+PRODUCT PAGE 1025: CHANGES IN ORDER
+
+P1. One spec only (20 minutes). Approver: Thuwaraga.
+Delete the old description from "Vintage Retro Filament Bulb – E27, 4W/6W/8W" down to the end of Package Contents. It says Warm white for all wattages, Shape Traditional and uses the US spelling Color, which contradicts the spec sheet. Keep Installation and Safety and Shipping and Returns.
+Put this short intro at the top instead (Thuwaraga confirms the facts, including the 8W colour temperature, and uses the same text on the other channels):
+A dimmable ST64 squirrel cage LED filament bulb in amber glass, made to be seen in open pendants, cages and wall lights. Choose 4W (450 lm, 2700K warm white) for a soft glow or 8W (800 lm, 2200K extra warm) to replace an old 60W bulb. E27 screw cap, 64 x 138 mm, CRI 90+, rated 25,000 hours. Use an LED trailing-edge dimmer. Indoor, dry locations only.
+How AI will check: the words Traditional and Color no longer appear.
+
+P2. Fix the FAQ 1 link (5 minutes). Approver: Thuwaraga.
+Answer should end: you have B22 and need our B22 version of this bulb. Make "B22 version of this bulb" a normal link to /products/vintage-style-led-edison-bulb-lamp-b22. Delete the arrow and the bracket.
+
+P3. Tidy the buy box on mobile (1 hour, duplicate theme).
+Layout and discount codes: Muguntha. Variant labels: Thuwaraga.
+Move the Unlock 10% Off box and the Why no interest and Discount codes buttons below Add to cart, or into one collapsed row. Today they push Add to cart below the first screen on a phone.
+Remove the Spring Sale SPRING15 code from the list (it is October). Ask Muguntha first if it is still active.
+Under the price add one line: Free UK delivery over 25 pounds, plus the delivery wording from C6.
+Rename the variant buttons: 4W, 450 lm, 2700K / 6W, 2700K / 8W, 800 lm, 2200K extra warm.
+How AI will check: on a phone screenshot, Add to cart is visible without scrolling and there is no Spring text.
+
+P4. Breadcrumb, related products and links (1 hour).
+Breadcrumb: Muguntha. Related products and FAQ links: Thuwaraga.
+a) Breadcrumb: Home, LED Light Bulbs, E27 Bulbs, then the product. Show it on the page and in the structured data. Today it is Home then the product.
+b) Related products: today it shows New Arrivals (panels and pendants). Use Search and Discovery complementary products instead: the 8W 6-pack (1227), the G125 8W (1024), the B22 version of this bulb and E27 pendant sets.
+c) FAQ 7: link the words 6-pack to listing 1227.
+d) In Will it fit, add: Not sure which fitting? Read our E27 vs B22 guide (linked).
+
+P5. Meta description (10 minutes). Approver: Thuwaraga.
+Use exactly: Dimmable ST64 E27 LED filament bulb, amber glass. 4W 450 lm or 8W 800 lm, 2700K or 2200K, CRI 90+. From £5.49 with free UK delivery over £25.
+Whether to remove the listing code from SEO title tags across the site is a site-wide rule: Muguntha decides.
+
+P6. Images (2 hours).
+Product photos and alt text: Thuwaraga. Carousel theme fix: Muguntha.
+a) New main image: at least 1500 by 1500 pixels, JPG or WebP, the bulb lit on a white background. File name: st64-e27-led-filament-bulb-amber-dimmable.jpg. Today the main image is a small 502 by 487 PNG and it is the slowest item on the page.
+b) Add a dimension drawing: 64 mm diameter, 138 mm height, E27 cap 27 mm.
+c) Write alt text for all 10 photos, each one different. Examples: ST64 E27 LED filament bulb, amber glass, 4W, unlit. ST64 amber filament bulb lit in a black pendant over a table. Dimension drawing: ST64 bulb 64 mm x 138 mm, E27 cap. Remove the old alt text that says lamp caldarax bulb bulbs style.
+d) Theme fix in the New Arrivals carousel: add an alt attribute to the small variant thumbnail image that outputs the product title using the Liquid escape filter. This fixes the 25 missing alts.
+How AI will check: main image at least 1200 pixels, no image without alt, Lighthouse image alt check passes.
+
+P7. Structured data (1 to 2 hours, duplicate theme).
+Template: Muguntha. Product data values (SKU, barcodes, rating): Thuwaraga.
+Add to the product structured data: variesBy size; mpn equal to each variant SKU (LDMST64E274, LDMST64E276, LDMST64E278); a full web address for the id.
+For each offer add a return policy: country GB, 30-day window, return by post.
+Also add shipping details: country GB, transit time 2 to 5 days, and handling time once Muguntha has decided the delivery promise (C6).
+Add the review rating once reviews exist.
+Barcodes (GTIN) are empty. Thuwaraga asks the supplier for EAN numbers. Who pays return postage is not stated; Muguntha decides that, because the returns policy is site-wide.
+How AI will check: Google Rich Results Test shows no shipping or return warnings.
+
+P8. 6W was-price. Approver: Thuwaraga.
+The 6W shows was £9.89, now £5.99. Its last selling price was £8.69, so the was-price should be £8.69 or removed. Also remove the Summer Sale tag. Build what Thuwaraga decides.
+
+P9. 6W lumens and energy label. Approver: Thuwaraga (she contacts the supplier).
+Until the supplier figure arrives, replace the dash in the compare table with: Being confirmed with supplier. When the labels arrive, add the energy label image to each variant.
+
+P10. Remove the duplicate title heading (15 minutes, duplicate theme). Approver: Muguntha.
+The theme prints the product title as a small heading before the H1. Remove that extra heading so the page starts with the H1.
+
+P11. Reviews (30 minutes). Approver: Thuwaraga.
+Turn on Judge.me review requests for this product. Thuwaraga decides whether to email recent buyers.
+
+GUIDE (when you pick it up). Approver for all guide items: Muguntha.
+G1. Fix the dead links: Shop E27 Bulbs to /collections/e27-bulbs; Shop GU10 Bulbs to /collections/led-bulb (there is no GU10 collection, today it shows page not found); the breadcrumb link Bulbs to /collections/led-bulb (also page not found today).
+G2. Meta description, exactly: E27 screws in, B22 pushes and twists, GU10 is a two-pin spotlight. See photos, a side-by-side table and how to check your fitting in 10 seconds.
+G3. One H1 only: the article body has its own H1 as well as the page title. Change the one in the body to normal large text.
+G4. Structured data: fill the article description, set the author as the organisation DC Voltage (not a person), and add FAQ markup for the 6 questions.
+G5. Title test: E27 vs B22 vs GU10: How to Tell Which Bulb Fitting You Have
+G6. Replace the fixed text Updated May 2026 and as of 2025 with the real update date.
+Why the guide matters: it is the strongest E27 page on the site. Google showed it about 20,000 times since March at position 6 to 7, but only about 3 in every 1,000 people clicked. A better description and title should lift clicks, and the fixed links send those readers to the E27 collection.
+
+WAITING FOR DECISIONS
+From Thuwaraga (portfolio holder for Bulbs; she has her own decision list):
+1. 6W lumens, the 8W colour temperature, energy labels and barcodes (P1, P7, P9).
+2. Whether 1158 is dimmable, and what the 1103 set contains (C2).
+3. The 6W was-price and the Summer Sale tag (P8).
+4. The brand shown on the bulbs (C5c).
+5. Product text, card names, variant labels, images, alt text and related products (C7, P1 to P6).
+6. Review emails to buyers (C9, P11).
+7. Matching the same bulbs on ledsone.co.uk, eBay and Amazon. Thuwaraga does this on those channels; you only build dcvoltage.
+From Muguntha (website team leader):
+1. The true delivery promise and return postage (C6, P7).
+2. The company name in the Organization data (C5b).
+3. Whether to remove listing codes from SEO title tags site-wide (P5).
+4. The SPRING15 code, buy box layout, menu, filters set-up, collection order, theme, speed and guide changes.
+
+SUGGESTED DATES
+Friday 2 October: C1, C3, C4, P1, P2, P5, G1, G2, G3 (quick fixes).
+Wednesday 7 October: C2, C5, C7, P3, P4, P6, P10, G4, G6.
+Monday 12 October: C8, C10, C11, P7, and C6, P8, P9 once the decisions are made.
+Thursday 15 October: AI re-review of all three pages.
+These are suggested dates. Each approver can change the dates for their own items.
+
+Reminder: nothing goes live until the named approver says OK.

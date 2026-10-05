@@ -48,3 +48,22 @@
   channel but not deleted) — confirmed those were already included in the export, not missed.
   67 variants have a blank SKU field in Shopify's own data; flagged explicitly rather than
   hidden or fabricated. See [[2026-10-05_ledsone-uk-sku-price-export_closure]].
+
+- **GA-19 — DC Voltage Organic Discovery pack, first task from the new shared Organic
+  Discovery doc.** Site-wide product title H1 fix (two separate bugs found: the theme's
+  "H1" setting only applied CSS styling, not the real tag, which was hardcoded as `<h3>`
+  separately; plus a second duplicate heading in the sticky add-to-cart bar) — both fixed
+  and verified live. Enabled Judge.me's star rating badge + review widget using real review
+  data (27 published reviews), confirmed live. Set up Shopify Admin API access for dcvoltage
+  from scratch (none existed before) to pull live numbers for Parts 3 & 4 instead of the
+  week-old audit — found the real current counts are higher than the stale numbers (57
+  compare-at price issues vs. the audit's 41; 1,356/4,196 images missing alt text vs.
+  1,385/3,655) — sent a full report to Muguntha, cc Hethesha and Sajeepan (DC Voltage's ads
+  lead), since neither is theme work and both need her approval first. Created the B22 Bulbs
+  (7 products) and E14 Bulbs (1 product) collections live, with SEO title/meta matching the
+  existing E27 Bulbs pattern — verified real product counts first via a full sweep (titles,
+  descriptions, tags, variant titles, SKUs), not just title matches, catching one B22 product
+  only findable via its SKU. Confirmed with Kuberan that B22/E14 should also get the same
+  richer content E27 Bulbs already has (intro box, quick links, shape table, FAQ, breadcrumb,
+  schema) — logged as the explicit next step. Wall Light's answer-first intro still in
+  progress. See [[2026-10-05_ga19-organic-discovery_closure]].

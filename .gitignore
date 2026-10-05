@@ -17,3 +17,9 @@ shopify-themes/
 piranav_aios/
 gcm-diagnose.log
 sr-deploy/
+
+# Contains real Shopify app Client Secrets in plain text -- never commit
+shopify-token/
+
+# Raw theme export/extracted copy -- the real tracked copy lives in shopify-themes/dcvoltage (its own repo)
+dcvoltage-e27-model/theme-exports/
