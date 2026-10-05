@@ -33,3 +33,18 @@
   just checking it compiles), and confirmed via a final repo-wide grep that no instances of
   this pattern remain anywhere. Pushed to `dev-work`. See
   [[2026-10-05_production-incidents-broken-imports_closure]].
+
+- **Internal request — full LEDSone UK SKU + price export.** Pulled every product and variant
+  directly from Shopify's live Admin GraphQL API (not a cached source), with nested
+  pagination so no variant could be lost even on a product with many variants. Result:
+  5,304 products, 18,166 SKU rows, written to
+  `sku-price-exports/ledsone_uk_skus_prices_2026-10-05.csv`. Kuberan pushed back twice on
+  whether the total was really complete — both times followed up with real independent
+  checks rather than just reasserting the number: Shopify's own live `productsCount` field
+  (separate from the export's own pagination code) matched exactly; a cross-check against the
+  business DB's nightly listings sync showed a 4-product gap explained by normal sync lag;
+  and a full status breakdown uncovered that Shopify has a 4th product status beyond the
+  commonly-known 3 (Active/Draft/Archived) — **Unlisted** (93 products, published to no sales
+  channel but not deleted) — confirmed those were already included in the export, not missed.
+  67 variants have a blank SKU field in Shopify's own data; flagged explicitly rather than
+  hidden or fabricated. See [[2026-10-05_ledsone-uk-sku-price-export_closure]].
