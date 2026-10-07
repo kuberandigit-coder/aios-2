@@ -20,6 +20,17 @@ code inspection of existing dm-dashboard tasks (not assumption).
 | Content Gap competitor cache | This app's own Postgres, `content_gap_result` table | YES — read via `get_latest_for_page()`, or trigger a fresh check via `run_analyze()` | Shares the SerpAPI quota above |
 | AI/GEO Visibility (AEO) data | This app's own Postgres, `geo_visibility_queries`/`_results` tables, sourced from SearchAPI.io | YES, read-only, as an input signal | Do not re-implement AI Overview detection — this is the single existing source for it |
 
+## UPDATE (2026-10-07, same day) — Internal Linking's data source is UK-only
+
+Follow-up hardcode-fix audit (see
+`evidence/dm-dashboard/2026-10-07_hardcoded-store-brand-fix-audit_evidence.md`) confirmed, via
+direct read of `internal_linking/content_fetch.py`, that its `STORE = "ledsone_uk"` /
+`SITE_BASE = "https://ledsone.co.uk"` are hardcoded — meaning the `internal_linking_content_index`
+table referenced above as a reusable source (§ Shared infrastructure) is **UK-only in practice
+today**, regardless of what site is asking. For `ledsone.de`/`ledsone.fr`, internal-link
+suggestions drawn from this index would still only ever offer UK pages. Not fixed by this audit;
+flagged for whoever extends Internal Linking to other sites in the future.
+
 ## Explicitly NOT available / NOT to be built as a new integration
 
 - Direct SerpAPI or Scrape.do calls from a new Blog HTML Automation module — must go through

@@ -29,6 +29,24 @@ links, FAQ schema, and AI generation all in one workflow — meaning it has a du
 touching 6+ existing systems simultaneously, not just 1. Step 2 planning should explicitly check
 this list before writing any new integration code.
 
+## UPDATE (2026-10-07, same day) — a config-duplication risk, confirmed during the hardcoded-store-brand follow-up audit
+
+Found during the follow-up hardcode-fix audit (see
+`evidence/dm-dashboard/2026-10-07_hardcoded-store-brand-fix-audit_evidence.md`): there are now
+**3 separate domain/store-keyed config dicts**, each with a slightly different shape, serving
+overlapping purposes:
+
+- `core/shopify_client.STORES` — Shopify store KEY → `{domain, token_env}`
+- `blog_optimization/shopify.SITE_STORES` — public domain → `(store_key, domain)`
+- `blog_optimization/gsc_sync.SYNC_SITES` — human label → `(gsc_site_url, token_fn)`
+
+None is wrong on its own (each serves a genuinely different lookup direction), but a future fix
+(e.g. the proposed `qa_check.py`/`faq_schema.py` domain-derivation fix) should reuse
+`SITE_STORES`'s shape rather than inventing a 4th dict. If Blog HTML Automation or any future
+task needs a FOURTH domain-keyed lookup (e.g. with locale/brand-label metadata, as the
+`faq_schema.py` fix will), reuse/extend one of the existing 3 rather than adding a new one —
+flagged here so it isn't missed later.
+
 ## Status
 
 Open — relevant for the entire Step 2 build, not resolved by Step 1 (Step 1 only identifies the
