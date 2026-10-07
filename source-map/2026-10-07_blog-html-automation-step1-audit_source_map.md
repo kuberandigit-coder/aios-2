@@ -42,6 +42,15 @@ and `faq_schema._BRAND_CONTEXT_BY_DOMAIN` (added by the 2026-10-07 hardcode fix)
 (`blog_html_automation_generation`) is proposed to hold the generation lifecycle; no new source/
 API integration beyond what's listed above.
 
+## UPDATE (2026-10-07, Step 3 implementation) — connections confirmed live, not just designed
+
+Every source/connection described above was confirmed working with REAL data during Step 3
+implementation, not just planned: real GSC queries for `ledsone.de`, real Shopify products
+(prices, CDN images) for a real DE collection, real FAQ generation, real `internal_linking`
+single-store limitation correctly surfaced as `partial`. See
+`evidence/dm-dashboard/2026-10-07_blog-html-automation-step3-implementation_evidence.md` for the
+full live-test log. No new source/API was introduced beyond what's listed in this file.
+
 ## Explicitly NOT available / NOT to be built as a new integration
 
 - Direct SerpAPI or Scrape.do calls from a new Blog HTML Automation module — must go through

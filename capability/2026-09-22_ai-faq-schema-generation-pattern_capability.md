@@ -102,3 +102,16 @@ FAQ HTML content, only the FAQPage JSON-LD block. Blog HTML Automation needs BOT
 FAQs plus schema that exactly matches them) — so this capability will need extending with a
 visible-FAQ-HTML generation path alongside the existing schema-only one, not rebuilding. Flagged
 as a Step 2 task, not yet implemented.
+
+## UPDATE (2026-10-07, Step 3 implementation) — new reusable technique: render visible content FROM the schema, don't generate it twice
+
+Blog HTML Automation's `faq_adapter.py` resolved the gap above WITHOUT a second LLM call: it
+calls the existing `generate_faq_schema()` exactly once (unchanged, zero edits), then renders
+the visible FAQ HTML directly from the already-parsed FAQPage JSON-LD's `mainEntity`
+question/answer pairs. This is a stronger reuse pattern than "two outputs from one prompt" — it
+is structurally impossible for the visible content and the schema to diverge, since one is
+literally derived from the other's already-validated data, and it costs zero extra AI calls or
+credits. Worth reusing for any future feature that needs both a visible rendering and a
+structured-data version of the same AI-generated content (not just FAQs) — generate the
+structured data once, render the visible form from it, rather than generating both
+independently.

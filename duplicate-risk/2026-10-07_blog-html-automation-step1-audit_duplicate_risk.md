@@ -59,7 +59,24 @@ edit" decisions were made specifically to avoid risking the EXISTING consumers o
 library, they do not fork or copy their logic. Status remains open for Step 3's actual
 implementation discipline to follow this design faithfully.
 
+## UPDATE (2026-10-07, Step 3 implementation) — final implementation status
+
+Step 3 implemented the feature with zero new duplicate systems, confirmed by direct code
+inspection of the finished implementation (not just design review): no second LLM/Shopify/GSC/
+content-gap/internal-linking client exists anywhere in `blog_html_automation/`. The one apparent
+new store-domain literal found during the mandatory no-hardcode check
+(`inputs.get_internal_links`'s `"ledsone.co.uk"` comparison) was removed and replaced with a
+dynamic check against `internal_linking/content_fetch.py`'s own existing `SITE_BASE` constant —
+confirmed via a final repo grep returning zero `ledsone.*`/`LEDSone` matches in the new package.
+One genuinely new, reusable technique was found during implementation (not a duplicate): FAQ
+visible HTML rendered directly from already-generated JSON-LD schema data instead of a second AI
+call — documented in `capability/2026-09-22_ai-faq-schema-generation-pattern_capability.md`'s
+own update, not a new capability record.
+
 ## Status
 
-Open — relevant for the entire Step 2 build, not resolved by Step 1 (Step 1 only identifies the
-risk; avoiding it is a Step 2 implementation discipline).
+**Resolved for this feature's implementation** (Step 3 complete with zero duplicate systems).
+The underlying duplicate-risk SURFACE this record describes (shared LLM/Shopify/GSC/content-gap/
+internal-linking/SEO/HTML-fix/AEO systems) remains permanently relevant for any FUTURE feature
+touching the same systems — this record stays open as a standing reference, not because Step 3
+itself introduced a duplicate.
