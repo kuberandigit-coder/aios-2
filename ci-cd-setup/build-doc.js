@@ -17,7 +17,6 @@ const MAX_W = 600; // docx points-ish display width, keeps every screenshot insi
 
 const steps = [
   { file: '01_ssh-keygen-powershell-quoting-error.png', title: 'Step 1a — ssh-keygen quoting issue in PowerShell', caption: 'PowerShell swallowed the empty-passphrase argument ("-N \\"\\"") and ssh-keygen errored out. Fixed by dropping -N entirely and pressing Enter twice at the interactive passphrase prompts instead.' },
-  { file: '02_pub-file-wrong-app-publisher-error.png', title: 'Step 1b — .pub file opened with the wrong app', caption: 'Windows had no default app for an extensionless/.pub file and tried Microsoft Publisher. Opened with Notepad instead to read the key.' },
   { file: '03_vps-terminal-public-key-added-confirmed.png', title: 'Step 2 — Public key added to the VPS', caption: 'Connected to the Contabo VPS and appended the new public key to ~/.ssh/authorized_keys, then confirmed with cat — the new "github-actions-deploy" key is listed.' },
   { file: '04_github-actions-create-workflow-page.png', title: 'Step 3 (navigation) — GitHub Actions "get started" page', caption: 'The default Actions landing page reached before going to Settings first for the secrets.' },
   { file: '05_github-secrets-page-empty-before.png', title: 'Step 3 — Repository secrets page (before)', caption: 'Settings > Secrets and variables > Actions, before any of the 4 deploy secrets were added.' },
