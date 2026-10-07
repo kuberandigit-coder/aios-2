@@ -54,6 +54,17 @@ No Shopify write capability anywhere in the new code (confirmed by reading every
 ends at a "Copy" button, an "Open Shopify" link (opens the real admin, does not write), and a
 "Confirm Published" button that only records a URL the user pastes in after publishing manually.
 
+## Added this pass (2026-10-07, same day) — keyword suggestions
+
+Reordered the form: Collection URL now comes before Main keyword. New "Suggest Keywords" step
+in between: parses the collection handle from the URL (generic regex, no hardcoded domain),
+fetches the real Shopify collection title, derives one candidate via `faq_schema`'s existing
+`primary_keyword_for()`, and finds real high-click GSC queries overlapping the title's
+significant words (generalized the existing single-term GSC query into a shared helper). User
+picks a suggestion or types their own — nothing auto-decided. Live-tested against a real DE
+collection: real title, a title-derived suggestion, and 2 real German GSC queries returned.
+Pushed as commit `8730af2`.
+
 ## Fixed this pass (2026-10-07, same day)
 
 - **Word count** -- root cause: a single "write ~1500 words" call is a weak self-pacing
