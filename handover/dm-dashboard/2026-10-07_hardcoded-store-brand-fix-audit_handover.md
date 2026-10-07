@@ -2,8 +2,8 @@
 
 Date: 2026-10-07
 Owner: Kuberan
-Status: **Audit complete. Fix NOT implemented — waiting on explicit approval + one content
-decision.**
+Status: **Audit complete. Fix IMPLEMENTED same day, approved by Kuberan — see
+`closure/dm-dashboard/2026-10-07_hardcoded-store-brand-fix_closure.md`.**
 
 ## Task
 
