@@ -1,0 +1,11 @@
+# Safety net: this folder lives in a git repo that gets pushed to GitHub.
+# The public key (.pub) is safe to commit. The PRIVATE key must never be
+# committed here or anywhere else in this repo -- these patterns block it
+# even if it's accidentally copied into this folder later.
+gh-actions-deploy-key
+*deploy-key
+!*.pub
+id_rsa
+id_ed25519
+*.pem
+*.key
