@@ -79,3 +79,26 @@ is genuinely reusable, not a one-off:
 
 Confirms this is now a proven, twice-used pattern in this codebase, not implemented in reference to a
 single task.
+
+## UPDATE (2026-10-06) — consolidated into shared modules, location changed
+
+This capability's code MOVED: `_call_local_llm()` is no longer copy-per-file — consolidated into
+one shared `backend/app/dev_tasks/local_llm.py` (`call_local_llm`/`call_with_gemini_fallback`),
+used by every AI-generation task in the codebase now, not just this pattern's consumers. The
+FAQ-schema-specific logic itself (`parse_llm_output`, `ensure_internal_link_present`,
+`links_actually_mentioned`, `strip_internal_links_from_jsonld`, `pick_internal_links`,
+`primary_keyword_for`) moved from `collection_thin_content/faq_generation.py` to the new shared
+`dev_tasks/faq_schema.py` (`generate_faq_schema()`), so Blog Optimization could reuse the exact
+same pipeline for blog posts instead of building a second one — confirmed working, this is now a
+**third** consumer of this capability.
+
+## UPDATE (2026-10-07) — confirmed relevant to a 4th planned consumer, with a real gap found
+
+Step 1 audit for a new "Blog HTML Automation" feature (see
+`evidence/dm-dashboard/2026-10-07_blog-html-automation-step1-audit_evidence.md`) confirmed this
+pattern is the correct reuse target for that feature's FAQ requirement too — but found a real
+gap: `faq_schema.py`'s `generate_faq_schema()` is **schema-only**. It never generates visible
+FAQ HTML content, only the FAQPage JSON-LD block. Blog HTML Automation needs BOTH (6–8 visible
+FAQs plus schema that exactly matches them) — so this capability will need extending with a
+visible-FAQ-HTML generation path alongside the existing schema-only one, not rebuilding. Flagged
+as a Step 2 task, not yet implemented.
