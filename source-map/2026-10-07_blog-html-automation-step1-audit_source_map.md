@@ -31,6 +31,17 @@ today**, regardless of what site is asking. For `ledsone.de`/`ledsone.fr`, inter
 suggestions drawn from this index would still only ever offer UK pages. Not fixed by this audit;
 flagged for whoever extends Internal Linking to other sites in the future.
 
+## UPDATE (2026-10-07) — Step 2 architecture confirms the final generation data flow
+
+The Step 2 architecture doc
+(`evidence/dm-dashboard/2026-10-07_blog-html-automation-step2-architecture_evidence.md`, §5/§22)
+finalizes how every source above actually connects in the proposed design: store/domain/brand/
+locale resolution goes through the SAME 3 existing domain-keyed structures listed here (no 4th
+one introduced) — `core.shopify_client.STORES`, `blog_optimization.gsc.SITES`/`gsc_sync.SYNC_SITES`,
+and `faq_schema._BRAND_CONTEXT_BY_DOMAIN` (added by the 2026-10-07 hardcode fix). One new table
+(`blog_html_automation_generation`) is proposed to hold the generation lifecycle; no new source/
+API integration beyond what's listed above.
+
 ## Explicitly NOT available / NOT to be built as a new integration
 
 - Direct SerpAPI or Scrape.do calls from a new Blog HTML Automation module — must go through

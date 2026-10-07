@@ -47,6 +47,18 @@ task needs a FOURTH domain-keyed lookup (e.g. with locale/brand-label metadata, 
 `faq_schema.py` fix will), reuse/extend one of the existing 3 rather than adding a new one —
 flagged here so it isn't missed later.
 
+## UPDATE (2026-10-07) — Step 2 architecture confirms the risk was designed around, not resolved by avoidance alone
+
+The Step 2 architecture
+(`evidence/dm-dashboard/2026-10-07_blog-html-automation-step2-architecture_evidence.md`, §18)
+explicitly checked its own proposed design against every item in this list before finalizing.
+Result: zero new duplicate systems proposed. Two deliberate "sibling module, not a shared-file
+edit" decisions were made specifically to avoid risking the EXISTING consumers of shared code
+(`faq_adapter.py` instead of editing `faq_schema.py` directly; a new `qa.py` instead of editing
+`blog_optimization/qa_check.py` directly) — both reuse the existing shared functions as a
+library, they do not fork or copy their logic. Status remains open for Step 3's actual
+implementation discipline to follow this design faithfully.
+
 ## Status
 
 Open — relevant for the entire Step 2 build, not resolved by Step 1 (Step 1 only identifies the
