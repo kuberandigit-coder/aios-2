@@ -1,9 +1,13 @@
 # Handover — Blog HTML Automation Step 3 Implementation
 
-Date: 2026-10-07 (updated same day, fix pass)
+Date: 2026-10-07 (updated same day, multiple follow-on passes)
 Status: **Implemented, both known issues (word count, HTML QA false-positive) root-caused and
-fixed, live-verified against real data. Closure now written -- see
-`closure/dm-dashboard/2026-10-07_blog-html-automation-step3_closure.md`.**
+fixed, live-verified against real data. Closure written for that point -- see
+`closure/dm-dashboard/2026-10-07_blog-html-automation-step3_closure.md`. Three further feature
+additions happened AFTER that closure (keyword suggestions, QA-fix/meta/history UI, reference-
+blog structure match, documented below) -- not yet covered by a closure of their own; the
+original closure's "COMPLETE" verdict applies only to the scope it describes, not these later
+additions.**
 
 ## Feature implemented
 
@@ -79,6 +83,55 @@ Pushed as commit `8730af2`.
   confirmed genuinely broken HTML still correctly fails.
 
 Both fixes pushed to `dev-work` (commit `1aa6001`).
+
+## Added this pass (2026-10-07, same day) — QA fixes, meta generation, clickable history/detail view
+
+Per explicit request: "need fix button also when a fix and apply need to update that html and
+meta title and dec also need to genrate... every changes and fixed need to store... also need
+clickable after publish, view changes, detailed view." Delivered:
+
+- **Review-then-apply Fix buttons** for the 2 fixable QA failures, same pattern Blog Optimization
+  already proved. "Images (3-5)": deterministic (no AI) — caps rendered `<img>` tags to the
+  limit (root cause: `PRODUCT_COUNT_MAX=6` always exceeds `IMAGE_COUNT_MAX=5` when every product
+  card has one image). "Word count": narrow AI call that tightens only the single longest
+  paragraph, not a full regenerate.
+- **Meta title/description are now actually generated** (previously always `not_checkable`) via
+  `generator.generate_meta()`, length-enforced through the existing shared `seo_limits.py`.
+- **New table** `blog_html_automation_fix_log` persists every applied fix (mirrors
+  `blog_optimization_fix_log`'s exact shape); new `meta_title`/`meta_description` columns on the
+  generation table. `qa.py`'s two meta checks now validate the real stored values once generated.
+- **History rows are now clickable**, including after a generation is Published (not locked) —
+  opens a full `GenerationWorkspace` detail view (HTML code/preview, QA + fixes, meta
+  generate/apply, publish/republish) fetched fresh by generation id. One reusable component, used
+  both right after a fresh generation and when viewing history — not duplicated.
+
+Pushed as commit `875725c`.
+
+## Added this pass (2026-10-07, same day) — structure matched to a real reference blog
+
+User pointed at a real live blog (`ledsone.co.uk/blogs/new/led-panel-lights-vs-downlights`) and
+asked the generator to match its structure and depth. Fetched and analyzed it, found concrete
+gaps, closed every one:
+
+- **H3 subsections** — `outline.py` now splits a topic group with 3+ real items into H3
+  subsections under one H2 (matches the reference's room-by-room guide), each grounded in a real
+  GSC/AEO query, not invented.
+- **Bullet highlights** — each section prompt now asks for 2-4 short bullet lines after the
+  paragraph, parsed into real `<ul><li>`.
+- **Real comparison table** — deterministic (no AI) Product/Price table built from the already-
+  fetched product list. Deliberately NOT an AI-written feature-comparison table (e.g. "light
+  spread," "best for") — that would require claims this system can't verify under its own "never
+  invent product specs" rule.
+- **Labeled "Shop the Range" block** — heading + lead sentence before the product grid, instead
+  of cards dropped in with no context.
+- **Labeled "Final Thoughts" conclusion** — new short AI-written wrap-up paragraph under a real
+  heading, replacing one generic static CTA sentence used every time.
+- **Locale-aware label text** (German/French) for all of the above, derived from the same
+  `localeInstruction` signal `faq_schema` already computes — no new store/domain config.
+- **Business rules raised to match the reference's real numbers** (explicit, confirmed change):
+  `WORD_COUNT_TARGET` 1500 → 2200, `FAQ_COUNT_MAX` 8 → 9.
+
+Pushed as commit `f6b3b24`.
 
 ## Remaining, explicitly open (not silently resolved)
 
