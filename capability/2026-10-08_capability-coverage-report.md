@@ -68,6 +68,15 @@ from it plus several reusable gotchas (CDN-cache-busting, a refresh-button bug c
 order-level architecture) rather than new capability creation — not written up as new files, per
 the brief's own instruction to update/extend rather than duplicate.
 
+**Note 6 (added 2026-10-08, final pass):** reviewed 2026-08-01 through 2026-08-07 (2026-08-04 was
+already covered). 2026-08-01/02/03/06 have no task records at all. 2026-08-05 (muguntha
+multi-member tabs, thasitha Req3 fixes) was read in full and found to be applying already-known
+patterns (lazy-load tabs, concurrency caps, netSales consistency, a non-sargable-SQL timeout fix)
+rather than creating anything new — excluded. 2026-08-07 produced one genuine new capability: the
+Cost Dashboard's "confirmed-source-only, N/A instead of guessing" cost-attribution approach, plus
+concrete VAT/Transaction-Fee/Product-Cost business rules and a real cross-year data-drift bug it
+surfaced.
+
 ## Methodology (read this before the findings below)
 
 The historical AIOS record set is large: 384 evidence files, 252 validation files, 190 closure

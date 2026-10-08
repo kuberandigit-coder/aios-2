@@ -16,6 +16,7 @@ for the full task context; these files hold the reusable-capability extract only
 - [`2026-07-29_capability.md`](2026-07-29_capability.md) — SalesUK group construction + dual-repo deploy pattern.
 - [`2026-07-31_capability.md`](2026-07-31_capability.md) — Google Ads missing-conversion investigation workflow (Thasitha).
 - [`2026-08-04_capability.md`](2026-08-04_capability.md) — Shopify-product-ID-from-campaign-item-ID cost attribution pattern.
+- [`2026-08-07_capability.md`](2026-08-07_capability.md) — Cost Dashboard: confirmed-source-only cost attribution (VAT, Transaction Fee, Product Cost rule; N/A instead of guessing).
 - [`2026-08-13_capability.md`](2026-08-13_capability.md) — Dual-repo sync-drift detector script.
 - [`2026-08-19_capability.md`](2026-08-19_capability.md) — In-process batch aggregation pattern (avoiding N real HTTP round-trips).
 - [`2026-08-20_capability.md`](2026-08-20_capability.md) — Thivajini feed-optimization run/cycle workflow.
