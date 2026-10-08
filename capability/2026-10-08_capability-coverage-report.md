@@ -3,6 +3,13 @@
 **Date:** 2026-10-08
 **Scope:** 2026-06-09 (earliest AIOS record found) → 2026-10-07/08 (latest)
 
+**Note (added same day, later):** at the user's request, the 22 individual dated capability files
+this report refers to by path below were merged into one master file,
+[`CAPABILITIES.md`](CAPABILITIES.md), immediately after this report was written. Every filename
+referenced below still exists as that same capability's section heading inside `CAPABILITIES.md`
+(unchanged content, just no longer a separate file) — the original per-file git history is
+preserved via `git log --follow` if ever needed.
+
 ## Methodology (read this before the findings below)
 
 The historical AIOS record set is large: 384 evidence files, 252 validation files, 190 closure
