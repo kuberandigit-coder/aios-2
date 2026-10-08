@@ -59,3 +59,38 @@ the live domain** — a theme's name is not reliable evidence of its publish sta
 Confirm with the user before every live theme push going forward, regardless of which theme is
 targeted — recorded as a standing feedback rule (`feedback_confirm_before_live_push` in assistant
 memory), not just a one-time correction.
+
+---
+
+## Capability — Single Source of Truth for "Who Owns This Product" (Mahima Req5b fix)
+
+**Date:** 2026-10-08
+**Owner:** Kuberan (dm-dashboard)
+**Status:** Fixed, pushed to `dev-work`
+
+### Capability (a documented bug class, not a feature)
+
+Two different functions in the same file (`backend/app/staff_pages/mahima.py`) answered "is this
+product Mahima's?" differently: `/req5` used the real Shopify `Mahi-ft` tag (fixed 2026-09-22),
+while `/req5b` still used an older, campaign-spend-derived definition (any product with a row in
+`google_ads.product_performance` under her campaign IDs) — including stray/historical rows for
+products that aren't actually hers. A real product with zero ad spend leaked through on `/req5b`
+while correctly being absent from the tag-based Product Ownership page.
+
+### Fix
+
+Made `/req5b`'s ownership function call the same authoritative, tag-based source `/req5` already
+uses, instead of maintaining a second, separately-computed (and disagreeing) definition.
+
+### Reusable lesson
+
+**When a "who owns this" concept has already been fixed once in a codebase, grep for every other
+place that same concept might be independently re-derived** — a fix applied to one endpoint
+doesn't propagate to a sibling endpoint computing the same thing its own way. This is the same
+class of issue as `2026-10-02_capability.md`'s 3-way sidebar-registration duplication and
+`2026-10-06_capability.md`'s sidebar-visibility gotcha — multiple hand-maintained sources of the
+same fact silently drifting apart.
+
+### Originating task
+
+`evidence/dm-dashboard/2026-10-08_mahima-req5b-product-ownership-bug_evidence.md`
