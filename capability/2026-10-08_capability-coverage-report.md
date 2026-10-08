@@ -194,3 +194,29 @@ static-page-port + dead-dependency-repair migration shape). Also updated the exi
 rather than writing it up separately, since it's an in-place change to that same shared module.
 2026-08-09/12/25/28/30 were read in full and found to be bug fixes/planning applying already-
 documented patterns, not new capability creation.
+
+**Note 8 (added 2026-10-08, final full-September pass):** per a direct request for a full
+day-by-day September audit, listed every task file for every uncovered September date
+(2026-09-01 through 2026-09-30, excluding dates already covered: 09-16/17/18/22/29/30) and read
+each one before deciding. This was by far the densest month found — September is when dm-dashboard
+went from a handful of features to a genuinely large platform. **14 more capability days found**:
+2026-09-03 (the "Dev Tools" git-branching/merge workflow origin — the standing mechanism this whole
+project still uses), 2026-09-04 (self-service user creation, a CSS debugging checklist), 2026-09-07
+(API Health Monitor, a deliberate deploy-button reversion decision, a closed-month cache-gap bug
+class), 2026-09-09/09-11 (Product Ownership's database migration, piloted then completed for all 6
+staff), 2026-09-10 (Competitor Analysis/Lens Search), 2026-09-11 (Content Gap Analysis), 2026-09-14
+(AI/GEO Visibility Gap Analysis with multi-key quota rotation), 2026-09-15 (a rate-limited/audited
+Shopify-write pattern plus a reusable local-LLM-to-Gemini fallback chain, found on the single
+busiest day in this entire AIOS history at 40 commits), 2026-09-19 (the Internal Linking Suggestion
+Engine's full pipeline, extending the existing 09-18 capability), 2026-09-21 (the Collection
+Thin-Content Detector's "NOT CONFIGURED, never guessed" convention), and 2026-09-24/09-25
+(Hetheesha's Task 13 French Keyword Research and Task 15 Structured Data Validation — two major
+multi-phase pipelines). 2026-09-01/02/08 were read and found to be operational/infra days or
+already-covered recovery docs, not new capability creation.
+
+A notable cross-cutting pattern surfaced repeatedly across this month and flagged in several of the
+new capability files rather than written up as its own entry: **this project frequently builds a
+feature, live-tests it, and then fully removes it within days** (API Health Monitor, the Deploy
+button, My Dev Tasks, Competitor Lens Search all followed this arc in September alone) — this is
+documented as a known development style in this project, not treated as instability each time it's
+found.

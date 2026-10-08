@@ -29,10 +29,22 @@ for the full task context; these files hold the reusable-capability extract only
 - [`2026-08-27_capability.md`](2026-08-27_capability.md) — Live-vs-historical Postgres caching split (separate tables by data lifetime).
 - [`2026-08-29_capability.md`](2026-08-29_capability.md) — **ScheduledSnapshot pattern (origin)** — foundational caching model reused by nearly every slow dm-dashboard page since; updated with a 2026-08-31 connection-limit resilience fix.
 - [`2026-08-31_capability.md`](2026-08-31_capability.md) — 2 capabilities: Gemini AI Assistant (grounded task suggestions + conversational chat), verbatim static-page port + dead-dependency repair pattern (EOD Reports).
+- [`2026-09-03_capability.md`](2026-09-03_capability.md) — Git branching workflow + "Dev Tools" merge UI (origin) — the standing merge mechanism for this whole project since.
+- [`2026-09-04_capability.md`](2026-09-04_capability.md) — Self-service "Create User" for the Dev role; root-cause CSS debugging checklist.
+- [`2026-09-07_capability.md`](2026-09-07_capability.md) — 3 capabilities: API Health Monitor pattern (later removed), Deploy-button build-then-revert decision, closed-month cache-gap bug class.
+- [`2026-09-09_capability.md`](2026-09-09_capability.md) — Product Ownership: database-backed migration from hardcoded lists (pilot).
+- [`2026-09-10_capability.md`](2026-09-10_capability.md) — Competitor price/listing analysis pattern (E27 Competitor Analysis + Lens Search).
+- [`2026-09-11_capability.md`](2026-09-11_capability.md) — Content Gap Analysis pattern (competitor search engine); Product Ownership rollout completed (all 6 staff).
+- [`2026-09-14_capability.md`](2026-09-14_capability.md) — AI/GEO Visibility Gap Analysis pattern (multi-key quota-rotating AI Overview detection).
+- [`2026-09-15_capability.md`](2026-09-15_capability.md) — 2 capabilities: rate-limited/audited Shopify write pattern (Alt Text Keyword Finder), Dev Task Log.
 - [`2026-09-16_capability.md`](2026-09-16_capability.md) — SEO metadata audit + traffic-based prioritization.
 - [`2026-09-17_capability.md`](2026-09-17_capability.md) — 2 capabilities: broken-link/404 monitor (Screaming Frog CLI), GSC 404 URL monitor.
 - [`2026-09-18_capability.md`](2026-09-18_capability.md) — LEDSone content index (Internal Linking Step 01).
+- [`2026-09-19_capability.md`](2026-09-19_capability.md) — Internal Linking Suggestion Engine, Steps 02-05 + Blog HTML Editor (complete pipeline, extends Step 01).
+- [`2026-09-21_capability.md`](2026-09-21_capability.md) — Collection Page Thin-Content Detector, Level 1 (audit → priority → backlog, "NOT CONFIGURED" convention).
 - [`2026-09-22_capability.md`](2026-09-22_capability.md) — 2 capabilities: AI FAQ schema (JSON-LD) generation pattern, anti-repeat "Regenerate" pattern for local-LLM content.
+- [`2026-09-24_capability.md`](2026-09-24_capability.md) — French Keyword Research & Page Mapping pipeline (Task 13).
+- [`2026-09-25_capability.md`](2026-09-25_capability.md) — Structured Data Validation pipeline (Task 15).
 - [`2026-09-29_capability.md`](2026-09-29_capability.md) — Search Console sitemap & indexing monitor (Hetheesha Task 16).
 - [`2026-09-30_capability.md`](2026-09-30_capability.md) — DC Voltage "model" collection/product template pattern (reusable for future B22/E14 pages; confirmed still in active use 2026-10-08).
 
