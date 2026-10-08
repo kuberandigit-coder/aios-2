@@ -3,12 +3,23 @@
 **Date:** 2026-10-08
 **Scope:** 2026-06-09 (earliest AIOS record found) → 2026-10-07/08 (latest)
 
-**Note (added same day, later):** at the user's request, the 22 individual dated capability files
-this report refers to by path below were merged into one master file,
-[`CAPABILITIES.md`](CAPABILITIES.md), immediately after this report was written. Every filename
-referenced below still exists as that same capability's section heading inside `CAPABILITIES.md`
-(unchanged content, just no longer a separate file) — the original per-file git history is
-preserved via `git log --follow` if ever needed.
+**Note (added same day, later):** at the user's request, the individual capability files were
+first merged into one master file, then regrouped into one file per day (current structure —
+`capability/YYYY-MM-DD_capability.md`, see `README.md`), matching how `evidence/`/`validation/`/
+`handover/`/`closure/` are already organized. Content from the original per-capability files is
+unchanged, just regrouped by date.
+
+**Note 2 (added 2026-10-08, later still):** per a follow-up request, searched specifically for
+capability-worthy work **before** 2026-07-22 (this report's original earliest finding). Found one
+genuine earlier capability — `2026-06-17_capability.md` (Shopify→Google Sheets UTM/Product
+attribution extension pattern) — now the earliest entry. One more candidate
+(`handover/2026-07-03_dilaksi_req3_first_phase_ga4_shopify_website_handover.md`, labelling a GA4
+fetch script "reusable") was reviewed and excluded as too thin — it names a file as reusable
+without describing a generalizable technique, unlike the 2026-06-17 record's detailed, reusable
+gotchas and implementation choices. This search used the same keyword-expansion method as the
+original pass (`reusable`, `template for`, `pattern for future`, `can be reused` — not just the
+`## Reuse` heading), applied specifically to the 2026-06-09 through 2026-07-21 window that the
+original pass's narrower search had not covered.
 
 ## Methodology (read this before the findings below)
 
