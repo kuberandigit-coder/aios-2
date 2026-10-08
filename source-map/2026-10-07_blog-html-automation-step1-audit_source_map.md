@@ -51,6 +51,28 @@ single-store limitation correctly surfaced as `partial`. See
 `evidence/dm-dashboard/2026-10-07_blog-html-automation-step3-implementation_evidence.md` for the
 full live-test log. No new source/API was introduced beyond what's listed in this file.
 
+## UPDATE (2026-10-07 afternoon, post-Step-3 feature work) — two new keyword-suggestion inputs
+
+Not present in the Step 1/2/3 design above. Added same-day, after Step 3 closed, as part of 6
+iterative commits refining the keyword-suggestion feature (see
+`evidence/dm-dashboard/2026-10-07_blog-html-automation-post-step3-feature-additions_evidence.md`).
+Confirmed by direct read of the current `inputs.py` (2026-10-08) — **both reuse existing sources,
+no new credential/integration**:
+
+- **Google Keyword Planner data** (`a33d450`) — `_keyword_planner_suggestions()` reads
+  `public.google_lens_keyword_planner_suggestion`, the same table the Sajeepan Lens Keywords
+  Automation capability already populates (`capability/2026-08-24_sajeepan-lens-keywords-automation_capability.md`).
+  Per the function's own docstring, this table's status today is `BLOCKED_CONFIG_REQUIRED` (no
+  `GOOGLE_ADS_*` credentials configured) — so this input exists in code but returns nothing live
+  until that config gap (already known, not new) is closed.
+- **Google Ads paid-search keywords from the business database** (`0f2330a`) — reads
+  `google_ads.campaign_search_term_data` joined to `google_ads.campaigns`, confirmed (via a
+  code comment dated 2026-10-07) to share the same `google_ads` schema already used by the
+  existing Google Ads tab capability (`capability/2026-07-24_dm-google-ads-tab_capability.md`).
+
+Both are genuine reuse of already-documented data sources, not new integrations — no capability or
+source-map entry needed beyond this note.
+
 ## Explicitly NOT available / NOT to be built as a new integration
 
 - Direct SerpAPI or Scrape.do calls from a new Blog HTML Automation module — must go through

@@ -56,3 +56,10 @@
 All of today's dm-dashboard work pushed to `dev-work` (one piece, the CI/CD workflow file itself,
 committed straight to `main` per the nature of the task); merged to `main` via the usual Dev
 Tools process for everything else.
+
+**Addendum (added 2026-10-08, AIOS catch-up):** this log was written at 12:48pm and missed the
+rest of the day — 29 further Blog HTML Automation commits between 13:38 and 17:59 (keyword-
+suggestion refinements including two new reused data sources, content/structure quality fixes, a
+visual Customize editor, and other UX/performance work), all merged to `origin/main`. See
+`docs/2026-10-08_daily-work-log.md` and
+`handover/dm-dashboard/2026-10-07_blog-html-automation-post-step3-feature-additions_handover.md`.

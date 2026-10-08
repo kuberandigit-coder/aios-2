@@ -63,6 +63,11 @@ already used for `thivajini_feed_cycle` and `mahima_stpm_run` — reusable for
 any future paid-API-backed batch feature that must survive Vercel Function
 timeouts/retries without double-spending.
 
+**New consumer (2026-10-07):** Blog HTML Automation's keyword-suggestion feature reads
+`public.google_lens_keyword_planner_suggestion` directly (`_keyword_planner_suggestions()` in
+`backend/app/dev_tasks/blog_html_automation/inputs.py`) — a read-only reuse of this table, no new
+write path. See `source-map/2026-10-07_blog-html-automation-step1-audit_source_map.md`.
+
 ## Evidence
 `evidence/sajeepan/2026-08-24_lens-keywords-automation-schema.md`
 

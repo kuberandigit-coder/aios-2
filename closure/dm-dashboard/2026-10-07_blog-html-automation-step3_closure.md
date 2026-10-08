@@ -78,5 +78,13 @@ not deployed**.
 
 **COMPLETE** (per the task's own closure rule — all 8 required conditions satisfied, 2 of them
 via honest documentation of a genuinely unresolved item rather than full resolution, which the
-rule explicitly permits). Not deployed; awaiting the usual Dev Tools merge and a real browser
-smoke test before being considered fully production-proven.
+rule explicitly permits).
+
+**Status correction (added 2026-10-08, AIOS catch-up):** the "not merged to main, not deployed"
+line above is now stale. Both `f8e8984` and `1aa6001` are confirmed present in `origin/main` as of
+its current tip (`98a2057`), merged the same afternoon (2026-10-07) via the usual Dev Tools flow,
+alongside 29 further commits of feature work. See
+`evidence/dm-dashboard/2026-10-07_blog-html-automation-post-step3-feature-additions_evidence.md`,
+`validation/..._validation.md`, and `handover/..._handover.md` for that later work. A real browser
+smoke test is still outstanding — no browser automation tool has been available in any session to
+date.

@@ -32,6 +32,11 @@ Reconstructed from commit messages `ca1ba6a`, `e3d2ef5`, `e507636`, `c812ee1` â€
 ## Reuse
 Template for any future newly-discovered unclaimed campaign found via the gap-audit capability.
 
+**New consumer (2026-10-07):** Blog HTML Automation's keyword-suggestion feature reads
+`google_ads.campaign_search_term_data`/`google_ads.campaigns` directly (`inputs.py`, commit
+`0f2330a`) â€” a read-only reuse of the same `google_ads` schema, no new write path. See
+`source-map/2026-10-07_blog-html-automation-step1-audit_source_map.md`.
+
 ## Evidence
 `evidence/digital-marketing-member-pages/2026-07-24_dm-google-ads-tab-and-backfill.md`
 

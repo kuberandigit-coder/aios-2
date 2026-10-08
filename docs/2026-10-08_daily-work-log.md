@@ -75,3 +75,18 @@
 Status at end of day: **5 of 8 batch items fully done and verified live** (G6, G4, P4, P3, C5).
 Remaining 3 (P6, C7, C2) have every part that needed no approval already done; everything else is
 with Thuwaraga, awaiting her reply.
+
+- **AIOS — full catch-up for 29 missed dm-dashboard commits from yesterday afternoon/evening
+  (2026-10-07, 13:38-17:59).** The 2026-10-07 daily log and Step 3 closure doc stopped at 12:48pm;
+  verified via git (`git merge-base --is-ancestor`) that commit `1aa6001` and 28 further Blog HTML
+  Automation commits were actually merged to `origin/main` the same afternoon, contradicting the
+  Step 3 closure's "not merged, not deployed" line. Documented the full stream (keyword-suggestion
+  refinements incl. two reused data sources — Google Keyword Planner, Google Ads paid-search —
+  confirmed by direct code read to be existing-table reuse, not new integrations; content/structure
+  quality fixes; a visual Customize editor; performance work), added a correction note to the Step 3
+  closure doc, and updated the two capability docs these reused tables belong to with a "new
+  consumer" note. `py_compile` confirmed clean on every backend file touched. Frontend build,
+  live-server redeploy confirmation, and browser click-through were NOT re-checked this session
+  (no browser tool available) — recorded honestly as such, not claimed. See
+  `evidence/dm-dashboard/2026-10-07_blog-html-automation-post-step3-feature-additions_evidence.md`,
+  `validation/..._validation.md`, `handover/..._handover.md`.

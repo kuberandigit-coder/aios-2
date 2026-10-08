@@ -73,9 +73,20 @@ visible HTML rendered directly from already-generated JSON-LD schema data instea
 call — documented in `capability/2026-09-22_ai-faq-schema-generation-pattern_capability.md`'s
 own update, not a new capability record.
 
+## UPDATE (2026-10-07 afternoon, post-Step-3 feature work) — two more sources reused, confirmed clean
+
+The same afternoon's keyword-suggestion refinement work (29 commits, see
+`evidence/dm-dashboard/2026-10-07_blog-html-automation-post-step3-feature-additions_evidence.md`)
+added two further data reads — `public.google_lens_keyword_planner_suggestion` (Sajeepan Lens
+Keywords Automation's own table) and `google_ads.campaign_search_term_data`/`campaigns` (the same
+schema the DM Google Ads tab already reads) — confirmed by direct code read of the current
+`inputs.py` to be reuses, not new parallel integrations. Both capability docs updated with a
+"new consumer" note. No new duplicate-risk surface introduced.
+
 ## Status
 
-**Resolved for this feature's implementation** (Step 3 complete with zero duplicate systems).
+**Resolved for this feature's implementation** (Step 3 complete with zero duplicate systems, and
+the post-Step-3 feature work the same afternoon also confirmed clean on direct inspection).
 The underlying duplicate-risk SURFACE this record describes (shared LLM/Shopify/GSC/content-gap/
 internal-linking/SEO/HTML-fix/AEO systems) remains permanently relevant for any FUTURE feature
 touching the same systems — this record stays open as a standing reference, not because Step 3
