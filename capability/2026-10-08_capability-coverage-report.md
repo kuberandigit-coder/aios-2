@@ -58,6 +58,16 @@ blocked/research-only items like the Admin UI extension and out-of-stock auto-hi
 judged non-capability-worthy from their titles/first lines, not individually read start-to-finish —
 flagged here as the honest limit of this pass, not asserted as an exhaustive per-file certainty.
 
+**Note 5 (added 2026-10-08, final pass):** repeated the same title-by-title manual review for
+2026-07-22 through 2026-07-31 (the days between two already-covered dates). Found 2026-07-23 to be
+an unusually dense day — the point the team converged on standardized live-refresh/caching
+patterns across the whole Vercel sales-dashboard project — and wrote up 3 distinct capabilities
+from it plus several reusable gotchas (CDN-cache-busting, a refresh-button bug class, a documented
+"what not to do" reversal). 2026-07-28 and 2026-07-30 were read in full and found to be confirmed
+*instances* of already-documented patterns (the dual-repo deploy gap, the zero-duplication
+order-level architecture) rather than new capability creation — not written up as new files, per
+the brief's own instruction to update/extend rather than duplicate.
+
 ## Methodology (read this before the findings below)
 
 The historical AIOS record set is large: 384 evidence files, 252 validation files, 190 closure

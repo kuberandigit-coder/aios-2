@@ -10,6 +10,7 @@ for the full task context; these files hold the reusable-capability extract only
 - [`2026-07-06_capability.md`](2026-07-06_capability.md) — Shopify Bulk Operations as source-of-truth for catalog-wide metrics (units sold, stock, last order date).
 - [`2026-07-13_capability.md`](2026-07-13_capability.md) — Scheduled-trigger live data refresh for Vercel static pages (distinct from the later `ScheduledSnapshot` pattern — different architecture, same problem).
 - [`2026-07-22_capability.md`](2026-07-22_capability.md) — Vercel serverless function consolidation pattern (`?fn=`/`?entity=` dispatch under the 12-function cap).
+- [`2026-07-23_capability.md`](2026-07-23_capability.md) — 3 capabilities: incremental delta-fetch "Check New Orders" refresh pattern (rolled out to 14 tabs), durable snapshot + refresh-button semantics, CDN-cache-busting for refresh endpoints.
 - [`2026-07-24_capability.md`](2026-07-24_capability.md) — 8 capabilities: IndexedDB live-data persistence, Kamsi Req1 access-scope/hang fix, hourly snapshot refresh workflow, Jefri Req3 3-period product comparison, Sajeepan utm_term deep-audit + gap audit, Sonya snapshot backfill, DM Google Ads tab, Kamsi organic-sales rule definition.
 - [`2026-07-27_capability.md`](2026-07-27_capability.md) — Meta UK tab + overlap discovery; SalesUK standalone order-level page.
 - [`2026-07-29_capability.md`](2026-07-29_capability.md) — SalesUK group construction + dual-repo deploy pattern.
