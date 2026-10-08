@@ -47,6 +47,12 @@ for the full task context; these files hold the reusable-capability extract only
 - [`2026-09-25_capability.md`](2026-09-25_capability.md) — Structured Data Validation pipeline (Task 15).
 - [`2026-09-29_capability.md`](2026-09-29_capability.md) — Search Console sitemap & indexing monitor (Hetheesha Task 16).
 - [`2026-09-30_capability.md`](2026-09-30_capability.md) — DC Voltage "model" collection/product template pattern (reusable for future B22/E14 pages; confirmed still in active use 2026-10-08).
+- [`2026-10-01_capability.md`](2026-10-01_capability.md) — Search Intent → Page Action pipeline (deterministic, no-AI classification); dict-row vs tuple-row gotcha.
+- [`2026-10-02_capability.md`](2026-10-02_capability.md) — Blog Optimization multi-system reuse workflow; sidebar registration 3-way-duplication dedup.
+- [`2026-10-05_capability.md`](2026-10-05_capability.md) — Post-restructuring leftover-import sweep (critical refactor-safety lesson); multi-method completeness verification discipline.
+- [`2026-10-06_capability.md`](2026-10-06_capability.md) — Live-API-vs-external-DB verification discipline; mixed int/float JSON bulk-upsert bug class; sidebar-visibility gotcha; common-prefix/suffix HTML diffing.
+- [`2026-10-07_capability.md`](2026-10-07_capability.md) — Visual block editor (click-to-edit rendered HTML); parallelized AI section generation.
+- [`2026-10-08_capability.md`](2026-10-08_capability.md) — Liquid `article.handle` blog-prefix gotcha; confirm a "duplicate theme" is actually a duplicate before pushing to it.
 
 See `2026-10-08_capability-coverage-report.md` for the full audit methodology, what was/wasn't
 individually re-verified, and flagged gaps — note its file-path references predate this day-by-day

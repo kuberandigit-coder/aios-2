@@ -220,3 +220,23 @@ feature, live-tests it, and then fully removes it within days** (API Health Moni
 button, My Dev Tasks, Competitor Lens Search all followed this arc in September alone) — this is
 documented as a known development style in this project, not treated as instability each time it's
 found.
+
+**Note 9 (added 2026-10-08, final pass):** per a direct request to also cover October, reviewed
+every October task record through today. 8 new capability days found, closing the gap to today:
+2026-10-01 (Search Intent -> Page Action's deterministic classification pipeline, plus a dict-row/
+tuple-row access bug class), 2026-10-02 (Blog Optimization's heavy multi-system-reuse pattern, plus
+a 3-way sidebar-registration duplication fixed into one shared registry), 2026-10-05 (two real
+production incidents tracing to the same root cause -- leftover local/function-scoped imports
+invisible to py_compile/import app.main after a file-move refactor -- establishing a repo-wide-grep
+sweep as the standard post-refactor check; plus a 3-independent-method completeness-verification
+discipline from a SKU/price export), 2026-10-06 (a live-API-vs-external-DB verification discipline;
+a mixed int/float JSON bulk-upsert bug class; a second, related sidebar-visibility gotcha; a
+lightweight common-prefix/suffix HTML diffing technique), 2026-10-07 (a visual click-to-edit block
+editor pattern; parallelized AI section generation), and 2026-10-08 (this very session's own two
+gotchas: Liquid's article.handle returning the blog-prefixed path rather than the bare slug, and
+confirming a "duplicate" theme is actually not live before pushing to it).
+
+With this pass, the capability layer has continuous day-by-day coverage from the first
+capability-worthy task found (2026-06-17) through today (2026-10-08) -- every date in that range
+with task records was either reviewed and found to produce a genuine capability, or reviewed and
+explicitly excluded as non-reusable/duplicate, per the notes above.
