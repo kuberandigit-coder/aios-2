@@ -6,6 +6,9 @@ each day's task record(s) in `evidence/`, `validation/`, `handover/`, `closure/`
 for the full task context; these files hold the reusable-capability extract only.
 
 - [`2026-06-17_capability.md`](2026-06-17_capability.md) — Shopify→Google Sheets UTM/Product attribution extension pattern (reuse existing functions, dynamic ID loading, minimal additive GraphQL field, dual ID-type matching).
+- [`2026-07-03_capability.md`](2026-07-03_capability.md) — Vercel/GitHub deploy authorization root cause + the standard deploy path (digitalmarketing author) still in use today; safe git-subtree subfolder extraction; two-writer post-rewrite recovery.
+- [`2026-07-06_capability.md`](2026-07-06_capability.md) — Shopify Bulk Operations as source-of-truth for catalog-wide metrics (units sold, stock, last order date).
+- [`2026-07-13_capability.md`](2026-07-13_capability.md) — Scheduled-trigger live data refresh for Vercel static pages (distinct from the later `ScheduledSnapshot` pattern — different architecture, same problem).
 - [`2026-07-22_capability.md`](2026-07-22_capability.md) — Vercel serverless function consolidation pattern (`?fn=`/`?entity=` dispatch under the 12-function cap).
 - [`2026-07-24_capability.md`](2026-07-24_capability.md) — 8 capabilities: IndexedDB live-data persistence, Kamsi Req1 access-scope/hang fix, hourly snapshot refresh workflow, Jefri Req3 3-period product comparison, Sajeepan utm_term deep-audit + gap audit, Sonya snapshot backfill, DM Google Ads tab, Kamsi organic-sales rule definition.
 - [`2026-07-27_capability.md`](2026-07-27_capability.md) — Meta UK tab + overlap discovery; SalesUK standalone order-level page.

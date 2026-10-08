@@ -42,7 +42,21 @@ genuinely load-bearing capabilities, not just incidental mentions.
 This keyword-expansion method is still not a verbatim re-read of all 616 task slugs — it finds
 capability-worthy work by searching for the project's own language patterns for describing
 reusability, which could in principle miss a capability described without any of those phrases.
-No further gap-hunting pass beyond this one was performed.
+
+**Note 4 (added 2026-10-08, final pass):** per a direct follow-up ("why this gap, analyse the task
+in this period first"), did a title-by-title manual review of every task file dated 2026-06-18
+through 2026-07-21 (the window between the two earliest findings) — roughly 150 files across 24
+days — rather than relying only on keyword search, since that window had produced zero hits in
+every prior pass. Read the ~10 highest-signal titles in full (infrastructure/discovery/migration-
+sounding names, not routine UI-fix or single-report names) and found **3 more genuine
+capabilities**: 2026-07-03 (the Vercel deploy-authorization root cause — still the standing deploy
+rule for this project today), 2026-07-06 (Shopify Bulk Operations as source-of-truth for
+catalog-wide metrics), and 2026-07-13 (a scheduled-trigger refresh pattern for Vercel static pages,
+architecturally distinct from the later `ScheduledSnapshot`). The remaining ~140 files in this
+window were reviewed by title only (routing fixes, UI layout changes, one-off sales reports,
+blocked/research-only items like the Admin UI extension and out-of-stock auto-hide research) and
+judged non-capability-worthy from their titles/first lines, not individually read start-to-finish —
+flagged here as the honest limit of this pass, not asserted as an exhaustive per-file certainty.
 
 ## Methodology (read this before the findings below)
 
