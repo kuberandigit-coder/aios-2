@@ -1,0 +1,172 @@
+# Capabilities — 2026-09-22
+
+2 capabilities documented from this day's work.
+
+---
+
+# Capability — AI FAQ Schema (JSON-LD) Generation Pattern
+
+Date: 2026-09-22
+Established by: Collection Page Thin-Content Detector's FAQ Analysis tab
+Location: `backend/app/dev_tasks/collection_thin_content/faq_generation.py`
+
+## What this capability is
+
+A reusable, proven pattern for generating schema.org structured data (specifically FAQPage JSON-LD) from
+real PAA (People Also Ask) questions via a self-hosted local LLM, with deterministic safeguards against the
+two real failure modes LLM-generated structured data hits in practice:
+
+1. **Missing `<script>` wrapper** — an LLM asked for "JSON-LD" will often return bare JSON. Pasting bare
+   JSON into a page renders as visible text instead of invisible structured data (confirmed live via a real
+   before/after Shopify screenshot). Fix: always wrap in `<script type="application/ld+json">...</script>`,
+   validate/re-serialize the inner JSON so a malformed response can never be pasted through broken.
+2. **Soft instructions are unreliable** — asking a model to "mention X if relevant" often produces zero
+   compliance (confirmed live: a real generation with internal links offered produced no mention at all).
+   Fix: never trust the model for something that must deterministically happen — check the output
+   afterward and inject programmatically if the model didn't comply
+   (`ensure_internal_link_present()`), and separately compute "what was actually used" from the real
+   output rather than trusting what was offered (`links_actually_mentioned()`).
+
+## Reusable pieces (all in `faq_generation.py`, all generically named, not collection-specific)
+
+- `_call_local_llm()` — same `LOCAL_LLM_*` env-var pattern + Gemini fallback already used by
+  `meta_audit/generate.py` and `alt_text_keywords/ai_alt_text.py`. Copy-per-file convention (established
+  elsewhere in this codebase), not centralized.
+- `parse_llm_output()` — extracts + validates + re-wraps a `<script type="application/ld+json">` block from
+  a raw LLM response, tolerant of stray commentary the model prepends.
+- `ensure_internal_link_present()` — deterministic "guarantee X happened" pattern for any soft instruction
+  given to an LLM.
+- `links_actually_mentioned()` — "report only what's genuinely true in the output, not what was offered" pattern.
+- `strip_internal_links_from_jsonld()` — free, instant, no-new-AI-call post-processing edit pattern (edit
+  the already-generated output via plain text/regex instead of re-spending a credit + LLM call for a small
+  change).
+
+## Frontend pattern (in `CollectionThinContentDetector.jsx`)
+
+- `FaqSchemaPreview` / `linkifyAnswerText()` — renders a JSON-LD FAQPage schema as a real accordion, with
+  any embedded URL shown as an actual clickable link (using a real matched page's title) — the preview only;
+  the copied/stored schema text stays plain, since structured data is never rendered as a page.
+- Per-collection `BackgroundJob` for AI generation (not the audit's single shared job) — proven pattern for
+  "many independent slow AI calls, each keyed by its own entity id," reusable for any future per-item AI
+  generation feature in this codebase.
+
+## When to reuse this
+
+Any future dev task that needs to (a) generate schema.org structured data via the local LLM, (b) ask an LLM
+to conditionally include something and needs it to actually happen reliably, or (c) needs a
+credit-conscious "edit the existing AI output for free" action instead of a full regenerate.
+
+## Not reusable / scoped to this task
+
+`primary_keyword_for()` and `pick_internal_links()` are specific to collection-page SEO (title-cleaning,
+token-overlap against the Internal Linking content index) — reusable as a pattern, not as-is for a
+different domain.
+
+## UPDATE (2026-09-22, later) — confirmed reused, second consumer
+
+This exact pattern was reused (not duplicated) the same day by the AEO/GEO Content Action feature
+(`backend/app/dev_tasks/geo_visibility/content_actions.py`, Dilaksi Phase 1) — proof this capability record
+is genuinely reusable, not a one-off:
+
+- Same `_call_local_llm()` (`LOCAL_LLM_*` env vars) + Gemini fallback, copy-per-file per this codebase's
+  established convention.
+- Same "ask for strict JSON, validate before saving" pattern (`parse_llm_output()`) — here validating a
+  `{format, formatReason, question, content, placementNote}` shape instead of a JSON-LD block, same
+  discipline: a malformed response is rejected ("Generated response could not be validated. Please
+  regenerate.") rather than silently saved.
+- Extended the "never lose a previous draft" idea one step further: `generation_history` (a JSONB array on
+  the DB row) preserves every prior AI draft before a Regenerate overwrites `generated_content` — the FAQ
+  schema pattern only needed a single before/after edit (`strip_internal_links_from_jsonld`), this consumer
+  needed unlimited regenerate history, so the pattern generalized cleanly to that need.
+- New reusable idea contributed back: "human edit stored separately from the AI draft, original never
+  overwritten" (`final_content`/`final_question` columns alongside `generated_content`/`generated_question`)
+  — worth folding into this capability's own future consumers if a future feature needs human-editable AI
+  output.
+
+Confirms this is now a proven, twice-used pattern in this codebase, not implemented in reference to a
+single task.
+
+## UPDATE (2026-10-06) — consolidated into shared modules, location changed
+
+This capability's code MOVED: `_call_local_llm()` is no longer copy-per-file — consolidated into
+one shared `backend/app/dev_tasks/local_llm.py` (`call_local_llm`/`call_with_gemini_fallback`),
+used by every AI-generation task in the codebase now, not just this pattern's consumers. The
+FAQ-schema-specific logic itself (`parse_llm_output`, `ensure_internal_link_present`,
+`links_actually_mentioned`, `strip_internal_links_from_jsonld`, `pick_internal_links`,
+`primary_keyword_for`) moved from `collection_thin_content/faq_generation.py` to the new shared
+`dev_tasks/faq_schema.py` (`generate_faq_schema()`), so Blog Optimization could reuse the exact
+same pipeline for blog posts instead of building a second one — confirmed working, this is now a
+**third** consumer of this capability.
+
+## UPDATE (2026-10-07) — confirmed relevant to a 4th planned consumer, with a real gap found
+
+Step 1 audit for a new "Blog HTML Automation" feature (see
+`evidence/dm-dashboard/2026-10-07_blog-html-automation-step1-audit_evidence.md`) confirmed this
+pattern is the correct reuse target for that feature's FAQ requirement too — but found a real
+gap: `faq_schema.py`'s `generate_faq_schema()` is **schema-only**. It never generates visible
+FAQ HTML content, only the FAQPage JSON-LD block. Blog HTML Automation needs BOTH (6–8 visible
+FAQs plus schema that exactly matches them) — so this capability will need extending with a
+visible-FAQ-HTML generation path alongside the existing schema-only one, not rebuilding. Flagged
+as a Step 2 task, not yet implemented.
+
+## UPDATE (2026-10-07, Step 3 implementation) — new reusable technique: render visible content FROM the schema, don't generate it twice
+
+Blog HTML Automation's `faq_adapter.py` resolved the gap above WITHOUT a second LLM call: it
+calls the existing `generate_faq_schema()` exactly once (unchanged, zero edits), then renders
+the visible FAQ HTML directly from the already-parsed FAQPage JSON-LD's `mainEntity`
+question/answer pairs. This is a stronger reuse pattern than "two outputs from one prompt" — it
+is structurally impossible for the visible content and the schema to diverge, since one is
+literally derived from the other's already-validated data, and it costs zero extra AI calls or
+credits. Worth reusing for any future feature that needs both a visible rendering and a
+structured-data version of the same AI-generated content (not just FAQs) — generate the
+structured data once, render the visible form from it, rather than generating both
+independently.
+
+---
+
+# Capability — Anti-repeat "Regenerate" pattern for local-LLM content generation
+
+**Date:** 2026-09-22
+**Owner:** dm-dashboard dev tooling
+**Status:** Live, proven in production (Meta Title & Description Audit)
+
+## What it is
+
+A reusable fix pattern for any "Regenerate" button backed by the
+self-hosted local LLM (LOCAL_LLM_* env vars, the same pattern already
+used across `alt_text_keywords`, `meta_audit`, `collection_thin_content`,
+`geo_visibility`, `kamsi_blog_title_finder`): identical or near-identical
+inputs to an LLM call can produce identical or near-identical output if
+(a) no `temperature` is set on the call (defaults to low/near-greedy
+sampling) and (b) the prompt has no awareness the call is a "regenerate,
+give me something different" request rather than a fresh generation.
+
+## The fix
+
+1. Set an explicit `temperature` (0.9 proven to work well) on the local
+   LLM call.
+2. When a previous generation exists for the same input (tracked via
+   whatever log/history table the feature already has), fetch it and
+   inject an explicit instruction block into the prompt: "A previous
+   version was already generated: '{previous_text}'. Your new version
+   MUST take a genuinely different angle/wording — do not just swap one
+   or two words."
+
+## Where it's proven
+
+`backend/app/dev_tasks/meta_audit/generate.py` — found and fixed
+2026-09-22 after a real user bug report (Regenerate producing
+byte-identical output on a real product). Live-tested: 3 consecutive
+regenerates on the same real product/keyword produced 3 genuinely
+distinct outputs (previously identical/near-identical); re-confirmed
+directly against production.
+
+## When to reuse this
+
+Any future "Regenerate" button on an AI-generated field in this
+codebase that currently just re-calls the same prompt with the same
+inputs should check: does it set a temperature? Does the prompt know
+it's a regenerate? If either answer is no, this exact pattern applies
+directly — see `meta_audit/generate.py`'s `_call_local_llm`/
+`_PREVIOUS_VERSION_BLOCK` for the reference implementation.
+

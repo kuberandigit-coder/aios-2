@@ -1,11 +1,24 @@
-# Capability Folder
+# Capability Index
 
-All reusable capabilities are now in a single file: **[`CAPABILITIES.md`](CAPABILITIES.md)**.
+One file per day that produced a reusable capability — covering the full AIOS history from the
+first capability-worthy task found (2026-07-22) through the latest (2026-09-29). Cross-reference
+each day's task record(s) in `evidence/`, `validation/`, `handover/`, `closure/`, `source-map/`
+for the full task context; these files hold the reusable-capability extract only.
 
-Previously this folder held one dated `.md` file per capability — consolidated 2026-10-08 into
-one master reference per the user's request (per-day task records in `evidence/`, `validation/`,
-`handover/`, `closure/` are unaffected and remain dated-per-task as before; this change is
-specific to the capability layer only).
+- [`2026-07-22_capability.md`](2026-07-22_capability.md) — Vercel serverless function consolidation pattern (`?fn=`/`?entity=` dispatch under the 12-function cap).
+- [`2026-07-24_capability.md`](2026-07-24_capability.md) — 8 capabilities: IndexedDB live-data persistence, Kamsi Req1 access-scope/hang fix, hourly snapshot refresh workflow, Jefri Req3 3-period product comparison, Sajeepan utm_term deep-audit + gap audit, Sonya snapshot backfill, DM Google Ads tab, Kamsi organic-sales rule definition.
+- [`2026-07-27_capability.md`](2026-07-27_capability.md) — Meta UK tab + overlap discovery; SalesUK standalone order-level page.
+- [`2026-07-29_capability.md`](2026-07-29_capability.md) — SalesUK group construction + dual-repo deploy pattern.
+- [`2026-08-20_capability.md`](2026-08-20_capability.md) — Thivajini feed-optimization run/cycle workflow.
+- [`2026-08-21_capability.md`](2026-08-21_capability.md) — Mahima STPM immutable snapshot pattern.
+- [`2026-08-24_capability.md`](2026-08-24_capability.md) — Sajeepan Lens Keywords Automation (Google Lens → review → keyword derivation pipeline).
+- [`2026-09-16_capability.md`](2026-09-16_capability.md) — SEO metadata audit + traffic-based prioritization.
+- [`2026-09-17_capability.md`](2026-09-17_capability.md) — 2 capabilities: broken-link/404 monitor (Screaming Frog CLI), GSC 404 URL monitor.
+- [`2026-09-18_capability.md`](2026-09-18_capability.md) — LEDSone content index (Internal Linking Step 01).
+- [`2026-09-22_capability.md`](2026-09-22_capability.md) — 2 capabilities: AI FAQ schema (JSON-LD) generation pattern, anti-repeat "Regenerate" pattern for local-LLM content.
+- [`2026-09-29_capability.md`](2026-09-29_capability.md) — Search Console sitemap & indexing monitor (Hetheesha Task 16).
 
-See `2026-10-08_capability-coverage-report.md` for the full historical capability-audit methodology
-and coverage findings.
+See `2026-10-08_capability-coverage-report.md` for the full audit methodology, what was/wasn't
+individually re-verified, and flagged gaps — note its file-path references predate this day-by-day
+regrouping (it originally pointed at one-file-per-capability names); content is unchanged, just
+regrouped by date into the files above.
