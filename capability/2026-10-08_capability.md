@@ -94,3 +94,43 @@ same fact silently drifting apart.
 ### Originating task
 
 `evidence/dm-dashboard/2026-10-08_mahima-req5b-product-ownership-bug_evidence.md`
+
+---
+
+## Capability — Fixes Don't Automatically Cross Codebases (Jefri hardcoded-campaign-list bug)
+
+**Date:** 2026-10-08
+**Owner:** Kuberan (dm-dashboard)
+**Status:** Fixed, pushed to `dev-work`
+
+### Capability (a documented bug class, not a feature)
+
+Every Req (1-5) on Jefri's dm-dashboard page was scoped to a hardcoded 5-campaign list. The exact
+same bug — campaign reporting silently scoped to a stale hardcoded ID list instead of the real,
+current campaign group — had **already been found and permanently fixed once before**, in a
+completely different, older project (the Vercel `digital-marketing-member-pages` dashboard,
+2026-08-05): that fix confirmed Jefri's real campaigns match
+`google_ads.campaigns WHERE group_name='Jefri' AND account_id=9031058245` exactly. But a fix made
+in one codebase does not automatically apply to a second, independent codebase solving the same
+business problem — dm-dashboard's `jefri.py` kept its own separately-hardcoded list the whole time.
+
+### Fix
+
+Replaced the hardcoded list with a live, cached (1h TTL) query against the same proven
+`group_name`/`account_id` source, additionally scoped to `campaign_status='ENABLED'` (matching
+`admin_dm_campaign.py`'s existing convention for this same group elsewhere in the codebase) —
+mutated in place so every existing consumer across Req1-5 keeps working unchanged. Falls back to
+the original hardcoded list if the live query ever fails.
+
+### Reusable lesson
+
+**When a staff member moves/has already moved from one dashboard project to another, re-check
+whether a known data-correctness fix from the old project was actually ported, not just assumed
+carried over.** This is the cross-project version of the same-project lesson already captured in
+`2026-10-02_capability.md` and `2026-10-06_capability.md` (multiple hand-maintained sources of the
+same fact drifting apart) — here the drift was between two entirely separate codebases, not two
+files in the same one.
+
+### Originating task
+
+`evidence/dm-dashboard/2026-10-08_jefri-hardcoded-campaign-list-bug_evidence.md`
