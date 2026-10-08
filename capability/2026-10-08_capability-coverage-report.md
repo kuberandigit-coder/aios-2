@@ -179,3 +179,18 @@ manual CSV upload) — recorded as a cross-reference in the new capability doc, 
 - No historical task record was modified, moved, or deleted by this pass — only capability-layer
   files were created/updated, plus two small "new consumer" additions to existing capability docs.
 - `capability/README.md` index rebuilt to list all 23 files; no entry removed.
+
+**Note 7 (added 2026-10-08, final pass):** reviewed 2026-08-07 through 2026-08-31 the same way
+(2026-08-13/19/20/21/24/29 already covered). 7 more genuine capabilities found: 2026-08-10 (Target
+Achievement/YoY Growth metric definition), 2026-08-11 (a real security gotcha — an auth-guard
+auto-insertion script's regex gap left two pages unauthenticated), 2026-08-14 (the permanent,
+bidirectional live-deploy-vs-repo mismatch detector — the 4th and most complete fix in this
+project's recurring dual-repo-drift theme), 2026-08-26 (the Sync Monitor admin page — the visible
+counterpart to `ScheduledSnapshot`, confirmed still the standing destination every later
+`ScheduledSnapshot` adoption registers with), 2026-08-27 (the live-vs-historical Postgres table
+split), and 2026-08-31 (two: a Gemini-powered AI Assistant/chat pattern, and a verbatim
+static-page-port + dead-dependency-repair migration shape). Also updated the existing
+`2026-08-29_capability.md` (`ScheduledSnapshot`) with a same-week resilience fix found on 2026-08-31
+rather than writing it up separately, since it's an in-place change to that same shared module.
+2026-08-09/12/25/28/30 were read in full and found to be bug fixes/planning applying already-
+documented patterns, not new capability creation.

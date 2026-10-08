@@ -47,6 +47,16 @@ The pattern now exists as an actual shared module: `backend/app/core/scheduled_s
 dm-dashboard repo — confirmed present via direct file check during this capability backfill. Any
 future snapshot-backed page should import and use this module rather than writing a new one.
 
+### Update (2026-08-31) — resilience fix for a connection-limit failure mode
+
+Jefri Req1's auto-sync was failing due to the shared business-database role's hard 10-connection
+limit (an external constraint, not raisable from this app). Fixed inside `ScheduledSnapshot.run_sync`
+itself with automatic retry-with-backoff (5 attempts over ~7 minutes) plus a small extra slot of
+connection headroom — making the scheduler self-heal from a connection spike instead of staying
+stale for up to 2 days after one bad moment. Verified via a live manual sync (succeeded in 16.3s).
+This is the practical ceiling of "permanent" without DB-admin access to raise the connection limit
+itself. See `closure/jefri/2026-08-31_req1-autosync-permanent-fix.md`.
+
 ### Limitations
 
 The closure doc this is sourced from itself notes its origin is "a Claude session record (not git
