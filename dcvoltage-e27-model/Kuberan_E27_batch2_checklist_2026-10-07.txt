@@ -1,0 +1,231 @@
+DC VOLTAGE E27 PAGES: BATCH 2 STEP-BY-STEP CHECKLIST
+For: Kuberan
+Batch 2 items: C2, C5, C7, P3, P4, P6, P10, G4, G6 (from your file "DC VOLTAGE E27 PAGES: NEXT LEVEL TASKS (VERSION 2)", 1 Oct)
+Due: Wed 7 Oct 18:00 SL
+Live site checked: Wed 7 Oct 18:01 SL (read-only, live pages)
+Result: 1 of 9 live. 8 of 9 not live yet: G6, G4, P4, C5, P3, P6, C7, C2.
+
+PLEASE REPLY IN THE TELEGRAM GROUP BY THU 8 OCT 12:00 SL
+For each item ID, send ONE line, either:
+  C5 - DONE + <link or screenshot>
+or
+  C5 - new date <day, time SL> + what is blocking you (for example "waiting for Muguntha OK on duplicate theme")
+
+WHO APPROVES
+- Thuwaraga (portfolio holder, Bulbs): product decisions - product titles, variant names, product text, photos, alt text, related products, filter values.
+- Muguntha (website team leader): site-wide changes - theme code, structured data templates, breadcrumbs, filters set-up, buy box layout, discount codes, guide.
+Rule from your task file still applies: build theme and code changes on a DUPLICATE theme first, send the screenshot to the approver, and publish only after the approver says OK.
+If you are waiting for an approver, that is fine - say so in your reply with the date you asked them.
+
+DECISIONS STILL OPEN (do NOT wait for these - do everything else first)
+Thuwaraga's decisions: D1 (6W lumens), D2 (8W colour temperature) and D9 (approve your product content) are due today, Wed 7 Oct. D4 (was-prices), D7 (1158 dimmable or not) and D8 (1103 set contents) are overdue since Fri 2 Oct.
+Only these parts wait for them:
+- C2 filter values for 1158 (D7) and 1103 (D8), and final OK on all values (D9)
+- C7 product titles and 1102 variant names (D9), 1158 title (D7)
+- P3 variant labels (D9, and D2 for the 8W colour)
+- P4 b and c: which related products (D9)
+- P6 a, b, c: photos and alt text (D9)
+- C5 c: which brand name shows on the bulbs (Thuwaraga) and which company name in the Organization data (Muguntha)
+For these parts: prepare the work now (draft, duplicate theme or a sheet), send it to Thuwaraga, and tell us the date you sent it.
+
+======================================================================
+ALREADY LIVE, THANK YOU
+======================================================================
+
+P10 - Remove the duplicate title heading - LIVE
+Page: https://dcvoltage.co.uk/products/vintage-style-led-edison-bulb-lamp
+What we see now: the sticky add-to-cart title is now a normal <div class="sticky-add-to-cart__title">, not an <h3> before the H1. The product H1 is now the first product heading. Nothing more to do.
+
+Small optional tidy (2 minutes, from batch 1 P2): the "B22 version of this bulb" link on 1025 points to
+https://dcvoltage.co.uk//products/vintage-style-led-edison-bulb-lamp-b22 (two slashes after .co.uk).
+It works, but please change the link to /products/vintage-style-led-edison-bulb-lamp-b22 next time you edit the FAQ.
+
+======================================================================
+STILL OPEN - QUICKEST FIRST
+======================================================================
+
+----------------------------------------------------------------------
+1) G6 - Replace the fixed dates in the guide (about 5 minutes)
+Approver: Muguntha
+Page: https://dcvoltage.co.uk/blogs/news/e27-vs-b22-vs-gu10-which-bulb-fitting-do-you-actually-need
+What it shows now:
+  - At the top: "🕒 7 min read 📅 Updated May 2026 ✍️ DC Voltage Lighting Team"
+  - Near the end: "...there are no UK government plans to phase out B22 as of 2025."
+What to change (Shopify admin > Online Store > Blog posts > open this article > Content, use the "<>" HTML view):
+  a) Change "Updated May 2026" to the real date you save the update, e.g. "Updated 8 October 2026".
+  b) Change "as of 2025" to "as of October 2026" (or the month you update it).
+  Keep everything else the same.
+How you prove it: reply "G6 - DONE" with the article link.
+What we will check on the live page: the words "May 2026" and "as of 2025" no longer appear.
+
+----------------------------------------------------------------------
+2) G4 - Guide structured data (about 30 minutes, duplicate theme)
+Approver: Muguntha
+Page: same guide link as G6.
+What it shows now (Article structured data in the page code):
+  "description": ""   (empty)
+  "author": {"@type": "Person", "name": "DC VOLTAGE"}   (a company set as a person)
+  "dateModified": "2026-05-28..."
+  No FAQPage structured data at all, although the guide has 6 FAQs.
+What to change (Shopify admin > Online Store > Themes > duplicate theme > Edit code > the article section file that prints "@type": "Article", usually sections/main-article.liquid or a snippet it renders):
+  a) description: fill it with the article's meta description (the one you set in G2: "E27 screws in, B22 pushes and twists, GU10 is a two-pin spotlight...").
+  b) author: change to {"@type": "Organization", "name": "DC Voltage"}.
+  c) dateModified: use the article's real last-updated date (article.updated_at), not a fixed value.
+  d) Add a FAQPage block with the 6 guide questions and their answers, word for word from the page:
+     1. Can I use an E27 bulb in a B22 fitting?
+     2. Are LED GU10s worth switching to from halogen?
+     3. What's the difference between E27 and E26?
+     4. How do I know if my GU10 fitting is dimmable?
+     5. What brightness should I choose - wattage or lumens?
+     6. Is B22 being phased out in the UK? (copy the exact wording shown on the page)
+     Do not put numbers like "1." in front of the questions.
+How you prove it: send Muguntha the Google Rich Results Test link (https://search.google.com/test/rich-results) for the duplicate-theme preview, then publish after OK and reply "G4 - DONE" with the test link.
+What we will check on the live page: Article has a description, author is an Organization "DC Voltage", and a FAQPage with 6 questions exists.
+
+----------------------------------------------------------------------
+3) P4 - Breadcrumb, related products and two links on 1025 (about 1 hour)
+Approvers: breadcrumb - Muguntha. Related products and FAQ links - Thuwaraga.
+Page: https://dcvoltage.co.uk/products/vintage-style-led-edison-bulb-lamp
+What it shows now:
+  - Breadcrumb (structured data): Home > Dimmable ST64 E27 LED Filament Bulb... ~1025 (only 2 steps). No breadcrumb visible on the page.
+  - Related products: automatic "related" list (B22 G95 ~1155, braided cable ~1054, ~1102, lamp holder ~1137, ~1043, wall light ~1153), and the "New Arrivals" section is still below it. No complementary products are set.
+  - FAQ 7: "Yes, the 8W comes in a 6-pack (sold as a separate listing). For other pack sizes, contact us." - "6-pack" is not a link.
+  - "Will it fit?": no link to the E27 vs B22 guide.
+What to change:
+  a) Breadcrumb (duplicate theme, Muguntha): show Home > LED Light Bulbs > E27 Bulbs > product, both visibly on the page and in the BreadcrumbList structured data. Links: / > /collections/led-bulb > /collections/e27-bulbs > this product.
+  b) Related products (Thuwaraga): Shopify admin > Apps > Search & Discovery > Product recommendations > search ~1025 > Complementary products > add:
+       ~1227  /products/pack-6-led-e27-edison-bulb-st64-8w-60w-equivalent-dimmable-bulb
+       ~1024  /products/g125-dimmable-led-edison-bulb-e27-8w-vintage-globe-light
+       B22 version  /products/vintage-style-led-edison-bulb-lamp-b22
+       E27 pendant sets (Thuwaraga to name which ones)
+     Then in the theme editor on the product template, set the recommendations block to show complementary products (or add a "Complementary products" block), and replace "New Arrivals" on this template.
+  c) FAQ 7 (Thuwaraga): make the word "6-pack" a normal link to /products/pack-6-led-e27-edison-bulb-st64-8w-60w-equivalent-dimmable-bulb using the rich text link tool.
+  d) "Will it fit?" (Thuwaraga): add this sentence at the end: "Not sure which fitting? Read our E27 vs B22 guide." Link the words "E27 vs B22 guide" to /blogs/news/e27-vs-b22-vs-gu10-which-bulb-fitting-do-you-actually-need
+  Do c) and d) first - they take 10 minutes and need no decision except the approver's OK.
+How you prove it: screenshot of the Search & Discovery complementary list for ~1025, plus the live product link.
+What we will check on the live page: breadcrumb has 4 steps; complementary products are set; "6-pack" and "E27 vs B22 guide" are links.
+
+----------------------------------------------------------------------
+4) C5 - Collection structured data clean-up (about 1 hour, duplicate theme)
+Approver: Muguntha (point c also needs Thuwaraga)
+Page: https://dcvoltage.co.uk/collections/e27-bulbs
+What it shows now:
+  a) The ItemList has 17 items and every item still contains a full Product with price offers, e.g. position 1: "@type": "Product", "name": "Dimmable ST64 E27 LED Filament Bulb...~1025", "offers": {"@type": "AggregateOffer", ... "offerCount": 3}.
+  b) Organization only has name "DCVOLTAGE", logo and url. No legal name, address, phone or email. (Same block on the product, guide and home pages.)
+  c) Brand: products say "DC Voltage", Organization says "DCVOLTAGE".
+  d) Collection FAQ questions start with numbers: "1. Is E27 the same as ES?", "2. E27 or B22: how do I tell which I have...", up to "6. Filament bulb or standard LED: what's...".
+What to change (Online Store > Themes > duplicate theme > Edit code > the collection section/snippet that prints "CollectionPage" / "ItemList"; Organization is usually in layout/theme.liquid or a schema snippet):
+  a) Make each list item only: {"@type": "ListItem", "position": 1, "url": "https://dcvoltage.co.uk/products/vintage-style-led-edison-bulb-lamp"} - position and product web address only. Remove "item", "offers", "image" and price fields from the list.
+  b) Organization: add "legalName": "DC VOLTAGE UK Ltd", plus the Coventry address, phone and email copied exactly as shown in the site footer. Add social profile links (sameAs) only if Muguntha gives them.
+  c) Brand: leave as it is until Thuwaraga (brand on the bulbs) and Muguntha (company name) decide. Do a), b), d) now.
+  d) Remove "1." to "6." from the start of each FAQ question (theme editor > collection template > FAQ block, or wherever the questions are stored). (The 1025 product FAQ has the same numbering - ask Muguntha if you should remove it there too.)
+How you prove it: Rich Results Test link for the duplicate-theme preview to Muguntha, then the live collection link after OK.
+What we will check on the live page: no list item contains "offers"; Organization has an address and telephone; FAQ questions have no numbers.
+
+----------------------------------------------------------------------
+5) P3 - Tidy the buy box on 1025 (about 1 hour, duplicate theme)
+Approvers: layout and discount codes - Muguntha. Variant labels - Thuwaraga.
+Page: https://dcvoltage.co.uk/products/vintage-style-led-edison-bulb-lamp
+What it shows now:
+  - The "Unlock 10% Off" box (code DCFOSD10) comes BEFORE the Add to cart button.
+  - The "Available Discount Codes" box comes BEFORE Add to cart and still lists: "Spring Sale - Full Order 15% off your entire order ... SPRING15".
+  - No free-delivery line under the price.
+  - Variant buttons say: "ST64 4W E27", "ST64 6W E27", "ST64 8W E27".
+What to change:
+  a) Theme editor (duplicate theme) > Product template > drag the "Unlock 10% Off" block and the "Available Discount Codes" / "Why no interest" blocks BELOW the Buy buttons block, or put them in one collapsed row. (Muguntha)
+  b) Ask Muguntha today if SPRING15 is still active. If not, remove it from the discount codes list. (Muguntha)
+  c) Under the price, add one line with the free UK delivery wording from your task file (P3). Use the exact wording Muguntha approves; the full delivery promise waits for his C6 decision. (Muguntha)
+  d) Variant labels (Products > ~1025 > Variants > edit option values), after Thuwaraga's OK (D9, D2 for the 8W):
+       ST64 4W E27  ->  4W, 450 lm, 2700K
+       ST64 6W E27  ->  6W, 2700K
+       ST64 8W E27  ->  8W, 800 lm, 2200K extra warm
+  Do a) and b) first.
+How you prove it: a phone screenshot of the duplicate-theme preview showing Add to cart on the first screen without scrolling, sent to Muguntha; then the live link after OK.
+What we will check on the live page: Add to cart comes before the discount boxes; no "Spring" / SPRING15 text.
+
+----------------------------------------------------------------------
+6) P6 - Images and alt text on 1025 (about 2 hours)
+Approvers: photos and alt text - Thuwaraga. Carousel theme fix - Muguntha.
+Page: https://dcvoltage.co.uk/products/vintage-style-led-edison-bulb-lamp
+What it shows now:
+  - Main image: Vintage_Light_Bulb_ST64_E27_4W_Dimmable_LED_Filament_Bulb.png, 502 x 487 pixels (small PNG).
+  - No dimension drawing.
+  - Alt text in Shopify: 6 photos have none, 3 say "filament 2700k bulb bulbs", 1 says "lamp caldarax bulb bulbs style". On the page all 10 show the same product title as alt.
+  - 37 small variant thumbnails in the "New Arrivals" carousel have no alt at all: <img src="...514iGJkXFXL_200x200.jpg" class="variant-thumb" loading="lazy">
+What to change:
+  d) DO THIS FIRST - no decision needed (Muguntha, duplicate theme): Edit code > the New Arrivals carousel section/snippet that outputs class="variant-thumb" > add alt="{{ product.title | escape }}" to that <img> tag. This fixes the 37 missing alts.
+  c) Alt text (Products > ~1025 > Media > click each image > Add alt text). Each one different, describing that photo. Examples:
+       "ST64 E27 LED filament bulb, amber glass, 4W, unlit"
+       "ST64 amber filament bulb lit in a black pendant over a table"
+       "Dimension drawing: ST64 bulb 64 mm x 138 mm, E27 cap"
+     Delete "lamp caldarax bulb bulbs style" and "filament 2700k bulb bulbs". Send the 10 alt texts to Thuwaraga as a list, then enter them after OK.
+  a) New main image: at least 1500 x 1500 pixels, JPG or WebP, the bulb lit on a white background, file name st64-e27-led-filament-bulb-amber-dimmable.jpg. If you do not have a photo, ask Thuwaraga today and give us the date she replies.
+  b) Dimension drawing: 64 mm diameter, 138 mm height, E27 cap 27 mm.
+How you prove it: screenshot of the Media list with alt texts, and the live product link.
+What we will check on the live page: main image at least 1200 px wide; no <img> without alt; no "caldarax" text.
+
+----------------------------------------------------------------------
+7) C7 - Product card names to one pattern (1 to 2 hours)
+Approver: Thuwaraga (she uses the same titles on the other channels)
+Page: https://dcvoltage.co.uk/collections/e27-bulbs
+What it shows now: none of the 17 titles has changed since 1 Oct. Examples:
+  "Vintage Edison LED Bulb T45 E27 dimmable~1041"   (no space before ~)
+  "LED Non Dimmable Vintage Filament 4W T185 E27 Light Bulb ~1158"
+  "6 Pack E27 A60 LED Bulbs 12W 100W Equivalent 6400K ~1213"
+  "Vintage E27 LED Spiral Filament Bulbs | Amber Glass Retro Décor ~1102"
+  ~1102 variants are still named "Style 3", "Style 4", "Style 5", "Style 7", "Style 8", "Style 9", "Style 10", "Style 11".
+What to change:
+  Step 1 (today, no decision needed): make a sheet with 3 columns - listing code, current title, new title - for all 17 products. New title pattern:
+    Shape, E27, Filament or LED, Bulb, watts and lumens, Kelvin, Dimmable or Non-dimmable, pack, then a space and ~code
+    Example: T45 E27 LED Filament Bulb, 4W 450lm, 2700K, Dimmable ~1041
+  Add the 1102 variant names from the SKUs (check each against its photo):
+    Style 3 LDSG125MUE274 -> G125 Music
+    Style 4 LDSG95DIE274  -> G95 Diamond
+    Style 5 LDSG95E274    -> G95
+    Style 7 LDSST64E274   -> ST64
+    Style 8 LDSSTRE274    -> Star
+    Style 9 LDST185E274   -> T185
+    Style 10 LDST45E274   -> T45
+    Style 11 LDMG95E278   -> G95 8W
+  Step 2: send the sheet to Thuwaraga (D9). Leave 1158's "Dimmable / Non-dimmable" until her D7 decision.
+  Step 3: after her OK, change the titles in Products > each product > Title, and the 1102 variant option values.
+How you prove it: the sheet link (with the date you sent it to Thuwaraga), then the live collection link.
+What we will check on the live page: all 17 titles follow the pattern; no "Style" variant names.
+
+----------------------------------------------------------------------
+8) C2 - Make the filters work for all 17 products (2 to 3 hours)
+Approvers: filter set-up - Muguntha. Values for each product - Thuwaraga.
+Page: https://dcvoltage.co.uk/collections/e27-bulbs
+What it shows now: every filter still shows only one value, all from ~1025:
+  Fitting: "E27 (ES)"
+  Brightness: "450–800 lm"
+  Dimmable: Yes
+  Shape: "ST64"
+  Colour: "2700K warm white (8W: 2200K extra warm)"
+What to change:
+  Step 1 - set-up (Muguntha; can start now):
+    Settings > Custom data > Products > open the specs.lumens and specs.kelvin definitions (and specs.shape) > make them "List of values" with "Limit to preset choices":
+      Brightness: Soft glow under 300 lm; Ambient 300 to 600 lm; Bright 600 to 900 lm (about 60W); Very bright 900 lm plus
+      Colour: Extra warm 2200K; Warm white 2700K; Cool daylight 6400K
+      Shape: A60, ST64, G95, G125, T45, T185, Decorative
+    Then Apps > Search & Discovery > Filters: check the Brightness, Colour, Shape and Dimmable filters use these metafields.
+  Step 2 - values: send the value list in your task file (section C2, products 1025 to 1041) to Thuwaraga for OK (D9). Fill all products she confirms. Leave 1158 dimmable (D7) and 1103 (D8) empty until she decides.
+  Step 3 - fill each product: Products > product > Metafields at the bottom > choose the values.
+How you prove it: screenshot of the metafield definitions with preset choices, and the live collection link.
+What we will check on the live page: every filter shows more than one value, each value returns at least one product, and all 17 products have values (except 1158/1103 while waiting).
+
+======================================================================
+SUMMARY - REPLY FORMAT (copy, fill in, post in the group by Thu 8 Oct 12:00 SL)
+======================================================================
+G6 - DONE + link / new date + blocker
+G4 - DONE + link / new date + blocker
+P4 - DONE + link / new date + blocker
+C5 - DONE + link / new date + blocker
+P3 - DONE + link / new date + blocker
+P6 - DONE + link / new date + blocker
+C7 - DONE + link / new date + blocker
+C2 - DONE + link / new date + blocker
+
+We will re-check the live pages after your reply. The full AI re-review of all three pages is on Thu 15 Oct.
+
+Tip: paste this task into ChatGPT/Claude and ask it for the first draft or the steps.
