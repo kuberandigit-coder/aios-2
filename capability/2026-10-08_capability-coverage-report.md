@@ -21,6 +21,29 @@ original pass (`reusable`, `template for`, `pattern for future`, `can be reused`
 `## Reuse` heading), applied specifically to the 2026-06-09 through 2026-07-21 window that the
 original pass's narrower search had not covered.
 
+**Note 3 (added 2026-10-08, final pass):** per a follow-up request to check every day from
+2026-06-17 "till now" for missed capability-worthy work, ran the expanded keyword search
+(`reusable`, `## Reuse`, `template for (any|future)`, `pattern for future`, `can be reused`,
+`reuse this`, `standing convention`, `established pattern`, `generali[sz]able`) across the entire
+`evidence/`, `closure/`, `validation/`, `handover/` tree — not just the earlier gap windows — and
+individually reviewed every new hit (66 files matched; 43 were already covered by an existing
+capability day-file or were confirmations of reusing an *already-documented* pattern rather than
+creating a new one, e.g. the 2026-07-23/08-12/09-21/09-24 validation checklists confirming
+adherence to established caching/CSS conventions). **6 new capabilities found and added**, one of
+them (`2026-08-29_capability.md`, the `ScheduledSnapshot` pattern's origin) a major, foundational
+finding — confirmed still in active use as recently as 2026-09-29 and referenced throughout this
+same day's (2026-10-08) dm-dashboard catch-up work, meaning it had been missing from the capability
+layer despite being one of the most-reused patterns in the entire project. Also added
+`2026-09-30_capability.md` (DC Voltage's "model" template pattern) — confirmed, by direct
+cross-reference to this same day's own E27 Batch 2 evidence file, to be the exact template this
+session had been editing all day, strengthening confidence this discovery method surfaces
+genuinely load-bearing capabilities, not just incidental mentions.
+
+This keyword-expansion method is still not a verbatim re-read of all 616 task slugs — it finds
+capability-worthy work by searching for the project's own language patterns for describing
+reusability, which could in principle miss a capability described without any of those phrases.
+No further gap-hunting pass beyond this one was performed.
+
 ## Methodology (read this before the findings below)
 
 The historical AIOS record set is large: 384 evidence files, 252 validation files, 190 closure
