@@ -134,3 +134,38 @@ files in the same one.
 ### Originating task
 
 `evidence/dm-dashboard/2026-10-08_jefri-hardcoded-campaign-list-bug_evidence.md`
+
+---
+
+## Capability — A Fixed Reporting Window Can Permanently Hide Real Data With No Escape Hatch
+
+**Date:** 2026-10-08
+**Owner:** Kuberan (dm-dashboard, Jefri Req2)
+**Status:** Fixed, pushed to `dev-work`
+
+### Capability (a documented bug class, not a feature)
+
+A report hardcoded to "last 90 days" with no date-range control at all isn't just a display
+default — if the underlying data's freshness ever drifts (here: an upstream feed stopped updating
+for 6 of 7 campaigns around 2026-07), the real, substantial data (161k+ rows, confirmed via direct
+SQL) becomes **permanently unreachable through the UI**, with no way for the user to even discover
+it exists. An old code comment had actually mis-diagnosed this as "the table is empty" — a comment
+that was never re-verified once written, and was simply wrong.
+
+### Reusable lesson
+
+**Before trusting an old "this data source is empty/broken" code comment, re-verify it directly**
+— it may describe a true finding from when it was written that's since become stale or was itself
+wrong. And: **any report with a hardcoded time window should have a way to widen or shift it**,
+even if the default stays narrow — otherwise a silent upstream data-freshness regression becomes
+permanently invisible instead of just temporarily stale.
+
+### Fix
+
+Added optional `from`/`to` date params (backend) and From/To inputs (frontend) to Req2, same
+convention Req1 already used on this page — default behavior unchanged, but the real data is now
+reachable.
+
+### Originating task
+
+`evidence/dm-dashboard/2026-10-08_jefri-req2-missing-date-range_evidence.md`
