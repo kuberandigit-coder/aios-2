@@ -3,7 +3,10 @@ Thumbs.db
 node_modules/
 .env
 .env.*
+# OAuth client secrets / credential JSON (e.g. Google client_secret_*.json) and any other
+# API keys live here -- never commit, covered by both this rule and the *.json rule below.
 api-keys/
+client_secret*.json
 .claude/
 shopify.theme.toml.local
 *.json
