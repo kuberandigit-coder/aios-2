@@ -22,6 +22,21 @@
    - `git ls-files --error-unmatch` confirms it is not tracked.
    - `git status --short api-keys/` shows nothing — not staged, not appearing as untracked.
 
+## Update — 2026-10-09 (same day, follow-up)
+
+The file was relocated again, this time into the **dm-dashboard** repository at
+`backend/api-keys/` (its own separate git repo, not this one). In that repo:
+- Created `backend/api-keys/`, moved the JSON there from this vault.
+- Added `backend/api-keys/` and `client_secret*.json` rules to dm-dashboard's own `.gitignore`
+  (separate file from this repo's `.gitignore`), with an explanatory comment.
+- Verified the same way: `git check-ignore -v` matched the new `backend/api-keys/` rule,
+  `git ls-files --error-unmatch` confirmed untracked, `git status --short backend/api-keys/`
+  showed nothing.
+- No commit or push made in dm-dashboard, per explicit instruction for this follow-up task.
+- The file no longer exists in this repo's `api-keys/` folder — `api-keys/14_google_oauth_client.md`
+  and `api-keys/00_README.md` here updated to point to the new location instead of duplicating
+  this record.
+
 ## Known gap
 
 The credential's intended use (which task/project it's for) was not specified alongside it —
@@ -30,10 +45,12 @@ into any code until that's clarified.
 
 ## Files changed
 
-`.gitignore` (committed, no secret content). `api-keys/00_README.md`, `api-keys/14_google_oauth_client.md`,
-and the moved JSON itself are all git-ignored — not committed, by design, consistent with every
-other file in this vault.
+This repo: `.gitignore` (committed, no secret content). `api-keys/00_README.md`,
+`api-keys/14_google_oauth_client.md` updated in place — git-ignored, not committed, consistent
+with every other file in this vault. dm-dashboard repo: `.gitignore` updated (not committed, per
+instruction); the JSON itself lives there now, git-ignored, untracked.
 
 ## Status
 
-**Done.** File filed, ignore rule verified, no secret exposed in git or in this record.
+**Done.** File filed in its final location (dm-dashboard `backend/api-keys/`), ignore rules
+verified in both repos, no secret exposed in git or in any AIOS document.

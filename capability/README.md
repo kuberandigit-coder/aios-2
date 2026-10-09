@@ -53,6 +53,7 @@ for the full task context; these files hold the reusable-capability extract only
 - [`2026-10-06_capability.md`](2026-10-06_capability.md) — Live-API-vs-external-DB verification discipline; mixed int/float JSON bulk-upsert bug class; sidebar-visibility gotcha; common-prefix/suffix HTML diffing.
 - [`2026-10-07_capability.md`](2026-10-07_capability.md) — Visual block editor (click-to-edit rendered HTML); parallelized AI section generation.
 - [`2026-10-08_capability.md`](2026-10-08_capability.md) — Liquid `article.handle` blog-prefix gotcha; confirm a "duplicate theme" is actually a duplicate before pushing to it; single-source-of-truth product-ownership fix (Mahima Req5b); fixes don't automatically cross codebases (Jefri hardcoded-campaign-list bug); a fixed reporting window can permanently hide real data with no escape hatch (Jefri Req2).
+- [`2026-10-09_capability.md`](2026-10-09_capability.md) — Building a dev-task page fully from existing conventions; surfacing a provably-missing calculation input (`MISSING_INPUT`) instead of silently defaulting it; Balance Price lives in a second business database (`order_management_copy`, `blos.listing_channel_price_v1`), not the main one.
 
 See `2026-10-08_capability-coverage-report.md` for the full audit methodology, what was/wasn't
 individually re-verified, and flagged gaps — note its file-path references predate this day-by-day
